@@ -1,0 +1,43 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #1b0036;
+  color: #fff;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: #29094e;
+  border-bottom: 2px solid #444;
+}
+
+main {
+  max-width: 800px;
+  margin: auto;
+  padding: 2rem 1rem;
+}
+
+section {
+  margin-bottom: 2rem;
+}
+
+.placeholder {
+  height: 200px;
+  background: #3e006a;
+  border: 2px dashed #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+}
+
+.chat a {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  background: #ffd000;
+  color: #000;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 8px;
+}
