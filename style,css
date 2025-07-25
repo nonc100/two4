@@ -60,3 +60,29 @@ section {
 .chat a:hover {
   transform: scale(1.05);
 }
+.logo-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-start;
+}
+
+.logo {
+  height: 40px;
+  width: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.site-title h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #00ffff;
+  text-shadow: 0 0 8px #00ffff;
+}
+
+.site-title p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #77f7f7;
+}
