@@ -53,11 +53,18 @@ header {
   display: flex;
   align-items: center;
 }
+/* ─── Header 로고/타이틀 ──────────────────────────────────────────────── */
 .logo-wrapper img {
-  width: 2.5rem;
+  width: 2rem;               /* 2.5rem → 2rem 으로 축소 */
   height: auto;
-  margin-right: 0.75rem;
+  margin-right: 0.5rem;      /* 로고와 텍스트 사이 간격도 살짝 줄입니다 */
   filter: drop-shadow(0 0 6px var(--neon-accent1));
+}
+
+.site-title {
+  font-size: 1.8rem;         /* 제목을 약간 키워서 로고와 균형 맞춤 */
+}
+
 }
 .site-title {
   font-family: var(--ff-serif);
