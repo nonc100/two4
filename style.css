@@ -62,3 +62,8 @@ section {
 .chat a:hover {
   transform: scale(1.05);
 }
+/* style.css 맨 아래에 붙여넣기 */
+header img {
+  height: 48px;
+  width: auto;       /* 비율 유지 */
+}
