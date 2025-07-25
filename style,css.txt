@@ -1,0 +1,62 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to bottom right, #0d0d2b, #1a0033);
+  color: #e0e0ff;
+  background-image: radial-gradient(#ffffff10 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: rgba(20, 0, 40, 0.5);
+  border-bottom: 2px solid #4c00ff;
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
+}
+
+main {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+}
+
+h2 {
+  color: #66ccff;
+  text-shadow: 0 0 8px #66ccff;
+}
+
+section {
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 0 10px #00ffff44;
+}
+
+.placeholder {
+  height: 200px;
+  background: #111133;
+  border: 2px dashed #6666cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+}
+
+.chat a {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  background: #00ffff;
+  color: #000;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  box-shadow: 0 0 10px #00ffff;
+  transition: transform 0.2s ease;
+}
+
+.chat a:hover {
+  transform: scale(1.05);
+}
