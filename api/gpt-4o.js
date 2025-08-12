@@ -1,38 +1,54 @@
-// /api/gpt-4o.js
-export default async function handler(req, res) {
+// /api/gpt-4o.js  (Edge Runtime 버전)
+export const config = { runtime: "edge" };
+
+export default async function handler(req) {
   if (req.method !== "POST") {
-    // 주소창에서 직접 열면 무조건 405가 뜨는 게 정상임 (POST만 허용)
-    return res.status(405).json({ error: "Method not allowed" });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { "content-type": "application/json" } }
+    );
   }
 
   try {
-    const { messages } = req.body || {};
+    // ✅ 엣지 런타임: 본문 확실히 파싱
+    const { messages } = await req.json();
+
     if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: "messages must be an array" });
+      return new Response(
+        JSON.stringify({ error: "messages must be an array" }),
+        { status: 400, headers: { "content-type": "application/json" } }
+      );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "OPENAI_API_KEY not set" });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: "OPENAI_API_KEY not set" }),
+        { status: 500, headers: { "content-type": "application/json" } }
+      );
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "content-type": "application/json",
+        "authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",          // ← 여기서 4o 쓰도록 고정
+        model: "gpt-4o",
         messages,
         temperature: 0.7,
       }),
     });
 
-    const data = await response.json();
+    const data = await r.json();
 
-    if (!response.ok) {
-      // OpenAI에서 에러 내려오면 그대로 보여줌
-      return res.status(response.status).json(data);
+    if (!r.ok) {
+      // OpenAI가 돌려준 에러 그대로 전달
+      return new Response(
+        JSON.stringify(data),
+        { status: r.status, headers: { "content-type": "application/json" } }
+      );
     }
 
     const reply =
@@ -40,8 +56,14 @@ export default async function handler(req, res) {
       data?.choices?.[0]?.delta?.content ??
       "";
 
-    return res.status(200).json({ reply, raw: data });
+    return new Response(
+      JSON.stringify({ reply, raw: data }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
   } catch (err) {
-    return res.status(500).json({ error: err?.message || "Server error" });
+    return new Response(
+      JSON.stringify({ error: err?.message || "Server error" }),
+      { status: 500, headers: { "content-type": "application/json" } }
+    );
   }
 }
