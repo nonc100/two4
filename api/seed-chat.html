@@ -33,7 +33,7 @@ async function sendMessage() {
   displayMessage("user", text);
   input.value = "";
 
-  const res = await fetch("/api/seed", {
+  const res = await fetch("/api/gpt-4o", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages })
