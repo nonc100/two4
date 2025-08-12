@@ -1,86 +1,511 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script src="https://s3.tradingview.com/tv.js"></script>
-
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Two.4 - 우주의 시간</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWO.4 - TIME NEVER SLEEPS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: #0a0a0a;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .cosmic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #16213e 100%);
+            z-index: -2;
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .header {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            z-index: 100;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff79c6;
+            text-shadow: 0 0 10px #ff79c6;
+        }
+        
+        .menu-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ff79c6;
+            border-radius: 50%;
+            background: rgba(255, 121, 198, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .menu-btn:hover {
+            background: rgba(255, 121, 198, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 121, 198, 0.5);
+        }
+        
+        .menu-lines {
+            position: relative;
+            width: 20px;
+            height: 2px;
+            background: #ff79c6;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-lines::before,
+        .menu-lines::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: #ff79c6;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-lines::before {
+            top: -6px;
+        }
+        
+        .menu-lines::after {
+            top: 6px;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            position: relative;
+        }
+        
+        .title {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff79c6, #bd93f9, #8be9fd);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(255, 121, 198, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(255, 121, 198, 0.5)); }
+            to { filter: drop-shadow(0 0 40px rgba(255, 121, 198, 0.8)); }
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #8be9fd;
+            margin-bottom: 50px;
+            opacity: 0.8;
+        }
+        
+        .cosmic-eye-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 40px 0;
+        }
+        
+        .cosmic-eye {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #ff79c6;
+            border-radius: 50%;
+            position: relative;
+            background: 
+                radial-gradient(circle at center, rgba(255, 121, 198, 0.1) 0%, transparent 70%),
+                conic-gradient(from 0deg, #ff79c6, #bd93f9, #8be9fd, #50fa7b, #ff79c6);
+            animation: rotate 10s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 0 50px rgba(255, 121, 198, 0.5),
+                inset 0 0 50px rgba(255, 121, 198, 0.1);
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+        
+        .inner-eye {
+            width: 70%;
+            height: 70%;
+            background: 
+                radial-gradient(circle at 30% 30%, #8be9fd 0%, #bd93f9 40%, #1a0a2e 100%);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .pupil {
+            width: 40%;
+            height: 40%;
+            background: #0a0a0a;
+            border-radius: 50%;
+            position: relative;
+            animation: blink 4s infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+        
+        .pupil-light {
+            width: 30%;
+            height: 30%;
+            background: #ff79c6;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #ff79c6;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .satellite {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #50fa7b;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #50fa7b;
+            animation: orbit 6s linear infinite;
+        }
+        
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(160px) rotate(0deg); }
+            to { transform: rotate(-360deg) translateX(160px) rotate(360deg); }
+        }
+        
+        .satellite::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(to bottom, #50fa7b, transparent);
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .time-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ff79c6;
+            margin-top: 30px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 20px rgba(255, 121, 198, 0.8);
+        }
+        
+        .content-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+        
+        .section-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 121, 198, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .section-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 121, 198, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .section-card:hover::before {
+            left: 100%;
+        }
+        
+        .section-card:hover {
+            transform: translateY(-10px);
+            border-color: #ff79c6;
+            box-shadow: 0 20px 40px rgba(255, 121, 198, 0.2);
+        }
+        
+        .section-card h3 {
+            color: #8be9fd;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .section-card p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+        
+        .chat-btn {
+            background: linear-gradient(45deg, #ff79c6, #bd93f9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        
+        .chat-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 121, 198, 0.4);
+        }
+        
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            height: 100vh;
+            background: rgba(26, 10, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 2px solid #ff79c6;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            padding: 80px 30px 30px;
+        }
+        
+        .menu-overlay.active {
+            right: 0;
+        }
+        
+        .menu-item {
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 121, 198, 0.2);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .menu-item:hover {
+            color: #ff79c6;
+            padding-left: 10px;
+        }
+        
+        .close-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            color: #ff79c6;
+            font-size: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .cosmic-eye-container {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .content-sections {
+                grid-template-columns: 1fr;
+                padding: 0 15px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header>
-<header>
-  <div class="logo-title">
-    <img src="logo.png" alt="Two.4 Logo" class="logo" />
-    <div class="site-title">
-      <h1>Two.4</h1>
-      <p>시간은 모두에게 주어진 공평한 선물</p>
+    <div class="cosmic-bg"></div>
+    <div class="stars" id="stars"></div>
+    
+    <header class="header">
+        <div class="logo">TWO.4</div>
+        <div class="menu-btn" onclick="toggleMenu()">
+            <div class="menu-lines"></div>
+        </div>
+    </header>
+    
+    <div class="menu-overlay" id="menuOverlay">
+        <div class="close-menu" onclick="toggleMenu()">×</div>
+        <a href="#" class="menu-item">🏠 홈</a>
+        <a href="#" class="menu-item">📊 코인 차트</a>
+        <a href="#" class="menu-item">📰 뉴스</a>
+        <a href="#" class="menu-item">👥 커뮤니티</a>
+        <a href="#" class="menu-item">⚙️ 설정</a>
+        <a href="#" class="menu-item">❓ 도움말</a>
+        <a href="#" class="menu-item">📞 문의</a>
     </div>
-  </div>
-</header>
-  </header>
-
-  <main>
-    <section class="news">
-      <h2> Coin news</h2>
-      <p>최신 코인 뉴스들이 여기에 표시됩니다.</p>
+    
+    <main class="main-container">
+        <h1 class="title">TWO.4</h1>
+        <p class="subtitle">TIME NEVER SLEEPS</p>
+        
+        <div class="cosmic-eye-container">
+            <div class="cosmic-eye">
+                <div class="inner-eye">
+                    <div class="pupil">
+                        <div class="pupil-light"></div>
+                    </div>
+                </div>
+                <div class="satellite"></div>
+                <div class="satellite" style="animation-delay: -2s;"></div>
+                <div class="satellite" style="animation-delay: -4s;"></div>
+            </div>
+        </div>
+        
+        <div class="time-display" id="timeDisplay">24:00 → 00:00</div>
+    </main>
+    
+    <section class="content-sections">
+        <div class="section-card">
+            <h3>🪙 Coin News</h3>
+            <p>최신 암호화폐 뉴스와 시장 동향을 실시간으로 확인하세요. 글로벌 크립토 시장의 모든 변화를 놓치지 마세요.</p>
+        </div>
+        
+        <div class="section-card">
+            <h3>📈 Real Time Charts</h3>
+            <p>TradingView를 통해 모든 시장을 실시간으로 추적하세요. 전문적인 차트 분석 도구로 투자 결정을 내리세요.</p>
+        </div>
+        
+        <div class="section-card">
+            <h3>💬 사용자 게시판</h3>
+            <p>방문자들과 소중한 이야기를 나누는 공간입니다. 경험을 공유하고 새로운 인사이트를 발견해보세요.</p>
+            <a href="#" class="chat-btn">💬 오픈채팅방 참여하기</a>
+        </div>
     </section>
-
-    <section class="chart">
-      <h2> real time charts
-</h2>
-      <div class="placeholder">
-<!-- TradingView Widget BEGIN -->
-<div class="tradingview-widget-container" style="height:100%;width:100%">
-  <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-  <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-  {
-  "allow_symbol_change": true,
-  "calendar": false,
-  "details": false,
-  "hide_side_toolbar": true,
-  "hide_top_toolbar": false,
-  "hide_legend": false,
-  "hide_volume": false,
-  "hotlist": false,
-  "interval": "15",
-  "locale": "en",
-  "save_image": true,
-  "style": "1",
-  "symbol": "BINANCE:BTCUSDT",
-  "theme": "dark",
-  "timezone": "Etc/UTC",
-  "backgroundColor": "#0F0F0F",
-  "gridColor": "rgba(242, 242, 242, 0.06)",
-  "watchlist": [],
-  "withdateranges": false,
-  "compareSymbols": [],
-  "studies": [
-    "STD;Connors_RSI",
-    "STD;Balance%1of%1Power"
-  ],
-  "autosize": true
-}
-  </script>
-</div>
-<!-- TradingView Widget END -->
-
-    </section>
-
-    <section class="community">
-      <h2> 사용자 게시판</h2>
-      <p>방문자들의 이야기를 나누는 공간</p>
-    </section>
-
-    <section class="chat">
-      <a href="https://open.kakao.com/o/gakOu7Og" target="_blank">💬 오픈채팅방 참여하기</a>
-    </section>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Two.4. 우주의 하루를 함께.</p>
-  </footer>
+    
+    <script>
+        // 별 생성
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const numStars = 200;
+            
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 시간 업데이트
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const nextHour = String((now.getHours() + 1) % 24).padStart(2, '0');
+            
+            document.getElementById('timeDisplay').textContent = `${hours}:${minutes} → ${nextHour}:00`;
+        }
+        
+        // 메뉴 토글
+        function toggleMenu() {
+            const menuOverlay = document.getElementById('menuOverlay');
+            menuOverlay.classList.toggle('active');
+        }
+        
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            createStars();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+        
+        // 메뉴 외부 클릭시 닫기
+        document.addEventListener('click', function(e) {
+            const menuOverlay = document.getElementById('menuOverlay');
+            const menuBtn = document.querySelector('.menu-btn');
+            
+            if (!menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
+                menuOverlay.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
