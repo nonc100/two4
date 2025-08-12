@@ -2318,35 +2318,180 @@
             });
         }
         
+        // GPT-4o API 설정
+        const OPENAI_API_KEY = ''; // 여기에 OpenAI API 키를 입력하세요
+        const USE_GPT4 = false; // true로 변경하면 GPT-4o 사용
+        
+        async function callGPT4API(message) {
+            if (!OPENAI_API_KEY) {
+                return '⚠️ OpenAI API 키가 설정되지 않았습니다.\n\n설정 방법:\n1. OpenAI 계정 생성\n2. API 키 발급\n3. 코드에서 OPENAI_API_KEY 변수에 키 입력\n4. USE_GPT4를 true로 변경';
+            }
+            
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `너는 TWO.4 웹사이트의 암호화폐 전문 AI 어시스턴트 'Seed'야. 다음 특성을 가져야 해:
+
+1. 친근하고 전문적인 톤
+2. 암호화폐, 블록체인, DeFi 전문 지식
+3. 투자 조언 시 항상 위험성 경고
+4. 최신 트렌드와 기술 동향 파악
+5. 한국어로 자연스럽게 대화
+6. 이모지 적절히 사용
+7. 구체적이고 실용적인 조언 제공
+
+투자 관련 조언 시 반드시 "투자에는 위험이 따르며, 본인 책임하에 결정하세요"라는 내용 포함.`
+                            },
+                            {
+                                role: 'user',
+                                content: message
+                            }
+                        ],
+                        max_tokens: 500,
+                        temperature: 0.7
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API 오류: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.choices[0].message.content;
+                
+            } catch (error) {
+                console.error('GPT-4o API 호출 실패:', error);
+                return `🚫 GPT-4o 연결에 실패했습니다.\n\n오류: ${error.message}\n\n대안:\n• API 키 확인\n• 네트워크 연결 확인\n• CORS 정책으로 인한 제한\n\n로컬 AI로 대체 응답드릴게요! 🤖`;
+            }
+        }
+        
         function generateBotResponse(userMessage) {
             const message = userMessage.toLowerCase();
             
-            // 간단한 키워드 기반 응답
-            if (message.includes('비트코인') || message.includes('btc')) {
-                return '비트코인은 현재 강세를 보이고 있습니다! 📈 최신 차트를 확인해보세요.';
-            } else if (message.includes('이더리움') || message.includes('eth')) {
-                return '이더리움 2.0 업그레이드로 많은 관심을 받고 있어요! ⚡';
-            } else if (message.includes('가격') || message.includes('시세')) {
-                return '실시간 가격 정보는 위의 차트와 코인 목록에서 확인하실 수 있습니다! 💰';
-            } else if (message.includes('투자') || message.includes('매매')) {
-                return '투자는 항상 신중하게 하세요! 본인만의 투자 전략을 세우는 것이 중요합니다. 📊';
-            } else if (message.includes('뉴스') || message.includes('소식')) {
-                return '최신 암호화폐 뉴스는 뉴스 섹션에서 확인하실 수 있어요! 📰';
-            } else if (message.includes('안녕') || message.includes('하이') || message.includes('hello')) {
-                return '안녕하세요! 😊 암호화폐에 대해 궁금한 것이 있으시면 언제든 물어보세요!';
-            } else if (message.includes('고마워') || message.includes('감사')) {
-                return '천만에요! 언제든 도움이 필요하시면 말씀해주세요! 🙏';
-            } else if (message.includes('도움') || message.includes('help')) {
-                return '도움이 필요하시군요! 다음과 같은 주제로 이야기할 수 있어요:\n• 비트코인, 이더리움 등 암호화폐 정보\n• 투자 기본 가이드\n• 최신 뉴스와 시장 동향\n• 차트 보는 법';
-            } else {
-                const responses = [
-                    '흥미로운 질문이네요! 더 자세히 설명해주시면 도움을 드릴 수 있을 것 같아요. 🤔',
-                    '좋은 질문입니다! 암호화폐 시장은 정말 흥미로운 분야죠. 📈',
-                    '네, 맞습니다! 더 구체적인 질문이 있으시면 언제든 말씀해주세요. 💡',
-                    '암호화폐 투자에 관심이 많으시군요! 항상 DYOR(Do Your Own Research)을 잊지 마세요. 🔍'
-                ];
-                return responses[Math.floor(Math.random() * responses.length)];
+            // GPT-4o 사용 여부 체크
+            if (USE_GPT4 && OPENAI_API_KEY) {
+                return callGPT4API(userMessage);
             }
+            
+            // 현재 시간과 상황에 맞는 응답
+            const currentHour = new Date().getHours();
+            const greeting = currentHour < 12 ? '좋은 아침이에요' : currentHour < 18 ? '좋은 오후에요' : '좋은 저녁이에요';
+            
+            // 복합 키워드 분석
+            const keywords = {
+                crypto: ['비트코인', 'btc', '이더리움', 'eth', '암호화폐', '코인', '알트코인'],
+                price: ['가격', '시세', '얼마', '값', '가치', '차트'],
+                investment: ['투자', '매매', '매수', '매도', '수익', '손실', '포트폴리오'],
+                news: ['뉴스', '소식', '최신', '정보', '동향', '시장'],
+                technical: ['분석', '차트', '지지선', '저항선', '패턴', 'rsi', 'macd'],
+                greeting: ['안녕', '하이', 'hello', '처음', '반가워'],
+                help: ['도움', 'help', '모르겠어', '궁금', '질문'],
+                fear: ['무서워', '두려워', '걱정', '불안', '위험'],
+                bullish: ['상승', '올라', '오를', '강세', '호재'],
+                bearish: ['하락', '떨어', '내려', '약세', '악재'],
+                gpt: ['gpt', 'chatgpt', '지피티', 'ai', '인공지능']
+            };
+            
+            // GPT 관련 질문 처리
+            if (message.includes('gpt') || message.includes('지피티') || message.includes('chatgpt')) {
+                return `🤖 GPT-4o 연결 설정하기:\n\n1️⃣ OpenAI 계정 생성 (platform.openai.com)\n2️⃣ API 키 발급\n3️⃣ 코드에서 OPENAI_API_KEY에 키 입력\n4️⃣ USE_GPT4를 true로 변경\n\n⚠️ 주의사항:\n• API 사용 비용 발생\n• 브라우저 보안정책(CORS) 문제 가능\n• 프로덕션에서는 백엔드 서버 권장\n\n현재는 로컬 AI로 대화하고 있어요!`;
+            }
+            
+            // 키워드 점수 계산
+            const scores = {};
+            Object.keys(keywords).forEach(category => {
+                scores[category] = keywords[category].filter(keyword => message.includes(keyword)).length;
+            });
+            
+            // 가장 높은 점수의 카테고리 찾기
+            const maxCategory = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+            const maxScore = scores[maxCategory];
+            
+            // 복합 응답 생성
+            if (maxScore === 0) {
+                return generateContextualResponse(message);
+            }
+            
+            // 카테고리별 고급 응답
+            switch (maxCategory) {
+                case 'crypto':
+                    if (message.includes('비트코인') || message.includes('btc')) {
+                        const btcResponses = [
+                            `비트코인은 현재 강한 모멘텀을 보이고 있어요! 📈\n기관 투자자들의 지속적인 유입과 ETF 승인으로 인해 장기적으로는 긍정적인 전망이 많습니다.\n\n하지만 단기 변동성은 여전히 크니 신중한 접근이 필요해요.\n\n💡 GPT-4o 연결하시면 더 자세한 분석을 받아보실 수 있어요!`,
+                            `BTC 차트를 보면 현재 주요 지지선을 잘 유지하고 있어요.\n${greeting}! 비트코인 투자를 고려중이시라면:\n\n1️⃣ DCA(분할매수) 전략 추천\n2️⃣ 장기 관점에서 접근\n3️⃣ 위험 관리 필수\n\n🚀 GPT-4o로 업그레이드하면 실시간 시장 분석도 가능해요!`
+                        ];
+                        return btcResponses[Math.floor(Math.random() * btcResponses.length)];
+                    } else if (message.includes('이더리움') || message.includes('eth')) {
+                        return `이더리움 2.0의 성공적인 업그레이드로 네트워크 효율성이 크게 개선되었어요! ⚡\n\nDeFi와 NFT 생태계의 중심 역할을 하고 있고, Layer 2 솔루션들도 활발히 발전하고 있습니다.\n\n스테이킹 수익률도 안정적이어서 장기 보유자들에게는 매력적인 옵션이에요.\n\n🎯 GPT-4o 연결하시면 더 심화된 이더리움 분석을 받아보세요!`;
+                    }
+                    break;
+                    
+                case 'price':
+                    return `실시간 가격 정보는 위의 TradingView 차트에서 확인하실 수 있어요! 📊\n\n💡 가격 분석 팁:\n• 단순히 현재 가격보다는 추세를 보세요\n• 거래량과 함께 분석하는 것이 중요해요\n• 여러 시간대 차트를 비교해보세요\n\n🔥 GPT-4o 연결하면 AI가 차트를 실시간 분석해드려요!\n\n현재 시장은 어떤 코인에 관심이 있으신가요?`;
+                    
+                case 'investment':
+                    const investAdvice = [
+                        `투자에 대한 조언을 드리자면:\n\n🎯 기본 원칙:\n• 잃어도 되는 돈으로만 투자\n• 분산 투자로 위험 분산\n• 감정적 결정 피하기\n• DYOR (Do Your Own Research)\n\n${greeting}! 어떤 투자 전략에 관심이 있으신가요?\n\n🤖 GPT-4o와 연결하면 개인맞춤형 투자 전략을 받아보실 수 있어요!`,
+                        `암호화폐 투자는 전통 투자와 다른 특성이 있어요:\n\n📈 장점:\n• 24/7 거래 가능\n• 높은 수익 잠재력\n• 글로벌 접근성\n\n⚠️ 주의사항:\n• 높은 변동성\n• 규제 리스크\n• 기술적 이해 필요\n\n현재 포트폴리오 구성은 어떻게 되어 있나요?\n\n🧠 GPT-4o 연결하면 포트폴리오 최적화 조언도 받을 수 있어요!`
+                    ];
+                    return investAdvice[Math.floor(Math.random() * investAdvice.length)];
+                    
+                case 'technical':
+                    return `기술적 분석에 관심이 있으시군요! 📊\n\n주요 지표들:\n🔸 RSI: 과매수/과매도 구간 확인\n🔸 MACD: 추세 전환점 파악\n🔸 볼린저 밴드: 변동성과 지지/저항선\n🔸 이동평균선: 장기 추세 방향\n\n어떤 코인의 차트 분석을 원하시나요?\n\n🚀 GPT-4o로 업그레이드하면 실시간 차트 패턴 인식과 예측도 가능해요!`;
+                    
+                case 'fear':
+                    return `투자에 대한 불안감은 자연스러운 감정이에요. 😌\n\n🧘 마음가짐:\n• 투자는 마라톤, 단거리가 아니에요\n• 시장의 변동성은 정상적인 현상\n• 자신만의 투자 철학을 가지세요\n• 충분한 학습과 준비가 중요해요\n\n무엇이 가장 걱정되시나요?\n\n💡 GPT-4o와 상담하면 더 깊이 있는 심리적 조언도 받을 수 있어요!`;
+                    
+                case 'bullish':
+                    return `상승장에 대한 기대감이 있으시군요! 🚀\n\n📈 상승 요인들:\n• 기관 투자자 유입 증가\n• 규제 명확성 개선\n• 기술적 발전과 채택 확산\n• 거시경제적 요인들\n\n하지만 과도한 낙관은 금물이에요.\n\n🎯 GPT-4o 연결하면 실시간 시장 센티먼트 분석도 받아보세요!`;
+                    
+                case 'bearish':
+                    return `하락에 대한 우려가 있으시는군요. 📉\n\n🛡️ 하락장 대응법:\n• 패닉 매도 피하기\n• 분할 매수 기회로 활용\n• 포트폴리오 재평가\n• 현금 비중 조절\n\n암호화폐 시장은 사이클이 있어요.\n\n🤖 GPT-4o로 업그레이드하면 하락장 생존 전략도 맞춤 제공해드려요!`;
+                    
+                case 'greeting':
+                    return `${greeting}! 🌱 TWO.4 Seed Chat에 오신 것을 환영해요!\n\n저는 암호화폐 전문 AI 어시스턴트예요. 현재는 로컬 모드로 동작중이지만, GPT-4o와 연결하면 훨씬 더 똑똑해져요! 🧠\n\n🔥 GPT-4o 연결 시 추가 기능:\n• 실시간 시장 분석\n• 개인맞춤형 투자 조언\n• 복잡한 기술적 분석\n• 자연스러운 대화\n\n어떤 것이 궁금하신가요?`;
+                    
+                default:
+                    return generateContextualResponse(message);
+            }
+            
+            return generateContextualResponse(message);
+        }
+        
+        function generateContextualResponse(message) {
+            // 질문 패턴 분석
+            if (message.includes('?') || message.includes('궁금') || message.includes('어떻게')) {
+                return `좋은 질문이네요! 🤔\n\n더 구체적으로 말씀해주시면 정확한 답변을 드릴 수 있어요. 예를 들어:\n• 어떤 코인에 대해 궁금하신가요?\n• 투자 금액대는 어느 정도인가요?\n• 단기/장기 중 어떤 관점인가요?\n\n언제든 편하게 물어보세요!`;
+            }
+            
+            // 감정 표현 감지
+            if (message.includes('좋아') || message.includes('최고') || message.includes('감사')) {
+                return `기쁘게 생각해주셔서 감사해요! 😊\n\n앞으로도 유용한 정보와 인사이트를 제공해드리겠습니다. 암호화폐 투자 여정에서 좋은 동반자가 되고 싶어요!\n\n다른 궁금한 점이 있으시면 언제든 말씀해주세요! 🚀`;
+            }
+            
+            if (message.includes('싫어') || message.includes('별로') || message.includes('실망')) {
+                return `죄송해요! 😅 더 나은 도움을 드리고 싶어요.\n\n어떤 부분이 아쉬우셨는지 알려주시면 개선해나가겠습니다. 구체적인 피드백은 정말 소중해요!\n\n다시 한번 기회를 주시면 더 유용한 정보를 제공해드리겠습니다.`;
+            }
+            
+            // 복잡한 질문에 대한 응답
+            const complexResponses = [
+                `흥미로운 관점이네요! 🎯\n\n암호화폐 시장은 정말 다면적이어서 여러 요소를 고려해야 해요:\n• 기술적 펀더멘털\n• 시장 심리와 뉴스\n• 거시경제적 환경\n• 규제 동향\n\n어떤 측면에서 더 자세히 이야기해볼까요?`,
+                
+                `좋은 포인트를 짚으셨네요! 💡\n\n이런 상황에서는 다각도로 접근하는 것이 중요해요:\n\n1️⃣ 데이터 기반 분석\n2️⃣ 리스크 평가\n3️⃣ 장단기 전략 수립\n4️⃣ 지속적인 모니터링\n\n구체적으로 어떤 부분이 가장 궁금하신가요?`,
+                
+                `정말 의미있는 질문이에요! 🌟\n\n이런 주제는 암호화폐 투자자라면 꼭 고민해봐야 할 부분이죠. 시장의 변화가 빠르다 보니 계속 학습하고 적응하는 것이 중요해요.\n\n더 깊이 있는 대화를 원하시면 구체적인 상황이나 예시를 들어주세요!`
+            ];
+            
+            return complexResponses[Math.floor(Math.random() * complexResponses.length)];
         }
         
         // Initialize
