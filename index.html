@@ -149,21 +149,21 @@
         
         .brand-title {
             font-family: 'Exo 2', sans-serif;
-            font-size: 48px;
+            font-size: 24px;
             font-weight: 800;
             color: #8b5cf6;
-            text-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
-            margin-bottom: 8px;
-            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+            margin-bottom: 4px;
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
         
         .brand-subtitle {
             font-family: 'Exo 2', sans-serif;
-            font-size: 14px;
+            font-size: 10px;
             color: rgba(139, 92, 246, 0.8);
             font-weight: 600;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             text-transform: uppercase;
         }
         
@@ -254,13 +254,9 @@
             font-family: 'Exo 2', monospace;
             font-size: 2.2rem;
             font-weight: 700;
-            color: #8b5cf6;
-            text-shadow: 
-                0 0 20px rgba(139, 92, 246, 1),
-                0 0 40px rgba(139, 92, 246, 0.8),
-                0 0 60px rgba(139, 92, 246, 0.6);
+            color: #000000;
+            text-shadow: none;
             letter-spacing: 2px;
-            animation: timeGlow 3s ease-in-out infinite alternate;
         }
         
         @keyframes timeGlow {
@@ -723,10 +719,20 @@
     <div class="cosmic-bg"></div>
     <div class="stars" id="stars"></div>
     
-    <!-- Brand Section -->
+    <!-- Brand Section with Ancient Eye -->
     <div class="brand-section">
         <div class="brand-title">TWO.4</div>
         <div class="brand-subtitle">TIME NEVER SLEEPS</div>
+        <div class="ancient-eye" style="margin-top: 10px;">
+            <div class="eye-container">
+                <div class="eye-main">
+                    <div class="eye-pupil"></div>
+                </div>
+                <div class="eye-line-top"></div>
+                <div class="eye-line-bottom"></div>
+                <div class="eye-line-spiral"></div>
+            </div>
+        </div>
     </div>
     
     <!-- Navigation -->
@@ -743,20 +749,6 @@
     
     <!-- Main Container -->
     <main class="main-container" id="home">
-        <!-- Main Logo with Ancient Eye -->
-        <div class="main-logo-section">
-            <div class="main-title">Two.4</div>
-            <div class="ancient-eye">
-                <div class="eye-container">
-                    <div class="eye-main">
-                        <div class="eye-pupil"></div>
-                    </div>
-                    <div class="eye-line-top"></div>
-                    <div class="eye-line-bottom"></div>
-                    <div class="eye-line-spiral"></div>
-                </div>
-            </div>
-        </div>
         
         <div class="clock-planet-container">
             <!-- Satellite and Earth System -->
@@ -771,7 +763,7 @@
                     <div class="planet-surface"></div>
                 </div>
                 <div class="time-display-center">
-                    <div class="current-time" id="currentTime">[PM19:31:40]</div>
+                    <div class="current-time" id="currentTime">PM19:31:40</div>
                 </div>
             </div>
         </div>
@@ -1019,7 +1011,7 @@
             const period = hours >= 12 ? 'PM' : 'AM';
             const displayHours = String(hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours)).padStart(2, '0');
             
-            const timeString = `[${period}${displayHours}:${minutes}:${seconds}]`;
+            const timeString = `${period}${displayHours}:${minutes}:${seconds}`;
             
             // DOM 업데이트
             document.getElementById('currentTime').textContent = timeString;
