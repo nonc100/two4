@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Seed Chat</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #0b0b1a; color: white; }
+  .chat-box { max-width: 600px; margin: 50px auto; border: 1px solid #444; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05);}
+  .messages { height: 400px; overflow-y: auto; padding: 10px; }
+  .user { color: #00ffff; }
+  .seed { color: #ff66ff; }
+  input { width: 80%; padding: 10px; border-radius: 5px; border: none; }
+  button { padding: 10px 15px; border: none; background: #ff66ff; color: white; border-radius: 5px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="chat-box">
+  <div class="messages" id="messages"></div>
+  <input type="text" id="userInput" placeholder="Seed에게 물어보기..." />
+  <button onclick="sendMessage()">보내기</button>
+</div>
+
+<script>
+let messages = [{ role: "system", content: "너는 Seed라는 AI이며, 따뜻하고 유머러스하게 대답한다." }];
+
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const text = input.value.trim();
+  if (!text) return;
+  
+  messages.push({ role: "user", content: text });
+  displayMessage("user", text);
+  input.value = "";
+
+  const res = await fetch("/api/seed", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages })
+  });
+
+  const data = await res.json();
+  const reply = data.choices?.[0]?.message?.content || "Seed가 응답하지 못했어요.";
+  messages.push({ role: "assistant", content: reply });
+  displayMessage("seed", reply);
+}
+
+function displayMessage(sender, text) {
+  const msgBox = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = sender;
+  div.textContent = (sender === "user" ? "👤 You: " : "🌱 Seed: ") + text;
+  msgBox.appendChild(div);
+  msgBox.scrollTop = msgBox.scrollHeight;
+}
+</script>
+</body>
+</html>
