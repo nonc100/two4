@@ -167,12 +167,12 @@
             text-transform: uppercase;
         }
         
-        /* Ancient Eye of Horus */
+        /* Ancient Eye of Horus - Egyptian Style */
         .ancient-eye {
-            width: 60px;
-            height: 35px;
+            width: 80px;
+            height: 45px;
             position: relative;
-            filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.8));
+            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.9));
             margin-top: 15px;
         }
         
@@ -187,43 +187,161 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 55px;
-            height: 28px;
+            width: 70px;
+            height: 35px;
             border: 3px solid #8b5cf6;
-            border-radius: 50px 50px 50px 50px / 60px 60px 40px 40px;
+            border-radius: 45px 45px 35px 35px / 50px 50px 25px 25px;
             background: 
-                radial-gradient(ellipse at 50% 40%, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+                radial-gradient(ellipse at 30% 40%, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.1) 70%, transparent 100%);
             animation: eyeGlow 3s ease-in-out infinite;
+            overflow: hidden;
+        }
+        
+        .eye-pupil {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: 
+                radial-gradient(circle at 30% 30%, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 15px rgba(139, 92, 246, 1),
+                inset 0 0 8px rgba(0, 0, 0, 0.4);
+            animation: pupilBlink 5s ease-in-out infinite;
+        }
+        
+        .eye-pupil::after {
+            content: '';
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            width: 6px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+        }
+        
+        .eye-line-top {
+            position: absolute;
+            top: -2px;
+            right: -15px;
+            width: 28px;
+            height: 3px;
+            background: #8b5cf6;
+            transform: rotate(-20deg);
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-bottom {
+            position: absolute;
+            bottom: -8px;
+            left: 15px;
+            width: 25px;
+            height: 3px;
+            background: #8b5cf6;
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-bottom::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            bottom: -6px;
+            width: 8px;
+            height: 3px;
+            background: #8b5cf6;
+            transform: rotate(45deg);
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-spiral {
+            position: absolute;
+            bottom: -12px;
+            right: 8px;
+            width: 18px;
+            height: 10px;
+            border: 3px solid #8b5cf6;
+            border-top: none;
+            border-radius: 0 0 18px 18px;
+            border-left: none;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-spiral::before {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            width: 12px;
+            height: 6px;
+            border: 2px solid #8b5cf6;
+            border-top: none;
+            border-left: none;
+            border-radius: 0 0 12px 0;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+        }
+        
+        .eye-egyptian-marks {
+            position: absolute;
+            bottom: -5px;
+            left: 5px;
+            width: 15px;
+            height: 8px;
+        }
+        
+        .eye-egyptian-marks::before {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 8px;
+            background: #8b5cf6;
+            left: 0;
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-egyptian-marks::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 5px;
+            background: #8b5cf6;
+            left: 6px;
+            top: 3px;
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-inner-line {
+            position: absolute;
+            top: 55%;
+            left: 20%;
+            width: 60%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #8b5cf6 50%, transparent 100%);
+            border-radius: 2px;
+            animation: innerLineGlow 2s ease-in-out infinite;
         }
         
         @keyframes eyeGlow {
             0%, 100% { 
                 box-shadow: 
-                    0 0 15px rgba(139, 92, 246, 0.6),
-                    inset 0 0 15px rgba(139, 92, 246, 0.2);
+                    0 0 20px rgba(139, 92, 246, 0.7),
+                    inset 0 0 20px rgba(139, 92, 246, 0.2);
                 border-color: #8b5cf6;
             }
             50% { 
                 box-shadow: 
-                    0 0 25px rgba(139, 92, 246, 0.9),
-                    inset 0 0 25px rgba(139, 92, 246, 0.3);
+                    0 0 35px rgba(139, 92, 246, 1),
+                    inset 0 0 35px rgba(139, 92, 246, 0.4);
                 border-color: #a855f7;
             }
-        }
-        
-        .eye-pupil {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 16px;
-            height: 16px;
-            background: #8b5cf6;
-            border-radius: 50%;
-            box-shadow: 
-                0 0 12px rgba(139, 92, 246, 1),
-                inset 0 0 5px rgba(0, 0, 0, 0.3);
-            animation: pupilBlink 5s ease-in-out infinite;
         }
         
         @keyframes pupilBlink {
@@ -231,64 +349,9 @@
             95% { transform: translate(-50%, -50%) scaleY(0.1); }
         }
         
-        .eye-pupil::after {
-            content: '';
-            position: absolute;
-            top: 20%;
-            left: 20%;
-            width: 5px;
-            height: 5px;
-            background: rgba(0, 0, 0, 0.9);
-            border-radius: 50%;
-        }
-        
-        .eye-line-top {
-            position: absolute;
-            top: -4px;
-            right: -8px;
-            width: 20px;
-            height: 2px;
-            background: #8b5cf6;
-            transform: rotate(-15deg);
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-bottom {
-            position: absolute;
-            bottom: -6px;
-            left: 12px;
-            width: 16px;
-            height: 2px;
-            background: #8b5cf6;
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-bottom::after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            bottom: -4px;
-            width: 6px;
-            height: 2px;
-            background: #8b5cf6;
-            transform: rotate(45deg);
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-spiral {
-            position: absolute;
-            bottom: -8px;
-            right: 4px;
-            width: 12px;
-            height: 6px;
-            border: 2px solid #8b5cf6;
-            border-top: none;
-            border-radius: 0 0 12px 12px;
-            border-left: none;
-            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+        @keyframes innerLineGlow {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
         }
         
         /* Satellite and Earth System */
@@ -319,93 +382,106 @@
         
         .earth-satellite {
             position: absolute;
-            width: 20px;
-            height: 20px;
-            top: -10px;
+            width: 16px;
+            height: 16px;
+            top: -8px;
             left: 50%;
             transform: translateX(-50%);
             background: 
-                radial-gradient(circle at 30% 30%, #ffffff 0%, #e0f2fe 30%, #81d4fa 60%, #4fc3f7 80%, #29b6f6 100%);
+                radial-gradient(circle at 30% 30%, #ffffff 0%, #e3f2fd 40%, #90caf9 70%, #42a5f5 100%);
             border-radius: 50%;
             box-shadow: 
-                0 0 20px rgba(255, 255, 255, 1),
-                0 0 40px rgba(129, 212, 250, 0.8),
-                0 0 60px rgba(79, 195, 247, 0.6),
-                inset -2px -2px 6px rgba(0, 0, 0, 0.2),
-                inset 2px 2px 6px rgba(255, 255, 255, 0.8);
+                0 0 15px rgba(255, 255, 255, 1),
+                0 0 30px rgba(144, 202, 249, 0.8),
+                0 0 45px rgba(66, 165, 245, 0.6);
             animation: cometGlow 2s ease-in-out infinite;
         }
         
         @keyframes cometGlow {
             0%, 100% { 
                 box-shadow: 
-                    0 0 20px rgba(255, 255, 255, 1),
-                    0 0 40px rgba(129, 212, 250, 0.8),
-                    0 0 60px rgba(79, 195, 247, 0.6),
-                    inset -2px -2px 6px rgba(0, 0, 0, 0.2),
-                    inset 2px 2px 6px rgba(255, 255, 255, 0.8);
+                    0 0 15px rgba(255, 255, 255, 1),
+                    0 0 30px rgba(144, 202, 249, 0.8),
+                    0 0 45px rgba(66, 165, 245, 0.6);
                 transform: translateX(-50%) scale(1);
             }
             50% { 
                 box-shadow: 
-                    0 0 30px rgba(255, 255, 255, 1),
-                    0 0 60px rgba(129, 212, 250, 1),
-                    0 0 90px rgba(79, 195, 247, 0.8),
-                    0 0 120px rgba(41, 182, 246, 0.4),
-                    inset -2px -2px 6px rgba(0, 0, 0, 0.2),
-                    inset 2px 2px 6px rgba(255, 255, 255, 0.8);
-                transform: translateX(-50%) scale(1.2);
+                    0 0 20px rgba(255, 255, 255, 1),
+                    0 0 40px rgba(144, 202, 249, 1),
+                    0 0 60px rgba(66, 165, 245, 0.8);
+                transform: translateX(-50%) scale(1.1);
             }
         }
         
         .earth-satellite::after {
             content: '';
             position: absolute;
-            width: 40px;
-            height: 8px;
-            background: linear-gradient(90deg, 
-                rgba(255, 255, 255, 0.8) 0%, 
-                rgba(129, 212, 250, 0.6) 30%, 
-                rgba(79, 195, 247, 0.4) 60%, 
-                transparent 100%);
-            border-radius: 4px;
             top: 50%;
-            left: -45px;
+            left: -18px;
             transform: translateY(-50%);
-            box-shadow: 0 0 15px rgba(129, 212, 250, 0.8);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 2px 15px 2px 0;
+            border-color: transparent rgba(144, 202, 249, 0.7) transparent transparent;
+            filter: blur(0.5px);
             animation: cometTail 2s ease-in-out infinite;
-        }
-        
-        @keyframes cometTail {
-            0%, 100% { 
-                opacity: 0.7;
-                transform: translateY(-50%) scaleX(1);
-            }
-            50% { 
-                opacity: 1;
-                transform: translateY(-50%) scaleX(1.3);
-            }
         }
         
         .earth-satellite::before {
             content: '';
             position: absolute;
-            width: 4px;
-            height: 4px;
+            top: 50%;
+            left: -30px;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 1px 8px 1px 0;
+            border-color: transparent rgba(144, 202, 249, 0.4) transparent transparent;
+            filter: blur(1px);
+            animation: cometTailSecondary 2s ease-in-out infinite;
+        }
+        
+        @keyframes cometTail {
+            0%, 100% { 
+                opacity: 0.6;
+                border-right-color: rgba(144, 202, 249, 0.6);
+            }
+            50% { 
+                opacity: 1;
+                border-right-color: rgba(144, 202, 249, 1);
+            }
+        }
+        
+        @keyframes cometTailSecondary {
+            0%, 100% { 
+                opacity: 0.3;
+                border-right-color: rgba(144, 202, 249, 0.3);
+            }
+            50% { 
+                opacity: 0.6;
+                border-right-color: rgba(144, 202, 249, 0.6);
+            }
+        }
+        
+        .earth-satellite .comet-core {
+            position: absolute;
+            width: 3px;
+            height: 3px;
             background: rgba(255, 255, 255, 1);
             border-radius: 50%;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 
-                0 0 8px rgba(255, 255, 255, 1),
-                0 0 16px rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 1);
             animation: cometCore 1.5s ease-in-out infinite;
         }
         
         @keyframes cometCore {
             0%, 100% { 
-                opacity: 0.8;
+                opacity: 0.9;
                 transform: translate(-50%, -50%) scale(1);
             }
             50% { 
@@ -562,13 +638,13 @@
         }
         
         .tradingview-widget-container {
-            height: 700px;
+            height: 800px;
             width: 100%;
             position: relative;
             z-index: 10;
             border-radius: 16px;
             overflow: hidden;
-            min-height: 700px;
+            min-height: 800px;
         }
         
         .tradingview-widget-container__widget {
@@ -1025,8 +1101,8 @@
             }
             
             .tradingview-widget-container {
-                height: 600px;
-                min-height: 600px;
+                height: 700px;
+                min-height: 700px;
             }
             
             .top-coins-section, .news-section {
@@ -1064,10 +1140,12 @@
             <div class="eye-container">
                 <div class="eye-main">
                     <div class="eye-pupil"></div>
+                    <div class="eye-inner-line"></div>
                 </div>
                 <div class="eye-line-top"></div>
                 <div class="eye-line-bottom"></div>
                 <div class="eye-line-spiral"></div>
+                <div class="eye-egyptian-marks"></div>
             </div>
         </div>
     </div>
@@ -1090,7 +1168,9 @@
             <!-- Satellite and Earth System -->
             <div class="satellite-system">
                 <div class="earth-orbit">
-                    <div class="earth-satellite"></div>
+                    <div class="earth-satellite">
+                        <div class="comet-core"></div>
+                    </div>
                 </div>
             </div>
             
@@ -1132,7 +1212,13 @@
                     "calendar": false,
                     "hide_volume": false,
                     "support_host": "https://www.tradingview.com",
-                    "container_id": "tradingview_chart"
+                    "container_id": "tradingview_chart",
+                    "details": true,
+                    "hotlist": true,
+                    "enable_publishing": false,
+                    "withdateranges": true,
+                    "range": "YTD",
+                    "toolbar_bg": "rgba(139, 92, 246, 0.1)"
                 }
                 </script>
             </div>
