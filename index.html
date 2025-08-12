@@ -16,38 +16,7 @@
         html {
             scroll-behavior: smooth;
         }
-        <!-- Seed Chat 버튼 & 창 -->
-<style>
-  #seed-chat-btn{
-    position:fixed; bottom:24px; right:24px;
-    background:#8e44ad; color:#fff; border:none;
-    padding:12px 16px; border-radius:12px; cursor:pointer;
-    box-shadow:0 8px 20px rgba(0,0,0,.25); z-index:2147483000;
-  }
-  #seed-chat-window{
-    position:fixed; bottom:90px; right:24px; width:360px; height:520px;
-    border:1px solid rgba(255,255,255,.2); border-radius:14px;
-    background:#0b0b12; display:none; overflow:hidden;
-    box-shadow:0 16px 40px rgba(0,0,0,.35); z-index:2147483000;
-  }
-  @media (max-width:520px){
-    #seed-chat-window{ right:0; left:0; width:100%; height:60vh; border-radius:0; }
-  }
-</style>
-
-<button id="seed-chat-btn">Seed 채팅</button>
-<div id="seed-chat-window">
-  <iframe src="/seed-chat.html" style="width:100%; height:100%; border:0;"></iframe>
-</div>
-
-<script>
-  const btn = document.getElementById('seed-chat-btn');
-  const win = document.getElementById('seed-chat-window');
-  btn.onclick = () => {
-    win.style.display = (win.style.display === 'none' || !win.style.display) ? 'block' : 'none';
-  };
-</script>
-
+        
         body {
             font-family: 'Inter', sans-serif;
             background: #000;
@@ -1695,6 +1664,215 @@
         </div>
     </div>
     
+    <!-- Seed Chat 기능 -->
+    <style>
+        #seed-chat-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: #fff;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+            z-index: 9999;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(139, 92, 246, 0.8);
+            animation: chatPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes chatPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+            }
+            50% { 
+                transform: scale(1.05); 
+                box-shadow: 0 12px 35px rgba(139, 92, 246, 0.8);
+            }
+        }
+        
+        #seed-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(139, 92, 246, 0.6);
+        }
+        
+        #seed-chat-window {
+            position: fixed;
+            bottom: 90px;
+            right: 24px;
+            width: 380px;
+            height: 550px;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            display: none;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            flex-direction: column;
+        }
+        
+        #seed-chat-header {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            padding: 16px 20px;
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #seed-chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        #seed-chat-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        #seed-chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: rgba(11, 11, 18, 0.8);
+        }
+        
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+        
+        .message-user {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message-bot {
+            background: rgba(139, 92, 246, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 4px;
+        }
+        
+        #seed-chat-input-container {
+            padding: 16px;
+            background: rgba(11, 11, 18, 0.9);
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            gap: 8px;
+        }
+        
+        #seed-chat-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        #seed-chat-input:focus {
+            border-color: rgba(139, 92, 246, 0.6);
+        }
+        
+        #seed-chat-send {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        #seed-chat-send:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        
+        @media (max-width: 520px) {
+            #seed-chat-window {
+                right: 12px;
+                left: 12px;
+                width: auto;
+                height: 60vh;
+                bottom: 80px;
+            }
+            
+            #seed-chat-btn {
+                right: 12px;
+                bottom: 12px;
+            }
+        }
+        
+        /* 스크롤바 스타일 */
+        #seed-chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #seed-chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        #seed-chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 3px;
+        }
+        
+        #seed-chat-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.7);
+        }
+    </style>
+    
+    <button id="seed-chat-btn">💬 Seed 채팅</button>
+    <div id="seed-chat-window">
+        <div id="seed-chat-header">
+            <span>🌱 Seed Chat</span>
+            <button id="seed-chat-close">×</button>
+        </div>
+        <div id="seed-chat-messages"></div>
+        <div id="seed-chat-input-container">
+            <input type="text" id="seed-chat-input" placeholder="메시지를 입력하세요..." />
+            <button id="seed-chat-send">전송</button>
+        </div>
+    </div>
+    
     <script>
         // Global variables
         var communityPosts = {
@@ -2041,6 +2219,136 @@
             alert('글이 성공적으로 작성되었습니다!');
         }
         
+        // Chat functionality
+        var chatMessages = JSON.parse(localStorage.getItem('seedChatMessages')) || [];
+        
+        function initializeChat() {
+            const chatBtn = document.getElementById('seed-chat-btn');
+            const chatWindow = document.getElementById('seed-chat-window');
+            const chatClose = document.getElementById('seed-chat-close');
+            const chatInput = document.getElementById('seed-chat-input');
+            const chatSend = document.getElementById('seed-chat-send');
+            const chatMessagesContainer = document.getElementById('seed-chat-messages');
+            
+            // 버튼 클릭으로 채팅창 열기/닫기
+            chatBtn.addEventListener('click', function() {
+                const isVisible = chatWindow.style.display === 'flex';
+                chatWindow.style.display = isVisible ? 'none' : 'flex';
+                if (!isVisible) {
+                    loadChatMessages();
+                    chatInput.focus();
+                }
+            });
+            
+            // 닫기 버튼
+            chatClose.addEventListener('click', function() {
+                chatWindow.style.display = 'none';
+            });
+            
+            // 메시지 전송
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    addMessage(message, 'user');
+                    chatInput.value = '';
+                    
+                    // 봇 응답 시뮬레이션
+                    setTimeout(function() {
+                        const botResponse = generateBotResponse(message);
+                        addMessage(botResponse, 'bot');
+                    }, 500 + Math.random() * 1000);
+                }
+            }
+            
+            // 전송 버튼 클릭
+            chatSend.addEventListener('click', sendMessage);
+            
+            // 엔터키로 전송
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // 초기 환영 메시지
+            if (chatMessages.length === 0) {
+                addMessage('안녕하세요! TWO.4 Seed 채팅에 오신 것을 환영합니다! 🌱\n암호화폐에 대해 궁금한 것이 있으시면 언제든 물어보세요!', 'bot');
+            }
+        }
+        
+        function addMessage(text, sender) {
+            const timestamp = new Date().toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const message = {
+                text: text,
+                sender: sender,
+                timestamp: timestamp,
+                id: Date.now()
+            };
+            
+            chatMessages.push(message);
+            localStorage.setItem('seedChatMessages', JSON.stringify(chatMessages));
+            
+            displayMessage(message);
+        }
+        
+        function displayMessage(message) {
+            const messagesContainer = document.getElementById('seed-chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message message-${message.sender}`;
+            
+            messageDiv.innerHTML = `
+                <div>${message.text.replace(/\n/g, '<br>')}</div>
+                <div class="message-time">${message.timestamp}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function loadChatMessages() {
+            const messagesContainer = document.getElementById('seed-chat-messages');
+            messagesContainer.innerHTML = '';
+            
+            chatMessages.forEach(function(message) {
+                displayMessage(message);
+            });
+        }
+        
+        function generateBotResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            // 간단한 키워드 기반 응답
+            if (message.includes('비트코인') || message.includes('btc')) {
+                return '비트코인은 현재 강세를 보이고 있습니다! 📈 최신 차트를 확인해보세요.';
+            } else if (message.includes('이더리움') || message.includes('eth')) {
+                return '이더리움 2.0 업그레이드로 많은 관심을 받고 있어요! ⚡';
+            } else if (message.includes('가격') || message.includes('시세')) {
+                return '실시간 가격 정보는 위의 차트와 코인 목록에서 확인하실 수 있습니다! 💰';
+            } else if (message.includes('투자') || message.includes('매매')) {
+                return '투자는 항상 신중하게 하세요! 본인만의 투자 전략을 세우는 것이 중요합니다. 📊';
+            } else if (message.includes('뉴스') || message.includes('소식')) {
+                return '최신 암호화폐 뉴스는 뉴스 섹션에서 확인하실 수 있어요! 📰';
+            } else if (message.includes('안녕') || message.includes('하이') || message.includes('hello')) {
+                return '안녕하세요! 😊 암호화폐에 대해 궁금한 것이 있으시면 언제든 물어보세요!';
+            } else if (message.includes('고마워') || message.includes('감사')) {
+                return '천만에요! 언제든 도움이 필요하시면 말씀해주세요! 🙏';
+            } else if (message.includes('도움') || message.includes('help')) {
+                return '도움이 필요하시군요! 다음과 같은 주제로 이야기할 수 있어요:\n• 비트코인, 이더리움 등 암호화폐 정보\n• 투자 기본 가이드\n• 최신 뉴스와 시장 동향\n• 차트 보는 법';
+            } else {
+                const responses = [
+                    '흥미로운 질문이네요! 더 자세히 설명해주시면 도움을 드릴 수 있을 것 같아요. 🤔',
+                    '좋은 질문입니다! 암호화폐 시장은 정말 흥미로운 분야죠. 📈',
+                    '네, 맞습니다! 더 구체적인 질문이 있으시면 언제든 말씀해주세요. 💡',
+                    '암호화폐 투자에 관심이 많으시군요! 항상 DYOR(Do Your Own Research)을 잊지 마세요. 🔍'
+                ];
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+        }
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             createStars();
@@ -2055,13 +2363,23 @@
             setInterval(updateIndicators, 300000);
             
             setupCommunityForms();
+            initializeChat();
             
             document.addEventListener('click', function(e) {
                 var menuOverlay = document.getElementById('menuOverlay');
                 var menuBtn = document.querySelector('.menu-btn');
+                var chatWindow = document.getElementById('seed-chat-window');
+                var chatBtn = document.getElementById('seed-chat-btn');
                 
                 if (menuOverlay && menuBtn && !menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
                     menuOverlay.classList.remove('active');
+                }
+                
+                // 채팅창 외부 클릭시 닫기
+                if (chatWindow && chatBtn && !chatWindow.contains(e.target) && !chatBtn.contains(e.target)) {
+                    if (chatWindow.style.display === 'flex') {
+                        chatWindow.style.display = 'none';
+                    }
                 }
             });
         });
