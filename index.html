@@ -300,10 +300,12 @@
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(139, 92, 246, 0.2);
             border-radius: 24px;
-            padding: 30px;
+            padding: 40px;
             backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
+            margin: 0 auto;
+            max-width: 1200px;
         }
         
         .chart-container::before {
@@ -333,10 +335,12 @@
         }
         
         .tradingview-widget-container {
-            height: 500px;
+            height: 550px;
             width: 100%;
             position: relative;
             z-index: 10;
+            border-radius: 16px;
+            overflow: hidden;
         }
         
         /* Top Coins Section */
@@ -697,7 +701,7 @@
             }
             
             .tradingview-widget-container {
-                height: 400px;
+                height: 500px;
             }
             
             .menu-overlay {
@@ -723,7 +727,7 @@
     <div class="brand-section">
         <div class="brand-title">TWO.4</div>
         <div class="brand-subtitle">TIME NEVER SLEEPS</div>
-        <div class="ancient-eye" style="margin-top: 10px;">
+        <div class="ancient-eye">
             <div class="eye-container">
                 <div class="eye-main">
                     <div class="eye-pupil"></div>
@@ -797,6 +801,75 @@
                     "support_host": "https://www.tradingview.com"
                 }
                 </script>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Crypto News Section -->
+    <section class="news-section">
+        <div class="news-container">
+            <h2 class="news-title">암호화폐 실시간 뉴스</h2>
+            <div class="news-list" id="newsList">
+                <div class="news-item">
+                    <div class="news-content">
+                        <div class="news-headline">비트코인, 새로운 최고가 경신 후 조정 국면</div>
+                        <div class="news-summary">전문가들은 비트코인이 단기 조정 후 다시 상승할 것으로 전망한다고 밝혔습니다.</div>
+                    </div>
+                    <div class="news-meta">
+                        <div class="news-source">CoinDesk</div>
+                        <div class="news-time">2시간 전</div>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="news-content">
+                        <div class="news-headline">이더리움 2.0 업그레이드 완료, 새로운 시대 개막</div>
+                        <div class="news-summary">이더리움의 주요 업그레이드가 성공적으로 완료되어 더 빠르고 효율적인 네트워크가 구축되었습니다.</div>
+                    </div>
+                    <div class="news-meta">
+                        <div class="news-source">Ethereum.org</div>
+                        <div class="news-time">4시간 전</div>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="news-content">
+                        <div class="news-headline">솔라나 생태계, 새로운 DeFi 프로젝트 대거 출시</div>
+                        <div class="news-summary">솔라나 블록체인에서 혁신적인 탈중앙화 금융 프로젝트들이 연이어 출시되고 있습니다.</div>
+                    </div>
+                    <div class="news-meta">
+                        <div class="news-source">CryptoNews</div>
+                        <div class="news-time">6시간 전</div>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="news-content">
+                        <div class="news-headline">글로벌 기업들의 암호화폐 도입 가속화</div>
+                        <div class="news-summary">메타, 테슬라 등 주요 기업들이 암호화폐를 결제 수단으로 채택하는 추세가 확산되고 있습니다.</div>
+                    </div>
+                    <div class="news-meta">
+                        <div class="news-source">Bloomberg</div>
+                        <div class="news-time">8시간 전</div>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="news-content">
+                        <div class="news-headline">중앙은행 디지털화폐(CBDC) 개발 경쟁 본격화</div>
+                        <div class="news-summary">각국 중앙은행들이 디지털 화폐 발행을 위한 기술 개발에 박차를 가하고 있습니다.</div>
+                    </div>
+                    <div class="news-meta">
+                        <div class="news-source">Reuters</div>
+                        <div class="news-time">12시간 전</div>
+                    </div>
+                </div>
+                <div class="news-item">
+                    <div class="news-content">
+                        <div class="news-headline">NFT 시장 부활 조짐, 새로운 컬렉션들 인기</div>
+                        <div class="news-summary">최근 유명 아티스트들의 NFT 출시로 침체되었던 시장에 다시 활기가 돌고 있습니다.</div>
+                    </div>
+                    <div class="news-meta">
+                        <div class="news-source">NFT Today</div>
+                        <div class="news-time">1일 전</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1085,6 +1158,17 @@
         }
         
         // 코인 데이터 업데이트 시뮬레이션
+                            <div class="news-headline">${news.headline}</div>
+                            <div class="news-summary">${news.summary}</div>
+                        </div>
+                        <div class="news-meta">
+                            <div class="news-source">${news.source}</div>
+                            <div class="news-time">${news.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
         function updateCoinData() {
             const coinItems = document.querySelectorAll('.coin-change');
             coinItems.forEach(item => {
@@ -1120,6 +1204,10 @@
             updateKoreanTime();
             setInterval(updateKoreanTime, 1000);
             loadPosts();
+            
+            // 뉴스 10초마다 업데이트
+            setInterval(updateNews, 10000);
+            updateNews();
             
             // 코인 데이터 5초마다 업데이트
             setInterval(updateCoinData, 5000);
