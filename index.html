@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TWO.4 - TIME NEVER SLEEPS</title>
+    <title>TWO.4 - Time Never Sleeps</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
         
         * {
             margin: 0;
@@ -13,499 +13,1096 @@
             box-sizing: border-box;
         }
         
+        html {
+            scroll-behavior: smooth;
+        }
+        
         body {
-            font-family: 'Orbitron', monospace;
-            background: #0a0a0a;
-            color: #fff;
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #ffffff;
             overflow-x: hidden;
-            min-height: 100vh;
+            line-height: 1.6;
         }
         
-        .cosmic-bg {
+        /* Navigation */
+        .nav {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
-                linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 50%, #16213e 100%);
-            z-index: -2;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            transition: all 0.3s ease;
         }
         
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-        
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
-        }
-        
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-        
-        .header {
-            position: relative;
+        .nav-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
-            z-index: 100;
+            max-width: 1400px;
+            margin: 0 auto;
         }
         
         .logo {
-            font-size: 1.5rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
             font-weight: 700;
-            color: #ff79c6;
-            text-shadow: 0 0 10px #ff79c6;
+            color: #fff;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
         }
         
-        .menu-btn {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #ff79c6;
-            border-radius: 50%;
-            background: rgba(255, 121, 198, 0.1);
-            cursor: pointer;
+        .nav-menu {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            gap: 40px;
+            list-style: none;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-weight: 500;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .menu-btn:hover {
-            background: rgba(255, 121, 198, 0.3);
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(255, 121, 198, 0.5);
-        }
-        
-        .menu-lines {
+            font-size: 16px;
             position: relative;
-            width: 20px;
-            height: 2px;
-            background: #ff79c6;
-            transition: all 0.3s ease;
         }
         
-        .menu-lines::before,
-        .menu-lines::after {
+        .nav-link::after {
             content: '';
             position: absolute;
-            width: 20px;
+            bottom: -5px;
+            left: 0;
+            width: 0;
             height: 2px;
-            background: #ff79c6;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .nav-link:hover {
+            color: #8b5cf6;
+        }
+        
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 4px;
+        }
+        
+        .menu-line {
+            width: 25px;
+            height: 2px;
+            background: #fff;
             transition: all 0.3s ease;
         }
         
-        .menu-lines::before {
-            top: -6px;
-        }
-        
-        .menu-lines::after {
-            top: 6px;
-        }
-        
-        .main-container {
+        /* Enhanced Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 80vh;
-            text-align: center;
-            position: relative;
-        }
-        
-        .title {
-            font-size: 4rem;
-            font-weight: 900;
-            background: linear-gradient(45deg, #ff79c6, #bd93f9, #8be9fd);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-            text-shadow: 0 0 30px rgba(255, 121, 198, 0.5);
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes glow {
-            from { filter: drop-shadow(0 0 20px rgba(255, 121, 198, 0.5)); }
-            to { filter: drop-shadow(0 0 40px rgba(255, 121, 198, 0.8)); }
-        }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            color: #8be9fd;
-            margin-bottom: 50px;
-            opacity: 0.8;
-        }
-        
-        .cosmic-eye-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 40px 0;
-        }
-        
-        .cosmic-eye {
-            width: 100%;
-            height: 100%;
-            border: 3px solid #ff79c6;
-            border-radius: 50%;
-            position: relative;
             background: 
-                radial-gradient(circle at center, rgba(255, 121, 198, 0.1) 0%, transparent 70%),
-                conic-gradient(from 0deg, #ff79c6, #bd93f9, #8be9fd, #50fa7b, #ff79c6);
-            animation: rotate 10s linear infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 
-                0 0 50px rgba(255, 121, 198, 0.5),
-                inset 0 0 50px rgba(255, 121, 198, 0.1);
-        }
-        
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(-360deg); }
-        }
-        
-        .inner-eye {
-            width: 70%;
-            height: 70%;
-            background: 
-                radial-gradient(circle at 30% 30%, #8be9fd 0%, #bd93f9 40%, #1a0a2e 100%);
-            border-radius: 50%;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.5) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.3) 0%, transparent 70%),
+                conic-gradient(from 180deg at 50% 50%, #000 0deg, #1a0b2e 60deg, #2d1b4e 120deg, #4c1d95 180deg, #1a0b2e 240deg, #000 360deg);
             overflow: hidden;
         }
         
-        .pupil {
-            width: 40%;
-            height: 40%;
-            background: #0a0a0a;
+        .cosmic-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
             border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            filter: blur(0.5px);
+        }
+        
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px) translateX(0px) scale(1);
+                opacity: 0.3;
+            }
+            25% { 
+                transform: translateY(-20px) translateX(10px) scale(1.2);
+                opacity: 0.8;
+            }
+            75% { 
+                transform: translateY(-10px) translateX(-10px) scale(0.8);
+                opacity: 1;
+            }
+        }
+        
+        .nebula {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(168, 85, 247, 0.2) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            animation: nebulaShift 20s ease-in-out infinite;
+        }
+        
+        @keyframes nebulaShift {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(5deg) scale(1.1); }
+        }
+        
+        .hero-content {
+            text-align: center;
+            z-index: 10;
+            max-width: 1200px;
+            padding: 0 40px;
+        }
+        
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 900;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, #fff 0%, #8b5cf6 30%, #ec4899 70%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -3px;
+            text-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            from { 
+                filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));
+                transform: scale(1);
+            }
+            to { 
+                filter: drop-shadow(0 0 40px rgba(139, 92, 246, 0.8));
+                transform: scale(1.02);
+            }
+        }
+        
+        .hero-quote {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 24px;
+            font-weight: 400;
+            font-style: italic;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            letter-spacing: 1px;
+        }
+        
+        .hero-author {
+            font-size: 1.2rem;
+            color: rgba(139, 92, 246, 0.8);
+            margin-bottom: 80px;
+            font-weight: 300;
+        }
+        
+        /* Ultra High-Quality 3D Planet */
+        .planet-section {
             position: relative;
-            animation: blink 4s infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 80px 0;
+            perspective: 2000px;
         }
         
-        @keyframes blink {
-            0%, 90%, 100% { transform: scaleY(1); }
-            95% { transform: scaleY(0.1); }
+        .planet-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            margin: 0 auto;
+            transform-style: preserve-3d;
         }
         
-        .pupil-light {
-            width: 30%;
-            height: 30%;
-            background: #ff79c6;
+        .planet-core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 450px;
+            height: 450px;
             border-radius: 50%;
-            box-shadow: 0 0 20px #ff79c6;
-            animation: pulse 2s ease-in-out infinite;
+            background: 
+                radial-gradient(circle at 25% 25%, #f0abfc 0%, #e879f9 15%, #d946ef 30%, #c026d3 45%, #a21caf 60%, #86198f 75%, #701a75 90%, #4a044e 100%);
+            box-shadow: 
+                0 0 120px rgba(139, 92, 246, 0.8),
+                0 0 240px rgba(139, 92, 246, 0.4),
+                0 0 360px rgba(139, 92, 246, 0.2),
+                inset -80px -80px 160px rgba(0, 0, 0, 0.4),
+                inset 60px 60px 120px rgba(255, 255, 255, 0.1);
+            animation: planetPulse 8s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
+        @keyframes planetPulse {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1) rotateX(0deg);
+                box-shadow: 
+                    0 0 120px rgba(139, 92, 246, 0.8),
+                    0 0 240px rgba(139, 92, 246, 0.4),
+                    0 0 360px rgba(139, 92, 246, 0.2);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.05) rotateX(5deg);
+                box-shadow: 
+                    0 0 160px rgba(139, 92, 246, 1),
+                    0 0 320px rgba(139, 92, 246, 0.6),
+                    0 0 480px rgba(139, 92, 246, 0.3);
+            }
+        }
+        
+        .planet-surface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 30%),
+                linear-gradient(45deg, transparent 20%, rgba(168, 85, 247, 0.2) 40%, transparent 60%),
+                linear-gradient(-45deg, transparent 30%, rgba(236, 72, 153, 0.15) 50%, transparent 70%),
+                conic-gradient(from 0deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
+            animation: surfaceFlow 25s linear infinite;
+        }
+        
+        @keyframes surfaceFlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .planet-atmosphere {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, transparent 60%, rgba(139, 92, 246, 0.2) 80%, rgba(139, 92, 246, 0.4) 100%);
+            animation: atmosphereShimmer 6s ease-in-out infinite;
+        }
+        
+        @keyframes atmosphereShimmer {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        
+        .planet-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            z-index: 20;
+            text-shadow: 
+                0 0 10px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(139, 92, 246, 0.6);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        /* Enhanced Orbital System */
+        .orbit-system {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orbit-1 {
+            width: 550px;
+            height: 550px;
+            animation: orbitRotate 120s linear infinite;
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+        
+        .orbit-2 {
+            width: 650px;
+            height: 650px;
+            animation: orbitRotate 180s linear infinite reverse;
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+        
+        .orbit-3 {
+            width: 750px;
+            height: 750px;
+            animation: orbitRotate 240s linear infinite;
+            border-color: rgba(236, 72, 153, 0.2);
+        }
+        
+        @keyframes orbitRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
         }
         
         .satellite {
             position: absolute;
-            width: 8px;
-            height: 8px;
-            background: #50fa7b;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            box-shadow: 0 0 10px #50fa7b;
-            animation: orbit 6s linear infinite;
-        }
-        
-        @keyframes orbit {
-            from { transform: rotate(0deg) translateX(160px) rotate(0deg); }
-            to { transform: rotate(-360deg) translateX(160px) rotate(360deg); }
-        }
-        
-        .satellite::after {
-            content: '';
-            position: absolute;
-            width: 2px;
-            height: 20px;
-            background: linear-gradient(to bottom, #50fa7b, transparent);
-            top: -25px;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
+            box-shadow: 0 0 20px currentColor;
         }
         
-        .time-display {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #ff79c6;
-            margin-top: 30px;
-            font-family: 'Courier New', monospace;
-            text-shadow: 0 0 20px rgba(255, 121, 198, 0.8);
+        .satellite-1 {
+            background: #fff;
+            color: #fff;
+            animation: satellitePulse 2s ease-in-out infinite;
         }
         
-        .content-sections {
+        .satellite-2 {
+            background: #8b5cf6;
+            color: #8b5cf6;
+            animation: satellitePulse 2.5s ease-in-out infinite;
+        }
+        
+        .satellite-3 {
+            background: #ec4899;
+            color: #ec4899;
+            animation: satellitePulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes satellitePulse {
+            0%, 100% { 
+                transform: translateX(-50%) scale(1);
+                box-shadow: 0 0 20px currentColor;
+            }
+            50% { 
+                transform: translateX(-50%) scale(1.5);
+                box-shadow: 0 0 40px currentColor;
+            }
+        }
+        
+        /* Bitcoin Chart & Top Coins Section */
+        .data-section {
+            padding: 120px 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        .data-container {
+            max-width: 1400px;
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            max-width: 1200px;
-            margin: 50px auto;
-            padding: 0 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
         }
         
-        .section-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 121, 198, 0.3);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
+        .chart-section, .top-coins-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
         }
         
-        .section-card::before {
+        .chart-section::before, .top-coins-section::before {
             content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 121, 198, 0.1), transparent);
-            transition: left 0.5s ease;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.05), transparent);
+            animation: shimmer 3s ease-in-out infinite;
         }
         
-        .section-card:hover::before {
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .btc-chart {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        .coin-list {
+            list-style: none;
+        }
+        
+        .coin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .coin-item:hover {
+            background: rgba(139, 92, 246, 0.05);
+            transform: translateX(8px);
+        }
+        
+        .coin-rank {
+            font-weight: 700;
+            color: #8b5cf6;
+            min-width: 30px;
+        }
+        
+        .coin-name {
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .coin-symbol {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+        
+        .coin-change {
+            font-weight: 700;
+            color: #10b981;
+        }
+        
+        /* Features Section - Enhanced */
+        .features-section {
+            padding: 120px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .feature-card:hover::before {
             left: 100%;
         }
         
-        .section-card:hover {
-            transform: translateY(-10px);
-            border-color: #ff79c6;
-            box-shadow: 0 20px 40px rgba(255, 121, 198, 0.2);
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(139, 92, 246, 0.5);
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
         }
         
-        .section-card h3 {
-            color: #8be9fd;
-            font-size: 1.5rem;
-            margin-bottom: 15px;
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.6));
+        }
+        
+        .feature-title {
+            font-size: 24px;
             font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
         }
         
-        .section-card p {
-            color: rgba(255, 255, 255, 0.8);
+        .feature-description {
+            color: rgba(255, 255, 255, 0.7);
             line-height: 1.6;
+            margin-bottom: 24px;
         }
         
-        .chat-btn {
-            background: linear-gradient(45deg, #ff79c6, #bd93f9);
+        .feature-link {
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-link:hover {
+            color: #a855f7;
+            transform: translateX(4px);
+        }
+        
+        /* CTA Section - Enhanced */
+        .cta-section {
+            padding: 120px 40px;
+            text-align: center;
+            background: 
+                radial-gradient(circle at center, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(139,92,246,0.1)"/></svg>') repeat;
+            animation: starfield 20s linear infinite;
+        }
+        
+        @keyframes starfield {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100px); }
+        }
+        
+        .cta-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #fff, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .cta-description {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 700;
+            padding: 20px 40px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
-            margin-top: 20px;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
         }
         
-        .chat-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(255, 121, 198, 0.4);
+        .cta-button:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.6);
         }
         
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 300px;
-            height: 100vh;
-            background: rgba(26, 10, 46, 0.95);
-            backdrop-filter: blur(20px);
-            border-left: 2px solid #ff79c6;
-            z-index: 1000;
-            transition: right 0.3s ease;
-            padding: 80px 30px 30px;
-        }
-        
-        .menu-overlay.active {
-            right: 0;
-        }
-        
-        .menu-item {
-            display: block;
-            color: #fff;
-            text-decoration: none;
-            padding: 15px 0;
-            border-bottom: 1px solid rgba(255, 121, 198, 0.2);
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .menu-item:hover {
-            color: #ff79c6;
-            padding-left: 10px;
-        }
-        
-        .close-menu {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            color: #ff79c6;
-            font-size: 1.5rem;
+        /* Mobile Responsive */
+        @media (max-width: 968px) {
+            .data-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
         }
         
         @media (max-width: 768px) {
-            .title {
-                font-size: 2.5rem;
+            .nav-menu {
+                display: none;
             }
             
-            .cosmic-eye-container {
-                width: 250px;
-                height: 250px;
+            .menu-toggle {
+                display: flex;
             }
             
-            .content-sections {
+            .hero {
+                padding: 100px 20px 50px;
+            }
+            
+            .hero-content {
+                padding: 0 20px;
+            }
+            
+            .planet-container {
+                width: 400px;
+                height: 400px;
+            }
+            
+            .planet-core {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .orbit-1 { width: 380px; height: 380px; }
+            .orbit-2 { width: 450px; height: 450px; }
+            .orbit-3 { width: 520px; height: 520px; }
+            
+            .features-grid {
                 grid-template-columns: 1fr;
-                padding: 0 15px;
+                gap: 30px;
+            }
+            
+            .feature-card {
+                padding: 30px;
+            }
+            
+            .data-section {
+                padding: 80px 20px;
+            }
+            
+            .chart-section, .top-coins-section {
+                padding: 30px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="cosmic-bg"></div>
-    <div class="stars" id="stars"></div>
-    
-    <header class="header">
-        <div class="logo">TWO.4</div>
-        <div class="menu-btn" onclick="toggleMenu()">
-            <div class="menu-lines"></div>
-        </div>
-    </header>
-    
-    <div class="menu-overlay" id="menuOverlay">
-        <div class="close-menu" onclick="toggleMenu()">×</div>
-        <a href="#" class="menu-item">🏠 홈</a>
-        <a href="#" class="menu-item">📊 코인 차트</a>
-        <a href="#" class="menu-item">📰 뉴스</a>
-        <a href="#" class="menu-item">👥 커뮤니티</a>
-        <a href="#" class="menu-item">⚙️ 설정</a>
-        <a href="#" class="menu-item">❓ 도움말</a>
-        <a href="#" class="menu-item">📞 문의</a>
-    </div>
-    
-    <main class="main-container">
-        <h1 class="title">TWO.4</h1>
-        <p class="subtitle">TIME NEVER SLEEPS</p>
-        
-        <div class="cosmic-eye-container">
-            <div class="cosmic-eye">
-                <div class="inner-eye">
-                    <div class="pupil">
-                        <div class="pupil-light"></div>
-                    </div>
-                </div>
-                <div class="satellite"></div>
-                <div class="satellite" style="animation-delay: -2s;"></div>
-                <div class="satellite" style="animation-delay: -4s;"></div>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <div class="logo">TWO.4</div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#charts" class="nav-link">Charts</a></li>
+                <li><a href="#community" class="nav-link">Community</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <div class="menu-toggle">
+                <div class="menu-line"></div>
+                <div class="menu-line"></div>
+                <div class="menu-line"></div>
             </div>
         </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="cosmic-particles" id="cosmicParticles"></div>
+        <div class="nebula"></div>
         
-        <div class="time-display" id="timeDisplay">24:00 → 00:00</div>
-    </main>
-    
-    <section class="content-sections">
-        <div class="section-card">
-            <h3>🪙 Coin News</h3>
-            <p>최신 암호화폐 뉴스와 시장 동향을 실시간으로 확인하세요. 글로벌 크립토 시장의 모든 변화를 놓치지 마세요.</p>
-        </div>
-        
-        <div class="section-card">
-            <h3>📈 Real Time Charts</h3>
-            <p>TradingView를 통해 모든 시장을 실시간으로 추적하세요. 전문적인 차트 분석 도구로 투자 결정을 내리세요.</p>
-        </div>
-        
-        <div class="section-card">
-            <h3>💬 사용자 게시판</h3>
-            <p>방문자들과 소중한 이야기를 나누는 공간입니다. 경험을 공유하고 새로운 인사이트를 발견해보세요.</p>
-            <a href="#" class="chat-btn">💬 오픈채팅방 참여하기</a>
+        <div class="hero-content">
+            <h1 class="hero-title">TWO.4</h1>
+            <p class="hero-quote">"Time is the most valuable thing we have and yet we tend to waste it, kill it, and spend it rather than invest it."</p>
+            <p class="hero-author">— Jim Rohn</p>
+            
+            <div class="planet-section">
+                <div class="planet-container">
+                    <div class="orbit-system">
+                        <div class="orbit orbit-1">
+                            <div class="satellite satellite-1"></div>
+                        </div>
+                        <div class="orbit orbit-2">
+                            <div class="satellite satellite-2"></div>
+                        </div>
+                        <div class="orbit orbit-3">
+                            <div class="satellite satellite-3"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="planet-core">
+                        <div class="planet-atmosphere"></div>
+                        <div class="planet-surface"></div>
+                        <div class="planet-text">
+                            TIME NEVER<br>
+                            SLEEPS
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
-    
+
+    <!-- Bitcoin Chart & Top Coins Section -->
+    <section class="data-section">
+        <div class="data-container">
+            <div class="chart-section">
+                <h2 class="section-title">
+                    🪙 Bitcoin Real-Time Chart
+                </h2>
+                <div class="btc-chart">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; color: #8b5cf6; margin-bottom: 16px;">₿ BTC/USD</div>
+                        <div style="font-size: 32px; font-weight: 700; color: #10b981; margin-bottom: 8px;">$67,420.00</div>
+                        <div style="color: #10b981;">+5.67% (24h)</div>
+                        <div style="margin-top: 20px; color: rgba(255,255,255,0.5); font-size: 14px;">
+                            Live chart integration coming soon
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="top-coins-section">
+                <h2 class="section-title">
+                    🚀 Top Volume Gainers
+                </h2>
+                <ul class="coin-list">
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">1</span>
+                            <div>
+                                <div class="coin-name">Bitcoin</div>
+                                <div class="coin-symbol">BTC</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+5.67%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">2</span>
+                            <div>
+                                <div class="coin-name">Ethereum</div>
+                                <div class="coin-symbol">ETH</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+8.23%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">3</span>
+                            <div>
+                                <div class="coin-name">Solana</div>
+                                <div class="coin-symbol">SOL</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+12.45%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">4</span>
+                            <div>
+                                <div class="coin-name">Chainlink</div>
+                                <div class="coin-symbol">LINK</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+15.67%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">5</span>
+                            <div>
+                                <div class="coin-name">Polygon</div>
+                                <div class="coin-symbol">MATIC</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+9.88%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">6</span>
+                            <div>
+                                <div class="coin-name">Avalanche</div>
+                                <div class="coin-symbol">AVAX</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+11.34%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">7</span>
+                            <div>
+                                <div class="coin-name">Cardano</div>
+                                <div class="coin-symbol">ADA</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+7.92%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">8</span>
+                            <div>
+                                <div class="coin-name">Polkadot</div>
+                                <div class="coin-symbol">DOT</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+13.55%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">9</span>
+                            <div>
+                                <div class="coin-name">Uniswap</div>
+                                <div class="coin-symbol">UNI</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+16.78%</div>
+                    </li>
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">10</span>
+                            <div>
+                                <div class="coin-name">Cosmos</div>
+                                <div class="coin-symbol">ATOM</div>
+                            </div>
+                        </div>
+                        <div class="coin-change">+14.21%</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Global Markets</h3>
+                <p class="feature-description">
+                    Access real-time cryptocurrency market data from exchanges worldwide. 
+                    Track price movements, volume, and market cap changes across all major digital assets.
+                </p>
+                <a href="#" class="feature-link">Explore Markets →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Advanced Analytics</h3>
+                <p class="feature-description">
+                    Professional-grade charting tools powered by TradingView. 
+                    Technical indicators, drawing tools, and market analysis for informed trading decisions.
+                </p>
+                <a href="#" class="feature-link">View Charts →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3 class="feature-title">Smart Alerts</h3>
+                <p class="feature-description">
+                    Custom price alerts and portfolio notifications. 
+                    Never miss important market movements with our intelligent alert system.
+                </p>
+                <a href="#" class="feature-link">Set Alerts →</a>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3 class="feature-title">Community Hub</h3>
+                <p class="feature-description">
+                    Connect with traders and investors worldwide. 
+                    Share insights, strategies, and stay updated with the latest market sentiment.
+                </p>
+                <a href="#" class="feature-link">Join Community →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section" id="community">
+        <h2 class="cta-title">Join the Future of Trading</h2>
+        <p class="cta-description">
+            Experience the next generation of cryptocurrency trading and investment tools.
+        </p>
+        <a href="#" class="cta-button">💬 Join Our Community</a>
+    </section>
+
     <script>
-        // 별 생성
-        function createStars() {
-            const starsContainer = document.getElementById('stars');
-            const numStars = 200;
+        // Enhanced Particle System
+        function createCosmicParticles() {
+            const container = document.getElementById('cosmicParticles');
+            const numParticles = 200;
             
-            for (let i = 0; i < numStars; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
-                star.style.animationDelay = Math.random() * 3 + 's';
-                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
-                starsContainer.appendChild(star);
+            for (let i = 0; i < numParticles; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Random positioning
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                
+                // Random sizing
+                const size = Math.random() * 4 + 1;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                
+                // Random animation timing
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                
+                // Random colors for variety
+                const colors = ['rgba(255,255,255,0.8)', 'rgba(139,92,246,0.6)', 'rgba(168,85,247,0.6)', 'rgba(236,72,153,0.6)'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                container.appendChild(particle);
             }
         }
         
-        // 시간 업데이트
-        function updateTime() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const nextHour = String((now.getHours() + 1) % 24).padStart(2, '0');
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Enhanced scroll effects
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('.nav');
+            const scrolled = window.scrollY;
             
-            document.getElementById('timeDisplay').textContent = `${hours}:${minutes} → ${nextHour}:00`;
+            if (scrolled > 100) {
+                nav.style.background = 'rgba(0, 0, 0, 0.95)';
+                nav.style.borderBottom = '1px solid rgba(139, 92, 246, 0.4)';
+            } else {
+                nav.style.background = 'rgba(0, 0, 0, 0.8)';
+                nav.style.borderBottom = '1px solid rgba(139, 92, 246, 0.2)';
+            }
+            
+            // Parallax effect for hero elements
+            const hero = document.querySelector('.hero');
+            const heroContent = document.querySelector('.hero-content');
+            if (heroContent) {
+                const offset = scrolled * 0.5;
+                heroContent.style.transform = `translateY(${offset}px)`;
+            }
+        });
+        
+        // Enhanced hover effects for cards
+        document.querySelectorAll('.feature-card, .chart-section, .top-coins-section').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = this.classList.contains('feature-card') 
+                    ? 'translateY(-12px) scale(1.02)' 
+                    : 'translateY(-8px) scale(1.01)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+        
+        // Planet interaction
+        const planet = document.querySelector('.planet-core');
+        if (planet) {
+            planet.addEventListener('mouseenter', function() {
+                this.style.animationDuration = '4s';
+                this.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            });
+            
+            planet.addEventListener('mouseleave', function() {
+                this.style.animationDuration = '8s';
+                this.style.transform = 'translate(-50%, -50%) scale(1)';
+            });
         }
         
-        // 메뉴 토글
-        function toggleMenu() {
-            const menuOverlay = document.getElementById('menuOverlay');
-            menuOverlay.classList.toggle('active');
+        // Dynamic coin data simulation
+        function updateCoinData() {
+            const coinItems = document.querySelectorAll('.coin-change');
+            coinItems.forEach(item => {
+                const currentValue = parseFloat(item.textContent.replace('%', ''));
+                const variation = (Math.random() - 0.5) * 0.5;
+                const newValue = currentValue + variation;
+                item.textContent = `+${newValue.toFixed(2)}%`;
+                
+                // Color coding
+                if (newValue > 10) {
+                    item.style.color = '#10b981';
+                } else if (newValue > 5) {
+                    item.style.color = '#8b5cf6';
+                } else {
+                    item.style.color = '#ec4899';
+                }
+            });
         }
         
-        // 초기화
+        // Initialize everything
         document.addEventListener('DOMContentLoaded', function() {
-            createStars();
-            updateTime();
-            setInterval(updateTime, 1000);
+            createCosmicParticles();
+            
+            // Update coin data every 5 seconds
+            setInterval(updateCoinData, 5000);
+            
+            // Add loading animation
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.transition = 'opacity 1s ease';
+                document.body.style.opacity = '1';
+            }, 100);
         });
         
-        // 메뉴 외부 클릭시 닫기
-        document.addEventListener('click', function(e) {
-            const menuOverlay = document.getElementById('menuOverlay');
-            const menuBtn = document.querySelector('.menu-btn');
-            
-            if (!menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
-                menuOverlay.classList.remove('active');
-            }
-        });
+        // Mobile menu toggle
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navMenu = document.querySelector('.nav-menu');
+        
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+        }
     </script>
 </body>
 </html>
