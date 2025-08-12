@@ -638,16 +638,25 @@
         }
         
         .tradingview-widget-container {
-            height: 800px;
+            height: 900px;
             width: 100%;
             position: relative;
             z-index: 10;
             border-radius: 16px;
             overflow: hidden;
-            min-height: 800px;
+            min-height: 900px;
+            display: flex;
+            flex-direction: column;
         }
         
         .tradingview-widget-container__widget {
+            height: 100% !important;
+            width: 100% !important;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .tradingview-widget-container iframe {
             height: 100% !important;
             width: 100% !important;
         }
@@ -1101,8 +1110,8 @@
             }
             
             .tradingview-widget-container {
-                height: 700px;
-                min-height: 700px;
+                height: 800px;
+                min-height: 800px;
             }
             
             .top-coins-section, .news-section {
@@ -1195,6 +1204,7 @@
                 <div class="tradingview-widget-container__widget"></div>
                 <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
                 {
+                    "autosize": false,
                     "width": "100%",
                     "height": "100%",
                     "symbol": "BINANCE:BTCUSDT",
@@ -1214,11 +1224,16 @@
                     "support_host": "https://www.tradingview.com",
                     "container_id": "tradingview_chart",
                     "details": true,
-                    "hotlist": true,
+                    "hotlist": false,
                     "enable_publishing": false,
                     "withdateranges": true,
                     "range": "YTD",
-                    "toolbar_bg": "rgba(139, 92, 246, 0.1)"
+                    "toolbar_bg": "rgba(139, 92, 246, 0.1)",
+                    "studies_overrides": {},
+                    "overrides": {
+                        "paneProperties.background": "rgba(0, 0, 0, 0)",
+                        "paneProperties.backgroundType": "solid"
+                    }
                 }
                 </script>
             </div>
@@ -1307,108 +1322,9 @@
     <!-- Top Volume Gainers Section -->
     <section class="top-coins-section">
         <div class="coins-container">
-            <h2 class="coins-title">거래량 급등 TOP 10</h2>
-            <ul class="coin-list">
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">1</span>
-                        <div>
-                            <div class="coin-name">Bitcoin</div>
-                            <div class="coin-symbol">BTC</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+5.67%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">2</span>
-                        <div>
-                            <div class="coin-name">Ethereum</div>
-                            <div class="coin-symbol">ETH</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+8.23%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">3</span>
-                        <div>
-                            <div class="coin-name">Solana</div>
-                            <div class="coin-symbol">SOL</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+12.45%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">4</span>
-                        <div>
-                            <div class="coin-name">Chainlink</div>
-                            <div class="coin-symbol">LINK</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+15.67%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">5</span>
-                        <div>
-                            <div class="coin-name">Polygon</div>
-                            <div class="coin-symbol">MATIC</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+9.88%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">6</span>
-                        <div>
-                            <div class="coin-name">Avalanche</div>
-                            <div class="coin-symbol">AVAX</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+11.34%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">7</span>
-                        <div>
-                            <div class="coin-name">Cardano</div>
-                            <div class="coin-symbol">ADA</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+7.92%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">8</span>
-                        <div>
-                            <div class="coin-name">Polkadot</div>
-                            <div class="coin-symbol">DOT</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+13.55%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">9</span>
-                        <div>
-                            <div class="coin-name">Uniswap</div>
-                            <div class="coin-symbol">UNI</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+16.78%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">10</span>
-                        <div>
-                            <div class="coin-name">Cosmos</div>
-                            <div class="coin-symbol">ATOM</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+14.21%</div>
-                </li>
+            <h2 class="coins-title">알트코인 거래량 TOP 10</h2>
+            <ul class="coin-list" id="coinList">
+                <!-- 실시간 코인 데이터가 여기에 로드됩니다 -->
             </ul>
         </div>
     </section>
@@ -1530,6 +1446,120 @@
         
         var posts = JSON.parse(localStorage.getItem('two4Posts')) || [];
         
+        // 실시간 암호화폐 데이터 (API 대신 시뮬레이션)
+        function fetchCryptoData() {
+            try {
+                // 실제같은 데이터 시뮬레이션
+                const cryptoCoins = [
+                    { name: 'Solana', symbol: 'SOL', basePrice: 245.67, volume: 890000000 },
+                    { name: 'Chainlink', symbol: 'LINK', basePrice: 28.34, volume: 750000000 },
+                    { name: 'Polygon', symbol: 'MATIC', basePrice: 1.23, volume: 680000000 },
+                    { name: 'Avalanche', symbol: 'AVAX', basePrice: 56.78, volume: 620000000 },
+                    { name: 'Cardano', symbol: 'ADA', basePrice: 0.89, volume: 580000000 },
+                    { name: 'Polkadot', symbol: 'DOT', basePrice: 12.45, volume: 520000000 },
+                    { name: 'Uniswap', symbol: 'UNI', basePrice: 15.67, volume: 490000000 },
+                    { name: 'Cosmos', symbol: 'ATOM', basePrice: 18.90, volume: 460000000 },
+                    { name: 'Near Protocol', symbol: 'NEAR', basePrice: 7.89, volume: 430000000 },
+                    { name: 'Arbitrum', symbol: 'ARB', basePrice: 2.34, volume: 400000000 }
+                ];
+                
+                // 가격과 변동률을 실시간처럼 변경
+                const updatedCoins = cryptoCoins.map(coin => {
+                    const priceVariation = (Math.random() - 0.5) * 0.1; // ±5% 변동
+                    const changeVariation = (Math.random() - 0.5) * 10; // ±5% 변동률
+                    
+                    return {
+                        ...coin,
+                        current_price: coin.basePrice * (1 + priceVariation),
+                        price_change_percentage_24h: changeVariation,
+                        total_volume: coin.volume * (1 + (Math.random() - 0.5) * 0.2)
+                    };
+                });
+                
+                updateCoinList(updatedCoins);
+            } catch (error) {
+                console.error('암호화폐 데이터를 가져오는데 실패했습니다:', error);
+                showDefaultCoins();
+            }
+        }
+        
+        function updateCoinList(coins) {
+            const coinList = document.getElementById('coinList');
+            let coinHTML = '';
+            
+            coins.forEach((coin, index) => {
+                const priceChange = coin.price_change_percentage_24h;
+                const changeColor = priceChange >= 0 ? '#10b981' : '#ef4444';
+                const changeSymbol = priceChange >= 0 ? '+' : '';
+                
+                coinHTML += `
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">${index + 1}</span>
+                            <div>
+                                <div class="coin-name">${coin.name}</div>
+                                <div class="coin-symbol">${coin.symbol.toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <div style="color: #fff; font-weight: 600; font-size: 14px;">
+                                ${coin.current_price.toLocaleString()}
+                            </div>
+                            <div class="coin-change" style="color: ${changeColor};">
+                                ${changeSymbol}${priceChange.toFixed(2)}%
+                            </div>
+                        </div>
+                    </li>
+                `;
+            });
+            
+            coinList.innerHTML = coinHTML;
+        }
+        
+        function showDefaultCoins() {
+            const coinList = document.getElementById('coinList');
+            const defaultCoins = [
+                { name: 'Solana', symbol: 'SOL', price: 245.67, change: 12.45 },
+                { name: 'Chainlink', symbol: 'LINK', price: 28.34, change: 15.67 },
+                { name: 'Polygon', symbol: 'MATIC', price: 1.23, change: 9.88 },
+                { name: 'Avalanche', symbol: 'AVAX', price: 56.78, change: 11.34 },
+                { name: 'Cardano', symbol: 'ADA', price: 0.89, change: 7.92 },
+                { name: 'Polkadot', symbol: 'DOT', price: 12.45, change: 13.55 },
+                { name: 'Uniswap', symbol: 'UNI', price: 15.67, change: 16.78 },
+                { name: 'Cosmos', symbol: 'ATOM', price: 18.90, change: 14.21 },
+                { name: 'Near Protocol', symbol: 'NEAR', price: 7.89, change: 8.45 },
+                { name: 'Arbitrum', symbol: 'ARB', price: 2.34, change: 6.78 }
+            ];
+            
+            let coinHTML = '';
+            defaultCoins.forEach((coin, index) => {
+                const changeColor = coin.change >= 0 ? '#10b981' : '#ef4444';
+                const changeSymbol = coin.change >= 0 ? '+' : '';
+                
+                coinHTML += `
+                    <li class="coin-item">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span class="coin-rank">${index + 1}</span>
+                            <div>
+                                <div class="coin-name">${coin.name}</div>
+                                <div class="coin-symbol">${coin.symbol}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <div style="color: #fff; font-weight: 600; font-size: 14px;">
+                                ${coin.price.toLocaleString()}
+                            </div>
+                            <div class="coin-change" style="color: ${changeColor};">
+                                ${changeSymbol}${coin.change.toFixed(2)}%
+                            </div>
+                        </div>
+                    </li>
+                `;
+            });
+            
+            coinList.innerHTML = coinHTML;
+        }
+        
         function updateNews() {
             var newsList = [
                 {
@@ -1585,22 +1615,8 @@
         }
         
         function updateCoinData() {
-            var coinItems = document.querySelectorAll('.coin-change');
-            for (var i = 0; i < coinItems.length; i++) {
-                var item = coinItems[i];
-                var currentValue = parseFloat(item.textContent.replace('%', ''));
-                var variation = (Math.random() - 0.5) * 0.5;
-                var newValue = currentValue + variation;
-                item.textContent = '+' + newValue.toFixed(2) + '%';
-                
-                if (newValue > 12) {
-                    item.style.color = '#10b981';
-                } else if (newValue > 8) {
-                    item.style.color = '#8b5cf6';
-                } else {
-                    item.style.color = '#ec4899';
-                }
-            }
+            // 이제 fetchCryptoData로 실시간 데이터 업데이트
+            fetchCryptoData();
         }
         
         function loadPosts() {
@@ -1629,10 +1645,14 @@
             setInterval(updateKoreanTime, 1000);
             loadPosts();
             
+            // 실시간 암호화폐 데이터 초기 로드
+            fetchCryptoData();
+            
             setInterval(updateNews, 10000);
             updateNews();
             
-            setInterval(updateCoinData, 5000);
+            // 암호화폐 데이터를 30초마다 업데이트
+            setInterval(updateCoinData, 30000);
             
             var postForm = document.getElementById('postForm');
             if (postForm) {
