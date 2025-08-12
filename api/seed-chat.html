@@ -1,58 +1,153 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Seed Chat</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #0b0b1a; color: white; }
-  .chat-box { max-width: 600px; margin: 50px auto; border: 1px solid #444; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.05);}
-  .messages { height: 400px; overflow-y: auto; padding: 10px; }
-  .user { color: #00ffff; }
-  .seed { color: #ff66ff; }
-  input { width: 80%; padding: 10px; border-radius: 5px; border: none; }
-  button { padding: 10px 15px; border: none; background: #ff66ff; color: white; border-radius: 5px; cursor: pointer; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seed Chat</title>
+  <style>
+    :root{
+      --bg:#0b0012; --panel:#141022; --line:#24244e; --fg:#e9e9ff; --sub:#a8a8d7; --accent:#8e44ad;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 800px at 70% 20%, #240b36 0%, #0b0012 60%),
+                linear-gradient(180deg, #170021 0%, #0b0012 100%);
+      color:var(--fg); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Apple Color Emoji","Segoe UI Emoji", sans-serif;
+      display:flex; align-items:center; justify-content:center; padding:18px;
+    }
+    .wrap{
+      width:min(940px, 100%); height:min(80vh, 720px);
+      display:flex; flex-direction:column; border:1px solid var(--line);
+      border-radius:18px; background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      backdrop-filter:saturate(140%) blur(8px); box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+    header{
+      padding:12px 16px; border-bottom:1px solid var(--line);
+      display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.02)
+    }
+    header .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 16px var(--accent)}
+    header h1{font-size:16px; margin:0}
+    header .sub{margin-left:auto; color:var(--sub); font-size:12px}
+    #messages{flex:1; overflow:auto; padding:18px; display:flex; flex-direction:column; gap:10px;}
+    .row{display:flex; gap:10px; align-items:flex-end;}
+    .me{justify-content:flex-end}
+    .ai{justify-content:flex-start}
+    .bubble{
+      max-width:min(78%, 700px); padding:10px 12px; border-radius:12px; line-height:1.5;
+      background:rgba(255,255,255,.06); border:1px solid var(--line); word-break:break-word; white-space:pre-wrap;
+    }
+    .me .bubble{background:rgba(142,68,173,.2); border-color:#6b2d8b}
+    .ai .bubble{background:rgba(255,255,255,.03)}
+    footer{
+      border-top:1px solid var(--line); padding:10px; display:flex; gap:10px; background:rgba(255,255,255,.02);
+    }
+    input[type="text"]{
+      flex:1; background:#0f0a1b; border:1px solid var(--line); color:var(--fg);
+      padding:12px 14px; border-radius:12px; outline:none;
+    }
+    button{
+      background:var(--accent); color:white; border:none; padding:12px 16px; border-radius:12px;
+      cursor:pointer; font-weight:600;
+    }
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .hint{color:var(--sub); font-size:12px; padding:6px 16px; border-top:1px dashed var(--line)}
+  </style>
 </head>
 <body>
-<div class="chat-box">
-  <div class="messages" id="messages"></div>
-  <input type="text" id="userInput" placeholder="Seed에게 물어보기..." />
-  <button onclick="sendMessage()">보내기</button>
-</div>
+  <div class="wrap">
+    <header>
+      <span class="dot"></span>
+      <h1>two.4 — Seed Q&A</h1>
+      <span class="sub">model: gpt-4o • serverless</span>
+    </header>
 
-<script>
-let messages = [{ role: "system", content: "너는 Seed라는 AI이며, 따뜻하고 유머러스하게 대답한다." }];
+    <div id="messages"></div>
+    <div class="hint">대충/짧게 물어봐도 자연스럽게 보정해서 답해줄게. (예: “배포가 뭐야?”, “tradingview alert를 카톡으로?”)</div>
 
-async function sendMessage() {
-  const input = document.getElementById("userInput");
-  const text = input.value.trim();
-  if (!text) return;
-  
-  messages.push({ role: "user", content: text });
-  displayMessage("user", text);
-  input.value = "";
+    <footer>
+      <input id="userInput" type="text" placeholder="Seed에게 물어보기…" autocomplete="off" />
+      <button id="sendBtn">전송</button>
+    </footer>
+  </div>
 
-  const res = await fetch("/api/gpt-4o", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages })
-  });
+  <script>
+    // 대화 히스토리 (OpenAI Chat 형식)
+    let messages = [
+      { role: "system", content: "너는 Seed라는 AI이며, 따뜻하고 유머러스하지만 핵심은 정확하게 답한다. 너무 장황하지 말고, 간결-실용-예시 중심으로 설명한다." }
+    ];
 
-  const data = await res.json();
-  const reply = data.choices?.[0]?.message?.content || "Seed가 응답하지 못했어요.";
-  messages.push({ role: "assistant", content: reply });
-  displayMessage("seed", reply);
-}
+    const $messages = document.getElementById("messages");
+    const $input = document.getElementById("userInput");
+    const $send = document.getElementById("sendBtn");
 
-function displayMessage(sender, text) {
-  const msgBox = document.getElementById("messages");
-  const div = document.createElement("div");
-  div.className = sender;
-  div.textContent = (sender === "user" ? "👤 You: " : "🌱 Seed: ") + text;
-  msgBox.appendChild(div);
-  msgBox.scrollTop = msgBox.scrollHeight;
-}
-</script>
+    function addBubble(sender, text){
+      const row = document.createElement("div");
+      row.className = `row ${sender === "user" ? "me" : "ai"}`;
+      const b = document.createElement("div");
+      b.className = "bubble";
+      b.textContent = text;
+      row.appendChild(b);
+      $messages.appendChild(row);
+      // 맨 아래로
+      $messages.scrollTop = $messages.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = $input.value.trim();
+      if (!text) return;
+
+      // UI 반영
+      addBubble("user", text);
+      $input.value = "";
+      $input.focus();
+      $send.disabled = true;
+
+      messages.push({ role: "user", content: text });
+
+      try {
+        // 배포/로컬 모두 안전한 절대경로
+        const url = window.location.origin + "/api/gpt-4o";
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages })
+        });
+
+        // /api를 직접 열면 405를 주도록 구현되어 있음
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `서버 오류 (${res.status})`);
+        }
+
+        const data = await res.json();
+        // OpenAI Chat Completions 호환 응답 형태 가정
+        const reply = data?.choices?.[0]?.message?.content
+          || data?.message?.content
+          || data?.content
+          || "Seed가 아직 대답하지 못했어요.";
+
+        addBubble("assistant", reply);
+        messages.push({ role: "assistant", content: reply });
+      } catch (err) {
+        addBubble("assistant", `⚠️ 오류: ${err.message}`);
+      } finally {
+        $send.disabled = false;
+      }
+    }
+
+    // 이벤트 바인딩
+    $send.addEventListener("click", sendMessage);
+    $input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // 첫 안내 말풍선
+    addBubble("assistant", "안녕! Seed야. 뭐든 편하게 물어봐. (예: “/api가 405 뜨는데 왜?”, “Vercel 환경변수 어디서 보지?”)");
+  </script>
 </body>
 </html>
