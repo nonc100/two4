@@ -167,8 +167,204 @@
             text-transform: uppercase;
         }
         
-        .hero-quote {
-            display: none;
+        /* Ancient Eye of Horus */
+        .ancient-eye {
+            width: 60px;
+            height: 35px;
+            position: relative;
+            filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.8));
+            margin-top: 15px;
+        }
+        
+        .eye-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .eye-main {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55px;
+            height: 28px;
+            border: 3px solid #8b5cf6;
+            border-radius: 50px 50px 50px 50px / 60px 60px 40px 40px;
+            background: 
+                radial-gradient(ellipse at 50% 40%, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+            animation: eyeGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes eyeGlow {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 15px rgba(139, 92, 246, 0.6),
+                    inset 0 0 15px rgba(139, 92, 246, 0.2);
+                border-color: #8b5cf6;
+            }
+            50% { 
+                box-shadow: 
+                    0 0 25px rgba(139, 92, 246, 0.9),
+                    inset 0 0 25px rgba(139, 92, 246, 0.3);
+                border-color: #a855f7;
+            }
+        }
+        
+        .eye-pupil {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: #8b5cf6;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 12px rgba(139, 92, 246, 1),
+                inset 0 0 5px rgba(0, 0, 0, 0.3);
+            animation: pupilBlink 5s ease-in-out infinite;
+        }
+        
+        @keyframes pupilBlink {
+            0%, 90%, 100% { transform: translate(-50%, -50%) scaleY(1); }
+            95% { transform: translate(-50%, -50%) scaleY(0.1); }
+        }
+        
+        .eye-pupil::after {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 5px;
+            height: 5px;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 50%;
+        }
+        
+        .eye-line-top {
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            width: 20px;
+            height: 2px;
+            background: #8b5cf6;
+            transform: rotate(-15deg);
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-bottom {
+            position: absolute;
+            bottom: -6px;
+            left: 12px;
+            width: 16px;
+            height: 2px;
+            background: #8b5cf6;
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-bottom::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            bottom: -4px;
+            width: 6px;
+            height: 2px;
+            background: #8b5cf6;
+            transform: rotate(45deg);
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+        }
+        
+        .eye-line-spiral {
+            position: absolute;
+            bottom: -8px;
+            right: 4px;
+            width: 12px;
+            height: 6px;
+            border: 2px solid #8b5cf6;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            border-left: none;
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+        }
+        
+        /* Satellite and Earth System */
+        .satellite-system {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+        }
+        
+        .earth-orbit {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border: 2px solid rgba(34, 197, 94, 0.6);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: earthOrbitRotate 60s linear infinite;
+        }
+        
+        @keyframes earthOrbitRotate {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .earth-satellite {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: 
+                radial-gradient(circle at 30% 30%, #10b981 0%, #059669 40%, #047857 70%, #064e3b 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 30px rgba(16, 185, 129, 1),
+                0 0 60px rgba(16, 185, 129, 0.6),
+                inset -3px -3px 8px rgba(0, 0, 0, 0.4),
+                inset 3px 3px 8px rgba(255, 255, 255, 0.2);
+            animation: earthGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes earthGlow {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 30px rgba(16, 185, 129, 1),
+                    0 0 60px rgba(16, 185, 129, 0.6),
+                    inset -3px -3px 8px rgba(0, 0, 0, 0.4),
+                    inset 3px 3px 8px rgba(255, 255, 255, 0.2);
+                transform: translateX(-50%) scale(1);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 40px rgba(16, 185, 129, 1),
+                    0 0 80px rgba(16, 185, 129, 0.8),
+                    inset -3px -3px 8px rgba(0, 0, 0, 0.4),
+                    inset 3px 3px 8px rgba(255, 255, 255, 0.2);
+                transform: translateX(-50%) scale(1.15);
+            }
+        }
+        
+        .earth-satellite::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(16, 185, 129, 0.8);
+            border-radius: 50%;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 1);
         }
         
         /* Real-Time Clock Planet */
@@ -259,21 +455,6 @@
             letter-spacing: 2px;
         }
         
-        @keyframes timeGlow {
-            from { 
-                text-shadow: 
-                    0 0 20px rgba(139, 92, 246, 1),
-                    0 0 40px rgba(139, 92, 246, 0.8),
-                    0 0 60px rgba(139, 92, 246, 0.6);
-            }
-            to { 
-                text-shadow: 
-                    0 0 30px rgba(139, 92, 246, 1),
-                    0 0 60px rgba(139, 92, 246, 1),
-                    0 0 90px rgba(139, 92, 246, 0.8);
-            }
-        }
-        
         .zone-indicator {
             position: absolute;
             bottom: 80px;
@@ -291,21 +472,20 @@
         /* TradingView Chart Section */
         .chart-section {
             width: 100%;
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 80px auto;
-            padding: 0 40px;
+            padding: 0 20px;
         }
         
         .chart-container {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(139, 92, 246, 0.2);
             border-radius: 24px;
-            padding: 40px;
+            padding: 30px;
             backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
             margin: 0 auto;
-            max-width: 1200px;
         }
         
         .chart-container::before {
@@ -335,12 +515,114 @@
         }
         
         .tradingview-widget-container {
-            height: 550px;
+            height: 650px;
             width: 100%;
             position: relative;
             z-index: 10;
             border-radius: 16px;
             overflow: hidden;
+            min-height: 650px;
+        }
+        
+        /* News Section */
+        .news-section {
+            width: 100%;
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 40px;
+        }
+        
+        .news-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .news-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.05), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        .news-title {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: #8b5cf6;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .news-list {
+            position: relative;
+            z-index: 10;
+        }
+        
+        .news-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            gap: 20px;
+        }
+        
+        .news-item:hover {
+            background: rgba(139, 92, 246, 0.05);
+            transform: translateX(8px);
+            border-radius: 12px;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        
+        .news-content {
+            flex: 1;
+        }
+        
+        .news-headline {
+            font-weight: 600;
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .news-summary {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .news-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 120px;
+        }
+        
+        .news-source {
+            color: #8b5cf6;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .news-time {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
         }
         
         /* Top Coins Section */
@@ -673,18 +955,8 @@
                 height: 350px;
             }
             
-            .main-title {
-                font-size: 2.5rem;
-            }
-            
-            .ancient-eye {
-                width: 60px;
-                height: 40px;
-            }
-            
-            .eye-main {
-                width: 50px;
-                height: 25px;
+            .current-time {
+                font-size: 1.8rem;
             }
             
             .hero-quote {
@@ -692,16 +964,25 @@
                 padding: 0 20px;
             }
             
-            .chart-section, .top-coins-section {
-                padding: 0 20px;
+            .chart-section {
+                padding: 0 10px;
             }
             
-            .chart-container, .coins-container {
+            .chart-container {
                 padding: 20px;
             }
             
             .tradingview-widget-container {
                 height: 500px;
+                min-height: 500px;
+            }
+            
+            .top-coins-section, .news-section {
+                padding: 0 20px;
+            }
+            
+            .coins-container, .news-container {
+                padding: 20px;
             }
             
             .menu-overlay {
@@ -753,7 +1034,6 @@
     
     <!-- Main Container -->
     <main class="main-container" id="home">
-        
         <div class="clock-planet-container">
             <!-- Satellite and Earth System -->
             <div class="satellite-system">
@@ -830,46 +1110,6 @@
                         <div class="news-time">4시간 전</div>
                     </div>
                 </div>
-                <div class="news-item">
-                    <div class="news-content">
-                        <div class="news-headline">솔라나 생태계, 새로운 DeFi 프로젝트 대거 출시</div>
-                        <div class="news-summary">솔라나 블록체인에서 혁신적인 탈중앙화 금융 프로젝트들이 연이어 출시되고 있습니다.</div>
-                    </div>
-                    <div class="news-meta">
-                        <div class="news-source">CryptoNews</div>
-                        <div class="news-time">6시간 전</div>
-                    </div>
-                </div>
-                <div class="news-item">
-                    <div class="news-content">
-                        <div class="news-headline">글로벌 기업들의 암호화폐 도입 가속화</div>
-                        <div class="news-summary">메타, 테슬라 등 주요 기업들이 암호화폐를 결제 수단으로 채택하는 추세가 확산되고 있습니다.</div>
-                    </div>
-                    <div class="news-meta">
-                        <div class="news-source">Bloomberg</div>
-                        <div class="news-time">8시간 전</div>
-                    </div>
-                </div>
-                <div class="news-item">
-                    <div class="news-content">
-                        <div class="news-headline">중앙은행 디지털화폐(CBDC) 개발 경쟁 본격화</div>
-                        <div class="news-summary">각국 중앙은행들이 디지털 화폐 발행을 위한 기술 개발에 박차를 가하고 있습니다.</div>
-                    </div>
-                    <div class="news-meta">
-                        <div class="news-source">Reuters</div>
-                        <div class="news-time">12시간 전</div>
-                    </div>
-                </div>
-                <div class="news-item">
-                    <div class="news-content">
-                        <div class="news-headline">NFT 시장 부활 조짐, 새로운 컬렉션들 인기</div>
-                        <div class="news-summary">최근 유명 아티스트들의 NFT 출시로 침체되었던 시장에 다시 활기가 돌고 있습니다.</div>
-                    </div>
-                    <div class="news-meta">
-                        <div class="news-source">NFT Today</div>
-                        <div class="news-time">1일 전</div>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
@@ -929,56 +1169,6 @@
                     </div>
                     <div class="coin-change">+9.88%</div>
                 </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">6</span>
-                        <div>
-                            <div class="coin-name">Avalanche</div>
-                            <div class="coin-symbol">AVAX</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+11.34%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">7</span>
-                        <div>
-                            <div class="coin-name">Cardano</div>
-                            <div class="coin-symbol">ADA</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+7.92%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">8</span>
-                        <div>
-                            <div class="coin-name">Polkadot</div>
-                            <div class="coin-symbol">DOT</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+13.55%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">9</span>
-                        <div>
-                            <div class="coin-name">Uniswap</div>
-                            <div class="coin-symbol">UNI</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+16.78%</div>
-                </li>
-                <li class="coin-item">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <span class="coin-rank">10</span>
-                        <div>
-                            <div class="coin-name">Cosmos</div>
-                            <div class="coin-symbol">ATOM</div>
-                        </div>
-                    </div>
-                    <div class="coin-change">+14.21%</div>
-                </li>
             </ul>
         </div>
     </section>
@@ -988,34 +1178,22 @@
         <div class="menu-close" onclick="toggleMenu()">×</div>
         <ul class="menu-items">
             <li class="menu-item">
-                <a href="#" class="menu-link" onclick="showBlog()">
-                    Blog
-                </a>
+                <a href="#" class="menu-link" onclick="showBlog()">Blog</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Charts
-                </a>
+                <a href="#" class="menu-link">Charts</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    News
-                </a>
+                <a href="#" class="menu-link">News</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Community
-                </a>
+                <a href="#" class="menu-link">Community</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Settings
-                </a>
+                <a href="#" class="menu-link">Settings</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Contact
-                </a>
+                <a href="#" class="menu-link">Contact</a>
             </li>
         </ul>
     </div>
@@ -1046,20 +1224,17 @@
                 </form>
             </div>
             
-            <div class="posts-container" id="postsContainer">
-                <!-- 작성된 글들이 여기에 표시됩니다 -->
-            </div>
+            <div class="posts-container" id="postsContainer"></div>
         </div>
     </div>
-    
+
     <script>
-        // 별 생성
         function createStars() {
-            const starsContainer = document.getElementById('stars');
-            const numStars = 100;
+            var starsContainer = document.getElementById('stars');
+            var numStars = 100;
             
-            for (let i = 0; i < numStars; i++) {
-                const star = document.createElement('div');
+            for (var i = 0; i < numStars; i++) {
+                var star = document.createElement('div');
                 star.className = 'star';
                 star.style.left = Math.random() * 100 + '%';
                 star.style.top = Math.random() * 100 + '%';
@@ -1070,114 +1245,81 @@
             }
         }
         
-        // 한국 시간 업데이트
         function updateKoreanTime() {
-            const now = new Date();
+            var now = new Date();
+            var koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+            var hours = koreanTime.getHours();
+            var minutes = String(koreanTime.getMinutes()).padStart(2, '0');
+            var seconds = String(koreanTime.getSeconds()).padStart(2, '0');
+            var period = hours >= 12 ? 'PM' : 'AM';
+            var displayHours = String(hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours)).padStart(2, '0');
+            var timeString = period + displayHours + ':' + minutes + ':' + seconds;
             
-            // 한국 시간으로 변환
-            const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-            
-            // 시간 포맷 ([PM19:31:40])
-            const hours = koreanTime.getHours();
-            const minutes = String(koreanTime.getMinutes()).padStart(2, '0');
-            const seconds = String(koreanTime.getSeconds()).padStart(2, '0');
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = String(hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours)).padStart(2, '0');
-            
-            const timeString = `${period}${displayHours}:${minutes}:${seconds}`;
-            
-            // DOM 업데이트
             document.getElementById('currentTime').textContent = timeString;
         }
         
-        // 메뉴 토글
         function toggleMenu() {
-            const menuOverlay = document.getElementById('menuOverlay');
+            var menuOverlay = document.getElementById('menuOverlay');
             menuOverlay.classList.toggle('active');
         }
         
-        // 블로그 열기
         function showBlog() {
             document.getElementById('blogSection').classList.add('active');
             document.getElementById('menuOverlay').classList.remove('active');
             loadPosts();
         }
         
-        // 블로그 닫기
         function closeBlog() {
             document.getElementById('blogSection').classList.remove('active');
         }
         
-        // 글 작성 기능
-        let posts = JSON.parse(localStorage.getItem('two4Posts')) || [];
+        var posts = JSON.parse(localStorage.getItem('two4Posts')) || [];
         
-        document.getElementById('postForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        function updateNews() {
+            var newsList = [
+                {
+                    headline: "비트코인, 12만 달러 돌파 후 강세 지속",
+                    summary: "기관 투자자들의 지속적인 매수로 비트코인이 사상 최고가를 경신했습니다.",
+                    source: "CoinTelegraph",
+                    time: "방금 전"
+                },
+                {
+                    headline: "이더리움 스테이킹 보상률 상승, 투자자 관심 증가",
+                    summary: "이더리움 2.0 스테이킹 참여율 증가로 네트워크 보안성이 더욱 강화되었습니다.",
+                    source: "DeFi Pulse",
+                    time: "30분 전"
+                }
+            ];
             
-            const title = document.getElementById('postTitle').value;
-            const author = document.getElementById('postAuthor').value;
-            const content = document.getElementById('postContent').value;
-            
-            const post = {
-                id: Date.now(),
-                title: title,
-                author: author,
-                content: content,
-                date: new Date().toLocaleString('ko-KR', {timeZone: 'Asia/Seoul'})
-            };
-            
-            posts.unshift(post);
-            localStorage.setItem('two4Posts', JSON.stringify(posts));
-            
-            // 폼 초기화
-            this.reset();
-            
-            // 글 목록 새로고침
-            loadPosts();
-            
-            // 성공 메시지
-            alert('글이 성공적으로 작성되었습니다!');
-        });
-        
-        // 글 목록 로드
-        function loadPosts() {
-            const container = document.getElementById('postsContainer');
-            
-            if (posts.length === 0) {
-                container.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 40px;">아직 작성된 글이 없습니다.</p>';
-                return;
-            }
-            
-            container.innerHTML = posts.map(post => `
-                <div class="post-card">
-                    <h3 class="post-title">${post.title}</h3>
-                    <div class="post-meta">작성자: ${post.author} | ${post.date}</div>
-                    <div class="post-content">${post.content.replace(/\n/g, '<br>')}</div>
-                </div>
-            `).join('');
-        }
-        
-        // 코인 데이터 업데이트 시뮬레이션
-                            <div class="news-headline">${news.headline}</div>
-                            <div class="news-summary">${news.summary}</div>
-                        </div>
-                        <div class="news-meta">
-                            <div class="news-source">${news.source}</div>
-                            <div class="news-time">${news.time}</div>
-                        </div>
-                    </div>
-                `).join('');
+            var newsContainer = document.getElementById('newsList');
+            if (newsContainer) {
+                var newsHTML = '';
+                for (var i = 0; i < newsList.length; i++) {
+                    var news = newsList[i];
+                    newsHTML += '<div class="news-item">';
+                    newsHTML += '<div class="news-content">';
+                    newsHTML += '<div class="news-headline">' + news.headline + '</div>';
+                    newsHTML += '<div class="news-summary">' + news.summary + '</div>';
+                    newsHTML += '</div>';
+                    newsHTML += '<div class="news-meta">';
+                    newsHTML += '<div class="news-source">' + news.source + '</div>';
+                    newsHTML += '<div class="news-time">' + news.time + '</div>';
+                    newsHTML += '</div>';
+                    newsHTML += '</div>';
+                }
+                newsContainer.innerHTML = newsHTML;
             }
         }
+        
         function updateCoinData() {
-            const coinItems = document.querySelectorAll('.coin-change');
-            coinItems.forEach(item => {
-                const currentValue = parseFloat(item.textContent.replace('%', ''));
-                const variation = (Math.random() - 0.5) * 0.5;
-                const newValue = currentValue + variation;
-                item.textContent = `+${newValue.toFixed(2)}%`;
+            var coinItems = document.querySelectorAll('.coin-change');
+            for (var i = 0; i < coinItems.length; i++) {
+                var item = coinItems[i];
+                var currentValue = parseFloat(item.textContent.replace('%', ''));
+                var variation = (Math.random() - 0.5) * 0.5;
+                var newValue = currentValue + variation;
+                item.textContent = '+' + newValue.toFixed(2) + '%';
                 
-                // 색상 코딩
                 if (newValue > 12) {
                     item.style.color = '#10b981';
                 } else if (newValue > 8) {
@@ -1185,32 +1327,71 @@
                 } else {
                     item.style.color = '#ec4899';
                 }
-            });
+            }
         }
         
-        // 외부 클릭시 메뉴 닫기
-        document.addEventListener('click', function(e) {
-            const menuOverlay = document.getElementById('menuOverlay');
-            const menuBtn = document.querySelector('.menu-btn');
+        function loadPosts() {
+            var container = document.getElementById('postsContainer');
             
-            if (!menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
-                menuOverlay.classList.remove('active');
+            if (posts.length === 0) {
+                container.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 40px;">아직 작성된 글이 없습니다.</p>';
+                return;
             }
-        });
+            
+            var postsHTML = '';
+            for (var i = 0; i < posts.length; i++) {
+                var post = posts[i];
+                postsHTML += '<div class="post-card">';
+                postsHTML += '<h3 class="post-title">' + post.title + '</h3>';
+                postsHTML += '<div class="post-meta">작성자: ' + post.author + ' | ' + post.date + '</div>';
+                postsHTML += '<div class="post-content">' + post.content.replace(/\n/g, '<br>') + '</div>';
+                postsHTML += '</div>';
+            }
+            container.innerHTML = postsHTML;
+        }
         
-        // 초기화
         document.addEventListener('DOMContentLoaded', function() {
             createStars();
             updateKoreanTime();
             setInterval(updateKoreanTime, 1000);
             loadPosts();
-            
-            // 뉴스 10초마다 업데이트
             setInterval(updateNews, 10000);
             updateNews();
-            
-            // 코인 데이터 5초마다 업데이트
             setInterval(updateCoinData, 5000);
+            
+            var postForm = document.getElementById('postForm');
+            if (postForm) {
+                postForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    var title = document.getElementById('postTitle').value;
+                    var author = document.getElementById('postAuthor').value;
+                    var content = document.getElementById('postContent').value;
+                    
+                    var post = {
+                        id: Date.now(),
+                        title: title,
+                        author: author,
+                        content: content,
+                        date: new Date().toLocaleString('ko-KR', {timeZone: 'Asia/Seoul'})
+                    };
+                    
+                    posts.unshift(post);
+                    localStorage.setItem('two4Posts', JSON.stringify(posts));
+                    postForm.reset();
+                    loadPosts();
+                    alert('글이 성공적으로 작성되었습니다!');
+                });
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            var menuOverlay = document.getElementById('menuOverlay');
+            var menuBtn = document.querySelector('.menu-btn');
+            
+            if (!menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
+                menuOverlay.classList.remove('active');
+            }
         });
     </script>
 </body>
