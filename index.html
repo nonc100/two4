@@ -16,7 +16,19 @@
         html {
             scroll-behavior: smooth;
         }
-        
+        <div id="seed-chat-btn" style="position:fixed; bottom:20px; right:20px; background:#8e44ad; color:white; padding:12px 18px; border-radius:50px; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,0.3); font-family:sans-serif; z-index:9999;">
+  Seed 채팅
+</div>
+<div id="seed-chat-window" style="display:none; position:fixed; bottom:80px; right:20px; width:320px; height:460px; background:#0b0b12; border:1px solid rgba(255,255,255,.1); border-radius:12px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,.45); z-index:9999;">
+  <iframe src="/seed-chat.html" style="width:100%; height:100%; border:none;"></iframe>
+</div>
+<script>
+  const btn = document.getElementById('seed-chat-btn');
+  const win = document.getElementById('seed-chat-window');
+  btn.onclick = () => {
+    win.style.display = (win.style.display === 'none' || !win.style.display) ? 'block' : 'none';
+  };
+</script>
         body {
             font-family: 'Inter', sans-serif;
             background: #000;
