@@ -1,3 +1,4 @@
+console.log("환경 변수 체크:", process.env.OPENAI_API_KEY ? "있음" : "없음");
 // /api/gpt-4o.js  (Edge Runtime 버전)
 export const config = { runtime: "edge" };
 
