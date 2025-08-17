@@ -1,6 +1,4 @@
-console.log("환경 변수 체크:", process.env.OPENAI_API_KEY ? "있음" : "없음");
-// /api/gpt-4o.js  (Edge Runtime 버전)
-export const config = { runtime: "edge" };
+// api/gpt-4o.js
 
 export default async function handler(req) {
   if (req.method !== "POST") {
@@ -11,7 +9,7 @@ export default async function handler(req) {
   }
 
   try {
-    // ✅ 엣지 런타임: 본문 확실히 파싱
+    // ✅ 요청 body에서 messages 파싱
     const { messages } = await req.json();
 
     if (!Array.isArray(messages)) {
@@ -21,8 +19,9 @@ export default async function handler(req) {
       );
     }
 
+    // ✅ 환경변수에서 API 키 가져오기
     const apiKey = process.env.OPENAI_API_KEY;
-console.log("🔑 API Key loaded?", apiKey ? "YES" : "NO");
+    console.log("🔑 API Key loaded?", apiKey ? "YES" : "NO");
 
     if (!apiKey) {
       return new Response(
@@ -31,41 +30,39 @@ console.log("🔑 API Key loaded?", apiKey ? "YES" : "NO");
       );
     }
 
+    // ✅ OpenAI API 호출
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "content-type": "application/json",
-        "authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o",
-        messages,
-        temperature: 0.7,
-      }),
+        model: "gpt-4o-mini",  // 필요하면 gpt-4o로 변경 가능
+        messages
+      })
     });
 
-    const data = await r.json();
-
     if (!r.ok) {
-      // OpenAI가 돌려준 에러 그대로 전달
+      const errText = await r.text();
+      console.error("❌ OpenAI API Error:", errText);
       return new Response(
-        JSON.stringify(data),
+        JSON.stringify({ error: "OpenAI API request failed", details: errText }),
         { status: r.status, headers: { "content-type": "application/json" } }
       );
     }
 
-    const reply =
-      data?.choices?.[0]?.message?.content ??
-      data?.choices?.[0]?.delta?.content ??
-      "";
+    const data = await r.json();
 
-    return new Response(
-      JSON.stringify({ reply, raw: data }),
-      { status: 200, headers: { "content-type": "application/json" } }
-    );
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+
   } catch (err) {
+    console.error("❌ Handler error:", err);
     return new Response(
-      JSON.stringify({ error: err?.message || "Server error" }),
+      JSON.stringify({ error: "Internal Server Error", details: err.message }),
       { status: 500, headers: { "content-type": "application/json" } }
     );
   }
