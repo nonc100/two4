@@ -21,6 +21,8 @@ export default async function handler(req) {
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
+console.log("🔑 API Key loaded?", apiKey ? "YES" : "NO");
+
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: "OPENAI_API_KEY not set" }),
