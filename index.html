@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TWO.4 - TIME NEVER SLEEPS</title>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
         
@@ -12,6 +11,14 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            /* 드래그 방지 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* 우클릭 방지를 위한 컨텍스트 메뉴 비활성화 */
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         html {
@@ -27,7 +34,6 @@
             min-height: 100vh;
         }
         
-        /* 배경 비디오 */
         .video-background {
             position: fixed;
             top: 0;
@@ -40,7 +46,6 @@
             object-fit: cover;
         }
         
-        /* 비디오 오버레이 */
         .video-overlay {
             position: fixed;
             top: 0;
@@ -51,7 +56,6 @@
             z-index: -5;
         }
         
-        /* 대체 배경 */
         .fallback-bg {
             position: fixed;
             top: 0;
@@ -62,7 +66,6 @@
             z-index: -15;
         }
         
-        /* 네비게이션 */
         .nav {
             position: fixed;
             top: 30px;
@@ -126,7 +129,6 @@
         .menu-line:nth-child(2) { top: 8px; }
         .menu-line:nth-child(3) { top: 16px; }
         
-        /* 브랜드 섹션 */
         .brand-section {
             position: absolute;
             top: 40px;
@@ -154,7 +156,6 @@
             text-transform: uppercase;
         }
         
-        /* 메인 컨테이너 */
         .main-container {
             display: flex;
             flex-direction: column;
@@ -166,7 +167,6 @@
             padding: 0 40px;
         }
         
-        /* 시계 행성 */
         .clock-planet-container {
             position: relative;
             margin: 60px 0;
@@ -265,7 +265,6 @@
             z-index: 5;
         }
         
-        /* 콘텐츠 섹션 */
         .content-section {
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(20px);
@@ -296,7 +295,6 @@
             gap: 3rem;
         }
         
-        /* 차트 섹션 */
         .chart-container {
             background: rgba(139, 92, 246, 0.05);
             border: 1px solid rgba(139, 92, 246, 0.3);
@@ -329,7 +327,6 @@
             100% { left: 100%; }
         }
         
-        /* 뉴스/코인 섹션 */
         .news-grid, .coin-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -364,7 +361,6 @@
             line-height: 1.6;
         }
         
-        /* 채팅 버튼 */
         .chat-button {
             position: fixed;
             bottom: 30px;
@@ -402,19 +398,19 @@
             box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
         }
         
-        /* 메뉴 오버레이 */
         .menu-overlay {
             position: fixed;
             top: 0;
-            right: -400px;
-            width: 400px;
+            right: -450px;
+            width: 450px;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(20px);
-            border-left: 2px solid rgba(139, 92, 246, 0.3);
+            background: rgba(0, 0, 0, 0.97);
+            backdrop-filter: blur(30px);
+            border-left: 2px solid rgba(139, 92, 246, 0.4);
             z-index: 2000;
             transition: right 0.4s ease;
             padding: 80px 40px 40px;
+            overflow-y: auto;
         }
         
         .menu-overlay.active {
@@ -434,42 +430,83 @@
             color: #8b5cf6;
             font-size: 24px;
             transition: all 0.3s ease;
+            border-radius: 50%;
+            border: 1px solid rgba(139, 92, 246, 0.3);
         }
         
         .menu-close:hover {
             color: #fff;
-            transform: scale(1.2);
+            background: rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.6);
+        }
+        
+        .menu-section {
+            margin-bottom: 30px;
         }
         
         .menu-items {
             list-style: none;
-            margin-top: 40px;
         }
         
         .menu-item {
-            margin-bottom: 30px;
+            margin-bottom: 6px;
         }
         
         .menu-link {
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            font-size: 20px;
+            font-size: 14px;
             font-weight: 500;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: block;
+            padding: 10px 16px;
+            border-radius: 8px;
+            position: relative;
         }
         
         .menu-link:hover {
-            color: #8b5cf6;
-            padding-left: 15px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+            color: #fff;
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateX(8px);
+            text-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
         }
         
-        /* 반응형 디자인 */
+        .korean-desc {
+            color: rgba(139, 92, 246, 0.8);
+            font-size: 12px;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            margin-left: 8px;
+            display: none;
+        }
+        
+        .menu-link:hover .korean-desc {
+            display: inline;
+        }
+        
+        .menu-link.featured {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            font-weight: 600;
+            color: rgba(139, 92, 246, 0.9);
+        }
+        
+        .menu-link.featured:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(168, 85, 247, 0.15));
+            border-color: rgba(139, 92, 246, 0.6);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+        
+        .menu-divider {
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+            margin: 25px 0;
+        }
+        
         @media (max-width: 768px) {
             .brand-section {
                 top: 20px;
@@ -508,8 +545,8 @@
                 right: -100%;
             }
             
-            .menu-tooltip {
-                display: none;
+            .korean-desc {
+                display: none !important;
             }
             
             .chat-button {
@@ -522,28 +559,23 @@
     </style>
 </head>
 <body>
-    <!-- 대체 배경 -->
     <div class="fallback-bg"></div>
 
-    <!-- 배경 비디오 -->
     <video class="video-background" autoplay muted loop playsinline>
         <source src="/background.mp4" type="video/mp4">
         <source src="background.mp4" type="video/mp4">
     </video>
 
-    <!-- 비디오 오버레이 -->
     <div class="video-overlay"></div>
     
-    <!-- 브랜드 섹션 -->
     <div class="brand-section">
         <div class="brand-title">TWO.4</div>
         <div class="brand-subtitle">TIME NEVER SLEEPS</div>
     </div>
     
-    <!-- 네비게이션 -->
     <nav class="nav">
         <a href="#home" class="nav-home">Home</a>
-        <div class="menu-btn" onclick="toggleMenu()">
+        <div class="menu-btn" id="menuButton">
             <div class="menu-icon">
                 <div class="menu-line"></div>
                 <div class="menu-line"></div>
@@ -552,7 +584,6 @@
         </div>
     </nav>
     
-    <!-- 메인 컨테이너 -->
     <main class="main-container" id="home">
         <div class="clock-planet-container">
             <div class="clock-planet">
@@ -568,10 +599,8 @@
         <div class="zone-indicator">- KOREA ZONE -</div>
     </main>
     
-    <!-- 콘텐츠 섹션 -->
     <section class="content-section">
         <div class="container">
-            <!-- 실시간 차트 -->
             <div class="section-content">
                 <h2 class="section-title">Real Time Charts</h2>
                 <div class="chart-container">
@@ -585,7 +614,6 @@
                 </div>
             </div>
 
-            <!-- 코인 뉴스 -->
             <div class="section-content">
                 <h2 class="section-title">Coin News</h2>
                 <div class="news-grid">
@@ -613,7 +641,6 @@
                 </div>
             </div>
 
-            <!-- 사용자 게시판 -->
             <div class="section-content" style="text-align: center;">
                 <h2 class="section-title">사용자 게시판</h2>
                 <p style="font-size: 1.2rem; margin-bottom: 2rem; color: rgba(255,255,255,0.7);">
@@ -637,105 +664,77 @@
         </div>
     </section>
     
-    <!-- 메뉴 오버레이 -->
     <div class="menu-overlay" id="menuOverlay">
-        <div class="menu-close" onclick="toggleMenu()">×</div>
+        <div class="menu-close" id="menuClose">×</div>
         
-        <!-- 메인 메뉴 섹션 -->
         <div class="menu-section">
             <ul class="menu-items">
                 <li class="menu-item">
                     <a href="/charts" class="menu-link">
-                        COSMOS (CHARTS)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">차트</span>
+                        COSMOS (CHARTS)<span class="korean-desc">차트</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="/signals" class="menu-link">
-                        ORBITS (SIGNALS / INDICATORS)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">지표/신호</span>
+                        ORBITS (SIGNALS / INDICATORS)<span class="korean-desc">지표/신호</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="/technique" class="menu-link">
-                        METHOD (TECHNIQUE)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">매매 기법</span>
+                        METHOD (TECHNIQUE)<span class="korean-desc">매매 기법</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="/psyche" class="menu-link">
-                        PSYCHE
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">마음과 철학, 멘탈</span>
+                        PSYCHE<span class="korean-desc">마음과 철학, 멘탈</span>
                     </a>
                 </li>
             </ul>
         </div>
         
-        <!-- 구분선 -->
-        <div style="border-top: 1px solid rgba(139, 92, 246, 0.3); margin: 20px 0;"></div>
+        <div class="menu-divider"></div>
         
-        <!-- 두 번째 섹션 -->
         <div class="menu-section">
             <ul class="menu-items">
                 <li class="menu-item">
                     <a href="/observations" class="menu-link">
-                        ECHOES (OBSERVATIONS / NEWS)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">사건의 메아리, 관찰 기록</span>
+                        ECHOES (OBSERVATIONS / NEWS)<span class="korean-desc">사건의 메아리, 관찰 기록</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="/community" class="menu-link">
-                        CONSTELLATION (COMMUNITY)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">사용자 커뮤니티</span>
+                        CONSTELLATION (COMMUNITY)<span class="korean-desc">사용자 커뮤니티</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="/alerts" class="menu-link">
-                        BEACONS (ALERTS)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">주의</span>
+                        BEACONS (ALERTS)<span class="korean-desc">주의</span>
                     </a>
                 </li>
             </ul>
         </div>
         
-        <!-- 구분선 -->
-        <div style="border-top: 1px solid rgba(139, 92, 246, 0.3); margin: 20px 0;"></div>
+        <div class="menu-divider"></div>
         
-        <!-- 특별 기능 섹션 -->
         <div class="menu-section">
             <ul class="menu-items">
                 <li class="menu-item">
                     <a href="/seed" class="menu-link featured">
-                        SEED ORACLE (SEED AI Q/A)
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">seed AI (챗봇 서비스)</span>
+                        SEED ORACLE (SEED AI Q/A)<span class="korean-desc">seed AI (챗봇 서비스)</span>
                     </a>
                 </li>
                 <li class="menu-item">
                     <a href="/portal" class="menu-link featured">
-                        PORTAL
-                        <span class="menu-separator">→</span>
-                        <span class="menu-korean">(가입/로그인/로그아웃)</span>
+                        PORTAL<span class="korean-desc">(가입/로그인/로그아웃)</span>
                     </a>
                 </li>
             </ul>
         </div>
     </div>
     
-    <!-- 채팅 버튼 -->
-    <button class="chat-button" onclick="alert('채팅 기능 준비중입니다.')">
-        채팅하기
-    </button>
+    <button class="chat-button" id="chatButton">채팅하기</button>
 
     <script>
-        // 한국 시간 업데이트
         function updateKoreanTime() {
             const now = new Date();
             const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
@@ -750,34 +749,30 @@
             document.getElementById('currentTime').textContent = timeString;
         }
         
-        // 메뉴 토글
         function toggleMenu() {
             const menuOverlay = document.getElementById('menuOverlay');
             menuOverlay.classList.toggle('active');
         }
         
-        // 비디오 처리
         function handleVideo() {
             const video = document.querySelector('.video-background');
             
             if (video) {
                 video.addEventListener('loadeddata', function() {
-                    console.log('✅ 비디오 로딩 성공!');
+                    console.log('비디오 로딩 성공!');
                 });
                 
                 video.addEventListener('error', function() {
-                    console.log('❌ 비디오 로딩 실패 - 대체 배경 사용');
+                    console.log('비디오 로딩 실패 - 대체 배경 사용');
                     video.style.display = 'none';
                 });
                 
-                // 모바일에서 터치 시 재생
                 document.addEventListener('touchstart', function() {
                     if (video.paused) {
                         video.play().catch(e => console.log('비디오 재생 실패:', e));
                     }
                 });
                 
-                // 클릭 시 재생
                 document.addEventListener('click', function() {
                     if (video.paused) {
                         video.play().catch(e => console.log('비디오 재생 실패:', e));
@@ -786,21 +781,119 @@
             }
         }
         
-        // 초기화
         document.addEventListener('DOMContentLoaded', function() {
             updateKoreanTime();
             setInterval(updateKoreanTime, 1000);
             handleVideo();
             
-            // 메뉴 외부 클릭 시 닫기
+            const menuButton = document.getElementById('menuButton');
+            const menuClose = document.getElementById('menuClose');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const chatButton = document.getElementById('chatButton');
+            
+            if (menuButton) {
+                menuButton.addEventListener('click', toggleMenu);
+            }
+            
+            if (menuClose) {
+                menuClose.addEventListener('click', toggleMenu);
+            }
+            
+            if (chatButton) {
+                chatButton.addEventListener('click', function() {
+                    alert('채팅 기능 준비중입니다.');
+                });
+            }
+            
             document.addEventListener('click', function(e) {
-                const menuOverlay = document.getElementById('menuOverlay');
-                const menuBtn = document.querySelector('.menu-btn');
-                
-                if (menuOverlay && menuBtn && !menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
+                if (menuOverlay && menuButton && !menuOverlay.contains(e.target) && !menuButton.contains(e.target)) {
                     menuOverlay.classList.remove('active');
                 }
             });
+            
+            // 복사 방지 기능들
+            // 우클릭 방지
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // 키보드 단축키 방지 (Ctrl+C, Ctrl+V, Ctrl+A, Ctrl+S, F12 등)
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+C (복사)
+                if (e.ctrlKey && e.key === 'c') {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+V (붙여넣기)
+                if (e.ctrlKey && e.key === 'v') {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+A (전체선택)
+                if (e.ctrlKey && e.key === 'a') {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+S (저장)
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+P (인쇄)
+                if (e.ctrlKey && e.key === 'p') {
+                    e.preventDefault();
+                    return false;
+                }
+                // F12 (개발자도구)
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+I (개발자도구)
+                if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+U (소스보기)
+                if (e.ctrlKey && e.key === 'u') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // 드래그 시작 방지
+            document.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // 선택 방지 (더블클릭 등)
+            document.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // 개발자도구 감지 (콘솔창 열림 감지)
+            let devtools = {
+                open: false,
+                orientation: null
+            };
+            
+            setInterval(function() {
+                if (window.outerHeight - window.innerHeight > 160 || window.outerWidth - window.innerWidth > 160) {
+                    if (!devtools.open) {
+                        devtools.open = true;
+                        if (typeof console.clear === 'function') {
+                            console.clear();
+                        }
+                        console.log('⚠️ 개발자 도구 사용을 감지했습니다.');
+                        console.log('🔒 이 사이트의 콘텐츠는 보호되고 있습니다.');
+                    }
+                } else {
+                    devtools.open = false;
+                }
+            }, 500);
         });
     </script>
 </body>
