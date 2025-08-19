@@ -11,12 +11,10 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* 드래그 방지 */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
-            /* 우클릭 방지를 위한 컨텍스트 메뉴 비활성화 */
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -394,37 +392,13 @@
             font-family: 'Orbitron', monospace;
         }
         
-        .crypto-chart {
+        .cosmos-chart-canvas {
             width: 100%;
             height: 480px;
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             border: 1px solid rgba(139, 92, 246, 0.1);
-        }
-        
-        .chart-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 480px;
-            color: rgba(139, 92, 246, 0.7);
-            font-size: 18px;
-            font-family: 'Orbitron', monospace;
-        }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(139, 92, 246, 0.3);
-            border-top: 3px solid #8b5cf6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 15px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            cursor: crosshair;
         }
         
         .news-grid, .coin-grid {
@@ -721,18 +695,13 @@
                                 <option value="multi" selected>Multi Coins</option>
                                 <option value="single">Single Coin</option>
                             </select>
-                            <span class="price-display" id="marketCap">Loading Market...</span>
+                            <span class="price-display" id="marketCap">COSMOS Ready...</span>
                         </div>
                         <div class="chart-legend" id="chartLegend">
                             <!-- 범례가 동적으로 생성됩니다 -->
                         </div>
                     </div>
-                    <div id="crypto-chart" class="crypto-chart">
-                        <div class="chart-loading">
-                            <div class="loading-spinner"></div>
-                            CONNECTING TO COSMOS...
-                        </div>
-                    </div>
+                    <canvas id="cosmosChart" class="cosmos-chart-canvas"></canvas>
                 </div>
             </div>
 
@@ -856,25 +825,24 @@
     
     <button class="chat-button" id="chatButton">채팅하기</button>
 
-    <!-- Lightweight Charts 라이브러리 로드 -->
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    
     <script>
-        // 글로벌 변수들
-        let cryptoChart = null;
-        let chartSeries = [];
+        // COSMOS 차트 엔진 - 완전 자체 제작
+        let chartCanvas = null;
+        let chartContext = null;
         let currentData = new Map();
+        let isAnimating = false;
+        let animationFrame = null;
         
         // 암호화폐 설정
         const cryptoConfig = [
-            { id: 'bitcoin', name: 'BTC', color: '#f7931a', fullName: 'Bitcoin' },
-            { id: 'ethereum', name: 'ETH', color: '#627eea', fullName: 'Ethereum' },
-            { id: 'binancecoin', name: 'BNB', color: '#f3ba2f', fullName: 'BNB' },
-            { id: 'solana', name: 'SOL', color: '#9945ff', fullName: 'Solana' },
-            { id: 'cardano', name: 'ADA', color: '#0033ad', fullName: 'Cardano' },
-            { id: 'ripple', name: 'XRP', color: '#23292f', fullName: 'XRP' },
-            { id: 'avalanche-2', name: 'AVAX', color: '#e84142', fullName: 'Avalanche' },
-            { id: 'dogecoin', name: 'DOGE', color: '#c2a633', fullName: 'Dogecoin' }
+            { id: 'bitcoin', name: 'BTC', color: '#f7931a', visible: true, basePrice: 43500 },
+            { id: 'ethereum', name: 'ETH', color: '#627eea', visible: true, basePrice: 2680 },
+            { id: 'binancecoin', name: 'BNB', color: '#f3ba2f', visible: true, basePrice: 315 },
+            { id: 'solana', name: 'SOL', color: '#9945ff', visible: true, basePrice: 98 },
+            { id: 'cardano', name: 'ADA', color: '#0033ad', visible: true, basePrice: 0.38 },
+            { id: 'ripple', name: 'XRP', color: '#ffffff', visible: true, basePrice: 0.51 },
+            { id: 'avalanche-2', name: 'AVAX', color: '#e84142', visible: true, basePrice: 24 },
+            { id: 'dogecoin', name: 'DOGE', color: '#c2a633', visible: true, basePrice: 0.078 }
         ];
         
         function updateKoreanTime() {
@@ -923,125 +891,56 @@
             }
         }
         
-        // 멀티 코인 차트 생성
-        function createMultiCoinChart() {
-            if (typeof LightweightCharts === 'undefined') {
-                console.log('Lightweight Charts 라이브러리 로딩 중...');
-                setTimeout(createMultiCoinChart, 500);
+        // COSMOS 차트 초기화
+        function initCosmosChart() {
+            console.log('🌌 TWO.4 COSMOS 엔진 부팅...');
+            
+            chartCanvas = document.getElementById('cosmosChart');
+            if (!chartCanvas) {
+                console.error('차트 캔버스를 찾을 수 없습니다.');
                 return;
             }
             
-            const chartContainer = document.getElementById('crypto-chart');
-            if (!chartContainer) return;
+            chartContext = chartCanvas.getContext('2d');
             
-            // 기존 차트가 있으면 제거
-            if (cryptoChart) {
-                cryptoChart.remove();
-                chartSeries = [];
-            }
-            
-            console.log('✅ COSMOS 차트 초기화 중...');
-            
-            // 로딩 표시 제거
-            chartContainer.innerHTML = '';
-            
-            // Lightweight Charts 생성
-            cryptoChart = LightweightCharts.createChart(chartContainer, {
-                width: chartContainer.offsetWidth,
-                height: chartContainer.offsetHeight,
-                layout: {
-                    background: {
-                        type: 'solid',
-                        color: 'transparent'
-                    },
-                    textColor: '#d1d4dc',
-                    fontSize: 12,
-                    fontFamily: 'Inter, sans-serif'
-                },
-                grid: {
-                    vertLines: {
-                        color: 'rgba(139, 92, 246, 0.1)',
-                        style: 1,
-                        visible: true,
-                    },
-                    horzLines: {
-                        color: 'rgba(139, 92, 246, 0.1)',
-                        style: 1,
-                        visible: true,
-                    },
-                },
-                crosshair: {
-                    mode: LightweightCharts.CrosshairMode.Normal,
-                    vertLine: {
-                        color: 'rgba(139, 92, 246, 0.5)',
-                        width: 1,
-                        style: 3,
-                    },
-                    horzLine: {
-                        color: 'rgba(139, 92, 246, 0.5)',
-                        width: 1,
-                        style: 3,
-                    },
-                },
-                rightPriceScale: {
-                    borderColor: 'rgba(139, 92, 246, 0.3)',
-                    textColor: '#d1d4dc',
-                },
-                timeScale: {
-                    borderColor: 'rgba(139, 92, 246, 0.3)',
-                    textColor: '#d1d4dc',
-                    timeVisible: true,
-                    secondsVisible: false,
-                },
-                handleScroll: {
-                    mouseWheel: true,
-                    pressedMouseMove: true,
-                },
-                handleScale: {
-                    axisPressedMouseMove: true,
-                    mouseWheel: true,
-                    pinch: true,
-                },
-            });
-            
-            // 각 암호화폐마다 라인 시리즈 생성
-            cryptoConfig.forEach((crypto, index) => {
-                const series = cryptoChart.addLineSeries({
-                    color: crypto.color,
-                    lineWidth: 2,
-                    lineStyle: LightweightCharts.LineStyle.Solid,
-                    lineType: LightweightCharts.LineType.Simple,
-                    crosshairMarkerVisible: true,
-                    crosshairMarkerRadius: 4,
-                    crosshairMarkerBorderColor: crypto.color,
-                    crosshairMarkerBackgroundColor: crypto.color,
-                    title: crypto.name,
-                    priceScaleId: index === 0 ? 'right' : 'left',
-                });
-                
-                chartSeries.push({
-                    series: series,
-                    config: crypto,
-                    visible: true
-                });
-            });
+            // 캔버스 크기 설정
+            resizeChart();
             
             // 범례 생성
             createChartLegend();
             
-            // 데이터 로드
-            loadMultiCoinData();
+            // 데모 데이터 생성
+            generateAllCosmosData();
             
-            // 차트 크기 자동 조정
-            const resizeObserver = new ResizeObserver(entries => {
-                if (entries.length === 0 || entries[0].target !== chartContainer) return;
-                const newRect = entries[0].contentRect;
-                cryptoChart.applyOptions({ width: newRect.width, height: newRect.height });
-            });
-            resizeObserver.observe(chartContainer);
+            // 애니메이션 시작
+            startChartAnimation();
+            
+            // 실시간 업데이트 시작
+            startRealTimeUpdates();
+            
+            // 리사이즈 이벤트
+            window.addEventListener('resize', resizeChart);
+            
+            console.log('✅ COSMOS 엔진 준비 완료!');
+            document.getElementById('marketCap').textContent = 'COSMOS Online: $2.31T';
         }
         
-        // 차트 범례 생성
+        // 차트 크기 조정
+        function resizeChart() {
+            if (!chartCanvas) return;
+            
+            const container = chartCanvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            
+            chartCanvas.width = rect.width - 4; // 패딩 고려
+            chartCanvas.height = 480;
+            
+            if (chartContext) {
+                drawChart();
+            }
+        }
+        
+        // 범례 생성
         function createChartLegend() {
             const legendContainer = document.getElementById('chartLegend');
             legendContainer.innerHTML = '';
@@ -1055,47 +954,18 @@
                 `;
                 
                 legendItem.addEventListener('click', () => {
-                    toggleSeries(index);
+                    toggleCryptoVisibility(index);
                 });
                 
                 legendContainer.appendChild(legendItem);
             });
         }
         
-        // 시리즈 토글
-        function toggleSeries(index) {
-            const seriesData = chartSeries[index];
-            if (!seriesData) return;
-            
-            seriesData.visible = !seriesData.visible;
-            
-            if (seriesData.visible) {
-                // 시리즈 다시 추가
-                const newSeries = cryptoChart.addLineSeries({
-                    color: seriesData.config.color,
-                    lineWidth: 2,
-                    lineStyle: LightweightCharts.LineStyle.Solid,
-                    lineType: LightweightCharts.LineType.Simple,
-                    crosshairMarkerVisible: true,
-                    crosshairMarkerRadius: 4,
-                    crosshairMarkerBorderColor: seriesData.config.color,
-                    crosshairMarkerBackgroundColor: seriesData.config.color,
-                    title: seriesData.config.name,
-                });
-                
-                seriesData.series = newSeries;
-                
-                // 기존 데이터가 있으면 다시 설정
-                if (currentData.has(seriesData.config.id)) {
-                    newSeries.setData(currentData.get(seriesData.config.id));
-                }
-            } else {
-                // 시리즈 제거
-                cryptoChart.removeSeries(seriesData.series);
-            }
-            
-            // 범례 업데이트
-            updateLegendVisibility(index, seriesData.visible);
+        // 암호화폐 표시 토글
+        function toggleCryptoVisibility(index) {
+            cryptoConfig[index].visible = !cryptoConfig[index].visible;
+            updateLegendVisibility(index, cryptoConfig[index].visible);
+            drawChart();
         }
         
         // 범례 표시 상태 업데이트
@@ -1106,129 +976,238 @@
             }
         }
         
-        // 멀티 코인 데이터 로드
-        async function loadMultiCoinData() {
-            const days = document.getElementById('timeSelector').value;
-            const promises = cryptoConfig.map(crypto => fetchCoinData(crypto.id, days));
+        // 모든 COSMOS 데이터 생성
+        function generateAllCosmosData() {
+            console.log('🎭 COSMOS 데이터 매트릭스 생성...');
             
-            try {
-                console.log('🚀 COSMOS 데이터 수집 중...');
-                const results = await Promise.all(promises);
+            cryptoConfig.forEach(crypto => {
+                const data = generateCosmosData(crypto, 100);
+                currentData.set(crypto.id, data);
+                console.log(`📊 ${crypto.name} 궤도 데이터 생성 완료`);
+            });
+        }
+        
+        // COSMOS 데이터 생성 (시뮬레이션)
+        function generateCosmosData(crypto, dataPoints) {
+            const data = [];
+            const now = Date.now();
+            const interval = 3600000; // 1시간
+            
+            let currentPrice = crypto.basePrice;
+            const basePrice = currentPrice;
+            
+            for (let i = dataPoints; i >= 0; i--) {
+                const timestamp = now - (i * interval);
                 
-                results.forEach((data, index) => {
-                    if (data && chartSeries[index] && chartSeries[index].visible) {
-                        const formattedData = formatCoinData(data);
-                        chartSeries[index].series.setData(formattedData);
-                        currentData.set(cryptoConfig[index].id, formattedData);
-                        
-                        console.log(`📊 ${cryptoConfig[index].name} 데이터 로드 완료`);
-                    }
+                // 시간대별 변동성
+                const hour = new Date(timestamp).getHours();
+                let volatility = 0.015;
+                
+                if (hour >= 8 && hour <= 16) volatility = 0.025;
+                if (hour >= 14 && hour <= 22) volatility = 0.035;
+                
+                // 시장 심리 반영
+                const change = (Math.random() - 0.5) * volatility;
+                currentPrice *= (1 + change);
+                
+                // 우주적 트렌드 적용
+                const cosmicTrend = Math.sin((i / 30) * Math.PI) * 0.001;
+                currentPrice *= (1 + cosmicTrend);
+                
+                // 가격 범위 제한
+                if (currentPrice > basePrice * 1.4) currentPrice = basePrice * 1.35;
+                if (currentPrice < basePrice * 0.6) currentPrice = basePrice * 0.65;
+                
+                data.push({
+                    timestamp: timestamp,
+                    price: Math.max(currentPrice, 0.001)
                 });
-                
-                updateMarketInfo();
-                console.log('✅ COSMOS 차트 준비 완료!');
-                
-            } catch (error) {
-                console.error('❌ 데이터 로딩 실패:', error);
-                showErrorMessage();
             }
-        }
-        
-        // 코인 데이터 가져오기
-        async function fetchCoinData(coinId, days) {
-            try {
-                const response = await fetch(
-                    `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=${days > 1 ? 'hourly' : 'minutely'}`
-                );
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                return data.prices;
-                
-            } catch (error) {
-                console.error(`${coinId} 데이터 가져오기 실패:`, error);
-                return null;
-            }
-        }
-        
-        // 데이터 포맷팅
-        function formatCoinData(priceData) {
-            if (!priceData || !Array.isArray(priceData)) return [];
             
-            return priceData.map(([timestamp, price]) => ({
-                time: Math.floor(timestamp / 1000),
-                value: price
-            }));
+            return data.sort((a, b) => a.timestamp - b.timestamp);
         }
         
-        // 마켓 정보 업데이트
-        async function updateMarketInfo() {
-            try {
-                const response = await fetch(
-                    'https://api.coingecko.com/api/v3/global'
-                );
+        // 차트 애니메이션 시작
+        function startChartAnimation() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            function animate() {
+                drawChart();
+                animationFrame = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // COSMOS 차트 그리기
+        function drawChart() {
+            if (!chartContext || !chartCanvas) return;
+            
+            const ctx = chartContext;
+            const width = chartCanvas.width;
+            const height = chartCanvas.height;
+            
+            // 우주 배경 렌더링
+            ctx.clearRect(0, 0, width, height);
+            
+            // 배경 그라디언트 (우주적)
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+            bgGradient.addColorStop(0, 'rgba(139, 92, 246, 0.15)');
+            bgGradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
+            bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // 코스믹 그리드
+            drawCosmicGrid(ctx, width, height);
+            
+            // 각 암호화폐 궤도 그리기
+            cryptoConfig.forEach(crypto => {
+                if (crypto.visible && currentData.has(crypto.id)) {
+                    drawCryptoOrbit(ctx, crypto, currentData.get(crypto.id), width, height);
+                }
+            });
+        }
+        
+        // 코스믹 그리드 그리기
+        function drawCosmicGrid(ctx, width, height) {
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.15)';
+            ctx.lineWidth = 0.5;
+            
+            // 수직 궤도선
+            for (let x = 0; x <= width; x += width / 12) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // 수평 궤도선
+            for (let y = 0; y <= height; y += height / 8) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+        
+        // 암호화폐 궤도 그리기
+        function drawCryptoOrbit(ctx, crypto, data, width, height) {
+            if (!data || data.length < 2) return;
+            
+            // 가격 범위 계산
+            const prices = data.map(d => d.price);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice || 1;
+            
+            // 시간 범위
+            const timeRange = data[data.length - 1].timestamp - data[0].timestamp;
+            
+            // 궤도 스타일 설정
+            ctx.strokeStyle = crypto.color;
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // 코스믹 글로우 효과
+            ctx.shadowColor = crypto.color;
+            ctx.shadowBlur = 8;
+            
+            ctx.beginPath();
+            
+            // 궤도 경로 그리기
+            data.forEach((point, index) => {
+                const x = ((point.timestamp - data[0].timestamp) / timeRange) * width;
+                const y = height - ((point.price - minPrice) / priceRange) * (height - 40) - 20;
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    const marketCap = data.data?.total_market_cap?.usd;
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    // 부드러운 곡선으로 연결
+                    const prevPoint = data[index - 1];
+                    const prevX = ((prevPoint.timestamp - data[0].timestamp) / timeRange) * width;
+                    const prevY = height - ((prevPoint.price - minPrice) / priceRange) * (height - 40) - 20;
                     
-                    if (marketCap) {
-                        const formatted = (marketCap / 1e12).toFixed(2);
-                        document.getElementById('marketCap').textContent = `Market: $${formatted}T`;
+                    const controlX = (prevX + x) / 2;
+                    ctx.quadraticCurveTo(controlX, prevY, x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // 현재 포인트 강조
+            if (data.length > 0) {
+                const lastPoint = data[data.length - 1];
+                const x = ((lastPoint.timestamp - data[0].timestamp) / timeRange) * width;
+                const y = height - ((lastPoint.price - minPrice) / priceRange) * (height - 40) - 20;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = crypto.color;
+                ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        // 실시간 우주 데이터 업데이트
+        function updateCosmosData() {
+            cryptoConfig.forEach(crypto => {
+                if (currentData.has(crypto.id)) {
+                    const data = currentData.get(crypto.id);
+                    if (data.length > 0) {
+                        const lastPoint = data[data.length - 1];
+                        const now = Date.now();
+                        
+                        // 우주적 변동 생성
+                        const cosmicVariation = (Math.random() - 0.5) * 0.025;
+                        const timeWave = Math.sin(now / 60000) * 0.005; // 1분 주기
+                        const newPrice = lastPoint.price * (1 + cosmicVariation + timeWave);
+                        
+                        const newPoint = {
+                            timestamp: now,
+                            price: Math.max(newPrice, 0.001)
+                        };
+                        
+                        data.push(newPoint);
+                        
+                        // 우주 메모리 관리
+                        if (data.length > 120) {
+                            data.shift();
+                        }
                     }
                 }
-            } catch (error) {
-                console.error('마켓 정보 업데이트 실패:', error);
-            }
+            });
+            
+            console.log('🌠 COSMOS 궤도 업데이트');
         }
         
-        // 에러 메시지 표시
-        function showErrorMessage() {
-            const chartContainer = document.getElementById('crypto-chart');
-            chartContainer.innerHTML = `
-                <div class="chart-loading">
-                    <div style="color: #ec4899; font-size: 18px;">
-                        ⚠️ COSMOS CONNECTION FAILED
-                    </div>
-                    <div style="color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 10px;">
-                        API 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.
-                    </div>
-                </div>
-            `;
+        // 실시간 업데이트 시작
+        function startRealTimeUpdates() {
+            // 3초마다 우주 데이터 업데이트
+            setInterval(() => {
+                updateCosmosData();
+            }, 3000);
+            
+            console.log('🔄 COSMOS 실시간 시스템 온라인');
         }
         
-        // 이벤트 리스너들
+        // 이벤트 리스너 설정
         function setupEventListeners() {
             // 시간 범위 변경
             document.getElementById('timeSelector').addEventListener('change', () => {
-                if (cryptoChart) {
-                    loadMultiCoinData();
-                }
+                generateAllCosmosData();
             });
             
             // 차트 타입 변경
             document.getElementById('chartType').addEventListener('change', (e) => {
-                if (e.target.value === 'multi') {
-                    createMultiCoinChart();
-                } else {
-                    // 단일 코인 차트는 추후 구현
-                    alert('단일 코인 차트는 곧 출시됩니다!');
+                if (e.target.value === 'single') {
+                    alert('단일 궤도 모드는 곧 출시됩니다!');
                     e.target.value = 'multi';
                 }
             });
-        }
-        
-        // 실시간 업데이트 (5분마다)
-        function startRealTimeUpdates() {
-            setInterval(() => {
-                if (cryptoChart && document.getElementById('chartType').value === 'multi') {
-                    console.log('🔄 실시간 업데이트 중...');
-                    loadMultiCoinData();
-                }
-            }, 300000); // 5분
         }
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -1236,12 +1215,12 @@
             setInterval(updateKoreanTime, 1000);
             handleVideo();
             
-            // 차트 초기화 (라이브러리 로딩 대기)
+            // COSMOS 즉시 부팅
             setTimeout(() => {
-                createMultiCoinChart();
+                console.log('🚀 TWO.4 COSMOS 시스템 온라인...');
+                initCosmosChart();
                 setupEventListeners();
-                startRealTimeUpdates();
-            }, 2000);
+            }, 300);
             
             const menuButton = document.getElementById('menuButton');
             const menuClose = document.getElementById('menuClose');
@@ -1268,7 +1247,7 @@
                 }
             });
             
-            // 복사 방지 기능들
+            // 보안 시스템
             document.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 return false;
@@ -1295,7 +1274,7 @@
                 return false;
             });
             
-            // 개발자도구 감지
+            // COSMOS 보안 모니터링
             let devtools = { open: false };
             setInterval(function() {
                 if (window.outerHeight - window.innerHeight > 160 || window.outerWidth - window.innerWidth > 160) {
@@ -1305,7 +1284,7 @@
                             console.clear();
                         }
                         console.log('⚠️ TWO.4 COSMOS 보안 시스템 활성화');
-                        console.log('🔒 TIME NEVER SLEEPS - 콘텐츠 보호 중');
+                        console.log('🔒 TIME NEVER SLEEPS - 우주 데이터 보호 중');
                     }
                 } else {
                     devtools.open = false;
