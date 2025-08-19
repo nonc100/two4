@@ -18,6 +18,21 @@
         }
         
         body {
+<video autoplay muted loop playsinline id="bg-video">
+  <source src="background.mp4" type="video/mp4">
+</video>
+
+<style>
+#bg-video {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  object-fit: cover;
+  z-index: -1; /* 영상이 맨 뒤 */
+}
+</style>
             font-family: 'Inter', sans-serif;
             background: #000;
             color: #ffffff;
