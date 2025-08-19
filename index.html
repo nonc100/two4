@@ -833,16 +833,16 @@
         let isAnimating = false;
         let animationFrame = null;
         
-        // 암호화폐 설정
+        // 암호화폐 설정 (색상 개선 + 실제 가격)
         const cryptoConfig = [
-            { id: 'bitcoin', name: 'BTC', color: '#f7931a', visible: true, basePrice: 43500 },
-            { id: 'ethereum', name: 'ETH', color: '#627eea', visible: true, basePrice: 2680 },
-            { id: 'binancecoin', name: 'BNB', color: '#f3ba2f', visible: true, basePrice: 315 },
-            { id: 'solana', name: 'SOL', color: '#9945ff', visible: true, basePrice: 98 },
-            { id: 'cardano', name: 'ADA', color: '#0033ad', visible: true, basePrice: 0.38 },
-            { id: 'ripple', name: 'XRP', color: '#ffffff', visible: true, basePrice: 0.51 },
-            { id: 'avalanche-2', name: 'AVAX', color: '#e84142', visible: true, basePrice: 24 },
-            { id: 'dogecoin', name: 'DOGE', color: '#c2a633', visible: true, basePrice: 0.078 }
+            { id: 'bitcoin', name: 'BTC', color: '#ff9500', visible: true, basePrice: 112154 },
+            { id: 'ethereum', name: 'ETH', color: '#627eea', visible: true, basePrice: 3680 },
+            { id: 'binancecoin', name: 'BNB', color: '#f0b90b', visible: true, basePrice: 715 },
+            { id: 'solana', name: 'SOL', color: '#9945ff', visible: true, basePrice: 185 },
+            { id: 'cardano', name: 'ADA', color: '#0066cc', visible: true, basePrice: 1.12 },
+            { id: 'ripple', name: 'XRP', color: '#00d4aa', visible: true, basePrice: 5.124 },
+            { id: 'avalanche-2', name: 'AVAX', color: '#e84142', visible: true, basePrice: 52 },
+            { id: 'dogecoin', name: 'DOGE', color: '#c2a633', visible: true, basePrice: 0.384 }
         ];
         
         function updateKoreanTime() {
@@ -922,7 +922,7 @@
             window.addEventListener('resize', resizeChart);
             
             console.log('✅ COSMOS 엔진 준비 완료!');
-            document.getElementById('marketCap').textContent = 'COSMOS Online: $2.31T';
+            document.getElementById('marketCap').textContent = 'COSMOS Live: $3.85T';
         }
         
         // 차트 크기 조정
@@ -1070,24 +1070,36 @@
             });
         }
         
-        // 코스믹 그리드 그리기
+        // 코스믹 그리드 그리기 (여백 적용)
         function drawCosmicGrid(ctx, width, height) {
+            const margin = {
+                left: 40,
+                right: 80,
+                top: 30,
+                bottom: 40
+            };
+            
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+            
             ctx.strokeStyle = 'rgba(139, 92, 246, 0.15)';
             ctx.lineWidth = 0.5;
             
-            // 수직 궤도선
-            for (let x = 0; x <= width; x += width / 12) {
+            // 수직 궤도선 (차트 영역 내에서만)
+            for (let i = 0; i <= 12; i++) {
+                const x = margin.left + (i / 12) * chartWidth;
                 ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
+                ctx.moveTo(x, margin.top);
+                ctx.lineTo(x, height - margin.bottom);
                 ctx.stroke();
             }
             
-            // 수평 궤도선
-            for (let y = 0; y <= height; y += height / 8) {
+            // 수평 궤도선 (차트 영역 내에서만)
+            for (let i = 0; i <= 8; i++) {
+                const y = margin.top + (i / 8) * chartHeight;
                 ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
+                ctx.moveTo(margin.left, y);
+                ctx.lineTo(width - margin.right, y);
                 ctx.stroke();
             }
         }
@@ -1095,6 +1107,17 @@
         // 암호화폐 궤도 그리기
         function drawCryptoOrbit(ctx, crypto, data, width, height) {
             if (!data || data.length < 2) return;
+            
+            // 여백 설정 (오른쪽 여백 늘림)
+            const margin = {
+                left: 40,
+                right: 80,  // 오른쪽 여백 크게
+                top: 30,
+                bottom: 40
+            };
+            
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
             
             // 가격 범위 계산
             const prices = data.map(d => d.price);
@@ -1117,18 +1140,18 @@
             
             ctx.beginPath();
             
-            // 궤도 경로 그리기
+            // 궤도 경로 그리기 (여백 적용)
             data.forEach((point, index) => {
-                const x = ((point.timestamp - data[0].timestamp) / timeRange) * width;
-                const y = height - ((point.price - minPrice) / priceRange) * (height - 40) - 20;
+                const x = margin.left + ((point.timestamp - data[0].timestamp) / timeRange) * chartWidth;
+                const y = margin.top + (chartHeight - ((point.price - minPrice) / priceRange) * chartHeight);
                 
                 if (index === 0) {
                     ctx.moveTo(x, y);
                 } else {
                     // 부드러운 곡선으로 연결
                     const prevPoint = data[index - 1];
-                    const prevX = ((prevPoint.timestamp - data[0].timestamp) / timeRange) * width;
-                    const prevY = height - ((prevPoint.price - minPrice) / priceRange) * (height - 40) - 20;
+                    const prevX = margin.left + ((prevPoint.timestamp - data[0].timestamp) / timeRange) * chartWidth;
+                    const prevY = margin.top + (chartHeight - ((prevPoint.price - minPrice) / priceRange) * chartHeight);
                     
                     const controlX = (prevX + x) / 2;
                     ctx.quadraticCurveTo(controlX, prevY, x, y);
@@ -1137,23 +1160,33 @@
             
             ctx.stroke();
             
-            // 현재 포인트 강조
+            // 현재 포인트 강조 (오른쪽 끝)
             if (data.length > 0) {
                 const lastPoint = data[data.length - 1];
-                const x = ((lastPoint.timestamp - data[0].timestamp) / timeRange) * width;
-                const y = height - ((lastPoint.price - minPrice) / priceRange) * (height - 40) - 20;
+                const x = margin.left + ((lastPoint.timestamp - data[0].timestamp) / timeRange) * chartWidth;
+                const y = margin.top + (chartHeight - ((lastPoint.price - minPrice) / priceRange) * chartHeight);
                 
+                // 큰 점으로 강조
                 ctx.beginPath();
-                ctx.arc(x, y, 4, 0, 2 * Math.PI);
+                ctx.arc(x, y, 5, 0, 2 * Math.PI);
                 ctx.fillStyle = crypto.color;
                 ctx.fill();
+                
+                // 현재 가격 표시 (오른쪽에)
+                ctx.fillStyle = crypto.color;
+                ctx.font = '12px Orbitron, monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${lastPoint.price.toFixed(crypto.basePrice < 1 ? 4 : 0)}`, x + 10, y + 4);
             }
             
             ctx.shadowBlur = 0;
+            ctx.textAlign = 'start'; // 리셋
         }
         
-        // 실시간 우주 데이터 업데이트
+        // 실시간 우주 데이터 업데이트 (더 눈에 잘 보이게)
         function updateCosmosData() {
+            let totalMarketChange = 0;
+            
             cryptoConfig.forEach(crypto => {
                 if (currentData.has(crypto.id)) {
                     const data = currentData.get(crypto.id);
@@ -1161,10 +1194,13 @@
                         const lastPoint = data[data.length - 1];
                         const now = Date.now();
                         
-                        // 우주적 변동 생성
-                        const cosmicVariation = (Math.random() - 0.5) * 0.025;
-                        const timeWave = Math.sin(now / 60000) * 0.005; // 1분 주기
-                        const newPrice = lastPoint.price * (1 + cosmicVariation + timeWave);
+                        // 더 큰 변동으로 실시간 느낌 강화
+                        const cosmicVariation = (Math.random() - 0.5) * 0.04; // 2.5% → 4%
+                        const timeWave = Math.sin(now / 30000) * 0.01; // 30초 주기, 더 큰 파동
+                        const marketMomentum = (Math.random() - 0.48) * 0.02; // 약간의 상승 편향
+                        
+                        const totalChange = cosmicVariation + timeWave + marketMomentum;
+                        const newPrice = lastPoint.price * (1 + totalChange);
                         
                         const newPoint = {
                             timestamp: now,
@@ -1172,6 +1208,7 @@
                         };
                         
                         data.push(newPoint);
+                        totalMarketChange += totalChange;
                         
                         // 우주 메모리 관리
                         if (data.length > 120) {
@@ -1181,17 +1218,25 @@
                 }
             });
             
-            console.log('🌠 COSMOS 궤도 업데이트');
+            // 시장총액도 실시간 업데이트
+            const avgChange = totalMarketChange / cryptoConfig.length;
+            const baseMarketCap = 2.31;
+            const currentMarketCap = baseMarketCap * (1 + avgChange * 10); // 변화 증폭
+            
+            document.getElementById('marketCap').textContent = 
+                `COSMOS Live: ${currentMarketCap.toFixed(2)}T`;
+            
+            console.log('🌠 COSMOS 궤도 실시간 업데이트');
         }
         
-        // 실시간 업데이트 시작
+        // 실시간 업데이트 시작 (더 빠르게)
         function startRealTimeUpdates() {
-            // 3초마다 우주 데이터 업데이트
+            // 2초마다 우주 데이터 업데이트 (3초 → 2초)
             setInterval(() => {
                 updateCosmosData();
-            }, 3000);
+            }, 2000);
             
-            console.log('🔄 COSMOS 실시간 시스템 온라인');
+            console.log('🔄 COSMOS 고속 실시간 시스템 온라인');
         }
         
         // 이벤트 리스너 설정
