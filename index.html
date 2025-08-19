@@ -508,6 +508,10 @@
                 right: -100%;
             }
             
+            .menu-tooltip {
+                display: none;
+            }
+            
             .chat-button {
                 right: 20px;
                 bottom: 20px;
@@ -572,7 +576,7 @@
                 <h2 class="section-title">Real Time Charts</h2>
                 <div class="chart-container">
                     <div style="text-align: center;">
-                        <div style="font-size: 2rem; margin-bottom: 1rem;">📈</div>
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">▲</div>
                         <div>Track all markets on TradingView</div>
                         <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-top: 1rem;">
                             실시간 차트가 여기에 표시됩니다
@@ -617,15 +621,15 @@
                 </p>
                 <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
                     <div class="coin-card" style="max-width: 300px;">
-                        <h3 class="card-title">📝 일반 토론</h3>
+                        <h3 class="card-title">일반 토론</h3>
                         <div class="card-content">자유롭게 의견을 나누는 공간</div>
                     </div>
                     <div class="coin-card" style="max-width: 300px;">
-                        <h3 class="card-title">📊 투자 전략</h3>
+                        <h3 class="card-title">투자 전략</h3>
                         <div class="card-content">투자 경험과 노하우 공유</div>
                     </div>
                     <div class="coin-card" style="max-width: 300px;">
-                        <h3 class="card-title">❓ Q&A</h3>
+                        <h3 class="card-title">Q&A</h3>
                         <div class="card-content">궁금한 점들을 해결하는 공간</div>
                     </div>
                 </div>
@@ -636,28 +640,79 @@
     <!-- 메뉴 오버레이 -->
     <div class="menu-overlay" id="menuOverlay">
         <div class="menu-close" onclick="toggleMenu()">×</div>
-        <ul class="menu-items">
-            <li class="menu-item">
-                <a href="#" class="menu-link">📊 Charts</a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">📰 News</a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">👥 Community</a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">⚙️ Settings</a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">📞 Contact</a>
-            </li>
-        </ul>
+        
+        <!-- 메인 메뉴 섹션 -->
+        <div class="menu-section">
+            <h3 class="menu-section-title">Main Menu</h3>
+            <ul class="menu-items">
+                <li class="menu-item">
+                    <a href="/charts" class="menu-link">
+                        Charts
+                        <span class="menu-tooltip">차트 분석</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/signals" class="menu-link">
+                        Signals
+                        <span class="menu-tooltip">매매 신호</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/technique" class="menu-link">
+                        Technique
+                        <span class="menu-tooltip">매매 기법</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/psyche" class="menu-link">
+                        Psyche
+                        <span class="menu-tooltip">투자 심리</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/observations" class="menu-link">
+                        Observations
+                        <span class="menu-tooltip">시장 관찰</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/community" class="menu-link">
+                        Community
+                        <span class="menu-tooltip">커뮤니티</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/alerts" class="menu-link">
+                        Alerts
+                        <span class="menu-tooltip">알림 설정</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- 특별 메뉴 섹션 -->
+        <div class="menu-section">
+            <h3 class="menu-section-title">Special Features</h3>
+            <ul class="menu-items">
+                <li class="menu-item">
+                    <a href="/seed" class="menu-link featured">
+                        Seed AI Q/A
+                        <span class="menu-tooltip">AI 질의응답</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="/portal" class="menu-link featured">
+                        Portal
+                        <span class="menu-tooltip">로그인/가입</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
     
     <!-- 채팅 버튼 -->
-    <button class="chat-button" onclick="alert('채팅 기능 준비중입니다! 💬')">
-        💬 채팅하기
+    <button class="chat-button" onclick="alert('채팅 기능 준비중입니다.')">
+        채팅하기
     </button>
 
     <script>
