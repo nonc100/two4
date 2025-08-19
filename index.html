@@ -502,9 +502,24 @@
             box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
         }
         
-        .menu-divider {
-            border-top: 1px solid rgba(139, 92, 246, 0.3);
-            margin: 25px 0;
+        .chart-controls select {
+            background: rgba(139, 92, 246, 0.1) !important;
+            border: 1px solid rgba(139, 92, 246, 0.3) !important;
+            color: white !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            font-size: 14px !important;
+            outline: none !important;
+        }
+        
+        .chart-controls select option {
+            background: rgba(0, 0, 0, 0.9) !important;
+            color: white !important;
+        }
+        
+        .chart-controls select:focus {
+            border-color: rgba(139, 92, 246, 0.6) !important;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3) !important;
         }
         
         @media (max-width: 768px) {
@@ -602,9 +617,26 @@
     <section class="content-section">
         <div class="container">
             <div class="section-content">
-                <h2 class="section-title">Real Time Charts</h2>
+                <h2 class="section-title">Top 10 Cryptocurrency Chart</h2>
                 <div class="chart-container">
-                    <div id="bitcoin-chart" style="width: 100%; height: 100%;"></div>
+                    <div class="chart-controls" style="padding: 1rem; border-bottom: 1px solid rgba(139, 92, 246, 0.2); margin-bottom: 1rem;">
+                        <select id="coinSelector" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px;">
+                            <option value="bitcoin">Bitcoin (BTC)</option>
+                            <option value="ethereum">Ethereum (ETH)</option>
+                            <option value="tether">Tether (USDT)</option>
+                            <option value="binancecoin">BNB (BNB)</option>
+                            <option value="solana">Solana (SOL)</option>
+                            <option value="usd-coin">USD Coin (USDC)</option>
+                            <option value="ripple">XRP (XRP)</option>
+                            <option value="dogecoin">Dogecoin (DOGE)</option>
+                            <option value="cardano">Cardano (ADA)</option>
+                            <option value="avalanche-2">Avalanche (AVAX)</option>
+                        </select>
+                        <span id="currentPrice" style="margin-left: 20px; color: #8b5cf6; font-weight: 600; font-size: 16px;">
+                            Loading...
+                        </span>
+                    </div>
+                    <div id="crypto-chart" style="width: 100%; height: 500px;"></div>
                 </div>
             </div>
 
@@ -960,10 +992,10 @@
             setInterval(updateKoreanTime, 1000);
             handleVideo();
             
-            // 비트코인 차트 생성 (라이브러리 로딩 후)
+            // TOP 10 암호화폐 차트 생성
             setTimeout(() => {
-                createBitcoinChart();
-            }, 2000); // 2초 대기로 증가
+                createTop10CryptoChart();
+            }, 2000);
             
             const menuButton = document.getElementById('menuButton');
             const menuClose = document.getElementById('menuClose');
