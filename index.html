@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TWO.4 - TIME NEVER SLEEPS</title>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
         
         * {
             margin: 0;
@@ -18,21 +19,6 @@
         }
         
         body {
-<video autoplay muted loop playsinline id="bg-video">
-  <source src="/background.mp4" type="video/mp4">
-</video>
-
-<style>
-#bg-video {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  min-width: 100%;
-  min-height: 100%;
-  object-fit: cover;
-  z-index: -1; /* 영상이 맨 뒤 */
-}
-</style>
             font-family: 'Inter', sans-serif;
             background: #000;
             color: #ffffff;
@@ -41,44 +27,42 @@
             min-height: 100vh;
         }
         
-        /* Cosmic Background */
-        .cosmic-bg {
+        /* 배경 비디오 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -10;
+            object-fit: cover;
+        }
+        
+        /* 비디오 오버레이 */
+        .video-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 10% 10%, rgba(75, 0, 130, 0.8) 0%, transparent 50%),
-                radial-gradient(circle at 90% 20%, rgba(138, 43, 226, 0.6) 0%, transparent 50%),
-                radial-gradient(circle at 30% 80%, rgba(72, 61, 139, 0.7) 0%, transparent 50%),
-                radial-gradient(circle at 80% 90%, rgba(25, 25, 112, 0.8) 0%, transparent 50%),
-                linear-gradient(135deg, #000000 0%, #1a0033 25%, #2d1b4e 50%, #4b0082 75%, #000000 100%);
-            z-index: -2;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: -5;
         }
         
-        .stars {
+        /* 대체 배경 */
+        .fallback-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            z-index: -1;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 25%, #6366f1 50%, #8b5cf6 75%, #a855f7 100%);
+            z-index: -15;
         }
         
-        .star {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            animation: twinkle 4s ease-in-out infinite;
-        }
-        
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.5); }
-        }
-        
-        /* Navigation */
+        /* 네비게이션 */
         .nav {
             position: fixed;
             top: 30px;
@@ -90,26 +74,25 @@
         }
         
         .nav-home {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             font-size: 18px;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.3s ease;
-            font-family: 'Exo 2', sans-serif;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         
         .nav-home:hover {
             color: #8b5cf6;
-            text-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
         }
         
         .menu-btn {
             width: 50px;
             height: 50px;
-            background: rgba(139, 92, 246, 0.1);
-            border: 2px solid rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.2);
+            border: 2px solid rgba(139, 92, 246, 0.4);
             border-radius: 50%;
             cursor: pointer;
             display: flex;
@@ -120,9 +103,9 @@
         }
         
         .menu-btn:hover {
-            background: rgba(139, 92, 246, 0.2);
-            border-color: rgba(139, 92, 246, 0.6);
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+            background: rgba(139, 92, 246, 0.3);
+            border-color: rgba(139, 92, 246, 0.7);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
         }
         
         .menu-icon {
@@ -143,7 +126,35 @@
         .menu-line:nth-child(2) { top: 8px; }
         .menu-line:nth-child(3) { top: 16px; }
         
-        /* Main Container */
+        /* 브랜드 섹션 */
+        .brand-section {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 100;
+        }
+        
+        .brand-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: #8b5cf6;
+            text-shadow: 0 0 30px rgba(139, 92, 246, 1);
+            margin-bottom: 6px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        .brand-subtitle {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: rgba(139, 92, 246, 0.8);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        /* 메인 컨테이너 */
         .main-container {
             display: flex;
             flex-direction: column;
@@ -155,365 +166,15 @@
             padding: 0 40px;
         }
         
-        .brand-section {
-            position: absolute;
-            top: 40px;
-            left: 40px;
-            z-index: 100;
-        }
-        
-        .brand-title {
-            font-family: 'Exo 2', sans-serif;
-            font-size: 24px;
-            font-weight: 800;
-            color: #8b5cf6;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-            margin-bottom: 4px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        
-        .brand-subtitle {
-            font-family: 'Exo 2', sans-serif;
-            font-size: 10px;
-            color: rgba(139, 92, 246, 0.8);
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        
-        /* Ancient Eye of Horus - Egyptian Style */
-        .ancient-eye {
-            width: 80px;
-            height: 45px;
-            position: relative;
-            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.9));
-            margin-top: 15px;
-        }
-        
-        .eye-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .eye-main {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70px;
-            height: 35px;
-            border: 3px solid #8b5cf6;
-            border-radius: 45px 45px 35px 35px / 50px 50px 25px 25px;
-            background: 
-                radial-gradient(ellipse at 30% 40%, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.1) 70%, transparent 100%);
-            animation: eyeGlow 3s ease-in-out infinite;
-            overflow: hidden;
-        }
-        
-        .eye-pupil {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            background: 
-                radial-gradient(circle at 30% 30%, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
-            border-radius: 50%;
-            box-shadow: 
-                0 0 15px rgba(139, 92, 246, 1),
-                inset 0 0 8px rgba(0, 0, 0, 0.4);
-            animation: pupilBlink 5s ease-in-out infinite;
-        }
-        
-        .eye-pupil::after {
-            content: '';
-            position: absolute;
-            top: 25%;
-            left: 25%;
-            width: 6px;
-            height: 6px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 50%;
-        }
-        
-        .eye-line-top {
-            position: absolute;
-            top: -2px;
-            right: -15px;
-            width: 28px;
-            height: 3px;
-            background: #8b5cf6;
-            transform: rotate(-20deg);
-            border-radius: 3px;
-            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-bottom {
-            position: absolute;
-            bottom: -8px;
-            left: 15px;
-            width: 25px;
-            height: 3px;
-            background: #8b5cf6;
-            border-radius: 3px;
-            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-bottom::after {
-            content: '';
-            position: absolute;
-            right: -8px;
-            bottom: -6px;
-            width: 8px;
-            height: 3px;
-            background: #8b5cf6;
-            transform: rotate(45deg);
-            border-radius: 3px;
-            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-spiral {
-            position: absolute;
-            bottom: -12px;
-            right: 8px;
-            width: 18px;
-            height: 10px;
-            border: 3px solid #8b5cf6;
-            border-top: none;
-            border-radius: 0 0 18px 18px;
-            border-left: none;
-            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-line-spiral::before {
-            content: '';
-            position: absolute;
-            bottom: -3px;
-            right: -3px;
-            width: 12px;
-            height: 6px;
-            border: 2px solid #8b5cf6;
-            border-top: none;
-            border-left: none;
-            border-radius: 0 0 12px 0;
-            box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
-        }
-        
-        .eye-egyptian-marks {
-            position: absolute;
-            bottom: -5px;
-            left: 5px;
-            width: 15px;
-            height: 8px;
-        }
-        
-        .eye-egyptian-marks::before {
-            content: '';
-            position: absolute;
-            width: 3px;
-            height: 8px;
-            background: #8b5cf6;
-            left: 0;
-            border-radius: 2px;
-            box-shadow: 0 0 6px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-egyptian-marks::after {
-            content: '';
-            position: absolute;
-            width: 3px;
-            height: 5px;
-            background: #8b5cf6;
-            left: 6px;
-            top: 3px;
-            border-radius: 2px;
-            box-shadow: 0 0 6px rgba(139, 92, 246, 0.8);
-        }
-        
-        .eye-inner-line {
-            position: absolute;
-            top: 55%;
-            left: 20%;
-            width: 60%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent 0%, #8b5cf6 50%, transparent 100%);
-            border-radius: 2px;
-            animation: innerLineGlow 2s ease-in-out infinite;
-        }
-        
-        @keyframes eyeGlow {
-            0%, 100% { 
-                box-shadow: 
-                    0 0 20px rgba(139, 92, 246, 0.7),
-                    inset 0 0 20px rgba(139, 92, 246, 0.2);
-                border-color: #8b5cf6;
-            }
-            50% { 
-                box-shadow: 
-                    0 0 35px rgba(139, 92, 246, 1),
-                    inset 0 0 35px rgba(139, 92, 246, 0.4);
-                border-color: #a855f7;
-            }
-        }
-        
-        @keyframes pupilBlink {
-            0%, 90%, 100% { transform: translate(-50%, -50%) scaleY(1); }
-            95% { transform: translate(-50%, -50%) scaleY(0.1); }
-        }
-        
-        @keyframes innerLineGlow {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-        
-        /* Satellite and Earth System */
-        .satellite-system {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 15;
-        }
-        
-        .earth-orbit {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            border: 2px solid rgba(129, 212, 250, 0.6);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation: earthOrbitRotate 60s linear infinite;
-        }
-        
-        @keyframes earthOrbitRotate {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        
-        .earth-satellite {
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            top: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: 
-                radial-gradient(circle at 30% 30%, #ffffff 0%, #e3f2fd 40%, #90caf9 70%, #42a5f5 100%);
-            border-radius: 50%;
-            box-shadow: 
-                0 0 15px rgba(255, 255, 255, 1),
-                0 0 30px rgba(144, 202, 249, 0.8),
-                0 0 45px rgba(66, 165, 245, 0.6);
-            animation: cometGlow 2s ease-in-out infinite;
-        }
-        
-        @keyframes cometGlow {
-            0%, 100% { 
-                box-shadow: 
-                    0 0 15px rgba(255, 255, 255, 1),
-                    0 0 30px rgba(144, 202, 249, 0.8),
-                    0 0 45px rgba(66, 165, 245, 0.6);
-                transform: translateX(-50%) scale(1);
-            }
-            50% { 
-                box-shadow: 
-                    0 0 20px rgba(255, 255, 255, 1),
-                    0 0 40px rgba(144, 202, 249, 1),
-                    0 0 60px rgba(66, 165, 245, 0.8);
-                transform: translateX(-50%) scale(1.1);
-            }
-        }
-        
-        .earth-satellite::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -18px;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 2px 15px 2px 0;
-            border-color: transparent rgba(144, 202, 249, 0.7) transparent transparent;
-            filter: blur(0.5px);
-            animation: cometTail 2s ease-in-out infinite;
-        }
-        
-        .earth-satellite::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -30px;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 1px 8px 1px 0;
-            border-color: transparent rgba(144, 202, 249, 0.4) transparent transparent;
-            filter: blur(1px);
-            animation: cometTailSecondary 2s ease-in-out infinite;
-        }
-        
-        @keyframes cometTail {
-            0%, 100% { 
-                opacity: 0.6;
-                border-right-color: rgba(144, 202, 249, 0.6);
-            }
-            50% { 
-                opacity: 1;
-                border-right-color: rgba(144, 202, 249, 1);
-            }
-        }
-        
-        @keyframes cometTailSecondary {
-            0%, 100% { 
-                opacity: 0.3;
-                border-right-color: rgba(144, 202, 249, 0.3);
-            }
-            50% { 
-                opacity: 0.6;
-                border-right-color: rgba(144, 202, 249, 0.6);
-            }
-        }
-        
-        .earth-satellite .comet-core {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: rgba(255, 255, 255, 1);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 8px rgba(255, 255, 255, 1);
-            animation: cometCore 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes cometCore {
-            0%, 100% { 
-                opacity: 0.9;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% { 
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1.5);
-            }
-        }
-        
-        /* Real-Time Clock Planet */
+        /* 시계 행성 */
         .clock-planet-container {
             position: relative;
             margin: 60px 0;
         }
         
         .clock-planet {
-            width: 450px;
-            height: 450px;
+            width: 400px;
+            height: 400px;
             margin: 0 auto;
             position: relative;
             display: flex;
@@ -528,33 +189,32 @@
             border: 3px solid #8b5cf6;
             border-radius: 50%;
             background: 
-                radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.8) 0%, rgba(139, 92, 246, 0.6) 25%, rgba(139, 92, 246, 0.4) 50%, rgba(139, 92, 246, 0.2) 75%, transparent 100%),
-                conic-gradient(from 0deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
+                radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.6) 0%, rgba(139, 92, 246, 0.4) 25%, rgba(139, 92, 246, 0.2) 50%, rgba(139, 92, 246, 0.1) 75%, transparent 100%);
             box-shadow: 
-                0 0 30px rgba(139, 92, 246, 0.8),
-                0 0 60px rgba(139, 92, 246, 0.6),
+                0 0 40px rgba(139, 92, 246, 0.8),
+                0 0 80px rgba(139, 92, 246, 0.6),
                 0 0 120px rgba(139, 92, 246, 0.4),
-                inset 0 0 30px rgba(139, 92, 246, 0.2);
-            animation: planetGlow 5s ease-in-out infinite;
+                inset 0 0 40px rgba(139, 92, 246, 0.3);
+            animation: planetGlow 4s ease-in-out infinite;
             overflow: hidden;
         }
         
         @keyframes planetGlow {
             0%, 100% { 
                 box-shadow: 
-                    0 0 30px rgba(139, 92, 246, 0.8),
-                    0 0 60px rgba(139, 92, 246, 0.6),
+                    0 0 40px rgba(139, 92, 246, 0.8),
+                    0 0 80px rgba(139, 92, 246, 0.6),
                     0 0 120px rgba(139, 92, 246, 0.4),
-                    inset 0 0 30px rgba(139, 92, 246, 0.2);
+                    inset 0 0 40px rgba(139, 92, 246, 0.3);
                 transform: scale(1);
             }
             50% { 
                 box-shadow: 
-                    0 0 40px rgba(139, 92, 246, 1),
-                    0 0 80px rgba(139, 92, 246, 0.8),
-                    0 0 160px rgba(139, 92, 246, 0.6),
-                    inset 0 0 40px rgba(139, 92, 246, 0.3);
-                transform: scale(1.02);
+                    0 0 60px rgba(139, 92, 246, 1),
+                    0 0 120px rgba(139, 92, 246, 0.8),
+                    0 0 180px rgba(139, 92, 246, 0.6),
+                    inset 0 0 60px rgba(139, 92, 246, 0.4);
+                transform: scale(1.03);
             }
         }
         
@@ -566,10 +226,8 @@
             height: 100%;
             border-radius: 50%;
             background: 
-                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
-                linear-gradient(45deg, transparent 30%, rgba(139, 92, 246, 0.1) 50%, transparent 70%),
-                conic-gradient(from 0deg, rgba(139, 92, 246, 0.05), rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.05), rgba(139, 92, 246, 0.05));
-            animation: surfaceRotate 30s linear infinite;
+                conic-gradient(from 0deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
+            animation: surfaceRotate 20s linear infinite;
         }
         
         @keyframes surfaceRotate {
@@ -581,16 +239,16 @@
             position: relative;
             z-index: 20;
             text-align: center;
-            color: #fff;
+            color: #000;
         }
         
         .current-time {
-            font-family: 'Exo 2', monospace;
+            font-family: 'Orbitron', monospace;
             font-size: 2.2rem;
             font-weight: 700;
             color: #000000;
-            text-shadow: none;
             letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
         
         .zone-indicator {
@@ -598,32 +256,61 @@
             bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: rgba(139, 92, 246, 0.4);
-            font-weight: 400;
-            letter-spacing: 2px;
-            opacity: 0.6;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            color: rgba(139, 92, 246, 0.7);
+            font-weight: 500;
+            letter-spacing: 3px;
+            opacity: 0.8;
             z-index: 5;
         }
         
-        /* TradingView Chart Section */
-        .chart-section {
-            width: 100%;
-            max-width: 1600px;
-            margin: 80px auto;
-            padding: 0 20px;
+        /* 콘텐츠 섹션 */
+        .content-section {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            min-height: 100vh;
+            padding: 100px 20px;
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
         }
         
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #8b5cf6;
+            text-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
+        }
+        
+        .section-content {
+            display: grid;
+            gap: 3rem;
+        }
+        
+        /* 차트 섹션 */
         .chart-container {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 24px;
-            padding: 30px;
-            backdrop-filter: blur(20px);
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
             position: relative;
             overflow: hidden;
-            margin: 0 auto;
         }
         
         .chart-container::before {
@@ -633,7 +320,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.05), transparent);
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
             animation: shimmer 3s ease-in-out infinite;
         }
         
@@ -642,224 +329,80 @@
             100% { left: 100%; }
         }
         
-        .chart-title {
-            font-family: 'Exo 2', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            color: #8b5cf6;
-            text-align: center;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+        /* 뉴스/코인 섹션 */
+        .news-grid, .coin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
         }
         
-        .tradingview-widget-container {
-            height: 900px;
-            width: 100%;
-            position: relative;
-            z-index: 10;
-            border-radius: 16px;
-            overflow: hidden;
-            min-height: 900px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .tradingview-widget-container__widget {
-            height: 100% !important;
-            width: 100% !important;
-            flex: 1;
-            min-height: 0;
-        }
-        
-        .tradingview-widget-container iframe {
-            height: 100% !important;
-            width: 100% !important;
-        }
-        
-        /* News Section */
-        .news-section {
-            width: 100%;
-            max-width: 1200px;
-            margin: 60px auto;
-            padding: 0 40px;
-        }
-        
-        .news-container {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 24px;
-            padding: 40px;
-            backdrop-filter: blur(20px);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .news-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.05), transparent);
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        .news-title {
-            font-family: 'Exo 2', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            color: #8b5cf6;
-            text-align: center;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-            position: relative;
-            z-index: 10;
-        }
-        
-        .news-list {
-            position: relative;
-            z-index: 10;
-        }
-        
-        .news-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-            gap: 20px;
-        }
-        
-        .news-item:hover {
+        .news-card, .coin-card {
             background: rgba(139, 92, 246, 0.05);
-            transform: translateX(8px);
-            border-radius: 12px;
-            padding-left: 20px;
-            padding-right: 20px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
         
-        .news-content {
-            flex: 1;
+        .news-card:hover, .coin-card:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
         }
         
-        .news-headline {
+        .card-title {
+            color: #8b5cf6;
+            font-size: 1.2rem;
             font-weight: 600;
-            color: #fff;
+            margin-bottom: 1rem;
+        }
+        
+        .card-content {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+        
+        /* 채팅 버튼 */
+        .chat-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
             font-size: 16px;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-        
-        .news-summary {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .news-meta {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            min-width: 120px;
-        }
-        
-        .news-source {
-            color: #8b5cf6;
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        
-        .news-time {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 12px;
-        }
-        
-        /* Top Coins Section */
-        .top-coins-section {
-            width: 100%;
-            max-width: 1200px;
-            margin: 60px auto;
-            padding: 0 40px;
-        }
-        
-        .coins-container {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 24px;
-            padding: 40px;
-            backdrop-filter: blur(20px);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .coins-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.05), transparent);
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        .coins-title {
-            font-family: 'Exo 2', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            color: #8b5cf6;
-            text-align: center;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-            position: relative;
-            z-index: 10;
-        }
-        
-        .coin-list {
-            list-style: none;
-            position: relative;
-            z-index: 10;
-        }
-        
-        .coin-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            animation: chatPulse 2s ease-in-out infinite;
         }
         
-        .coin-item:hover {
-            background: rgba(139, 92, 246, 0.05);
-            transform: translateX(8px);
+        @keyframes chatPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+            }
+            50% { 
+                transform: scale(1.05); 
+                box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
+            }
         }
         
-        .coin-rank {
-            font-weight: 700;
-            color: #8b5cf6;
-            min-width: 30px;
+        .chat-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
         }
         
-        .coin-name {
-            font-weight: 600;
-            color: #fff;
-        }
-        
-        .coin-symbol {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-        }
-        
-        .coin-change {
-            font-weight: 700;
-            color: #10b981;
-        }
-        
-        /* Menu Overlay */
+        /* 메뉴 오버레이 */
         .menu-overlay {
             position: fixed;
             top: 0;
@@ -895,7 +438,7 @@
         
         .menu-close:hover {
             color: #fff;
-            transform: scale(1.1);
+            transform: scale(1.2);
         }
         
         .menu-items {
@@ -922,314 +465,11 @@
         
         .menu-link:hover {
             color: #8b5cf6;
-            padding-left: 10px;
-            text-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+            padding-left: 15px;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
         }
         
-        /* Indicator Section */
-        .indicator-section {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.98);
-            backdrop-filter: blur(20px);
-            z-index: 3000;
-            display: none;
-            flex-direction: column;
-            padding: 40px;
-            overflow-y: auto;
-        }
-        
-        .indicator-section.active {
-            display: flex;
-        }
-        
-        .indicator-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
-        }
-        
-        .indicator-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            color: #8b5cf6;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-        }
-        
-        .indicator-close {
-            width: 50px;
-            height: 50px;
-            background: transparent;
-            border: 2px solid rgba(139, 92, 246, 0.3);
-            border-radius: 50%;
-            color: #8b5cf6;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .indicator-close:hover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.6);
-        }
-        
-        .indicator-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        
-        .indicator-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-        
-        .indicator-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s ease;
-        }
-        
-        .indicator-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(139, 92, 246, 0.4);
-            transform: translateY(-4px);
-        }
-        
-        .indicator-card-title {
-            color: #8b5cf6;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-        
-        .indicator-card-value {
-            color: #fff;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .indicator-card-change {
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        /* Community Section */
-        .community-section {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.98);
-            backdrop-filter: blur(20px);
-            z-index: 3000;
-            display: none;
-            flex-direction: column;
-            padding: 40px;
-            overflow-y: auto;
-        }
-        
-        .community-section.active {
-            display: flex;
-        }
-        
-        .community-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
-        }
-        
-        .community-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            color: #8b5cf6;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-        }
-        
-        .community-close {
-            width: 50px;
-            height: 50px;
-            background: transparent;
-            border: 2px solid rgba(139, 92, 246, 0.3);
-            border-radius: 50%;
-            color: #8b5cf6;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .community-close:hover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.6);
-        }
-        
-        .community-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        
-        .community-tabs {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
-        }
-        
-        .community-tab {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .community-tab.active {
-            color: #8b5cf6;
-            border-bottom-color: #8b5cf6;
-        }
-        
-        .community-tab:hover {
-            color: #8b5cf6;
-        }
-        
-        .community-tab-content {
-            display: none;
-        }
-        
-        .community-tab-content.active {
-            display: block;
-        }
-        
-        .post-form {
-            background: rgba(139, 92, 246, 0.05);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 40px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            color: #8b5cf6;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-        
-        .form-input, .form-textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(139, 92, 246, 0.2);
-            border-radius: 8px;
-            padding: 12px 16px;
-            color: #fff;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-input:focus, .form-textarea:focus {
-            outline: none;
-            border-color: rgba(139, 92, 246, 0.6);
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
-        }
-        
-        .form-input option {
-            background: #000;
-            color: #fff;
-        }
-        
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
-        }
-        
-        .posts-container {
-            margin-top: 40px;
-        }
-        
-        .post-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            transition: all 0.3s ease;
-        }
-        
-        .post-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(139, 92, 246, 0.4);
-            transform: translateY(-4px);
-        }
-        
-        .post-title {
-            color: #8b5cf6;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .post-meta {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 14px;
-            margin-bottom: 12px;
-        }
-        
-        .post-content {
-            color: rgba(255, 255, 255, 0.8);
-            line-height: 1.6;
-        }
-        
-        /* Mobile Responsive */
+        /* 반응형 디자인 */
         @media (max-width: 768px) {
             .brand-section {
                 top: 20px;
@@ -1237,7 +477,7 @@
             }
             
             .brand-title {
-                font-size: 32px;
+                font-size: 24px;
             }
             
             .nav {
@@ -1247,38 +487,20 @@
             }
             
             .clock-planet {
-                width: 350px;
-                height: 350px;
+                width: 300px;
+                height: 300px;
             }
             
             .current-time {
                 font-size: 1.8rem;
             }
             
-            .hero-quote {
-                font-size: 1.4rem;
-                padding: 0 20px;
+            .section-title {
+                font-size: 2rem;
             }
             
-            .chart-section {
-                padding: 0 10px;
-            }
-            
-            .chart-container {
-                padding: 20px;
-            }
-            
-            .tradingview-widget-container {
-                height: 800px;
-                min-height: 800px;
-            }
-            
-            .top-coins-section, .news-section {
-                padding: 0 20px;
-            }
-            
-            .coins-container, .news-container {
-                padding: 20px;
+            .content-section {
+                padding: 60px 20px;
             }
             
             .menu-overlay {
@@ -1286,62 +508,35 @@
                 right: -100%;
             }
             
-            .blog-section {
-                padding: 20px;
-            }
-            
-            .blog-title {
-                font-size: 24px;
-            }
-            
-            .indicator-section, .community-section {
-                padding: 20px;
-            }
-            
-            .indicator-title, .community-title {
-                font-size: 24px;
-            }
-            
-            .indicator-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .community-tabs {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-            
-            .community-tab {
+            .chat-button {
+                right: 20px;
+                bottom: 20px;
+                padding: 12px 20px;
                 font-size: 14px;
-                padding: 8px 16px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="cosmic-bg"></div>
-    <div class="stars" id="stars"></div>
+    <!-- 대체 배경 -->
+    <div class="fallback-bg"></div>
+
+    <!-- 배경 비디오 -->
+    <video class="video-background" autoplay muted loop playsinline>
+        <source src="/background.mp4" type="video/mp4">
+        <source src="background.mp4" type="video/mp4">
+    </video>
+
+    <!-- 비디오 오버레이 -->
+    <div class="video-overlay"></div>
     
-    <!-- Brand Section with Ancient Eye -->
+    <!-- 브랜드 섹션 -->
     <div class="brand-section">
         <div class="brand-title">TWO.4</div>
         <div class="brand-subtitle">TIME NEVER SLEEPS</div>
-        <div class="ancient-eye">
-            <div class="eye-container">
-                <div class="eye-main">
-                    <div class="eye-pupil"></div>
-                    <div class="eye-inner-line"></div>
-                </div>
-                <div class="eye-line-top"></div>
-                <div class="eye-line-bottom"></div>
-                <div class="eye-line-spiral"></div>
-                <div class="eye-egyptian-marks"></div>
-            </div>
-        </div>
     </div>
     
-    <!-- Navigation -->
+    <!-- 네비게이션 -->
     <nav class="nav">
         <a href="#home" class="nav-home">Home</a>
         <div class="menu-btn" onclick="toggleMenu()">
@@ -1353,18 +548,9 @@
         </div>
     </nav>
     
-    <!-- Main Container -->
+    <!-- 메인 컨테이너 -->
     <main class="main-container" id="home">
         <div class="clock-planet-container">
-            <!-- Satellite and Earth System -->
-            <div class="satellite-system">
-                <div class="earth-orbit">
-                    <div class="earth-satellite">
-                        <div class="comet-core"></div>
-                    </div>
-                </div>
-            </div>
-            
             <div class="clock-planet">
                 <div class="planet-core">
                     <div class="planet-surface"></div>
@@ -1378,1168 +564,167 @@
         <div class="zone-indicator">- KOREA ZONE -</div>
     </main>
     
-    <!-- TradingView Bitcoin Chart Section -->
-    <section class="chart-section">
-        <div class="chart-container">
-            <h2 class="chart-title">Bitcoin Live Chart</h2>
-            <div class="tradingview-widget-container">
-                <div class="tradingview-widget-container__widget"></div>
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-                {
-                    "autosize": false,
-                    "width": "100%",
-                    "height": "100%",
-                    "symbol": "BINANCE:BTCUSDT",
-                    "interval": "D",
-                    "timezone": "Asia/Seoul",
-                    "theme": "dark",
-                    "style": "1",
-                    "locale": "ko",
-                    "backgroundColor": "rgba(0, 0, 0, 0)",
-                    "gridColor": "rgba(139, 92, 246, 0.1)",
-                    "hide_top_toolbar": false,
-                    "hide_legend": false,
-                    "allow_symbol_change": true,
-                    "save_image": false,
-                    "calendar": false,
-                    "hide_volume": false,
-                    "support_host": "https://www.tradingview.com",
-                    "container_id": "tradingview_chart",
-                    "details": true,
-                    "hotlist": false,
-                    "enable_publishing": false,
-                    "withdateranges": true,
-                    "range": "YTD",
-                    "toolbar_bg": "rgba(139, 92, 246, 0.1)",
-                    "studies_overrides": {},
-                    "overrides": {
-                        "paneProperties.background": "rgba(0, 0, 0, 0)",
-                        "paneProperties.backgroundType": "solid"
-                    }
-                }
-                </script>
+    <!-- 콘텐츠 섹션 -->
+    <section class="content-section">
+        <div class="container">
+            <!-- 실시간 차트 -->
+            <div class="section-content">
+                <h2 class="section-title">Real Time Charts</h2>
+                <div class="chart-container">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 1rem;">📈</div>
+                        <div>Track all markets on TradingView</div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-top: 1rem;">
+                            실시간 차트가 여기에 표시됩니다
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 코인 뉴스 -->
+            <div class="section-content">
+                <h2 class="section-title">Coin News</h2>
+                <div class="news-grid">
+                    <div class="news-card">
+                        <h3 class="card-title">최신 암호화폐 뉴스 1</h3>
+                        <div class="card-content">
+                            비트코인이 새로운 최고가를 경신하며 시장에 활기를 불어넣고 있습니다. 
+                            기관 투자자들의 지속적인 유입이 주요 요인으로 분석됩니다.
+                        </div>
+                    </div>
+                    <div class="news-card">
+                        <h3 class="card-title">최신 암호화폐 뉴스 2</h3>
+                        <div class="card-content">
+                            이더리움 네트워크 업그레이드가 성공적으로 완료되어 
+                            거래 속도 향상과 수수료 절감 효과가 기대됩니다.
+                        </div>
+                    </div>
+                    <div class="news-card">
+                        <h3 class="card-title">최신 암호화폐 뉴스 3</h3>
+                        <div class="card-content">
+                            DeFi 프로토콜들이 새로운 혁신을 선보이며 
+                            전통 금융과의 융합이 가속화되고 있습니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 사용자 게시판 -->
+            <div class="section-content" style="text-align: center;">
+                <h2 class="section-title">사용자 게시판</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 2rem; color: rgba(255,255,255,0.7);">
+                    방문자들의 이야기를 나누는 공간
+                </p>
+                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+                    <div class="coin-card" style="max-width: 300px;">
+                        <h3 class="card-title">📝 일반 토론</h3>
+                        <div class="card-content">자유롭게 의견을 나누는 공간</div>
+                    </div>
+                    <div class="coin-card" style="max-width: 300px;">
+                        <h3 class="card-title">📊 투자 전략</h3>
+                        <div class="card-content">투자 경험과 노하우 공유</div>
+                    </div>
+                    <div class="coin-card" style="max-width: 300px;">
+                        <h3 class="card-title">❓ Q&A</h3>
+                        <div class="card-content">궁금한 점들을 해결하는 공간</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
     
-    <!-- Crypto News Section -->
-    <section class="news-section">
-        <div class="news-container">
-            <h2 class="news-title">암호화폐 실시간 뉴스</h2>
-            <div class="news-list" id="newsList">
-                <!-- News items will be loaded here -->
-            </div>
-        </div>
-    </section>
-    
-    <!-- Top Volume Gainers Section -->
-    <section class="top-coins-section">
-        <div class="coins-container">
-            <h2 class="coins-title">알트코인 거래량 TOP 10</h2>
-            <ul class="coin-list" id="coinList">
-                <!-- Coin data will be loaded here -->
-            </ul>
-        </div>
-    </section>
-    
-    <!-- Menu Overlay -->
+    <!-- 메뉴 오버레이 -->
     <div class="menu-overlay" id="menuOverlay">
         <div class="menu-close" onclick="toggleMenu()">×</div>
         <ul class="menu-items">
             <li class="menu-item">
-                <a href="#" class="menu-link" onclick="showIndicator()">
-                    Indicator
-                </a>
+                <a href="#" class="menu-link">📊 Charts</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Charts
-                </a>
+                <a href="#" class="menu-link">📰 News</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    News
-                </a>
+                <a href="#" class="menu-link">👥 Community</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link" onclick="showCommunity()">
-                    Community
-                </a>
+                <a href="#" class="menu-link">⚙️ Settings</a>
             </li>
             <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Settings
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    Contact
-                </a>
+                <a href="#" class="menu-link">📞 Contact</a>
             </li>
         </ul>
     </div>
     
-    <!-- Indicator Section -->
-    <div class="indicator-section" id="indicatorSection">
-        <div class="indicator-header">
-            <h1 class="indicator-title">Market Indicators</h1>
-            <button class="indicator-close" onclick="closeIndicator()">×</button>
-        </div>
-        
-        <div class="indicator-content">
-            <div class="indicator-grid">
-                <div class="indicator-card">
-                    <div class="indicator-card-title">Fear & Greed Index</div>
-                    <div class="indicator-card-value" id="fearGreedValue">76</div>
-                    <div class="indicator-card-change" style="color: #10b981;">극도의 탐욕</div>
-                </div>
-                
-                <div class="indicator-card">
-                    <div class="indicator-card-title">Bitcoin Dominance</div>
-                    <div class="indicator-card-value" id="btcDominance">56.7%</div>
-                    <div class="indicator-card-change" style="color: #ef4444;">-2.3%</div>
-                </div>
-                
-                <div class="indicator-card">
-                    <div class="indicator-card-title">Total Market Cap</div>
-                    <div class="indicator-card-value" id="totalMarketCap">$2.89T</div>
-                    <div class="indicator-card-change" style="color: #10b981;">+5.2%</div>
-                </div>
-                
-                <div class="indicator-card">
-                    <div class="indicator-card-title">24h Volume</div>
-                    <div class="indicator-card-value" id="volume24h">$189.4B</div>
-                    <div class="indicator-card-change" style="color: #10b981;">+12.8%</div>
-                </div>
-                
-                <div class="indicator-card">
-                    <div class="indicator-card-title">Active Addresses</div>
-                    <div class="indicator-card-value" id="activeAddresses">1.2M</div>
-                    <div class="indicator-card-change" style="color: #10b981;">+8.4%</div>
-                </div>
-                
-                <div class="indicator-card">
-                    <div class="indicator-card-title">Network Hash Rate</div>
-                    <div class="indicator-card-value" id="hashRate">456 EH/s</div>
-                    <div class="indicator-card-change" style="color: #10b981;">+3.1%</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Community Section -->
-    <div class="community-section" id="communitySection">
-        <div class="community-header">
-            <h1 class="community-title">TWO.4 Community</h1>
-            <button class="community-close" onclick="closeCommunity()">×</button>
-        </div>
-        
-        <div class="community-content">
-            <div class="community-tabs">
-                <button class="community-tab active" onclick="switchTab('general')">일반 토론</button>
-                <button class="community-tab" onclick="switchTab('trading')">트레이딩</button>
-                <button class="community-tab" onclick="switchTab('analysis')">기술 분석</button>
-                <button class="community-tab" onclick="switchTab('news')">뉴스 & 정보</button>
-                <button class="community-tab" onclick="switchTab('questions')">질문 & 답변</button>
-            </div>
-            
-            <div id="general" class="community-tab-content active">
-                <div class="post-form">
-                    <form id="generalPostForm">
-                        <div class="form-group">
-                            <label class="form-label">제목</label>
-                            <input type="text" class="form-input" id="generalTitle" placeholder="일반 토론 주제를 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">작성자</label>
-                            <input type="text" class="form-input" id="generalAuthor" placeholder="닉네임을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">내용</label>
-                            <textarea class="form-textarea" id="generalContent" placeholder="자유롭게 토론하고 싶은 내용을 작성하세요" required></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">글 작성하기</button>
-                    </form>
-                </div>
-                <div class="posts-container" id="generalPosts"></div>
-            </div>
-            
-            <div id="trading" class="community-tab-content">
-                <div class="post-form">
-                    <form id="tradingPostForm">
-                        <div class="form-group">
-                            <label class="form-label">제목</label>
-                            <input type="text" class="form-input" id="tradingTitle" placeholder="트레이딩 전략, 포트폴리오 등" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">작성자</label>
-                            <input type="text" class="form-input" id="tradingAuthor" placeholder="닉네임을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">거래 유형</label>
-                            <select class="form-input" id="tradingType">
-                                <option value="spot">현물 거래</option>
-                                <option value="futures">선물 거래</option>
-                                <option value="swing">스윙 트레이딩</option>
-                                <option value="scalping">스캘핑</option>
-                                <option value="longterm">장기 투자</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">내용</label>
-                            <textarea class="form-textarea" id="tradingContent" placeholder="트레이딩 전략, 경험담, 포트폴리오 공유 등" required></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">글 작성하기</button>
-                    </form>
-                </div>
-                <div class="posts-container" id="tradingPosts"></div>
-            </div>
-            
-            <div id="analysis" class="community-tab-content">
-                <div class="post-form">
-                    <form id="analysisPostForm">
-                        <div class="form-group">
-                            <label class="form-label">제목</label>
-                            <input type="text" class="form-input" id="analysisTitle" placeholder="기술 분석 제목" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">작성자</label>
-                            <input type="text" class="form-input" id="analysisAuthor" placeholder="닉네임을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">분석 대상</label>
-                            <input type="text" class="form-input" id="analysisTarget" placeholder="BTC, ETH, SOL 등" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">내용</label>
-                            <textarea class="form-textarea" id="analysisContent" placeholder="차트 분석, 지지/저항선, 예상 시나리오 등" required></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">분석 공유하기</button>
-                    </form>
-                </div>
-                <div class="posts-container" id="analysisPosts"></div>
-            </div>
-            
-            <div id="news" class="community-tab-content">
-                <div class="post-form">
-                    <form id="newsPostForm">
-                        <div class="form-group">
-                            <label class="form-label">제목</label>
-                            <input type="text" class="form-input" id="newsTitle" placeholder="뉴스 제목" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">작성자</label>
-                            <input type="text" class="form-input" id="newsAuthor" placeholder="닉네임을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">출처</label>
-                            <input type="text" class="form-input" id="newsSource" placeholder="뉴스 출처 (선택사항)">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">내용</label>
-                            <textarea class="form-textarea" id="newsContent" placeholder="중요한 뉴스나 정보를 공유해주세요" required></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">뉴스 공유하기</button>
-                    </form>
-                </div>
-                <div class="posts-container" id="newsPosts"></div>
-            </div>
-            
-            <div id="questions" class="community-tab-content">
-                <div class="post-form">
-                    <form id="questionsPostForm">
-                        <div class="form-group">
-                            <label class="form-label">제목</label>
-                            <input type="text" class="form-input" id="questionsTitle" placeholder="질문 제목" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">작성자</label>
-                            <input type="text" class="form-input" id="questionsAuthor" placeholder="닉네임을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">카테고리</label>
-                            <select class="form-input" id="questionCategory">
-                                <option value="beginner">초보자 질문</option>
-                                <option value="technical">기술적 질문</option>
-                                <option value="wallet">지갑 관련</option>
-                                <option value="exchange">거래소 관련</option>
-                                <option value="tax">세금 관련</option>
-                                <option value="other">기타</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">내용</label>
-                            <textarea class="form-textarea" id="questionsContent" placeholder="궁금한 점을 자세히 설명해주세요" required></textarea>
-                        </div>
-                        <button type="submit" class="submit-btn">질문하기</button>
-                    </form>
-                </div>
-                <div class="posts-container" id="questionsPosts"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Seed Chat 기능 -->
-    <style>
-        #seed-chat-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: #fff;
-            border: none;
-            padding: 16px 24px;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
-            z-index: 9999;
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(139, 92, 246, 0.8);
-            animation: chatPulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes chatPulse {
-            0%, 100% { 
-                transform: scale(1); 
-                box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
-            }
-            50% { 
-                transform: scale(1.05); 
-                box-shadow: 0 12px 35px rgba(139, 92, 246, 0.8);
-            }
-        }
-        
-        #seed-chat-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 35px rgba(139, 92, 246, 0.6);
-        }
-        
-        #seed-chat-window {
-            position: fixed;
-            bottom: 90px;
-            right: 24px;
-            width: 380px;
-            height: 550px;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 16px;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(20px);
-            display: none;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            flex-direction: column;
-        }
-        
-        #seed-chat-header {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-            padding: 16px 20px;
-            font-family: 'Exo 2', sans-serif;
-            font-weight: 600;
-            font-size: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        #seed-chat-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 0;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-        
-        #seed-chat-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        #seed-chat-messages {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-            background: rgba(11, 11, 18, 0.8);
-        }
-        
-        .chat-message {
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            max-width: 85%;
-            word-wrap: break-word;
-        }
-        
-        .message-user {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-            margin-left: auto;
-            text-align: right;
-        }
-        
-        .message-bot {
-            background: rgba(139, 92, 246, 0.1);
-            color: #ffffff;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-        }
-        
-        .message-time {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 4px;
-        }
-        
-        #seed-chat-input-container {
-            padding: 16px;
-            background: rgba(11, 11, 18, 0.9);
-            border-top: 1px solid rgba(139, 92, 246, 0.2);
-            display: flex;
-            gap: 8px;
-        }
-        
-        #seed-chat-input {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 8px;
-            padding: 10px 12px;
-            color: white;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        #seed-chat-input:focus {
-            border-color: rgba(139, 92, 246, 0.6);
-        }
-        
-        #seed-chat-send {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            border: none;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        #seed-chat-send:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
-        }
-        
-        @media (max-width: 520px) {
-            #seed-chat-window {
-                right: 12px;
-                left: 12px;
-                width: auto;
-                height: 60vh;
-                bottom: 80px;
-            }
-            
-            #seed-chat-btn {
-                right: 12px;
-                bottom: 12px;
-            }
-        }
-        
-        /* 스크롤바 스타일 */
-        #seed-chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        #seed-chat-messages::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-        }
-        
-        #seed-chat-messages::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.5);
-            border-radius: 3px;
-        }
-        
-        #seed-chat-messages::-webkit-scrollbar-thumb:hover {
-            background: rgba(139, 92, 246, 0.7);
-        }
-    </style>
-    
-    <button id="seed-chat-btn">💬 Seed 채팅</button>
-    <div id="seed-chat-window">
-        <div id="seed-chat-header">
-            <span>🌱 Seed Chat</span>
-            <button id="seed-chat-close">×</button>
-        </div>
-        <div id="seed-chat-messages"></div>
-        <div id="seed-chat-input-container">
-            <input type="text" id="seed-chat-input" placeholder="메시지를 입력하세요..." />
-            <button id="seed-chat-send">전송</button>
-        </div>
-    </div>
-    
+    <!-- 채팅 버튼 -->
+    <button class="chat-button" onclick="alert('채팅 기능 준비중입니다! 💬')">
+        💬 채팅하기
+    </button>
+
     <script>
-        // Global variables
-        var communityPosts = {
-            general: JSON.parse(localStorage.getItem('generalPosts')) || [],
-            trading: JSON.parse(localStorage.getItem('tradingPosts')) || [],
-            analysis: JSON.parse(localStorage.getItem('analysisPosts')) || [],
-            news: JSON.parse(localStorage.getItem('newsPosts')) || [],
-            questions: JSON.parse(localStorage.getItem('questionsPosts')) || []
-        };
-        
-        // Create stars
-        function createStars() {
-            var starsContainer = document.getElementById('stars');
-            var numStars = 100;
-            
-            for (var i = 0; i < numStars; i++) {
-                var star = document.createElement('div');
-                star.className = 'star';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
-                star.style.animationDelay = Math.random() * 4 + 's';
-                star.style.animationDuration = (Math.random() * 4 + 3) + 's';
-                starsContainer.appendChild(star);
-            }
-        }
-        
-        // Update Korean time
+        // 한국 시간 업데이트
         function updateKoreanTime() {
-            var now = new Date();
-            var koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+            const now = new Date();
+            const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
             
-            var hours = koreanTime.getHours();
-            var minutes = String(koreanTime.getMinutes()).padStart(2, '0');
-            var seconds = String(koreanTime.getSeconds()).padStart(2, '0');
-            var period = hours >= 12 ? 'PM' : 'AM';
-            var displayHours = String(hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours)).padStart(2, '0');
+            const hours = koreanTime.getHours();
+            const minutes = String(koreanTime.getMinutes()).padStart(2, '0');
+            const seconds = String(koreanTime.getSeconds()).padStart(2, '0');
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = String(hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours)).padStart(2, '0');
             
-            var timeString = period + displayHours + ':' + minutes + ':' + seconds;
+            const timeString = period + displayHours + ':' + minutes + ':' + seconds;
             document.getElementById('currentTime').textContent = timeString;
         }
         
-        // Menu functions
+        // 메뉴 토글
         function toggleMenu() {
-            var menuOverlay = document.getElementById('menuOverlay');
+            const menuOverlay = document.getElementById('menuOverlay');
             menuOverlay.classList.toggle('active');
         }
         
-        function showIndicator() {
-            document.getElementById('indicatorSection').classList.add('active');
-            document.getElementById('menuOverlay').classList.remove('active');
-            updateIndicators();
-        }
-        
-        function closeIndicator() {
-            document.getElementById('indicatorSection').classList.remove('active');
-        }
-        
-        function showCommunity() {
-            document.getElementById('communitySection').classList.add('active');
-            document.getElementById('menuOverlay').classList.remove('active');
-            loadCommunityPosts();
-        }
-        
-        function closeCommunity() {
-            document.getElementById('communitySection').classList.remove('active');
-        }
-        
-        // Tab switching
-        function switchTab(tabName) {
-            document.querySelectorAll('.community-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.community-tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
+        // 비디오 처리
+        function handleVideo() {
+            const video = document.querySelector('.video-background');
             
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            
-            loadCommunityPosts(tabName);
-        }
-        
-        // Update indicators
-        function updateIndicators() {
-            const fearGreed = Math.floor(Math.random() * 100);
-            document.getElementById('fearGreedValue').textContent = fearGreed;
-            
-            const btcDom = (Math.random() * 20 + 45).toFixed(1) + '%';
-            document.getElementById('btcDominance').textContent = btcDom;
-            
-            const marketCap = '$' + (Math.random() * 1 + 2.5).toFixed(2) + 'T';
-            document.getElementById('totalMarketCap').textContent = marketCap;
-            
-            const volume = '$' + (Math.random() * 100 + 150).toFixed(1) + 'B';
-            document.getElementById('volume24h').textContent = volume;
-            
-            const addresses = (Math.random() * 0.5 + 1).toFixed(1) + 'M';
-            document.getElementById('activeAddresses').textContent = addresses;
-            
-            const hashRate = (Math.random() * 100 + 400).toFixed(0) + ' EH/s';
-            document.getElementById('hashRate').textContent = hashRate;
-        }
-        
-        // Crypto data functions
-        function fetchCryptoData() {
-            try {
-                const cryptoCoins = [
-                    { name: 'Solana', symbol: 'SOL', basePrice: 245.67, volume: 890000000 },
-                    { name: 'Chainlink', symbol: 'LINK', basePrice: 28.34, volume: 750000000 },
-                    { name: 'Polygon', symbol: 'MATIC', basePrice: 1.23, volume: 680000000 },
-                    { name: 'Avalanche', symbol: 'AVAX', basePrice: 56.78, volume: 620000000 },
-                    { name: 'Cardano', symbol: 'ADA', basePrice: 0.89, volume: 580000000 },
-                    { name: 'Polkadot', symbol: 'DOT', basePrice: 12.45, volume: 520000000 },
-                    { name: 'Uniswap', symbol: 'UNI', basePrice: 15.67, volume: 490000000 },
-                    { name: 'Cosmos', symbol: 'ATOM', basePrice: 18.90, volume: 460000000 },
-                    { name: 'Near Protocol', symbol: 'NEAR', basePrice: 7.89, volume: 430000000 },
-                    { name: 'Arbitrum', symbol: 'ARB', basePrice: 2.34, volume: 400000000 }
-                ];
-                
-                const updatedCoins = cryptoCoins.map(coin => {
-                    const priceVariation = (Math.random() - 0.5) * 0.1;
-                    const changeVariation = (Math.random() - 0.5) * 10;
-                    
-                    return {
-                        ...coin,
-                        current_price: coin.basePrice * (1 + priceVariation),
-                        price_change_percentage_24h: changeVariation,
-                        total_volume: coin.volume * (1 + (Math.random() - 0.5) * 0.2)
-                    };
+            if (video) {
+                video.addEventListener('loadeddata', function() {
+                    console.log('✅ 비디오 로딩 성공!');
                 });
                 
-                updateCoinList(updatedCoins);
-            } catch (error) {
-                console.error('암호화폐 데이터를 가져오는데 실패했습니다:', error);
-                showDefaultCoins();
-            }
-        }
-        
-        function updateCoinList(coins) {
-            const coinList = document.getElementById('coinList');
-            let coinHTML = '';
-            
-            coins.forEach((coin, index) => {
-                const priceChange = coin.price_change_percentage_24h;
-                const changeColor = priceChange >= 0 ? '#10b981' : '#ef4444';
-                const changeSymbol = priceChange >= 0 ? '+' : '';
-                
-                coinHTML += `
-                    <li class="coin-item">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <span class="coin-rank">${index + 1}</span>
-                            <div>
-                                <div class="coin-name">${coin.name}</div>
-                                <div class="coin-symbol">${coin.symbol.toUpperCase()}</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                            <div style="color: #fff; font-weight: 600; font-size: 14px;">
-                                $${coin.current_price.toFixed(2)}
-                            </div>
-                            <div class="coin-change" style="color: ${changeColor};">
-                                ${changeSymbol}${priceChange.toFixed(2)}%
-                            </div>
-                        </div>
-                    </li>
-                `;
-            });
-            
-            coinList.innerHTML = coinHTML;
-        }
-        
-        function showDefaultCoins() {
-            const coinList = document.getElementById('coinList');
-            const defaultCoins = [
-                { name: 'Solana', symbol: 'SOL', price: 245.67, change: 12.45 },
-                { name: 'Chainlink', symbol: 'LINK', price: 28.34, change: 15.67 },
-                { name: 'Polygon', symbol: 'MATIC', price: 1.23, change: 9.88 },
-                { name: 'Avalanche', symbol: 'AVAX', price: 56.78, change: 11.34 },
-                { name: 'Cardano', symbol: 'ADA', price: 0.89, change: 7.92 },
-                { name: 'Polkadot', symbol: 'DOT', price: 12.45, change: 13.55 },
-                { name: 'Uniswap', symbol: 'UNI', price: 15.67, change: 16.78 },
-                { name: 'Cosmos', symbol: 'ATOM', price: 18.90, change: 14.21 },
-                { name: 'Near Protocol', symbol: 'NEAR', price: 7.89, change: 8.45 },
-                { name: 'Arbitrum', symbol: 'ARB', price: 2.34, change: 6.78 }
-            ];
-            
-            let coinHTML = '';
-            defaultCoins.forEach((coin, index) => {
-                const changeColor = coin.change >= 0 ? '#10b981' : '#ef4444';
-                const changeSymbol = coin.change >= 0 ? '+' : '';
-                
-                coinHTML += `
-                    <li class="coin-item">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <span class="coin-rank">${index + 1}</span>
-                            <div>
-                                <div class="coin-name">${coin.name}</div>
-                                <div class="coin-symbol">${coin.symbol}</div>
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                            <div style="color: #fff; font-weight: 600; font-size: 14px;">
-                                $${coin.price.toFixed(2)}
-                            </div>
-                            <div class="coin-change" style="color: ${changeColor};">
-                                ${changeSymbol}${coin.change.toFixed(2)}%
-                            </div>
-                        </div>
-                    </li>
-                `;
-            });
-            
-            coinList.innerHTML = coinHTML;
-        }
-        
-        // News functions
-        function updateNews() {
-            var newsList = [
-                {
-                    headline: "비트코인, 12만 달러 돌파 후 강세 지속",
-                    summary: "기관 투자자들의 지속적인 매수로 비트코인이 사상 최고가를 경신했습니다.",
-                    source: "CoinTelegraph",
-                    time: "방금 전"
-                },
-                {
-                    headline: "이더리움 스테이킹 보상률 상승, 투자자 관심 증가",
-                    summary: "이더리움 2.0 스테이킹 참여율 증가로 네트워크 보안성이 더욱 강화되었습니다.",
-                    source: "DeFi Pulse",
-                    time: "30분 전"
-                },
-                {
-                    headline: "알트코인 시즌 본격화, 다양한 프로젝트 주목",
-                    summary: "비트코인 도미넌스 하락과 함께 알트코인들이 강세를 보이고 있습니다.",
-                    source: "CryptoSlate",
-                    time: "1시간 전"
-                },
-                {
-                    headline: "NFT 시장 부활 조짐, 새로운 컬렉션 인기",
-                    summary: "최근 유명 아티스트들의 NFT 출시로 시장에 활기가 돌고 있습니다.",
-                    source: "NFT News",
-                    time: "2시간 전"
-                },
-                {
-                    headline: "Web3 게임 산업 급성장, 블록체인 기술 적용 확대",
-                    summary: "게임 업계에서 블록체인 기술을 활용한 혁신적인 프로젝트들이 주목받고 있습니다.",
-                    source: "GameFi Today",
-                    time: "3시간 전"
-                }
-            ];
-            
-            var newsContainer = document.getElementById('newsList');
-            if (newsContainer) {
-                var newsHTML = '';
-                for (var i = 0; i < newsList.length; i++) {
-                    var news = newsList[i];
-                    newsHTML += '<div class="news-item">';
-                    newsHTML += '<div class="news-content">';
-                    newsHTML += '<div class="news-headline">' + news.headline + '</div>';
-                    newsHTML += '<div class="news-summary">' + news.summary + '</div>';
-                    newsHTML += '</div>';
-                    newsHTML += '<div class="news-meta">';
-                    newsHTML += '<div class="news-source">' + news.source + '</div>';
-                    newsHTML += '<div class="news-time">' + news.time + '</div>';
-                    newsHTML += '</div>';
-                    newsHTML += '</div>';
-                }
-                newsContainer.innerHTML = newsHTML;
-            }
-        }
-        
-        // Community functions
-        function loadCommunityPosts(category = 'general') {
-            const container = document.getElementById(category + 'Posts');
-            const posts = communityPosts[category];
-            
-            if (posts.length === 0) {
-                container.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 40px;">아직 작성된 글이 없습니다.</p>';
-                return;
-            }
-            
-            let postsHTML = '';
-            for (var i = 0; i < posts.length; i++) {
-                var post = posts[i];
-                postsHTML += '<div class="post-card">';
-                postsHTML += '<h3 class="post-title">' + post.title + '</h3>';
-                postsHTML += '<div class="post-meta">작성자: ' + post.author + ' | ' + post.date;
-                if (post.category) postsHTML += ' | ' + post.category;
-                if (post.source) postsHTML += ' | 출처: ' + post.source;
-                if (post.target) postsHTML += ' | 대상: ' + post.target;
-                if (post.type) postsHTML += ' | 유형: ' + post.type;
-                postsHTML += '</div>';
-                postsHTML += '<div class="post-content">' + post.content.replace(/\n/g, '<br>') + '</div>';
-                postsHTML += '</div>';
-            }
-            container.innerHTML = postsHTML;
-        }
-        
-        function setupCommunityForms() {
-            const formTypes = ['general', 'trading', 'analysis', 'news', 'questions'];
-            
-            formTypes.forEach(type => {
-                const form = document.getElementById(type + 'PostForm');
-                if (form) {
-                    form.addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        handleCommunityPost(type);
-                    });
-                }
-            });
-        }
-        
-        function handleCommunityPost(type) {
-            const title = document.getElementById(type + 'Title').value;
-            const author = document.getElementById(type + 'Author').value;
-            const content = document.getElementById(type + 'Content').value;
-            
-            const post = {
-                id: Date.now(),
-                title: title,
-                author: author,
-                content: content,
-                date: new Date().toLocaleString('ko-KR', {timeZone: 'Asia/Seoul'})
-            };
-            
-            if (type === 'trading') {
-                const tradingType = document.getElementById('tradingType').value;
-                post.type = document.querySelector('#tradingType option[value="' + tradingType + '"]').textContent;
-            } else if (type === 'analysis') {
-                post.target = document.getElementById('analysisTarget').value;
-            } else if (type === 'news') {
-                const source = document.getElementById('newsSource').value;
-                if (source) post.source = source;
-            } else if (type === 'questions') {
-                const category = document.getElementById('questionCategory').value;
-                post.category = document.querySelector('#questionCategory option[value="' + category + '"]').textContent;
-            }
-            
-            communityPosts[type].unshift(post);
-            localStorage.setItem(type + 'Posts', JSON.stringify(communityPosts[type]));
-            
-            document.getElementById(type + 'PostForm').reset();
-            loadCommunityPosts(type);
-            alert('글이 성공적으로 작성되었습니다!');
-        }
-        
-        // Chat functionality
-        var chatMessages = JSON.parse(localStorage.getItem('seedChatMessages')) || [];
-        
-        function initializeChat() {
-            const chatBtn = document.getElementById('seed-chat-btn');
-            const chatWindow = document.getElementById('seed-chat-window');
-            const chatClose = document.getElementById('seed-chat-close');
-            const chatInput = document.getElementById('seed-chat-input');
-            const chatSend = document.getElementById('seed-chat-send');
-            const chatMessagesContainer = document.getElementById('seed-chat-messages');
-            
-            // 버튼 클릭으로 채팅창 열기/닫기
-            chatBtn.addEventListener('click', function() {
-                const isVisible = chatWindow.style.display === 'flex';
-                chatWindow.style.display = isVisible ? 'none' : 'flex';
-                if (!isVisible) {
-                    loadChatMessages();
-                    chatInput.focus();
-                }
-            });
-            
-            // 닫기 버튼
-            chatClose.addEventListener('click', function() {
-                chatWindow.style.display = 'none';
-            });
-            
-            // 메시지 전송
-            function sendMessage() {
-                const message = chatInput.value.trim();
-                if (message) {
-                    addMessage(message, 'user');
-                    chatInput.value = '';
-                    
-                    // 봇 응답 시뮬레이션
-                    setTimeout(function() {
-                        const botResponse = generateBotResponse(message);
-                        addMessage(botResponse, 'bot');
-                    }, 500 + Math.random() * 1000);
-                }
-            }
-            
-            // 전송 버튼 클릭
-            chatSend.addEventListener('click', sendMessage);
-            
-            // 엔터키로 전송
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-            
-            // 초기 환영 메시지
-            if (chatMessages.length === 0) {
-                addMessage('안녕하세요! TWO.4 Seed 채팅에 오신 것을 환영합니다! 🌱\n암호화폐에 대해 궁금한 것이 있으시면 언제든 물어보세요!', 'bot');
-            }
-        }
-        
-        function addMessage(text, sender) {
-            const timestamp = new Date().toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            const message = {
-                text: text,
-                sender: sender,
-                timestamp: timestamp,
-                id: Date.now()
-            };
-            
-            chatMessages.push(message);
-            localStorage.setItem('seedChatMessages', JSON.stringify(chatMessages));
-            
-            displayMessage(message);
-        }
-        
-        function displayMessage(message) {
-            const messagesContainer = document.getElementById('seed-chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message message-${message.sender}`;
-            
-            messageDiv.innerHTML = `
-                <div>${message.text.replace(/\n/g, '<br>')}</div>
-                <div class="message-time">${message.timestamp}</div>
-            `;
-            
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        function loadChatMessages() {
-            const messagesContainer = document.getElementById('seed-chat-messages');
-            messagesContainer.innerHTML = '';
-            
-            chatMessages.forEach(function(message) {
-                displayMessage(message);
-            });
-        }
-        
-        // GPT-4o API 설정
-        const OPENAI_API_KEY = ''; // 여기에 OpenAI API 키를 입력하세요
-        const USE_GPT4 = false; // true로 변경하면 GPT-4o 사용
-        
-        async function callGPT4API(message) {
-            if (!OPENAI_API_KEY) {
-                return '⚠️ OpenAI API 키가 설정되지 않았습니다.\n\n설정 방법:\n1. OpenAI 계정 생성\n2. API 키 발급\n3. 코드에서 OPENAI_API_KEY 변수에 키 입력\n4. USE_GPT4를 true로 변경';
-            }
-            
-            try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4o',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: `너는 TWO.4 웹사이트의 암호화폐 전문 AI 어시스턴트 'Seed'야. 다음 특성을 가져야 해:
-
-1. 친근하고 전문적인 톤
-2. 암호화폐, 블록체인, DeFi 전문 지식
-3. 투자 조언 시 항상 위험성 경고
-4. 최신 트렌드와 기술 동향 파악
-5. 한국어로 자연스럽게 대화
-6. 이모지 적절히 사용
-7. 구체적이고 실용적인 조언 제공
-
-투자 관련 조언 시 반드시 "투자에는 위험이 따르며, 본인 책임하에 결정하세요"라는 내용 포함.`
-                            },
-                            {
-                                role: 'user',
-                                content: message
-                            }
-                        ],
-                        max_tokens: 500,
-                        temperature: 0.7
-                    })
+                video.addEventListener('error', function() {
+                    console.log('❌ 비디오 로딩 실패 - 대체 배경 사용');
+                    video.style.display = 'none';
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`API 오류: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                return data.choices[0].message.content;
-                
-            } catch (error) {
-                console.error('GPT-4o API 호출 실패:', error);
-                return `🚫 GPT-4o 연결에 실패했습니다.\n\n오류: ${error.message}\n\n대안:\n• API 키 확인\n• 네트워크 연결 확인\n• CORS 정책으로 인한 제한\n\n로컬 AI로 대체 응답드릴게요! 🤖`;
-            }
-        }
-        
-        function generateBotResponse(userMessage) {
-            const message = userMessage.toLowerCase();
-            
-            // GPT-4o 사용 여부 체크
-            if (USE_GPT4 && OPENAI_API_KEY) {
-                return callGPT4API(userMessage);
-            }
-            
-            // 현재 시간과 상황에 맞는 응답
-            const currentHour = new Date().getHours();
-            const greeting = currentHour < 12 ? '좋은 아침이에요' : currentHour < 18 ? '좋은 오후에요' : '좋은 저녁이에요';
-            
-            // 복합 키워드 분석
-            const keywords = {
-                crypto: ['비트코인', 'btc', '이더리움', 'eth', '암호화폐', '코인', '알트코인'],
-                price: ['가격', '시세', '얼마', '값', '가치', '차트'],
-                investment: ['투자', '매매', '매수', '매도', '수익', '손실', '포트폴리오'],
-                news: ['뉴스', '소식', '최신', '정보', '동향', '시장'],
-                technical: ['분석', '차트', '지지선', '저항선', '패턴', 'rsi', 'macd'],
-                greeting: ['안녕', '하이', 'hello', '처음', '반가워'],
-                help: ['도움', 'help', '모르겠어', '궁금', '질문'],
-                fear: ['무서워', '두려워', '걱정', '불안', '위험'],
-                bullish: ['상승', '올라', '오를', '강세', '호재'],
-                bearish: ['하락', '떨어', '내려', '약세', '악재'],
-                gpt: ['gpt', 'chatgpt', '지피티', 'ai', '인공지능']
-            };
-            
-            // GPT 관련 질문 처리
-            if (message.includes('gpt') || message.includes('지피티') || message.includes('chatgpt')) {
-                return `🤖 GPT-4o 연결 설정하기:\n\n1️⃣ OpenAI 계정 생성 (platform.openai.com)\n2️⃣ API 키 발급\n3️⃣ 코드에서 OPENAI_API_KEY에 키 입력\n4️⃣ USE_GPT4를 true로 변경\n\n⚠️ 주의사항:\n• API 사용 비용 발생\n• 브라우저 보안정책(CORS) 문제 가능\n• 프로덕션에서는 백엔드 서버 권장\n\n현재는 로컬 AI로 대화하고 있어요!`;
-            }
-            
-            // 키워드 점수 계산
-            const scores = {};
-            Object.keys(keywords).forEach(category => {
-                scores[category] = keywords[category].filter(keyword => message.includes(keyword)).length;
-            });
-            
-            // 가장 높은 점수의 카테고리 찾기
-            const maxCategory = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-            const maxScore = scores[maxCategory];
-            
-            // 복합 응답 생성
-            if (maxScore === 0) {
-                return generateContextualResponse(message);
-            }
-            
-            // 카테고리별 고급 응답
-            switch (maxCategory) {
-                case 'crypto':
-                    if (message.includes('비트코인') || message.includes('btc')) {
-                        const btcResponses = [
-                            `비트코인은 현재 강한 모멘텀을 보이고 있어요! 📈\n기관 투자자들의 지속적인 유입과 ETF 승인으로 인해 장기적으로는 긍정적인 전망이 많습니다.\n\n하지만 단기 변동성은 여전히 크니 신중한 접근이 필요해요.\n\n💡 GPT-4o 연결하시면 더 자세한 분석을 받아보실 수 있어요!`,
-                            `BTC 차트를 보면 현재 주요 지지선을 잘 유지하고 있어요.\n${greeting}! 비트코인 투자를 고려중이시라면:\n\n1️⃣ DCA(분할매수) 전략 추천\n2️⃣ 장기 관점에서 접근\n3️⃣ 위험 관리 필수\n\n🚀 GPT-4o로 업그레이드하면 실시간 시장 분석도 가능해요!`
-                        ];
-                        return btcResponses[Math.floor(Math.random() * btcResponses.length)];
-                    } else if (message.includes('이더리움') || message.includes('eth')) {
-                        return `이더리움 2.0의 성공적인 업그레이드로 네트워크 효율성이 크게 개선되었어요! ⚡\n\nDeFi와 NFT 생태계의 중심 역할을 하고 있고, Layer 2 솔루션들도 활발히 발전하고 있습니다.\n\n스테이킹 수익률도 안정적이어서 장기 보유자들에게는 매력적인 옵션이에요.\n\n🎯 GPT-4o 연결하시면 더 심화된 이더리움 분석을 받아보세요!`;
+                // 모바일에서 터치 시 재생
+                document.addEventListener('touchstart', function() {
+                    if (video.paused) {
+                        video.play().catch(e => console.log('비디오 재생 실패:', e));
                     }
-                    break;
-                    
-                case 'price':
-                    return `실시간 가격 정보는 위의 TradingView 차트에서 확인하실 수 있어요! 📊\n\n💡 가격 분석 팁:\n• 단순히 현재 가격보다는 추세를 보세요\n• 거래량과 함께 분석하는 것이 중요해요\n• 여러 시간대 차트를 비교해보세요\n\n🔥 GPT-4o 연결하면 AI가 차트를 실시간 분석해드려요!\n\n현재 시장은 어떤 코인에 관심이 있으신가요?`;
-                    
-                case 'investment':
-                    const investAdvice = [
-                        `투자에 대한 조언을 드리자면:\n\n🎯 기본 원칙:\n• 잃어도 되는 돈으로만 투자\n• 분산 투자로 위험 분산\n• 감정적 결정 피하기\n• DYOR (Do Your Own Research)\n\n${greeting}! 어떤 투자 전략에 관심이 있으신가요?\n\n🤖 GPT-4o와 연결하면 개인맞춤형 투자 전략을 받아보실 수 있어요!`,
-                        `암호화폐 투자는 전통 투자와 다른 특성이 있어요:\n\n📈 장점:\n• 24/7 거래 가능\n• 높은 수익 잠재력\n• 글로벌 접근성\n\n⚠️ 주의사항:\n• 높은 변동성\n• 규제 리스크\n• 기술적 이해 필요\n\n현재 포트폴리오 구성은 어떻게 되어 있나요?\n\n🧠 GPT-4o 연결하면 포트폴리오 최적화 조언도 받을 수 있어요!`
-                    ];
-                    return investAdvice[Math.floor(Math.random() * investAdvice.length)];
-                    
-                case 'technical':
-                    return `기술적 분석에 관심이 있으시군요! 📊\n\n주요 지표들:\n🔸 RSI: 과매수/과매도 구간 확인\n🔸 MACD: 추세 전환점 파악\n🔸 볼린저 밴드: 변동성과 지지/저항선\n🔸 이동평균선: 장기 추세 방향\n\n어떤 코인의 차트 분석을 원하시나요?\n\n🚀 GPT-4o로 업그레이드하면 실시간 차트 패턴 인식과 예측도 가능해요!`;
-                    
-                case 'fear':
-                    return `투자에 대한 불안감은 자연스러운 감정이에요. 😌\n\n🧘 마음가짐:\n• 투자는 마라톤, 단거리가 아니에요\n• 시장의 변동성은 정상적인 현상\n• 자신만의 투자 철학을 가지세요\n• 충분한 학습과 준비가 중요해요\n\n무엇이 가장 걱정되시나요?\n\n💡 GPT-4o와 상담하면 더 깊이 있는 심리적 조언도 받을 수 있어요!`;
-                    
-                case 'bullish':
-                    return `상승장에 대한 기대감이 있으시군요! 🚀\n\n📈 상승 요인들:\n• 기관 투자자 유입 증가\n• 규제 명확성 개선\n• 기술적 발전과 채택 확산\n• 거시경제적 요인들\n\n하지만 과도한 낙관은 금물이에요.\n\n🎯 GPT-4o 연결하면 실시간 시장 센티먼트 분석도 받아보세요!`;
-                    
-                case 'bearish':
-                    return `하락에 대한 우려가 있으시는군요. 📉\n\n🛡️ 하락장 대응법:\n• 패닉 매도 피하기\n• 분할 매수 기회로 활용\n• 포트폴리오 재평가\n• 현금 비중 조절\n\n암호화폐 시장은 사이클이 있어요.\n\n🤖 GPT-4o로 업그레이드하면 하락장 생존 전략도 맞춤 제공해드려요!`;
-                    
-                case 'greeting':
-                    return `${greeting}! 🌱 TWO.4 Seed Chat에 오신 것을 환영해요!\n\n저는 암호화폐 전문 AI 어시스턴트예요. 현재는 로컬 모드로 동작중이지만, GPT-4o와 연결하면 훨씬 더 똑똑해져요! 🧠\n\n🔥 GPT-4o 연결 시 추가 기능:\n• 실시간 시장 분석\n• 개인맞춤형 투자 조언\n• 복잡한 기술적 분석\n• 자연스러운 대화\n\n어떤 것이 궁금하신가요?`;
-                    
-                default:
-                    return generateContextualResponse(message);
+                });
+                
+                // 클릭 시 재생
+                document.addEventListener('click', function() {
+                    if (video.paused) {
+                        video.play().catch(e => console.log('비디오 재생 실패:', e));
+                    }
+                });
             }
-            
-            return generateContextualResponse(message);
         }
         
-        function generateContextualResponse(message) {
-            // 질문 패턴 분석
-            if (message.includes('?') || message.includes('궁금') || message.includes('어떻게')) {
-                return `좋은 질문이네요! 🤔\n\n더 구체적으로 말씀해주시면 정확한 답변을 드릴 수 있어요. 예를 들어:\n• 어떤 코인에 대해 궁금하신가요?\n• 투자 금액대는 어느 정도인가요?\n• 단기/장기 중 어떤 관점인가요?\n\n언제든 편하게 물어보세요!`;
-            }
-            
-            // 감정 표현 감지
-            if (message.includes('좋아') || message.includes('최고') || message.includes('감사')) {
-                return `기쁘게 생각해주셔서 감사해요! 😊\n\n앞으로도 유용한 정보와 인사이트를 제공해드리겠습니다. 암호화폐 투자 여정에서 좋은 동반자가 되고 싶어요!\n\n다른 궁금한 점이 있으시면 언제든 말씀해주세요! 🚀`;
-            }
-            
-            if (message.includes('싫어') || message.includes('별로') || message.includes('실망')) {
-                return `죄송해요! 😅 더 나은 도움을 드리고 싶어요.\n\n어떤 부분이 아쉬우셨는지 알려주시면 개선해나가겠습니다. 구체적인 피드백은 정말 소중해요!\n\n다시 한번 기회를 주시면 더 유용한 정보를 제공해드리겠습니다.`;
-            }
-            
-            // 복잡한 질문에 대한 응답
-            const complexResponses = [
-                `흥미로운 관점이네요! 🎯\n\n암호화폐 시장은 정말 다면적이어서 여러 요소를 고려해야 해요:\n• 기술적 펀더멘털\n• 시장 심리와 뉴스\n• 거시경제적 환경\n• 규제 동향\n\n어떤 측면에서 더 자세히 이야기해볼까요?`,
-                
-                `좋은 포인트를 짚으셨네요! 💡\n\n이런 상황에서는 다각도로 접근하는 것이 중요해요:\n\n1️⃣ 데이터 기반 분석\n2️⃣ 리스크 평가\n3️⃣ 장단기 전략 수립\n4️⃣ 지속적인 모니터링\n\n구체적으로 어떤 부분이 가장 궁금하신가요?`,
-                
-                `정말 의미있는 질문이에요! 🌟\n\n이런 주제는 암호화폐 투자자라면 꼭 고민해봐야 할 부분이죠. 시장의 변화가 빠르다 보니 계속 학습하고 적응하는 것이 중요해요.\n\n더 깊이 있는 대화를 원하시면 구체적인 상황이나 예시를 들어주세요!`
-            ];
-            
-            return complexResponses[Math.floor(Math.random() * complexResponses.length)];
-        }
-        
-        // Initialize
+        // 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            createStars();
             updateKoreanTime();
             setInterval(updateKoreanTime, 1000);
+            handleVideo();
             
-            fetchCryptoData();
-            updateNews();
-            
-            setInterval(updateNews, 10000);
-            setInterval(fetchCryptoData, 60000);
-            setInterval(updateIndicators, 300000);
-            
-            setupCommunityForms();
-            initializeChat();
-            
+            // 메뉴 외부 클릭 시 닫기
             document.addEventListener('click', function(e) {
-                var menuOverlay = document.getElementById('menuOverlay');
-                var menuBtn = document.querySelector('.menu-btn');
-                var chatWindow = document.getElementById('seed-chat-window');
-                var chatBtn = document.getElementById('seed-chat-btn');
+                const menuOverlay = document.getElementById('menuOverlay');
+                const menuBtn = document.querySelector('.menu-btn');
                 
                 if (menuOverlay && menuBtn && !menuOverlay.contains(e.target) && !menuBtn.contains(e.target)) {
                     menuOverlay.classList.remove('active');
-                }
-                
-                // 채팅창 외부 클릭시 닫기
-                if (chatWindow && chatBtn && !chatWindow.contains(e.target) && !chatBtn.contains(e.target)) {
-                    if (chatWindow.style.display === 'flex') {
-                        chatWindow.style.display = 'none';
-                    }
                 }
             });
         });
