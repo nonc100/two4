@@ -2,193 +2,175 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TWO.4</title>
-
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@600;700&family=Orbitron:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@700;800&display=swap');
 
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    /* Reset */
+    *{margin:0;padding:0;box-sizing:border-box}
     html{scroll-behavior:smooth}
-    body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#000;color:#fff;min-height:100vh;overflow-x:hidden;line-height:1.6}
+    body{
+      font-family:'Inter',system-ui,sans-serif;
+      background:#000;color:#fff;line-height:1.6;min-height:100vh;overflow-x:hidden;
+    }
 
-    /* ── 배경 비디오 (기본: 데스크톱/가로) */
+    /* Background video + overlay + fallback */
     .video-background{
-      position:fixed;inset:0;z-index:-10;
-      width:auto;height:auto;min-width:100%;min-height:100%;
-      object-fit:cover;object-position:50% 50%;
+      position:fixed;inset:0;width:100%;height:100%;
+      object-fit:cover;z-index:-10;background:#000;
     }
-    .video-overlay{position:fixed;inset:0;height:100vh;background:rgba(0,0,0,.30);z-index:-5}
-    .fallback-bg{position:fixed;inset:0;height:100vh;background:linear-gradient(135deg,#1e3a8a,#3b82f6,#6366f1,#8b5cf6,#a855f7);z-index:-15}
-    .video-fade{
-      position:fixed;left:0;bottom:0;width:100%;height:18vh;z-index:-4;pointer-events:none;
-      background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.55) 60%,rgba(0,0,0,1) 100%);
+    .video-overlay{
+      position:fixed;inset:0;height:100vh;width:100%;
+      background:rgba(0,0,0,.3);z-index:-5;
+    }
+    .fallback-bg{
+      position:fixed;inset:0;height:100vh;width:100%;
+      background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 25%,#6366f1 50%,#8b5cf6 75%,#a855f7 100%);
+      z-index:-15;
     }
 
-    /* ── 좌상단 로고 (더 위로) */
-    .brand-logo{
-      position:fixed;z-index:1200;
-      top:calc(env(safe-area-inset-top,0px) + 0px);
-      left:calc(env(safe-area-inset-left,0px) + 14px);
-      display:block;
-    }
+    /* Top-left logo (more up) */
+    .brand-logo{position:fixed;top:10px;left:16px;z-index:1200;display:block}
     .brand-logo img{
-      display:block;
-      height:clamp(54px,7.2vw,110px);
-      width:auto;
+      display:block;height:clamp(56px,7.2vw,110px);width:auto;
       filter:drop-shadow(0 0 12px rgba(139,92,246,.85)) drop-shadow(0 0 24px rgba(56,189,248,.45));
     }
-
-    /* ── 상단 우측: 메뉴 버튼 (HOME 숨김) */
-    .nav{position:fixed;top:30px;right:30px;z-index:1000;display:flex;align-items:center;gap:22px}
-    .nav-home{display:none}
-    .menu-btn{
-      width:50px;height:50px;border-radius:50%;
-      background:rgba(139,92,246,.22);
-      border:2px solid rgba(139,92,246,.45);
-      cursor:pointer;display:flex;align-items:center;justify-content:center;
-      transition:.25s;backdrop-filter:blur(18px)
+    @media (max-width:768px){
+      .brand-logo{top:calc(8px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px))}
+      .brand-logo img{height:clamp(52px,9vw,96px)}
     }
-    .menu-btn:hover{background:rgba(139,92,246,.3);border-color:rgba(139,92,246,.75);box-shadow:0 0 28px rgba(139,92,246,.5)}
+
+    /* Nav (menu button only) */
+    .nav{position:fixed;top:20px;right:20px;z-index:1100;display:flex;gap:16px;align-items:center}
+    .menu-btn{
+      width:50px;height:50px;border-radius:50%;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(139,92,246,.2);border:2px solid rgba(139,92,246,.4);
+      backdrop-filter:blur(20px);transition:.3s;
+    }
+    .menu-btn:hover{background:rgba(139,92,246,.3);border-color:rgba(139,92,246,.7);box-shadow:0 0 30px rgba(139,92,246,.5)}
     .menu-icon{width:20px;height:20px;position:relative}
-    .menu-line{position:absolute;width:20px;height:2px;background:#8b5cf6;left:0;transition:.25s}
+    .menu-line{position:absolute;width:20px;height:2px;background:#8b5cf6;left:0;transition:.3s}
     .menu-line:nth-child(1){top:0}.menu-line:nth-child(2){top:8px}.menu-line:nth-child(3){top:16px}
 
-    /* ── 메인/콘텐츠 */
-    .main-container{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px}
-    .content-section{position:relative;z-index:1;background:rgba(0,0,0,.82);backdrop-filter:blur(18px);border-top:1px solid rgba(139,92,246,.28);padding:90px 20px;min-height:100vh}
-    .container{max-width:1200px;margin:0 auto}
-    .section-content{display:grid;gap:2.5rem}
-
-    /* ── 차트 카드 */
-    .chart-container{
-      background:rgba(139,92,246,.06);
-      border:1px solid rgba(139,92,246,.28);
-      border-radius:18px;
-      padding:1.6rem 1.6rem 1.2rem;
-      box-shadow:0 20px 40px rgba(0,0,0,.3);
-      height:600px;position:relative;overflow:hidden;
+    /* Dayband (24h timeline) */
+    .dayband{
+      position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);
+      left:50%;transform:translateX(-50%);width:min(820px,94vw);
+      z-index:1300;pointer-events:none;font-family:'Orbitron','Inter',sans-serif;
     }
-    .chart-container::before{
-      content:'';position:absolute;inset:0;left:-100%;background:linear-gradient(90deg,transparent,rgba(139,92,246,.10),transparent);
-      animation:shimmer 3s ease-in-out infinite
+    .dayband__bar{
+      position:relative;height:14px;border-radius:999px;overflow:hidden;
+      background:
+        radial-gradient(1200px 180px at 10% 50%, rgba(56,189,248,.10), transparent 55%),
+        radial-gradient(900px 160px at 90% 50%, rgba(139,92,246,.12), transparent 60%),
+        rgba(255,255,255,.08);
+      border:1px solid rgba(139,92,246,.35);
+      backdrop-filter:blur(8px);
+      box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 0 14px rgba(139,92,246,.14), 0 0 22px rgba(56,189,248,.08);
     }
-    @keyframes shimmer{0%{left:-100%}100%{left:100%}}
-    .chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(139,92,246,.2)}
-    .chart-controls{display:flex;gap:12px;align-items:center}
-    .chart-selector{
-      background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#fff;padding:8px 12px;border-radius:8px;
-      font-size:14px;outline:none;transition:.2s
+    .dayband__fill{
+      position:absolute;inset:0 auto 0 0;width:0%;
+      background:linear-gradient(90deg,#22c55e 0%,#84cc16 16%,#eab308 32%,#f97316 48%,#ef4444 72%,#7f1d1d 100%);
+      box-shadow:inset 0 0 18px rgba(139,92,246,.18);transition:width .4s ease;
     }
-    .chart-selector:focus{border-color:rgba(139,92,246,.6);box-shadow:0 0 14px rgba(139,92,246,.28)}
-    .chart-selector option{background:#000;color:#fff}
-    .chart-legend{display:flex;gap:18px;flex-wrap:wrap}
-    .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:rgba(255,255,255,.82);cursor:pointer;transition:.2s}
-    .legend-item:hover{color:#fff;transform:translateY(-1px)}
-    .legend-color{width:12px;height:3px;border-radius:2px}
-    .price-display{color:#b39eff;font-weight:700;font-family:'Orbitron',monospace}
-    .cosmos-chart-canvas{width:100%;height:480px;background:rgba(0,0,0,.2);border:1px solid rgba(139,92,246,.1);border-radius:10px;cursor:crosshair}
-
-    .news-grid,.coin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}
-    .news-card,.coin-card{background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.2);border-radius:14px;padding:1.6rem;transition:.2s;backdrop-filter:blur(10px)}
-    .news-card:hover,.coin-card:hover{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.38);transform:translateY(-4px);box-shadow:0 20px 40px rgba(139,92,246,.2)}
-    .card-title{color:#c4b5fd;font-size:1.1rem;font-weight:700;margin-bottom:.8rem}
-    .card-content{color:rgba(255,255,255,.82)}
-
-    /* ── 채팅 버튼 */
-    .chat-button{
-      position:fixed;right:26px;bottom:26px;z-index:1000;
-      background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:14px 22px;border-radius:999px;
-      font-weight:700;box-shadow:0 10px 30px rgba(139,92,246,.4);border:2px solid rgba(139,92,246,.28);
-      transition:.2s;backdrop-filter:blur(10px);animation:chatPulse 2s ease-in-out infinite
+    .dayband__fill::before{
+      content:"";position:absolute;inset:0;
+      background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.12) 50%,transparent 100%);
+      mix-blend-mode:screen;transform:translateX(-100%);animation:two4Sheen 3.5s linear infinite;pointer-events:none;
     }
-    @keyframes chatPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-    .chat-button:hover{transform:translateY(-2px)}
+    @keyframes two4Sheen{from{transform:translateX(-100%)}to{transform:translateX(0%)}}
 
-    /* ── 메뉴 오버레이 */
+    .dayband__marker{
+      position:absolute;top:-6px;bottom:-6px;width:2px;background:#facc15;
+      box-shadow:0 0 10px rgba(250,204,21,.85),0 0 16px rgba(250,204,21,.5);
+      transform:translateX(-1px);
+    }
+    .dayband__marker::after{
+      content:attr(data-label);position:absolute;bottom:100%;left:50%;transform:translate(-50%,-6px);
+      font-size:11px;color:#e9d5ff;white-space:nowrap;text-shadow:0 0 6px rgba(139,92,246,.6);
+      background:rgba(10,10,22,.35);border:1px solid rgba(139,92,246,.28);border-radius:6px;padding:2px 6px;
+    }
+    .dayband__marker--mid{
+      width:3px;background:#fde047;
+      box-shadow:0 0 16px rgba(250,204,21,.95),0 0 28px rgba(139,92,246,.45);
+    }
+    .dayband__marker--mid::after{font-weight:800;letter-spacing:.6px}
+    .dayband.is-esc-hot .dayband__marker--mid{
+      box-shadow:0 0 20px rgba(250,204,21,1),0 0 40px rgba(139,92,246,.55),0 0 60px rgba(56,189,248,.35);
+      animation:escPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes escPulse{0%,100%{transform:translateX(-1px) scaleY(1)}50%{transform:translateX(-1px) scaleY(1.15)}}
+
+    .dayband__labels{
+      display:grid;grid-template-columns:1fr 1fr auto;align-items:center;margin-top:6px;
+      color:#e9d5ff;font-size:12px;text-shadow:0 0 6px rgba(139,92,246,.6);
+    }
+    .dayband__edge:first-child{justify-self:start;opacity:.7}
+    .dayband__edge:last-child{justify-self:end;opacity:.7}
+    .dayband__now{justify-self:end;font-size:11px;color:#e9d5ff;text-shadow:0 0 6px rgba(139,92,246,.85),0 0 12px rgba(56,189,248,.35)}
+    @media (max-width:768px){
+      .dayband{width:min(680px,94vw);top:calc(env(safe-area-inset-top,0px)+8px)}
+      .dayband__now{display:none}
+    }
+
+    /* Menu overlay */
     .menu-overlay{
-      position:fixed;top:0;right:-450px;width:450px;height:100vh;background:rgba(0,0,0,.97);
-      backdrop-filter:blur(30px);border-left:2px solid rgba(139,92,246,.4);z-index:2000;
-      transition:right .35s ease; padding:80px 34px 34px; overflow-y:auto
+      position:fixed;top:0;right:-450px;width:450px;height:100vh;
+      background:rgba(0,0,0,.97);backdrop-filter:blur(30px);
+      border-left:2px solid rgba(139,92,246,.4);z-index:2000;transition:right .4s ease;
+      padding:80px 40px 40px;overflow-y:auto
     }
     .menu-overlay.active{right:0}
     .menu-close{
-      position:absolute;top:26px;right:26px;width:40px;height:40px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;cursor:pointer;
-      color:#b39eff;border:1px solid rgba(139,92,246,.35);transition:.2s
+      position:absolute;top:30px;right:30px;width:40px;height:40px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;color:#8b5cf6;font-size:24px;
+      border-radius:50%;border:1px solid rgba(139,92,246,.3);transition:.3s
     }
-    .menu-close:hover{color:#fff;background:rgba(139,92,246,.18);border-color:rgba(139,92,246,.6)}
-    .menu-section{margin-bottom:26px}
+    .menu-close:hover{color:#fff;background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.6)}
+    .menu-section{margin-bottom:30px}
     .menu-items{list-style:none}
     .menu-item{margin-bottom:6px}
     .menu-link{
-      display:block;padding:10px 14px;border-radius:8px;text-decoration:none;
-      color:rgba(255,255,255,.86);font-weight:600;font-family:'Space Grotesk',sans-serif;letter-spacing:.5px;text-transform:uppercase;
-      transition:.2s
+      color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:600;
+      font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:1px;
+      display:block;padding:10px 16px;border-radius:8px;transition:.25s
     }
-    .menu-link:hover{color:#fff;background:rgba(139,92,246,.1);transform:translateX(6px);text-shadow:0 0 14px rgba(139,92,246,.5)}
+    .menu-link:hover{color:#fff;background:rgba(139,92,246,.1);transform:translateX(8px);text-shadow:0 0 15px rgba(139,92,246,.6)}
+    .korean-desc{color:rgba(139,92,246,.8);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;display:none}
+    .menu-link:hover .korean-desc{display:inline}
+    .menu-link.featured{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.3);color:rgba(139,92,246,.95)}
+    .menu-link.featured:hover{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(168,85,247,.15));border-color:rgba(139,92,246,.6);color:#fff;box-shadow:0 0 20px rgba(139,92,246,.4)}
+    @media (max-width:768px){.menu-overlay{width:100%;right:-100%}.korean-desc{display:none!important}}
 
-    /* ▶ 한글 보조 텍스트: 기본 숨김, hover 시만 표시 */
-    .korean-desc{display:none!important;margin-left:8px;color:#a78bfa;font-size:12px;font-weight:500;text-transform:none;letter-spacing:0}
-    .menu-link:hover .korean-desc{display:inline!important}
-
-    .menu-link.featured{background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(168,85,247,.12));border:1px solid rgba(139,92,246,.32);color:#c4b5fd}
-    .menu-link.featured:hover{background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(168,85,247,.18));border-color:rgba(139,92,246,.6)}
-
-    /* ── 반응형 */
-    @media (max-width:768px){
-      .nav{top:20px;right:18px}
-      .menu-overlay{width:100%;right:-100%}
-      .brand-logo{left:14px}
-      .chat-button{right:18px;bottom:18px;padding:12px 18px}
-      .chart-header{flex-direction:column;gap:12px;align-items:flex-start}
-      .chart-legend{justify-content:center}
-      /* 모바일도 보조 텍스트는 계속 숨김 */
-      .korean-desc{display:none!important}
-    }
-
-    /* 태블릿/중간폭: 가로 비율 망가질 때 전체 보이게 */
-    @media (orientation: landscape) and (max-aspect-ratio: 16/10){
-      .video-background{object-fit:contain;object-position:50% 50%;background:#000}
-      .video-overlay{background:rgba(0,0,0,.38)}
-      .video-fade{height:22vh}
-    }
-
-    /* 세로(포트레이트): 전체 보이게(이미 잘 됨) */
-    @media (orientation: portrait){
-      .video-background{
-        position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;
-        min-width:0 !important;min-height:0 !important;
-        object-fit:contain;object-position:50% 50%;background:#000;
-      }
-      .video-overlay{background:rgba(0,0,0,.38)}
-      .video-fade{height:22vh}
-      .brand-logo{top:calc(env(safe-area-inset-top,0px) + 0px)}
+    /* Chat button */
+    .chat-button{
+      position:fixed;right:20px;bottom:20px;z-index:1000;cursor:pointer;
+      background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;
+      padding:14px 20px;border-radius:50px;border:2px solid rgba(139,92,246,.3);
+      box-shadow:0 10px 30px rgba(139,92,246,.4);font-weight:600
     }
   </style>
 </head>
 <body>
   <div class="fallback-bg"></div>
 
-  <!-- ── 배경 비디오: 세로/가로 자동 분기 -->
+  <!-- Responsive background video: portrait / landscape -->
   <video class="video-background" autoplay muted loop playsinline preload="auto">
-    <source src="/background1.mp4" type="video/mp4" media="(orientation: portrait)">
-    <source src="/background.mp4"  type="video/mp4" media="(orientation: landscape)">
-    <source src="/background.mp4"  type="video/mp4">
+    <source src="/background-portrait.mp4" type="video/mp4" media="(orientation: portrait)">
+    <source src="/background.mp4"           type="video/mp4" media="(orientation: landscape)">
   </video>
-
   <div class="video-overlay"></div>
-  <div class="video-fade"></div>
 
-  <!-- 좌상단 로고 -->
-  <a href="/" class="brand-logo" aria-label="TWO.4 home">
+  <!-- Top-left logo -->
+  <a href="/" class="brand-logo" aria-label="home">
     <img src="/logo1.png" alt="TWO.4">
   </a>
 
-  <!-- 상단 우측: 메뉴 버튼 -->
+  <!-- Menu button -->
   <nav class="nav">
-    <a href="#home" class="nav-home">Home</a>
-    <div class="menu-btn" id="menuButton" aria-label="Open menu">
+    <div class="menu-btn" id="menuButton" aria-label="menu">
       <div class="menu-icon">
         <div class="menu-line"></div>
         <div class="menu-line"></div>
@@ -197,105 +179,47 @@
     </div>
   </nav>
 
-  <!-- 메인(히어로 영역) -->
-  <main class="main-container" id="home"></main>
-
-  <!-- 콘텐츠 -->
-  <section class="content-section">
-    <div class="container">
-      <div class="section-content">
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-controls">
-              <select id="timeSelector" class="chart-selector">
-                <option value="1">1D</option>
-                <option value="7" selected>7D</option>
-                <option value="30">30D</option>
-                <option value="90">90D</option>
-              </select>
-              <select id="chartType" class="chart-selector">
-                <option value="multi" selected>Multi Coins</option>
-                <option value="single">Single Coin</option>
-              </select>
-              <span class="price-display" id="marketCap">COSMOS Ready...</span>
-            </div>
-            <div class="chart-legend" id="chartLegend"></div>
-          </div>
-          <canvas id="cosmosChart" class="cosmos-chart-canvas"></canvas>
-        </div>
-      </div>
-
-      <div class="section-content">
-        <div class="news-grid">
-          <div class="news-card">
-            <h3 class="card-title">최신 암호화폐 뉴스 1</h3>
-            <div class="card-content">비트코인이 새로운 최고가를 경신하며 시장에 활기를 불어넣고 있습니다. 기관 투자자들의 지속적인 유입이 주요 요인으로 분석됩니다.</div>
-          </div>
-          <div class="news-card">
-            <h3 class="card-title">최신 암호화폐 뉴스 2</h3>
-            <div class="card-content">이더리움 네트워크 업그레이드가 성공적으로 완료되어 거래 속도 향상과 수수료 절감 효과가 기대됩니다.</div>
-          </div>
-          <div class="news-card">
-            <h3 class="card-title">최신 암호화폐 뉴스 3</h3>
-            <div class="card-content">DeFi 프로토콜들이 새로운 혁신을 선보이며 전통 금융과의 융합이 가속화되고 있습니다.</div>
-          </div>
-        </div>
-      </div>
+  <!-- 24H DAY-BAND (00:00 → 24:00) -->
+  <div class="dayband" id="dayBand" aria-label="24h day progress">
+    <div class="dayband__bar">
+      <div class="dayband__fill" id="dayBandFill"></div>
+      <!-- markers -->
+      <div class="dayband__marker" data-label="오전 9시" data-hm="09:00"></div>
+      <div class="dayband__marker dayband__marker--mid" data-label="ESC" data-hm="12:00" title="Noon pivot"></div>
+      <div class="dayband__marker" data-label="오후 10:30" data-hm="22:30"></div>
     </div>
-  </section>
+    <div class="dayband__labels">
+      <span class="dayband__edge">00:00</span>
+      <span class="dayband__edge">24:00</span>
+      <span class="dayband__now" id="dayBandNow">AM 12:00:00</span>
+    </div>
+  </div>
 
-  <!-- 메뉴 오버레이 -->
-  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
-    <div class="menu-close" id="menuClose" aria-label="Close menu">×</div>
+  <!-- Menu overlay -->
+  <div class="menu-overlay" id="menuOverlay">
+    <div class="menu-close" id="menuClose">×</div>
 
     <div class="menu-section">
       <ul class="menu-items">
-        <li class="menu-item">
-          <a href="/charts" class="menu-link">COSMOS (CHARTS)
-            <span class="korean-desc">차트</span></a>
-        </li>
-        <li class="menu-item">
-          <a href="/signals" class="menu-link">ORBITS (SIGNALS / INDICATORS)
-            <span class="korean-desc">지표/신호</span></a>
-        </li>
-        <li class="menu-item">
-          <a href="/technique" class="menu-link">METHOD (TECHNIQUE)
-            <span class="korean-desc">매매 기법</span></a>
-        </li>
-        <li class="menu-item">
-          <a href="/psyche" class="menu-link">PSYCHE
-            <span class="korean-desc">마음과 철학, 멘탈</span></a>
-        </li>
+        <li class="menu-item"><a href="/charts" class="menu-link">COSMOS (CHARTS)<span class="korean-desc">차트</span></a></li>
+        <li class="menu-item"><a href="/signals" class="menu-link">ORBITS (INDICATORS)<span class="korean-desc">지표/신호</span></a></li>
+        <li class="menu-item"><a href="/technique" class="menu-link">METHOD (TECHNIQUE)<span class="korean-desc">매매 기법</span></a></li>
+        <li class="menu-item"><a href="/psyche" class="menu-link">PSYCHE<span class="korean-desc">마음과 철학, 멘탈</span></a></li>
       </ul>
     </div>
 
     <div class="menu-section">
       <ul class="menu-items">
-        <li class="menu-item">
-          <a href="/observations" class="menu-link">ECHOES (OBSERVATIONS / NEWS)
-            <span class="korean-desc">사건의 메아리, 관찰 기록</span></a>
-        </li>
-        <li class="menu-item">
-          <a href="/community" class="menu-link">CONSTELLATION (COMMUNITY)
-            <span class="korean-desc">사용자 커뮤니티</span></a>
-        </li>
-        <li class="menu-item">
-          <a href="/alerts" class="menu-link">BEACONS (ALERTS)
-            <span class="korean-desc">주의</span></a>
-        </li>
+        <li class="menu-item"><a href="/observations" class="menu-link">ECHOES (NEWS)<span class="korean-desc">관찰 기록</span></a></li>
+        <li class="menu-item"><a href="/community" class="menu-link">CONSTELLATION (COMMUNITY)<span class="korean-desc">사용자 커뮤니티</span></a></li>
+        <li class="menu-item"><a href="/alerts" class="menu-link">BEACONS (ALERTS)<span class="korean-desc">주의</span></a></li>
       </ul>
     </div>
 
     <div class="menu-section">
       <ul class="menu-items">
-        <li class="menu-item">
-          <a href="/seed" class="menu-link featured">SEED ORACLE (SEED AI Q/A)
-            <span class="korean-desc">seed AI (챗봇 서비스)</span></a>
-        </li>
-        <li class="menu-item">
-          <a href="/portal" class="menu-link featured">PORTAL
-            <span class="korean-desc">(가입/로그인/로그아웃)</span></a>
-        </li>
+        <li class="menu-item"><a href="/seed" class="menu-link featured">SEED ORACLE (Q/A)<span class="korean-desc">seed AI</span></a></li>
+        <li class="menu-item"><a href="/portal" class="menu-link featured">PORTAL<span class="korean-desc">가입/로그인</span></a></li>
       </ul>
     </div>
   </div>
@@ -303,123 +227,77 @@
   <button class="chat-button" id="chatButton">채팅하기</button>
 
   <script>
-    // ── 메뉴 토글
-    function toggleMenu(){
-      const overlay = document.getElementById('menuOverlay');
-      const active = overlay.classList.toggle('active');
-      overlay.setAttribute('aria-hidden', active ? 'false' : 'true');
+    // --- Menu toggle ---
+    function toggleMenu(){ document.getElementById('menuOverlay')?.classList.toggle('active'); }
+
+    // --- Dayband (24h, KST) ---
+    function initDayBand24(){
+      const elFill = document.getElementById('dayBandFill');
+      const elNow  = document.getElementById('dayBandNow');
+      const band   = document.getElementById('dayBand');
+      const markers= Array.from(document.querySelectorAll('.dayband__marker'));
+      if(!elFill) return;
+
+      const TZ='Asia/Seoul';
+      const pad=n=>String(n).padStart(2,'0');
+      const toKST=(d=new Date())=>new Date(d.toLocaleString('en-US',{timeZone:TZ}));
+      const hmToPercent=hm=>{const [H,M]=hm.split(':').map(Number);return ((H+M/60)/24)*100};
+
+      // place markers
+      markers.forEach(m=>{ const p=hmToPercent(m.dataset.hm||'00:00'); m.style.left=`${p}%`; });
+
+      const fmtAMPM=(H,M,S)=>{const ap=H>=12?'PM':'AM';let h=H%12;if(h===0)h=12;return `${ap} ${pad(h)}:${pad(M)}:${pad(S)}`};
+
+      function tick(){
+        const now=toKST();
+        const start=new Date(now); start.setHours(0,0,0,0);
+        const end=new Date(start); end.setDate(end.getDate()+1);
+
+        const total=end-start, passed=now-start;
+        const pct=Math.max(0,Math.min(100,(passed/total)*100));
+        elFill.style.width=`${pct}%`;
+
+        // ESC pulse (±3분)
+        const noon=new Date(start); noon.setHours(12,0,0,0);
+        band?.classList.toggle('is-esc-hot', Math.abs(now - noon) <= 3*60*1000);
+
+        if(elNow) elNow.textContent=fmtAMPM(now.getHours(),now.getMinutes(),now.getSeconds());
+      }
+      tick(); setInterval(tick,1000);
+      document.addEventListener('visibilitychange',()=>{ if(!document.hidden) tick(); });
     }
 
-    document.addEventListener('DOMContentLoaded', function(){
-      const menuButton = document.getElementById('menuButton');
-      const menuClose  = document.getElementById('menuClose');
-      const menuOverlay= document.getElementById('menuOverlay');
-      const chatButton = document.getElementById('chatButton');
+    // --- Video helpers ---
+    function handleVideo(){
+      const v=document.querySelector('.video-background');
+      if(!v) return;
+      v.addEventListener('error',()=>{ v.style.display='none'; });
+      ['touchstart','click'].forEach(evt=>{
+        document.addEventListener(evt,()=>{ if(v.paused){ v.play().catch(()=>{}); } },{passive:true});
+      });
+    }
 
-      // 열기/닫기
-      menuButton && menuButton.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
-      menuClose  && menuClose.addEventListener('click',  (e)=>{ e.stopPropagation(); toggleMenu(); });
+    document.addEventListener('DOMContentLoaded',()=>{
+      // init
+      handleVideo();
+      initDayBand24();
 
-      // 오버레이 외부 클릭 시 닫기
-      document.addEventListener('click', (e)=>{
-        if (!menuOverlay.classList.contains('active')) return;
-        const btn = document.getElementById('menuButton');
-        if (!menuOverlay.contains(e.target) && !btn.contains(e.target)) {
-          menuOverlay.classList.remove('active');
-          menuOverlay.setAttribute('aria-hidden','true');
+      // menu
+      const btn=document.getElementById('menuButton');
+      const closeBtn=document.getElementById('menuClose');
+      const overlay=document.getElementById('menuOverlay');
+      btn?.addEventListener('click',toggleMenu);
+      closeBtn?.addEventListener('click',toggleMenu);
+      document.addEventListener('click',(e)=>{
+        if(!overlay) return;
+        if(overlay.classList.contains('active') && !overlay.contains(e.target) && !btn.contains(e.target)){
+          overlay.classList.remove('active');
         }
       });
 
-      // ESC 닫기
-      document.addEventListener('keydown', (e)=>{
-        if (e.key === 'Escape' && menuOverlay.classList.contains('active')) {
-          menuOverlay.classList.remove('active');
-          menuOverlay.setAttribute('aria-hidden','true');
-        }
-      });
-
-      // 채팅 버튼(더미)
-      chatButton && chatButton.addEventListener('click', ()=> alert('SEED ORACLE 채팅 기능 준비중입니다.'));
-
-      // ── COSMOS 차트 엔진
-      setTimeout(()=>{ initCosmosChart(); setupEventListeners(); }, 250);
+      // chat
+      document.getElementById('chatButton')?.addEventListener('click',()=>alert('SEED ORACLE 채팅 준비중입니다.'));
     });
-
-    // ===== COSMOS 차트 엔진 =====
-    let chartCanvas=null,chartContext=null,currentData=new Map,isAnimating=false,animationFrame=null;
-    const cryptoConfig=[
-      {id:'bitcoin',name:'BTC',color:'#ff9500',visible:true,basePrice:112154},
-      {id:'ethereum',name:'ETH',color:'#627eea',visible:true,basePrice:3680},
-      {id:'binancecoin',name:'BNB',color:'#f0b90b',visible:true,basePrice:715},
-      {id:'solana',name:'SOL',color:'#9945ff',visible:true,basePrice:185},
-      {id:'cardano',name:'ADA',color:'#0066cc',visible:true,basePrice:1.12},
-      {id:'ripple',name:'XRP',color:'#00d4aa',visible:true,basePrice:5.124},
-      {id:'avalanche-2',name:'AVAX',color:'#e84142',visible:true,basePrice:52},
-      {id:'dogecoin',name:'DOGE',color:'#c2a633',visible:true,basePrice:.384}
-    ];
-    function initCosmosChart(){
-      chartCanvas=document.getElementById('cosmosChart');
-      if(!chartCanvas) return;
-      chartContext=chartCanvas.getContext('2d');
-      resizeChart(); createChartLegend(); generateAllCosmosData(); startChartAnimation(); startRealTimeUpdates();
-      window.addEventListener('resize',resizeChart);
-      const cap=document.getElementById('marketCap'); if(cap) cap.textContent='COSMOS Live: $3.85T';
-    }
-    function resizeChart(){ if(!chartCanvas) return; const rect=chartCanvas.parentElement.getBoundingClientRect(); chartCanvas.width=rect.width-4; chartCanvas.height=480; if(chartContext) drawChart(); }
-    function createChartLegend(){ const el=document.getElementById('chartLegend'); el.innerHTML=''; cryptoConfig.forEach((c,i)=>{const d=document.createElement('div'); d.className='legend-item'; d.innerHTML=`<div class="legend-color" style="background-color:${c.color}"></div><span>${c.name}</span>`; d.addEventListener('click',()=>{cryptoConfig[i].visible=!cryptoConfig[i].visible; updateLegendVisibility(i,cryptoConfig[i].visible); drawChart();}); el.appendChild(d); }); }
-    function updateLegendVisibility(i,v){const items=document.querySelectorAll('.legend-item'); if(items[i]) items[i].style.opacity=v?'1':'0.3';}
-    function generateAllCosmosData(){ cryptoConfig.forEach(c=>{ currentData.set(c.id, generateCosmosData(c,100)); }); }
-    function generateCosmosData(crypto,n){ const data=[], now=Date.now(), iv=3600000; let p=crypto.basePrice, base=p;
-      for(let i=n;i>=0;i--){ const ts=now-(i*iv); const h=new Date(ts).getHours(); let vol=.015; if(h>=8&&h<=16) vol=.025; if(h>=14&&h<=22) vol=.035;
-        p*=(1+((Math.random()-.5)*vol)); p*=(1+Math.sin((i/30)*Math.PI)*.001);
-        if(p>1.4*base) p=1.35*base; if(p<.6*base) p=.65*base;
-        data.push({timestamp:ts,price:Math.max(p,.001)});
-      } return data.sort((a,b)=>a.timestamp-b.timestamp);
-    }
-    function startChartAnimation(){ if(isAnimating) return; isAnimating=true; (function loop(){ drawChart(); animationFrame=requestAnimationFrame(loop); })(); }
-    function drawChart(){ if(!chartContext||!chartCanvas) return; const ctx=chartContext, w=chartCanvas.width, h=chartCanvas.height;
-      ctx.clearRect(0,0,w,h);
-      const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'rgba(139,92,246,.15)'); g.addColorStop(.5,'rgba(59,130,246,.08)'); g.addColorStop(1,'rgba(0,0,0,.40)'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
-      drawGrid(ctx,w,h);
-      cryptoConfig.forEach(c=>{ if(c.visible && currentData.has(c.id)) drawOrbit(ctx,c,currentData.get(c.id),w,h); });
-    }
-    function drawGrid(ctx,w,h){ const m={left:40,right:80,top:30,bottom:40}, cw=w-m.left-m.right, ch=h-m.top-m.bottom;
-      ctx.strokeStyle='rgba(139,92,246,.15)'; ctx.lineWidth=.5;
-      for(let i=0;i<=12;i++){const x=m.left+(i/12)*cw; ctx.beginPath(); ctx.moveTo(x,m.top); ctx.lineTo(x,h-m.bottom); ctx.stroke();}
-      for(let i=0;i<=8;i++){const y=m.top+(i/8)*ch; ctx.beginPath(); ctx.moveTo(m.left,y); ctx.lineTo(w-m.right,y); ctx.stroke();}
-    }
-    function drawOrbit(ctx,crypto,data,w,h){
-      if(!data||data.length<2) return;
-      const m={left:40,right:80,top:30,bottom:40}, cw=w-m.left-m.right, ch=h-m.top-m.bottom;
-      const prices=data.map(d=>d.price), min=Math.min(...prices), max=Math.max(...prices), range=max-min||1, time=data[data.length-1].timestamp-data[0].timestamp;
-      ctx.strokeStyle=crypto.color; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.shadowColor=crypto.color; ctx.shadowBlur=8; ctx.beginPath();
-      data.forEach((p,i)=>{ const x=m.left+((p.timestamp-data[0].timestamp)/time)*cw; const y=m.top+(ch-((p.price-min)/range)*ch);
-        if(i===0) ctx.moveTo(x,y); else{ const q=data[i-1]; const px=m.left+((q.timestamp-data[0].timestamp)/time)*cw; const py=m.top+(ch-((q.price-min)/range)*ch); const cx=(px+x)/2; ctx.quadraticCurveTo(cx,py,x,y); }
-      });
-      ctx.stroke();
-      const last=data[data.length-1]; const lx=m.left+((last.timestamp-data[0].timestamp)/time)*cw; const ly=m.top+(ch-((last.price-min)/range)*ch);
-      ctx.beginPath(); ctx.arc(lx,ly,5,0,Math.PI*2); ctx.fillStyle=crypto.color; ctx.fill();
-      ctx.fillStyle=crypto.color; ctx.font='12px Orbitron, monospace'; ctx.textAlign='left'; ctx.fillText(`${last.price.toFixed(crypto.basePrice<1?4:0)}`, lx+10, ly+4);
-      ctx.shadowBlur=0; ctx.textAlign='start';
-    }
-    function updateCosmosData(){
-      let total=0;
-      cryptoConfig.forEach(c=>{
-        if(currentData.has(c.id)){
-          const d=currentData.get(c.id); if(!d.length) return;
-          const last=d[d.length-1], now=Date.now();
-          const var1=(Math.random()-.5)*.04, wave=Math.sin(now/30000)*.01, mom=(Math.random()-.48)*.02, chg=var1+wave+mom;
-          d.push({timestamp:now,price:Math.max(last.price*(1+chg),.001)}); total+=chg; if(d.length>120) d.shift();
-        }
-      });
-      const avg=total/cryptoConfig.length, base=2.31, cap=base*(1+avg*10);
-      const el=document.getElementById('marketCap'); if(el) el.textContent=`COSMOS Live: ${cap.toFixed(2)}T`;
-    }
-    function startRealTimeUpdates(){ setInterval(updateCosmosData, 2000); }
-    function setupEventListeners(){
-      const sel=document.getElementById('timeSelector'); sel && sel.addEventListener('change', generateAllCosmosData);
-      const type=document.getElementById('chartType'); type && type.addEventListener('change', (e)=>{ if(e.target.value==='single'){ alert('단일 궤도 모드는 곧 출시됩니다!'); e.target.value='multi'; } });
-    }
   </script>
 </body>
 </html>
