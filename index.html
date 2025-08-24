@@ -25,23 +25,23 @@
       background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.55) 60%,rgba(0,0,0,1) 100%);
     }
 
-    /* ── 좌상단 로고 (더 위로 붙임) */
+    /* ── 좌상단 로고 (더 위로) */
     .brand-logo{
       position:fixed;z-index:1200;
-      top:calc(env(safe-area-inset-top,0px) + 2px);
+      top:calc(env(safe-area-inset-top,0px) + 0px);
       left:calc(env(safe-area-inset-left,0px) + 14px);
       display:block;
     }
     .brand-logo img{
       display:block;
-      height:clamp(54px,7.2vw,110px); /* 크기 유지, 위치 ↑ */
+      height:clamp(54px,7.2vw,110px);
       width:auto;
       filter:drop-shadow(0 0 12px rgba(139,92,246,.85)) drop-shadow(0 0 24px rgba(56,189,248,.45));
     }
 
     /* ── 상단 우측: 메뉴 버튼 (HOME 숨김) */
     .nav{position:fixed;top:30px;right:30px;z-index:1000;display:flex;align-items:center;gap:22px}
-    .nav-home{display:none} /* 요청대로 숨김 */
+    .nav-home{display:none}
     .menu-btn{
       width:50px;height:50px;border-radius:50%;
       background:rgba(139,92,246,.22);
@@ -105,7 +105,7 @@
     @keyframes chatPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
     .chat-button:hover{transform:translateY(-2px)}
 
-    /* ── 메뉴 오버레이 (복구) */
+    /* ── 메뉴 오버레이 */
     .menu-overlay{
       position:fixed;top:0;right:-450px;width:450px;height:100vh;background:rgba(0,0,0,.97);
       backdrop-filter:blur(30px);border-left:2px solid rgba(139,92,246,.4);z-index:2000;
@@ -127,7 +127,11 @@
       transition:.2s
     }
     .menu-link:hover{color:#fff;background:rgba(139,92,246,.1);transform:translateX(6px);text-shadow:0 0 14px rgba(139,92,246,.5)}
-    .korean-desc{margin-left:8px;color:#a78bfa;font-size:12px;font-weight:500;text-transform:none;letter-spacing:0}
+
+    /* ▶ 한글 보조 텍스트: 기본 숨김, hover 시만 표시 */
+    .korean-desc{display:none!important;margin-left:8px;color:#a78bfa;font-size:12px;font-weight:500;text-transform:none;letter-spacing:0}
+    .menu-link:hover .korean-desc{display:inline!important}
+
     .menu-link.featured{background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(168,85,247,.12));border:1px solid rgba(139,92,246,.32);color:#c4b5fd}
     .menu-link.featured:hover{background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(168,85,247,.18));border-color:rgba(139,92,246,.6)}
 
@@ -139,15 +143,18 @@
       .chat-button{right:18px;bottom:18px;padding:12px 18px}
       .chart-header{flex-direction:column;gap:12px;align-items:flex-start}
       .chart-legend{justify-content:center}
-      .korean-desc{display:none}
+      /* 모바일도 보조 텍스트는 계속 숨김 */
+      .korean-desc{display:none!important}
     }
 
-    /* 태블릿 중앙 포커스 */
-    @media (min-width:768px) and (max-width:1199px){
-      .video-background{object-position:50% 50%}
+    /* 태블릿/중간폭: 가로 비율 망가질 때 전체 보이게 */
+    @media (orientation: landscape) and (max-aspect-ratio: 16/10){
+      .video-background{object-fit:contain;object-position:50% 50%;background:#000}
+      .video-overlay{background:rgba(0,0,0,.38)}
+      .video-fade{height:22vh}
     }
 
-    /* ── 세로(포트레이트) 전용: 확대 방지 + 중앙 */
+    /* 세로(포트레이트): 전체 보이게(이미 잘 됨) */
     @media (orientation: portrait){
       .video-background{
         position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;
@@ -156,7 +163,7 @@
       }
       .video-overlay{background:rgba(0,0,0,.38)}
       .video-fade{height:22vh}
-      .brand-logo{top:calc(env(safe-area-inset-top,0px) + 2px);left:calc(env(safe-area-inset-left,0px) + 12px)}
+      .brand-logo{top:calc(env(safe-area-inset-top,0px) + 0px)}
     }
   </style>
 </head>
@@ -178,7 +185,7 @@
     <img src="/logo1.png" alt="TWO.4">
   </a>
 
-  <!-- 상단 우측: 메뉴 버튼 (HOME 숨김) -->
+  <!-- 상단 우측: 메뉴 버튼 -->
   <nav class="nav">
     <a href="#home" class="nav-home">Home</a>
     <div class="menu-btn" id="menuButton" aria-label="Open menu">
@@ -190,14 +197,13 @@
     </div>
   </nav>
 
-  <!-- 메인(히어로 영역) — 제목은 제거 -->
+  <!-- 메인(히어로 영역) -->
   <main class="main-container" id="home"></main>
 
   <!-- 콘텐츠 -->
   <section class="content-section">
     <div class="container">
       <div class="section-content">
-        <!-- 큰 제목 제거됨 -->
         <div class="chart-container">
           <div class="chart-header">
             <div class="chart-controls">
@@ -238,7 +244,7 @@
     </div>
   </section>
 
-  <!-- 메뉴 오버레이 (복구) -->
+  <!-- 메뉴 오버레이 -->
   <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
     <div class="menu-close" id="menuClose" aria-label="Close menu">×</div>
 
@@ -357,7 +363,7 @@
       chartContext=chartCanvas.getContext('2d');
       resizeChart(); createChartLegend(); generateAllCosmosData(); startChartAnimation(); startRealTimeUpdates();
       window.addEventListener('resize',resizeChart);
-      document.getElementById('marketCap').textContent='COSMOS Live: $3.85T';
+      const cap=document.getElementById('marketCap'); if(cap) cap.textContent='COSMOS Live: $3.85T';
     }
     function resizeChart(){ if(!chartCanvas) return; const rect=chartCanvas.parentElement.getBoundingClientRect(); chartCanvas.width=rect.width-4; chartCanvas.height=480; if(chartContext) drawChart(); }
     function createChartLegend(){ const el=document.getElementById('chartLegend'); el.innerHTML=''; cryptoConfig.forEach((c,i)=>{const d=document.createElement('div'); d.className='legend-item'; d.innerHTML=`<div class="legend-color" style="background-color:${c.color}"></div><span>${c.name}</span>`; d.addEventListener('click',()=>{cryptoConfig[i].visible=!cryptoConfig[i].visible; updateLegendVisibility(i,cryptoConfig[i].visible); drawChart();}); el.appendChild(d); }); }
