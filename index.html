@@ -21,35 +21,73 @@
       overflow-x:hidden;
     }
 
-    /* ========== Background Video ========== */
+    /* ========== Background Video - 비율별 최적화 ========== */
     .video-background{
-      position:fixed; inset:0;
-      width:100vw; height:100vh;
-      min-width:100%; min-height:100%;
-      object-fit:cover; object-position:center;
-      z-index:0;
-      background:#000;
-      pointer-events:none; /* 클릭/스크롤 침범 방지 */
+      position:fixed; 
+      top: 0;
+      left: 0;
+      width: 100vw; 
+      height: 100vh;
+      object-fit: cover; 
+      object-position: center center;
+      z-index: 0;
+      background: #000;
+      pointer-events: none;
     }
-    /* 방향에 따라 프레이밍 조금 보정(필요시 숫자만 미세조절) */
-    @media (orientation:portrait){
-      .video-background{ object-position:center 32% }
+    
+    /* 세로 비율 (모바일) */
+    @media (orientation: portrait) {
+      .video-background{ 
+        object-position: center 40%;
+        transform: scale(1.1);
+      }
     }
+    
+    /* 가로 비율 (데스크톱) - 가로축 중심 */
+    @media (orientation: landscape) {
+      .video-background{ 
+        object-position: center center;
+        width: 100vw;
+        height: 100vh;
+        transform: scale(1);
+      }
+    }
+    
+    /* 초광각 화면 대응 */
+    @media (orientation: landscape) and (min-aspect-ratio: 21/9) {
+      .video-background{
+        object-position: center center;
+        transform: scale(1.2);
+      }
+    }
+    
+    /* 정사각형에 가까운 비율 */
+    @media (min-aspect-ratio: 4/5) and (max-aspect-ratio: 5/4) {
+      .video-background{
+        object-position: center 35%;
+        transform: scale(1.05);
+      }
+    }
+    
     .video-overlay{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.28);
-      z-index:1; pointer-events:none;
+      position:fixed; 
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:rgba(0,0,0,.25);
+      z-index:1; 
+      pointer-events:none;
     }
     .video-overlay::before{
-      content:""; position:absolute; inset:0; pointer-events:none;
+      content:""; 
+      position:absolute; 
+      inset:0; 
+      pointer-events:none;
       background:
-        radial-gradient(900px 700px at 70% 12%, rgba(139,92,246,.14), transparent 60%),
-        radial-gradient(900px 700px at 20% 80%, rgba(34,211,238,.12), transparent 60%);
+        radial-gradient(800px 600px at 70% 15%, rgba(139,92,246,.12), transparent 65%),
+        radial-gradient(800px 600px at 25% 85%, rgba(34,211,238,.08), transparent 60%);
     }
-
-    /* 데이터절약/모션감소/모바일/세로 비율에선 mp4 비활성화 (그라디언트만 표시) */
-    /* mp4 kept visible: removed mobile/data/motion hide */
-    /* mp4 kept visible on portrait */
 
     /* ========== Top-left Logo ========== */
     .brand-logo{
@@ -60,7 +98,7 @@
     }
     .brand-logo img{
       display:block;
-      height:clamp(36px,3.8vw,60px); /* 로고 크게 조정 */
+      height:clamp(36px,3.8vw,60px);
       width:auto;
       filter:drop-shadow(0 2px 8px rgba(0,0,0,.35));
       opacity:.95;
@@ -77,7 +115,6 @@
       z-index:1200;
       display:flex; align-items:center; gap:20px;
     }
-    .nav-home{ display:none } /* 홈 텍스트는 숨김(로고가 홈 역할) */
 
     .menu-btn{
       width:54px; height:54px;
@@ -101,7 +138,7 @@
     .menu-line:nth-child(2){ top:8px }
     .menu-line:nth-child(3){ top:16px }
 
-    /* ========== Infinity Clock (네 코드) ========== */
+    /* ========== Infinity Clock ========== */
     .infinity-clock{
       position:absolute;
       top: clamp(4px, 1.5vh, 12px);
@@ -111,143 +148,379 @@
       pointer-events:none; z-index:1200;
     }
     .inf-svg{ width:clamp(200px,35vw,400px); height:auto }
-    .esc{ font:600 clamp(13px,2.4vw,17px) 'Space Grotesk',system-ui,sans-serif; fill:rgba(255,255,255,.85); letter-spacing:1.5px }
-    .inf-base{ fill:none; stroke:rgba(255,255,255,.12); stroke-width:6; stroke-linecap:round }
-    .inf-prog{ fill:none; stroke:url(#inf-grad); stroke-width:6; stroke-linecap:round }
+    .esc{ 
+      font:600 clamp(13px,2.4vw,17px) 'Space Grotesk',system-ui,sans-serif; 
+      fill:rgba(255,255,255,.85); 
+      letter-spacing:1.5px 
+    }
+    .inf-base{ 
+      fill:none; 
+      stroke:rgba(255,255,255,.12); 
+      stroke-width:6; 
+      stroke-linecap:round 
+    }
+    .inf-prog{ 
+      fill:none; 
+      stroke:url(#inf-grad); 
+      stroke-width:6; 
+      stroke-linecap:round 
+    }
     .inf-cursor{ fill:rgba(255,255,255,.9) }
     .inf-mark{ fill:rgba(255,255,255,.35) }
     .inf-digital{
-      font-family:'Space Grotesk',system-ui,sans-serif; font-weight:500;
-      font-size:clamp(12px,1.8vw,16px); color:rgba(255,255,255,.95); letter-spacing:1px;
+      font-family:'Space Grotesk',system-ui,sans-serif; 
+      font-weight:500;
+      font-size:clamp(12px,1.8vw,16px); 
+      color:rgba(255,255,255,.95); 
+      letter-spacing:1px;
       background:rgba(0,0,0,.15);
       padding: clamp(6px,1vw,10px) clamp(10px,1.8vw,16px);
-      border-radius:8px; border:1px solid rgba(255,255,255,.06); backdrop-filter:blur(8px)
+      border-radius:8px; 
+      border:1px solid rgba(255,255,255,.06); 
+      backdrop-filter:blur(8px)
     }
     .time-quote{
-      font-family:'Space Grotesk',system-ui,sans-serif; font-weight:300;
-      font-size:clamp(9px,1.2vw,11px); color:rgba(255,255,255,.55);
-      text-align:center; margin-top: clamp(4px,.8vh,8px);
-      line-height:1.3; letter-spacing:.2px; font-style:italic
+      font-family:'Space Grotesk',system-ui,sans-serif; 
+      font-weight:300;
+      font-size:clamp(9px,1.2vw,11px); 
+      color:rgba(255,255,255,.55);
+      text-align:center; 
+      margin-top: clamp(4px,.8vh,8px);
+      line-height:1.3; 
+      letter-spacing:.2px; 
+      font-style:italic
     }
     @media (max-width:768px){
       .infinity-clock{ top: clamp(2px,1vh,8px) }
       .inf-svg{ width:clamp(280px,85vw,400px) }
     }
 
-    /* ========== Content (복원) ========== */
+    /* ========== Main Hero Section - 배경이 보이도록 ========== */
+    .hero-section{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      z-index:1;
+      background:transparent;
+    }
+
+    .hero-content{
+      text-align:center;
+      max-width:800px;
+      padding:20px;
+      margin-top:100px;
+    }
+
+    .hero-title{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:clamp(2rem, 6vw, 4rem);
+      font-weight:700;
+      background:linear-gradient(135deg, #8b5cf6, #06b6d4);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      margin-bottom:1.5rem;
+      text-shadow:0 0 40px rgba(139,92,246,.3);
+    }
+
+    .hero-subtitle{
+      font-size:clamp(0.9rem, 2.2vw, 1.2rem);
+      color:rgba(255,255,255,.7);
+      margin-bottom:3rem;
+      line-height:1.5;
+      font-weight:300;
+    }
+
+    /* ========== Content - 차트 영역 ========== */
     .content-section{
-      background:rgba(0,0,0,.82);
+      background:linear-gradient(135deg, rgba(0,0,0,.92), rgba(15,15,30,.95));
       backdrop-filter:blur(20px);
       min-height:100vh;
-      padding:100px 20px 120px;
-      border-top:1px solid rgba(139,92,246,.3);
-      position:relative; z-index:1;
+      padding:80px 20px 120px;
+      border-top:2px solid rgba(139,92,246,.3);
+      position:relative; 
+      z-index:2;
+      box-shadow:0 -20px 40px rgba(0,0,0,.3);
     }
-    .container{ max-width:1200px; margin:0 auto }
+
+    .container{ 
+      max-width:1200px; 
+      margin:0 auto 
+    }
+
     .section-title{
       font-family:'Space Grotesk',sans-serif;
-      font-size:3rem; font-weight:700; text-align:center; margin-bottom:3rem;
-      color:#8b5cf6; text-shadow:0 0 30px rgba(139,92,246,.8)
+      font-size:clamp(2rem, 6vw, 3.5rem); 
+      font-weight:700; 
+      text-align:center; 
+      margin-bottom:3rem;
+      background:linear-gradient(135deg, #8b5cf6, #06b6d4);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      text-shadow:0 0 30px rgba(139,92,246,.6);
     }
-    .section-content{ display:grid; gap:3rem }
 
+    .section-content{ 
+      display:grid; 
+      gap:4rem;
+      margin-bottom:4rem;
+    }
+
+    /* 차트 컨테이너 - 더 미래적으로 */
     .chart-container{
-      background:rgba(139,92,246,.05);
-      border:1px solid rgba(139,92,246,.3);
-      border-radius:20px; padding:2rem;
-      box-shadow:0 20px 40px rgba(0,0,0,.3);
-      height:600px; position:relative; overflow:hidden
+      background:linear-gradient(135deg, rgba(139,92,246,.08), rgba(59,130,246,.05));
+      border:2px solid rgba(139,92,246,.25);
+      border-radius:24px; 
+      padding:2.5rem;
+      box-shadow:
+        0 25px 50px rgba(0,0,0,.4),
+        inset 0 1px 0 rgba(255,255,255,.1);
+      height:650px; 
+      position:relative; 
+      overflow:hidden;
     }
+
     .chart-container::before{
-      content:''; position:absolute; inset:0; left:-100%;
-      background:linear-gradient(90deg,transparent,rgba(139,92,246,.12),transparent);
-      animation:shimmer 3s ease-in-out infinite
+      content:''; 
+      position:absolute; 
+      inset:-2px; 
+      background:linear-gradient(45deg, transparent, rgba(139,92,246,.15), transparent);
+      border-radius:24px;
+      z-index:-1;
+      animation:borderPulse 4s ease-in-out infinite;
     }
-    @keyframes shimmer{ 0%{left:-100%} 100%{left:100%} }
+
+    @keyframes borderPulse{ 
+      0%,100%{opacity:.3} 
+      50%{opacity:.8} 
+    }
 
     .chart-header{
-      display:flex; justify-content:space-between; align-items:center;
-      margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid rgba(139,92,246,.2)
+      display:flex; 
+      justify-content:space-between; 
+      align-items:center;
+      margin-bottom:25px; 
+      padding-bottom:20px; 
+      border-bottom:2px solid rgba(139,92,246,.2);
     }
-    .chart-controls{ display:flex; gap:15px; align-items:center }
-    .chart-selector{
-      background:rgba(139,92,246,.1);
-      border:1px solid rgba(139,92,246,.3);
-      color:#fff; padding:8px 12px; border-radius:8px; font-size:14px; outline:none;
-      transition:.25s
-    }
-    .chart-selector:focus{ border-color:rgba(139,92,246,.6); box-shadow:0 0 15px rgba(139,92,246,.3) }
-    .chart-selector option{ background:#000; color:#fff }
 
-    .chart-legend{ display:flex; gap:20px; flex-wrap:wrap }
-    .legend-item{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:500; color:rgba(255,255,255,.85); cursor:pointer; transition:.25s }
-    .legend-item:hover{ color:#fff; transform:translateY(-1px) }
-    .legend-color{ width:12px; height:3px; border-radius:2px }
-    .price-display{ color:#8b5cf6; font-weight:600; font-size:16px; font-family:'Orbitron',monospace }
+    .chart-controls{ 
+      display:flex; 
+      gap:15px; 
+      align-items:center 
+    }
+
+    .chart-selector{
+      background:rgba(139,92,246,.15);
+      border:2px solid rgba(139,92,246,.3);
+      color:#fff; 
+      padding:10px 16px; 
+      border-radius:12px; 
+      font-size:14px; 
+      outline:none;
+      transition:.25s;
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:500;
+    }
+    .chart-selector:focus{ 
+      border-color:rgba(139,92,246,.6); 
+      box-shadow:0 0 20px rgba(139,92,246,.4) 
+    }
+    .chart-selector option{ 
+      background:#000; 
+      color:#fff 
+    }
+
+    .chart-legend{ 
+      display:flex; 
+      gap:20px; 
+      flex-wrap:wrap 
+    }
+    .legend-item{ 
+      display:flex; 
+      align-items:center; 
+      gap:8px; 
+      font-size:12px; 
+      font-weight:600; 
+      color:rgba(255,255,255,.85); 
+      cursor:pointer; 
+      transition:.25s;
+      padding:6px 12px;
+      border-radius:8px;
+      background:rgba(0,0,0,.3);
+    }
+    .legend-item:hover{ 
+      color:#fff; 
+      background:rgba(139,92,246,.2);
+      transform:translateY(-2px) 
+    }
+    .legend-color{ 
+      width:12px; 
+      height:3px; 
+      border-radius:2px 
+    }
+    .price-display{ 
+      color:#8b5cf6; 
+      font-weight:700; 
+      font-size:16px; 
+      font-family:'Orbitron',monospace;
+      text-shadow:0 0 10px rgba(139,92,246,.5);
+    }
 
     .cosmos-chart-canvas{
-      width:100%; height:480px; background:rgba(0,0,0,.2); border-radius:10px;
-      border:1px solid rgba(139,92,246,.1); cursor:crosshair
+      width:100%; 
+      height:500px; 
+      background:rgba(0,0,0,.4); 
+      border-radius:16px;
+      border:2px solid rgba(139,92,246,.15); 
+      cursor:crosshair;
+      box-shadow:inset 0 4px 20px rgba(0,0,0,.3);
     }
 
-    .news-grid,.coin-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:2rem }
+    /* 뉴스/커뮤니티 카드들 */
+    .news-grid,.coin-grid{ 
+      display:grid; 
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); 
+      gap:2.5rem 
+    }
+    
     .news-card,.coin-card{
-      background:rgba(139,92,246,.05);
-      border:1px solid rgba(139,92,246,.2);
-      border-radius:15px; padding:2rem; transition:.25s; backdrop-filter:blur(10px)
+      background:linear-gradient(135deg, rgba(139,92,246,.08), rgba(59,130,246,.05));
+      border:2px solid rgba(139,92,246,.2);
+      border-radius:20px; 
+      padding:2.5rem; 
+      transition:.3s; 
+      backdrop-filter:blur(15px);
+      box-shadow:0 10px 30px rgba(0,0,0,.2);
     }
     .news-card:hover,.coin-card:hover{
-      background:rgba(139,92,246,.1); border-color:rgba(139,92,246,.4);
-      transform:translateY(-5px); box-shadow:0 20px 40px rgba(139,92,246,.2)
+      background:linear-gradient(135deg, rgba(139,92,246,.15), rgba(59,130,246,.08));
+      border-color:rgba(139,92,246,.4);
+      transform:translateY(-8px); 
+      box-shadow:0 20px 40px rgba(139,92,246,.3);
     }
-    .card-title{ color:#8b5cf6; font-size:1.2rem; font-weight:600; margin-bottom:1rem }
-    .card-content{ color:rgba(255,255,255,.82) }
+    .card-title{ 
+      color:#8b5cf6; 
+      font-size:1.3rem; 
+      font-weight:700; 
+      margin-bottom:1.2rem;
+      font-family:'Space Grotesk',sans-serif;
+    }
+    .card-content{ 
+      color:rgba(255,255,255,.85);
+      line-height:1.6;
+    }
 
-    /* ========== Menu Overlay (복원) ========== */
+    /* ========== Menu Overlay ========== */
     .menu-overlay{
-      position:fixed; top:0; right:-450px; width:450px; height:100vh;
-      background:rgba(0,0,0,.97); backdrop-filter:blur(30px);
+      position:fixed; 
+      top:0; 
+      right:-450px; 
+      width:450px; 
+      height:100vh;
+      background:rgba(0,0,0,.97); 
+      backdrop-filter:blur(30px);
       border-left:2px solid rgba(139,92,246,.4);
-      z-index:2000; transition:right .4s ease;
-      padding:80px 40px 40px; overflow-y:auto
+      z-index:2000; 
+      transition:right .4s ease;
+      padding:80px 40px 40px; 
+      overflow-y:auto;
     }
     .menu-overlay.active{ right:0 }
     .menu-close{
-      position:absolute; top:30px; right:30px; width:40px; height:40px; cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      color:#8b5cf6; font-size:24px; transition:.25s; border-radius:50%;
-      border:1px solid rgba(139,92,246,.35)
+      position:absolute; 
+      top:30px; 
+      right:30px; 
+      width:40px; 
+      height:40px; 
+      cursor:pointer;
+      display:flex; 
+      align-items:center; 
+      justify-content:center;
+      color:#8b5cf6; 
+      font-size:24px; 
+      transition:.25s; 
+      border-radius:50%;
+      border:1px solid rgba(139,92,246,.35);
     }
-    .menu-close:hover{ color:#fff; background:rgba(139,92,246,.2); border-color:rgba(139,92,246,.65) }
+    .menu-close:hover{ 
+      color:#fff; 
+      background:rgba(139,92,246,.2); 
+      border-color:rgba(139,92,246,.65) 
+    }
     .menu-section{ margin-bottom:30px }
     .menu-items{ list-style:none }
     .menu-item{ margin-bottom:6px }
     .menu-link{
-      color:rgba(255,255,255,.85); text-decoration:none; font-size:14px; font-weight:500;
-      font-family:'Space Grotesk',sans-serif; text-transform:uppercase; letter-spacing:1px;
-      transition:.25s; display:block; padding:10px 16px; border-radius:8px; position:relative
+      color:rgba(255,255,255,.85); 
+      text-decoration:none; 
+      font-size:14px; 
+      font-weight:500;
+      font-family:'Space Grotesk',sans-serif; 
+      text-transform:uppercase; 
+      letter-spacing:1px;
+      transition:.25s; 
+      display:block; 
+      padding:10px 16px; 
+      border-radius:8px; 
+      position:relative;
     }
-    .menu-link:hover{ color:#fff; background:rgba(139,92,246,.1); transform:translateX(8px); text-shadow:0 0 15px rgba(139,92,246,.6) }
-    .korean-desc{ color:rgba(139,92,246,.85); font-size:12px; font-weight:400; text-transform:none; letter-spacing:0; margin-left:8px; display:none }
+    .menu-link:hover{ 
+      color:#fff; 
+      background:rgba(139,92,246,.1); 
+      transform:translateX(8px); 
+      text-shadow:0 0 15px rgba(139,92,246,.6) 
+    }
+    .korean-desc{ 
+      color:rgba(139,92,246,.85); 
+      font-size:12px; 
+      font-weight:400; 
+      text-transform:none; 
+      letter-spacing:0; 
+      margin-left:8px; 
+      display:none 
+    }
     .menu-link:hover .korean-desc{ display:inline }
     .menu-link.featured{
       background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(168,85,247,.1));
-      border:1px solid rgba(139,92,246,.3); font-weight:600; color:rgba(139,92,246,.92)
+      border:1px solid rgba(139,92,246,.3); 
+      font-weight:600; 
+      color:rgba(139,92,246,.92);
     }
     .menu-link.featured:hover{
       background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(168,85,247,.15));
-      border-color:rgba(139,92,246,.6); color:#fff; box-shadow:0 0 20px rgba(139,92,246,.4)
+      border-color:rgba(139,92,246,.6); 
+      color:#fff; 
+      box-shadow:0 0 20px rgba(139,92,246,.4);
     }
 
     /* ========== Chat Button ========== */
     .chat-button{
-      position:fixed; bottom:28px; right:28px;
+      position:fixed; 
+      bottom:28px; 
+      right:28px;
       background:linear-gradient(135deg,#8b5cf6,#7c3aed);
-      color:#fff; border:none; padding:16px 24px; border-radius:50px; cursor:pointer;
-      box-shadow:0 10px 30px rgba(139,92,246,.4); z-index:1000; font-weight:600; font-size:16px;
-      transition:.25s; backdrop-filter:blur(10px); border:2px solid rgba(139,92,246,.3); animation:chatPulse 2s ease-in-out infinite
+      color:#fff; 
+      border:none; 
+      padding:16px 24px; 
+      border-radius:50px; 
+      cursor:pointer;
+      box-shadow:0 10px 30px rgba(139,92,246,.4); 
+      z-index:1000; 
+      font-weight:600; 
+      font-size:16px;
+      transition:.25s; 
+      backdrop-filter:blur(10px); 
+      border:2px solid rgba(139,92,246,.3); 
+      animation:chatPulse 2s ease-in-out infinite;
     }
-    @keyframes chatPulse{ 0%,100%{transform:scale(1); box-shadow:0 10px 30px rgba(139,92,246,.4)} 50%{transform:scale(1.05); box-shadow:0 15px 40px rgba(139,92,246,.6)} }
+    @keyframes chatPulse{ 
+      0%,100%{transform:scale(1); box-shadow:0 10px 30px rgba(139,92,246,.4)} 
+      50%{transform:scale(1.05); box-shadow:0 15px 40px rgba(139,92,246,.6)} 
+    }
     .chat-button:hover{ transform:translateY(-3px) }
 
     /* ========== Mobile tweaks ========== */
@@ -258,13 +531,16 @@
       .section-title{ font-size:2rem }
       .chart-header{ flex-direction:column; gap:15px; align-items:flex-start }
       .chart-legend{ justify-content:center }
+      .chart-container{ height:550px; padding:1.5rem }
+      .cosmos-chart-canvas{ height:400px }
+      .hero-title{ font-size:2.5rem }
     }
   </style>
 </head>
 <body>
   <!-- Background -->
-  <video class="video-background" autoplay muted loop playsinline preload="metadata" id="bgVideo">
-    <source src="/background-portrait.mp4" type="video/mp4" media="(orientation: portrait)">
+  <video class="video-background" autoplay muted loop playsinline preload="auto" id="bgVideo">
+    <source src="/background1.mp4" type="video/mp4" media="(orientation: portrait)">
     <source src="/background.mp4" type="video/mp4" media="(orientation: landscape)">
     <source src="/background.mp4" type="video/mp4">
   </video>
@@ -279,7 +555,6 @@
 
   <!-- Nav -->
   <nav class="nav">
-    <a href="#home" class="nav-home">Home</a>
     <div class="menu-btn" id="menuButton" aria-label="Open menu">
       <div class="menu-icon">
         <div class="menu-line"></div>
@@ -312,10 +587,15 @@
     <div class="time-quote" id="timeQuote">Time is what we want most, but what we use worst.</div>
   </div>
 
-  <!-- Main -->
-  <main id="home"></main>
+  <!-- Hero Section - 배경이 보이는 영역 -->
+  <main class="hero-section" id="home">
+    <div class="hero-content">
+      <h1 class="hero-title">COSMOS</h1>
+      <p class="hero-subtitle">AI-Powered Trading Intelligence<br>Where Data Meets Destiny</p>
+    </div>
+  </main>
 
-  <!-- Content (복원) -->
+  <!-- Content - 차트 영역 -->
   <section class="content-section">
     <div class="container">
       <div class="section-content">
@@ -342,38 +622,38 @@
       </div>
 
       <div class="section-content">
-        <h2 class="section-title">Coin News</h2>
+        <h2 class="section-title">Intelligence Feed</h2>
         <div class="news-grid">
           <div class="news-card">
-            <h3 class="card-title">최신 암호화폐 뉴스 1</h3>
-            <div class="card-content">비트코인이 새로운 최고가를 경신하며 시장에 활기를 불어넣고 있습니다. 기관 투자자들의 지속적인 유입이 주요 요인으로 분석됩니다.</div>
+            <h3 class="card-title">Market Signals</h3>
+            <div class="card-content">비트코인이 새로운 저항선을 돌파하며 상승 모멘텀을 이어가고 있습니다. AI 분석에 따르면 기관 투자자들의 지속적인 유입이 주요 동력으로 작용하고 있습니다.</div>
           </div>
           <div class="news-card">
-            <h3 class="card-title">최신 암호화폐 뉴스 2</h3>
-            <div class="card-content">이더리움 네트워크 업그레이드가 성공적으로 완료되어 거래 속도 향상과 수수료 절감 효과가 기대됩니다.</div>
+            <h3 class="card-title">Network Updates</h3>
+            <div class="card-content">이더리움 네트워크의 최신 업그레이드가 완료되어 거래 처리량이 30% 향상되었습니다. DeFi 생태계에 긍정적 영향이 예상됩니다.</div>
           </div>
           <div class="news-card">
-            <h3 class="card-title">최신 암호화폐 뉴스 3</h3>
-            <div class="card-content">DeFi 프로토콜들이 새로운 혁신을 선보이며 전통 금융과의 융합이 가속화되고 있습니다.</div>
+            <h3 class="card-title">AI Insights</h3>
+            <div class="card-content">머신러닝 모델이 감지한 새로운 패턴 분석 결과, 알트코인 시장에서 흥미로운 기회가 포착되고 있습니다.</div>
           </div>
         </div>
       </div>
 
       <div class="section-content" style="text-align:center;">
-        <h2 class="section-title">사용자 게시판</h2>
-        <p style="font-size:1.2rem;margin-bottom:2rem;color:rgba(255,255,255,.7)">방문자들의 이야기를 나누는 공간</p>
+        <h2 class="section-title">Community Hub</h2>
+        <p style="font-size:1.2rem;margin-bottom:2rem;color:rgba(255,255,255,.7)">트레이더들이 모이는 지식 공유 공간</p>
         <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap">
           <div class="coin-card" style="max-width:300px;">
-            <h3 class="card-title">일반 토론</h3>
-            <div class="card-content">자유롭게 의견을 나누는 공간</div>
+            <h3 class="card-title">Strategy Lab</h3>
+            <div class="card-content">AI 기반 전략 분석과 백테스팅 결과 공유</div>
           </div>
           <div class="coin-card" style="max-width:300px;">
-            <h3 class="card-title">투자 전략</h3>
-            <div class="card-content">투자 경험과 노하우 공유</div>
+            <h3 class="card-title">Signal Exchange</h3>
+            <div class="card-content">실시간 시그널과 시장 분석 토론</div>
           </div>
           <div class="coin-card" style="max-width:300px;">
-            <h3 class="card-title">Q&amp;A</h3>
-            <div class="card-content">궁금한 점들을 해결하는 공간</div>
+            <h3 class="card-title">Oracle Q&A</h3>
+            <div class="card-content">AI 오라클과 함께하는 질의응답</div>
           </div>
         </div>
       </div>
@@ -412,44 +692,76 @@
   </div>
 
   <script>
-    /* 비디오가 일부 기기에서 자동재생 멈추는 경우 대비 */
+    /* 비디오 자동재생 보장 */
     (function ensureVideoPlays(){
       const v=document.getElementById('bgVideo');
       if(!v) return;
-      const tryPlay=()=>v.play().catch(()=>{});
+      
+      // preload를 auto로 설정하여 확실히 로드
+      v.preload = 'auto';
+      
+      const tryPlay=()=>{
+        v.play().catch(e=>console.log('Video autoplay prevented:', e));
+      };
+      
+      // 즉시 재생 시도
+      tryPlay();
+      
+      // 사용자 인터랙션 시에도 재생 보장
       document.addEventListener('touchstart',tryPlay,{once:true});
       document.addEventListener('click',tryPlay,{once:true});
+      
+      // 비디오 로드 완료 시 재생
+      v.addEventListener('loadeddata', tryPlay);
+      v.addEventListener('canplay', tryPlay);
     })();
 
-    // 네트워크/방향/사이즈에 따라 비디오 소스 선택 또는 비활성화
+    // 비디오 소스 선택 - 비율별 최적화
     function chooseVideoSource(){
       const v=document.getElementById('bgVideo');
       if(!v) return;
+      
+      // 데이터 절약 모드 체크
       const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       const saveData = conn && conn.saveData;
       const reduceData = window.matchMedia('(prefers-reduced-data: reduce)').matches;
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const portrait = window.matchMedia('(orientation: portrait)').matches;
-      const narrow = window.innerWidth < 820;
 
-      // 데이터 절약/모션 감소/좁은 화면이면 비디오 완전 비활성화 (다운로드 방지)
-      if (saveData || reduceData || reduceMotion) {
-        try { v.pause(); } catch(e){}
-        v.removeAttribute('src');
-        while(v.firstChild) v.removeChild(v.firstChild);
-        v.style.display='none';
-        return;
-      }
-
-      v.style.display='';
-      const desired = portrait ? '/background-portrait.mp4' : '/background.mp4';
-      const current = v.currentSrc || '';
-      if (!current.includes(desired)){
-        v.innerHTML='';
-        const s=document.createElement('source'); s.src=desired; s.type='video/mp4'; v.appendChild(s);
-        v.load(); v.play().catch(()=>{});
+      // 데이터 절약이 아닌 경우에만 비디오 표시
+      if (!saveData && !reduceData && !reduceMotion) {
+        const portrait = window.matchMedia('(orientation: portrait)').matches;
+        const aspectRatio = window.innerWidth / window.innerHeight;
+        
+        let desired;
+        if (portrait || aspectRatio < 1) {
+          // 세로 모드 → background1.mp4 (새 버전)
+          desired = '/background1.mp4';
+        } else {
+          // 가로 모드 → background.mp4 (기존 가로 버전)
+          desired = '/background.mp4';
+        }
+        
+        const current = v.currentSrc || '';
+        const currentFile = current.split('/').pop();
+        const desiredFile = desired.split('/').pop();
+        
+        if (currentFile !== desiredFile) {
+          console.log(`Switching video: ${currentFile} → ${desiredFile}`);
+          v.innerHTML = '';
+          const source = document.createElement('source');
+          source.src = desired;
+          source.type = 'video/mp4';
+          v.appendChild(source);
+          v.load();
+          v.play().catch(e=>console.log('Video play failed:', e));
+        }
+        v.style.display = 'block';
+      } else {
+        // 데이터 절약 모드일 때는 비디오 숨김
+        v.style.display = 'none';
       }
     }
+    
     chooseVideoSource();
     window.addEventListener('resize', chooseVideoSource);
     window.addEventListener('orientationchange', chooseVideoSource);
@@ -458,19 +770,26 @@
     const menuBtn=document.getElementById('menuButton');
     const menuClose=document.getElementById('menuClose');
     const menuOverlay=document.getElementById('menuOverlay');
-    function toggleMenu(){ menuOverlay.classList.toggle('active') }
+    
+    function toggleMenu(){ 
+      menuOverlay.classList.toggle('active') 
+    }
+    
     menuBtn && menuBtn.addEventListener('click',toggleMenu);
     menuClose && menuClose.addEventListener('click',toggleMenu);
+    
     document.addEventListener('click',e=>{
       if(menuOverlay && menuBtn && !menuOverlay.contains(e.target) && !menuBtn.contains(e.target)){
         menuOverlay.classList.remove('active');
       }
     });
 
-    // 하단 채팅 버튼 → 카카오 오픈채팅으로 연결
-    document.getElementById('chatButton')?.addEventListener('click',()=>window.open('https://open.kakao.com/o/gakOu7Og','_blank'));
+    // 하단 채팅 버튼
+    document.getElementById('chatButton')?.addEventListener('click',()=>
+      window.open('https://open.kakao.com/o/gakOu7Og','_blank')
+    );
 
-    /* ===== Infinity Clock (그대로) ===== */
+    /* ===== Infinity Clock ===== */
     const dailyQuotes=[
       "Time is what we want most, but what we use worst.",
       "Lost time is never found again.",
@@ -480,6 +799,7 @@
       "Time you enjoy wasting is not wasted time.",
       "Yesterday is gone. Tomorrow has not yet come. We have only today."
     ];
+    
     function initClock(){
       const base=document.getElementById('infBase');
       const prog=document.getElementById('infProg');
@@ -488,12 +808,20 @@
       const timeQuote=document.getElementById('timeQuote');
       const markA=document.getElementById('markA');
       const markB=document.getElementById('markB');
+      
       if(!base||!prog) return;
 
       const totalLength=base.getTotalLength();
       prog.style.strokeDasharray=`0 ${totalLength}`;
+      
       const secondsToLength=sec=>((sec%60)/60)*totalLength;
-      const place=(el,len)=>{ const p=base.getPointAtLength(len); el.setAttribute('cx',p.x); el.setAttribute('cy',p.y) };
+      
+      const place=(el,len)=>{ 
+        const p=base.getPointAtLength(len); 
+        el.setAttribute('cx',p.x); 
+        el.setAttribute('cy',p.y) 
+      };
+      
       place(markA,secondsToLength(15));
       place(markB,secondsToLength(45));
 
@@ -511,15 +839,18 @@
         const ampm=h<12?'AM':'PM';
         digital.textContent=`${ampm} ${hh}:${mm}:${ss}`;
 
-        const dow=now.getDay(); const idx=dow===0?6:dow-1;
+        const dow=now.getDay(); 
+        const idx=dow===0?6:dow-1;
         timeQuote.textContent=dailyQuotes[idx];
       }
-      update(); setInterval(update,1000);
+      
+      update(); 
+      setInterval(update,1000);
     }
-    document.addEventListener('DOMContentLoaded',initClock);
 
-    /* ===== COSMOS 차트 엔진 (복원, 간결화 버전) ===== */
+    /* ===== COSMOS 차트 엔진 ===== */
     let chartCanvas=null, chartContext=null, currentData=new Map();
+    
     const cryptoConfig=[
       {id:'bitcoin',name:'BTC',color:'#ff9500',visible:true,basePrice:112154},
       {id:'ethereum',name:'ETH',color:'#627eea',visible:true,basePrice:3680},
@@ -534,66 +865,99 @@
     function initCosmosChart(){
       chartCanvas=document.getElementById('cosmosChart');
       if(!chartCanvas) return;
+      
       chartContext=chartCanvas.getContext('2d');
       resizeChart();
       createChartLegend();
       generateAllCosmosData();
       startChartAnimation();
       startRealTimeUpdates();
+      
       window.addEventListener('resize',resizeChart);
       document.getElementById('marketCap').textContent='COSMOS Live: $3.85T';
     }
+    
     function resizeChart(){
       if(!chartCanvas) return;
       const rect=chartCanvas.parentElement.getBoundingClientRect();
-      chartCanvas.width=rect.width-4; chartCanvas.height=480;
+      chartCanvas.width=rect.width-4; 
+      chartCanvas.height=500;
       chartContext && drawChart();
     }
+    
     function createChartLegend(){
       const legend=document.getElementById('chartLegend');
       legend.innerHTML='';
+      
       cryptoConfig.forEach((c,idx)=>{
         const item=document.createElement('div');
         item.className='legend-item';
         item.innerHTML=`<div class="legend-color" style="background-color:${c.color}"></div><span>${c.name}</span>`;
-        item.addEventListener('click',()=>{ c.visible=!c.visible; item.style.opacity=c.visible?'1':'.35'; drawChart() });
+        item.addEventListener('click',()=>{ 
+          c.visible=!c.visible; 
+          item.style.opacity=c.visible?'1':'.35'; 
+          drawChart() 
+        });
         legend.appendChild(item);
       });
     }
+    
     function generateAllCosmosData(){
       cryptoConfig.forEach(c=>{
         const data=generateCosmosData(c,100);
         currentData.set(c.id,data);
       });
     }
+    
     function generateCosmosData(crypto,points){
-      const data=[]; const now=Date.now(); const interval=3600000;
+      const data=[];
+      const now=Date.now(); 
+      const interval=3600000;
       let price=crypto.basePrice, base=price;
+      
       for(let i=points;i>=0;i--){
-        const ts=now-i*interval; const hr=new Date(ts).getHours();
-        let v=.015; if(hr>=8&&hr<=16) v=.025; if(hr>=14&&hr<=22) v=.035;
+        const ts=now-i*interval; 
+        const hr=new Date(ts).getHours();
+        let v=.015; 
+        if(hr>=8&&hr<=16) v=.025; 
+        if(hr>=14&&hr<=22) v=.035;
+        
         price*=(1+(Math.random()-.5)*v);
-        const trend=Math.sin((i/30)*Math.PI)*.001; price*=(1+trend);
-        if(price>1.4*base) price=1.35*base; if(price<.6*base) price=.65*base;
+        const trend=Math.sin((i/30)*Math.PI)*.001; 
+        price*=(1+trend);
+        
+        if(price>1.4*base) price=1.35*base; 
+        if(price<.6*base) price=.65*base;
+        
         data.push({timestamp:ts,price:Math.max(price,.001)});
       }
+      
       return data.sort((a,b)=>a.timestamp-b.timestamp);
     }
+    
     let raf=0;
     function startChartAnimation(){
       cancelAnimationFrame(raf);
-      const loop=()=>{ drawChart(); raf=requestAnimationFrame(loop) };
+      const loop=()=>{ 
+        drawChart(); 
+        raf=requestAnimationFrame(loop) 
+      };
       loop();
     }
+    
     function drawChart(){
       if(!chartContext||!chartCanvas) return;
+      
       const ctx=chartContext, w=chartCanvas.width, h=chartCanvas.height;
       ctx.clearRect(0,0,w,h);
+      
+      // 배경 그라데이션
       const bg=ctx.createLinearGradient(0,0,0,h);
-      bg.addColorStop(0,'rgba(139, 92, 246, 0.15)');
-      bg.addColorStop(.5,'rgba(59, 130, 246, 0.08)');
+      bg.addColorStop(0,'rgba(139, 92, 246, 0.12)');
+      bg.addColorStop(.5,'rgba(59, 130, 246, 0.06)');
       bg.addColorStop(1,'rgba(0, 0, 0, 0.4)');
-      ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle=bg; 
+      ctx.fillRect(0,0,w,h);
 
       drawGrid(ctx,w,h);
 
@@ -603,13 +967,33 @@
         drawSeries(ctx,c,d,w,h);
       });
     }
+    
     function drawGrid(ctx,w,h){
       const m={left:40,right:80,top:30,bottom:40};
       const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
-      ctx.strokeStyle='rgba(139, 92, 246, 0.15)'; ctx.lineWidth=.5;
-      for(let i=0;i<=12;i++){ const x=m.left+(i/12)*cw; ctx.beginPath(); ctx.moveTo(x,m.top); ctx.lineTo(x,h-m.bottom); ctx.stroke() }
-      for(let i=0;i<=8;i++){ const y=m.top+(i/8)*ch; ctx.beginPath(); ctx.moveTo(m.left,y); ctx.lineTo(w-m.right,y); ctx.stroke() }
+      
+      ctx.strokeStyle='rgba(139, 92, 246, 0.18)'; 
+      ctx.lineWidth=.5;
+      
+      // 세로선
+      for(let i=0;i<=12;i++){ 
+        const x=m.left+(i/12)*cw; 
+        ctx.beginPath(); 
+        ctx.moveTo(x,m.top); 
+        ctx.lineTo(x,h-m.bottom); 
+        ctx.stroke() 
+      }
+      
+      // 가로선
+      for(let i=0;i<=8;i++){ 
+        const y=m.top+(i/8)*ch; 
+        ctx.beginPath(); 
+        ctx.moveTo(m.left,y); 
+        ctx.lineTo(w-m.right,y); 
+        ctx.stroke() 
+      }
     }
+    
     function drawSeries(ctx,crypto,data,w,h){
       const m={left:40,right:80,top:30,bottom:40};
       const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
@@ -617,47 +1001,94 @@
       const min=Math.min(...prices), max=Math.max(...prices), range=max-min||1;
       const tr=data[data.length-1].timestamp-data[0].timestamp;
 
-      ctx.strokeStyle=crypto.color; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.lineJoin='round';
-      ctx.shadowColor=crypto.color; ctx.shadowBlur=8;
+      ctx.strokeStyle=crypto.color; 
+      ctx.lineWidth=2.5; 
+      ctx.lineCap='round'; 
+      ctx.lineJoin='round';
+      ctx.shadowColor=crypto.color; 
+      ctx.shadowBlur=6;
+      
       ctx.beginPath();
       data.forEach((p,i)=>{
         const x=m.left+((p.timestamp-data[0].timestamp)/tr)*cw;
         const y=m.top+(ch-((p.price-min)/range)*ch);
-        if(i===0) ctx.moveTo(x,y); else {
+        if(i===0) ctx.moveTo(x,y); 
+        else {
           const prev=data[i-1];
           const px=m.left+((prev.timestamp-data[0].timestamp)/tr)*cw;
           const py=m.top+(ch-((prev.price-min)/range)*ch);
-          const cx=(px+x)/2; ctx.quadraticCurveTo(cx,py,x,y);
+          const cx=(px+x)/2; 
+          ctx.quadraticCurveTo(cx,py,x,y);
         }
       });
       ctx.stroke();
 
+      // 마지막 포인트
       const last=data[data.length-1];
       const lx=m.left+((last.timestamp-data[0].timestamp)/tr)*cw;
       const ly=m.top+(ch-((last.price-min)/range)*ch);
-      ctx.beginPath(); ctx.arc(lx,ly,5,0,Math.PI*2); ctx.fillStyle=crypto.color; ctx.fill();
-      ctx.fillStyle=crypto.color; ctx.font='12px Orbitron, monospace'; ctx.textAlign='left';
-      ctx.fillText(`${last.price.toFixed(crypto.basePrice<1?4:0)}`, lx+10, ly+4);
-      ctx.shadowBlur=0; ctx.textAlign='start';
+      
+      ctx.beginPath(); 
+      ctx.arc(lx,ly,4,0,Math.PI*2); 
+      ctx.fillStyle=crypto.color; 
+      ctx.fill();
+      
+      ctx.fillStyle=crypto.color; 
+      ctx.font='11px Orbitron, monospace'; 
+      ctx.textAlign='left';
+      ctx.fillText(`${last.price.toFixed(crypto.basePrice<1?4:0)}`, lx+8, ly+3);
+      
+      ctx.shadowBlur=0; 
+      ctx.textAlign='start';
     }
+    
     function updateCosmosData(){
       cryptoConfig.forEach(c=>{
-        const d=currentData.get(c.id); if(!d||!d.length) return;
-        const last=d[d.length-1]; const now=Date.now();
-        const varr=(Math.random()-.5)*.04; const wave=Math.sin(now/30000)*.01; const bias=(Math.random()-.48)*.02;
-        const total=varr+wave+bias; const next={timestamp:now, price:Math.max(last.price*(1+total),.001)};
-        d.push(next); if(d.length>120) d.shift();
+        const d=currentData.get(c.id); 
+        if(!d||!d.length) return;
+        
+        const last=d[d.length-1]; 
+        const now=Date.now();
+        const varr=(Math.random()-.5)*.04; 
+        const wave=Math.sin(now/30000)*.01; 
+        const bias=(Math.random()-.48)*.02;
+        const total=varr+wave+bias; 
+        const next={
+          timestamp:now, 
+          price:Math.max(last.price*(1+total),.001)
+        };
+        
+        d.push(next); 
+        if(d.length>120) d.shift();
       });
+      
       drawChart();
-      // 시장총액 느낌값
-      document.getElementById('marketCap').textContent=`COSMOS Live: ${ (2.31*(1+Math.random()*.05)).toFixed(2) }T`;
+      
+      // 시장총액 업데이트
+      const marketCap = 2.31 + (Math.random() - 0.5) * 0.2;
+      document.getElementById('marketCap').textContent=`COSMOS Live: ${marketCap.toFixed(2)}T`;
     }
-    function startRealTimeUpdates(){ setInterval(updateCosmosData,2000) }
-    document.addEventListener('DOMContentLoaded',()=>{ setTimeout(()=>{ initCosmosChart() },300) });
+    
+    function startRealTimeUpdates(){ 
+      setInterval(updateCosmosData,2000) 
+    }
 
-    /* 간단한 이벤트 */
+    // 초기화
+    document.addEventListener('DOMContentLoaded',()=>{ 
+      initClock();
+      setTimeout(()=>{ 
+        initCosmosChart() 
+      },300) 
+    });
+
+    // 차트 컨트롤 이벤트
     document.getElementById('timeSelector')?.addEventListener('change',()=>generateAllCosmosData());
-    document.getElementById('chartType')?.addEventListener('change',e=>{ if(e.target.value==='single'){ alert('단일 궤도 모드는 곧 출시됩니다!'); e.target.value='multi' } });
+    document.getElementById('chartType')?.addEventListener('change',e=>{ 
+      if(e.target.value==='single'){ 
+        alert('Single Orbit 모드는 곧 출시됩니다!'); 
+        e.target.value='multi' 
+      } 
+    });
   </script>
 </body>
 </html>
