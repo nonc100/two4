@@ -12,7 +12,7 @@
     html{scroll-behavior:smooth}
     body{font-family:'Inter',sans-serif;background:#000;color:#fff;overflow-x:hidden;line-height:1.6;min-height:100vh}
 
-    /* 비디오 배경(기본: 가로 화면/데스크톱) */
+    /* 비디오 배경(기본: 가로/데스크톱) */
     .video-background{
       position:fixed;top:0;left:0;
       min-width:100%;min-height:100%;
@@ -37,7 +37,7 @@
     .menu-line{position:absolute;width:20px;height:2px;background:#8b5cf6;transition:.3s}
     .menu-line:nth-child(1){top:0}.menu-line:nth-child(2){top:8px}.menu-line:nth-child(3){top:16px}
 
-    /* 좌상단 로고(더 크게 + 더 위로) */
+    /* 좌상단 로고 */
     .brand-logo{position:fixed;top:3px;left:24px;z-index:1200;display:block}
     .brand-logo img{
       display:block;height:clamp(56px,8vw,148px);width:auto;
@@ -48,7 +48,7 @@
     /* 메인 컨테이너 */
     .main-container{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;position:relative;padding:0 40px}
 
-    /* 콘텐츠(원본 유지) */
+    /* 콘텐츠 */
     .content-section{background:rgba(0,0,0,.8);backdrop-filter:blur(20px);min-height:100vh;padding:100px 20px;position:relative;z-index:1;border-top:1px solid rgba(139,92,246,.3)}
     .container{max-width:1200px;margin:0 auto}
     .section-title{font-family:'Space Grotesk',sans-serif;font-size:3rem;font-weight:700;text-align:center;margin-bottom:3rem;color:#8b5cf6;text-shadow:0 0 30px rgba(139,92,246,.8)}
@@ -76,7 +76,7 @@
     @keyframes chatPulse{0%,100%{transform:scale(1);box-shadow:0 10px 30px rgba(139,92,246,.4)}50%{transform:scale(1.05);box-shadow:0 15px 40px rgba(139,92,246,.6)}}
     .chat-button:hover{transform:translateY(-3px);box-shadow:0 15px 40px rgba(139,92,246,.6)}
 
-    /* 메뉴 패널(원본) */
+    /* 메뉴 패널 */
     .menu-overlay{position:fixed;top:0;right:-450px;width:450px;height:100vh;background:rgba(0,0,0,.97);backdrop-filter:blur(30px);border-left:2px solid rgba(139,92,246,.4);z-index:2000;transition:right .4s ease;padding:80px 40px 40px;overflow-y:auto}
     .menu-overlay.active{right:0}
     .menu-close{position:absolute;top:30px;right:30px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#8b5cf6;font-size:24px;transition:.3s;border-radius:50%;border:1px solid rgba(139,92,246,.3)}
@@ -103,17 +103,17 @@
     }
     @media (max-width:480px){ .menu-btn{width:44px;height:44px} }
 
-    /* 태블릿(가로/세로 공통): 배경 중앙에 포커스 */
+    /* 태블릿(가로/세로 공통): 배경 중앙 포커스 */
     @media (min-width:768px) and (max-width:1199px){
       .video-background{object-position:50% 50%;}
     }
 
-    /* 세로 모드: 확대 방지 + 대비 약간 ↑ */
+    /* 세로 모드: 확대 방지 + 대비 ↑ */
     @media (orientation: portrait){
       .video-background{
         position:fixed; inset:0;
         width:100vw; height:100vh; height:100dvh;
-        min-width:0 !important; min-height:0 !important;
+        min-width:0 !important; min-height:0 !important; /* 핵심: 기존 min-* 무효화 */
         object-fit:contain; object-position:50% 50%;
         background:#000;
       }
@@ -145,9 +145,8 @@
   </a>
 
   <nav class="nav">
-    <!-- HOME 숨김 -->
     <a href="#home" class="nav-home">Home</a>
-    <div class="menu-btn" id="menuButton">
+    <div class="menu-btn" id="menuButton" aria-label="Open menu">
       <div class="menu-icon">
         <div class="menu-line"></div>
         <div class="menu-line"></div>
@@ -157,7 +156,7 @@
   </nav>
 
   <main class="main-container" id="home">
-    <!-- 필요하면 중앙 로고 등을 배치 -->
+    <!-- 필요 시 중앙 요소 배치 -->
   </main>
 
   <section class="content-section">
@@ -200,15 +199,15 @@
         <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;">
           <div class="coin-card" style="max-width:300px;"><h3 class="card-title">일반 토론</h3><div class="card-content">자유롭게 의견을 나누는 공간</div></div>
           <div class="coin-card" style="max-width:300px;"><h3 class="card-title">투자 전략</h3><div class="card-content">투자 경험과 노하우 공유</div></div>
-          <div class="coin-card" style="max-width:300px;"><h3 class="card-title">Q&A</h3><div class="card-content">궁금한 점들을 해결하는 공간</div></div>
+          <div class="coin-card" style="max-width:300px;"><h3 class="card-title">Q&amp;A</h3><div class="card-content">궁금한 점들을 해결하는 공간</div></div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- 메뉴 패널 -->
-  <div class="menu-overlay" id="menuOverlay">
-    <div class="menu-close" id="menuClose">×</div>
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+    <div class="menu-close" id="menuClose" aria-label="Close menu">×</div>
     <div class="menu-section">
       <ul class="menu-items">
         <li class="menu-item"><a href="/charts" class="menu-link">COSMOS (CHARTS)<span class="korean-desc">차트</span></a></li>
@@ -237,25 +236,55 @@
   <button class="chat-button" id="chatButton">채팅하기</button>
 
   <script>
-    // 메뉴 토글
-    function toggleMenu(){document.getElementById('menuOverlay').classList.toggle('active')}
-    document.addEventListener('DOMContentLoaded',function(){
-      const menuButton=document.getElementById('menuButton');
-      const menuClose=document.getElementById('menuClose');
-      const menuOverlay=document.getElementById('menuOverlay');
-      const chatButton=document.getElementById('chatButton');
-      menuButton&&menuButton.addEventListener('click',toggleMenu);
-      menuClose&&menuClose.addEventListener('click',toggleMenu);
-      chatButton&&chatButton.addEventListener('click',()=>alert('SEED ORACLE 채팅 기능 준비중입니다.'));
-      document.addEventListener('click',e=>{if(menuOverlay&&menuButton&&!menuOverlay.contains(e.target)&&!menuButton.contains(e.target))menuOverlay.classList.remove('active')});
-      // 원본 보안 핸들러(필요시 유지)
-      document.addEventListener('contextmenu',e=>{e.preventDefault();return false});
-      document.addEventListener('keydown',e=>{if(e.ctrlKey&&['c','v','a','s','p'].includes(e.key.toLowerCase())){e.preventDefault();return false}if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='i')||(e.ctrlKey&&e.key.toLowerCase()==='u')){e.preventDefault();return false}});
-      document.addEventListener('dragstart',e=>{e.preventDefault();return false});
-      document.addEventListener('selectstart',e=>{e.preventDefault();return false});
+    // ===== 메뉴 토글(열기/닫기) =====
+    function toggleMenu(){
+      const overlay = document.getElementById('menuOverlay');
+      overlay.classList.toggle('active');
+      overlay.setAttribute('aria-hidden', overlay.classList.contains('active') ? 'false' : 'true');
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      const menuButton = document.getElementById('menuButton');
+      const menuClose  = document.getElementById('menuClose');
+      const menuOverlay= document.getElementById('menuOverlay');
+      const chatButton = document.getElementById('chatButton');
+
+      // 열기/닫기 버튼
+      menuButton && menuButton.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
+      menuClose  && menuClose.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
+
+      // 오버레이 영역 외부 클릭 시 닫기
+      document.addEventListener('click', (e)=>{
+        if (!menuOverlay.classList.contains('active')) return;
+        const btn = document.getElementById('menuButton');
+        if (!menuOverlay.contains(e.target) && !btn.contains(e.target)) {
+          menuOverlay.classList.remove('active');
+          menuOverlay.setAttribute('aria-hidden','true');
+        }
+      });
+
+      // Esc 키로 닫기
+      document.addEventListener('keydown', (e)=>{
+        if (e.key === 'Escape' && menuOverlay.classList.contains('active')) {
+          menuOverlay.classList.remove('active');
+          menuOverlay.setAttribute('aria-hidden','true');
+        }
+      });
+
+      // 채팅 버튼 (더미)
+      chatButton && chatButton.addEventListener('click', ()=> alert('SEED ORACLE 채팅 기능 준비중입니다.'));
+
+      // (선택) 개발 편의 위해 아래 보안 막기 스크립트 잠시 비활성화 권장
+      // document.addEventListener('contextmenu', e=>{ e.preventDefault(); return false; });
+      // document.addEventListener('keydown', e=>{
+      //   if (e.ctrlKey && ['c','v','a','s','p'].includes(e.key.toLowerCase())) { e.preventDefault(); return false; }
+      //   if (e.key==='F12' || (e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='i') || (e.ctrlKey&&e.key.toLowerCase()==='u')) { e.preventDefault(); return false; }
+      // });
+      // document.addEventListener('dragstart', e=>{ e.preventDefault(); return false; });
+      // document.addEventListener('selectstart', e=>{ e.preventDefault(); return false; });
     });
 
-    /* ====== 아래는 COSMOS 차트 엔진(네가 쓰던 그대로) — 필요하면 기존 스크립트 유지 ====== */
+    // ===== COSMOS 차트 엔진(원본 유지) =====
     let chartCanvas=null,chartContext=null,currentData=new Map,isAnimating=false,animationFrame=null;
     const cryptoConfig=[
       {id:'bitcoin',name:'BTC',color:'#ff9500',visible:true,basePrice:112154},
