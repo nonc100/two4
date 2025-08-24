@@ -67,17 +67,33 @@
         .brand-logo{position:fixed;top:12px;left:24px;z-index:1200;display:block}
         .brand-logo img{display:block;height:clamp(56px,8vw,148px);width:auto;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
         @media (max-width:768px){.brand-logo{top:calc(8px + env(safe-area-inset-top));left:calc(16px + env(safe-area-inset-left))}}
+/* 세로 모드에서 영상 전체 보이게 (크롭 방지) */
+@media (orientation: portrait){
+  .video-background{
+    object-fit: contain;      /* cover → contain */
+    object-position: 50% 50%;
+    background:#000;
+  }
+  .video-overlay{ background: rgba(0,0,0,0.38); } /* 대비 조금 ↑ (원하면 숫자 조절) */
+}
+
+/* 로고 더 위로 & HOME 숨기기(원하면) */
+.brand-logo{ top: 4px; }             /* 더 붙이고 싶으면 3px, 2px로 */
+@media (max-width:768px){
+  .brand-logo{ top: calc(3px + env(safe-area-inset-top)); }
+}
+.nav-home{ display: none; }           /* HOME 버튼 감추기 */
     </style>
 </head>
 <body>
     <div class="fallback-bg"></div>
 
 <video class="video-background" autoplay muted loop playsinline preload="auto">
-  <!-- 세로(포트레이트)일 때: background1.mp4 사용 -->
+  <!-- 세로(포트레이트)일 때 -->
   <source src="/background1.mp4" type="video/mp4" media="(orientation: portrait)">
-  <!-- 가로(랜드스케이프/데스크톱)일 때: 기존 배경 -->
+  <!-- 가로(랜드스케이프/데스크톱)일 때 -->
   <source src="/background.mp4" type="video/mp4" media="(orientation: landscape)">
-  <!-- 아주 구형 브라우저 대비용 -->
+  <!-- 아주 구형 브라우저 대비 -->
   <source src="/background.mp4" type="video/mp4">
     </video>
 
