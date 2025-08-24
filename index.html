@@ -63,6 +63,10 @@
         .menu-link.featured{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.3);font-weight:600;color:rgba(139,92,246,.9)}
         .menu-link.featured:hover{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(168,85,247,.15));border-color:rgba(139,92,246,.6);color:#fff;box-shadow:0 0 20px rgba(139,92,246,.4)}
         @media (max-width:768px){.nav{top:20px;right:20px;gap:15px}.main-container{min-height:70vh;padding-top:20vh}.section-title{font-size:2rem}.content-section{padding:60px 20px}.menu-overlay{width:100%;right:-100%}.korean-desc{display:none!important}.chat-button{right:20px;bottom:20px;padding:12px 20px;font-size:14px}.chart-header{flex-direction:column;gap:15px;align-items:flex-start}.chart-legend{justify-content:center}}
+    /* ── Top-left brand logo (small) ───────────────────────────────── */
+        .brand-logo{position:fixed;top:24px;left:24px;z-index:1200;display:block}
+        .brand-logo img{display:block;height:clamp(24px,4.2vw,44px);width:auto;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+        @media (max-width:768px){.brand-logo{top:calc(16px + env(safe-area-inset-top));left:calc(16px + env(safe-area-inset-left))}}
     </style>
 </head>
 <body>
@@ -74,6 +78,11 @@
     </video>
 
     <div class="video-overlay"></div>
+
+    <!-- Top-left small logo -->
+    <a href="/" class="brand-logo" aria-label="TWO.4 home">
+        <img src="/logo1.png" alt="TWO.4">
+    </a>
 
     <!-- 브랜드 섹션 제거됨 (TWO.4 / TIME NEVER SLEEPS 삭제) -->
 
