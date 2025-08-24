@@ -98,14 +98,14 @@
     }
     .brand-logo img{
       display:block;
-      height:clamp(36px,3.8vw,60px);
+      height:clamp(48px,5vw,80px);
       width:auto;
-      filter:drop-shadow(0 2px 8px rgba(0,0,0,.35));
-      opacity:.95;
+      filter:drop-shadow(0 3px 12px rgba(0,0,0,.4));
+      opacity:.98;
     }
     @media (max-width:768px){
       .brand-logo{ top:10px; left:12px }
-      .brand-logo img{ height:clamp(34px,9vw,48px); }
+      .brand-logo img{ height:clamp(42px,11vw,64px); }
     }
 
     /* ========== Nav (Menu button) ========== */
@@ -117,26 +117,31 @@
     }
 
     .menu-btn{
-      width:54px; height:54px;
-      background:rgba(139,92,246,.2);
-      border:2px solid rgba(139,92,246,.4);
-      border-radius:50%;
+      width:56px; height:56px;
+      background:linear-gradient(135deg, rgba(139,92,246,.12), rgba(59,130,246,.08));
+      border:2px solid rgba(139,92,246,.3);
+      border-radius:12px;
       cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:all .25s ease;
-      backdrop-filter:blur(18px);
+      transition:all .3s ease;
+      backdrop-filter:blur(20px);
+      box-shadow:0 4px 20px rgba(0,0,0,.15);
     }
     .menu-btn:hover{
-      background:rgba(139,92,246,.3);
-      border-color:rgba(139,92,246,.7);
-      box-shadow:0 0 30px rgba(139,92,246,.45);
+      background:linear-gradient(135deg, rgba(139,92,246,.2), rgba(59,130,246,.12));
+      border-color:rgba(139,92,246,.5);
+      box-shadow:0 8px 32px rgba(139,92,246,.25);
+      transform:translateY(-2px);
     }
-    .menu-icon{ width:22px; height:22px; position:relative }
+    .menu-icon{ width:24px; height:24px; position:relative }
     .menu-line{
-      position:absolute; left:0; width:22px; height:2px; background:#8b5cf6; transition:.25s
+      position:absolute; left:0; width:24px; height:2.5px; 
+      background:linear-gradient(90deg, #8b5cf6, #06b6d4); 
+      border-radius:2px;
+      transition:.3s ease;
     }
     .menu-line:nth-child(1){ top:0 }
-    .menu-line:nth-child(2){ top:8px }
-    .menu-line:nth-child(3){ top:16px }
+    .menu-line:nth-child(2){ top:10px }
+    .menu-line:nth-child(3){ top:20px }
 
     /* ========== Infinity Clock ========== */
     .infinity-clock{
@@ -213,24 +218,14 @@
       margin-top:100px;
     }
 
-    .hero-title{
-      font-family:'Space Grotesk',sans-serif;
-      font-size:clamp(2rem, 6vw, 4rem);
-      font-weight:700;
-      background:linear-gradient(135deg, #8b5cf6, #06b6d4);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-      background-clip:text;
-      margin-bottom:1.5rem;
-      text-shadow:0 0 40px rgba(139,92,246,.3);
-    }
-
     .hero-subtitle{
-      font-size:clamp(0.9rem, 2.2vw, 1.2rem);
-      color:rgba(255,255,255,.7);
+      font-size:clamp(0.95rem, 2.4vw, 1.3rem);
+      color:rgba(255,255,255,.75);
       margin-bottom:3rem;
-      line-height:1.5;
+      line-height:1.6;
       font-weight:300;
+      font-style:italic;
+      text-shadow:0 2px 8px rgba(0,0,0,.3);
     }
 
     /* ========== Content - 차트 영역 ========== */
@@ -497,31 +492,44 @@
       box-shadow:0 0 20px rgba(139,92,246,.4);
     }
 
-    /* ========== Chat Button ========== */
+    /* ========== X-Talk Button ========== */
     .chat-button{
       position:fixed; 
       bottom:28px; 
       right:28px;
-      background:linear-gradient(135deg,#8b5cf6,#7c3aed);
+      background:linear-gradient(135deg, rgba(139,92,246,.15), rgba(59,130,246,.1));
       color:#fff; 
-      border:none; 
-      padding:16px 24px; 
-      border-radius:50px; 
+      border:2px solid rgba(139,92,246,.4);
+      padding:16px 28px; 
+      border-radius:16px; 
       cursor:pointer;
-      box-shadow:0 10px 30px rgba(139,92,246,.4); 
+      box-shadow:0 8px 32px rgba(139,92,246,.2); 
       z-index:1000; 
       font-weight:600; 
-      font-size:16px;
-      transition:.25s; 
-      backdrop-filter:blur(10px); 
-      border:2px solid rgba(139,92,246,.3); 
-      animation:chatPulse 2s ease-in-out infinite;
+      font-size:15px;
+      transition:.3s ease; 
+      backdrop-filter:blur(20px);
+      font-family:'Space Grotesk',sans-serif;
+      letter-spacing:0.5px;
     }
-    @keyframes chatPulse{ 
-      0%,100%{transform:scale(1); box-shadow:0 10px 30px rgba(139,92,246,.4)} 
-      50%{transform:scale(1.05); box-shadow:0 15px 40px rgba(139,92,246,.6)} 
+    .chat-button:hover{ 
+      background:linear-gradient(135deg, rgba(139,92,246,.25), rgba(59,130,246,.15));
+      border-color:rgba(139,92,246,.6);
+      box-shadow:0 12px 40px rgba(139,92,246,.35);
+      transform:translateY(-3px);
     }
-    .chat-button:hover{ transform:translateY(-3px) }
+    .chat-button::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, transparent, rgba(255,255,255,.1), transparent);
+      border-radius:14px;
+      opacity:0;
+      transition:.3s ease;
+    }
+    .chat-button:hover::before{
+      opacity:1;
+    }
 
     /* ========== Mobile tweaks ========== */
     @media (max-width:768px){
@@ -590,8 +598,7 @@
   <!-- Hero Section - 배경이 보이는 영역 -->
   <main class="hero-section" id="home">
     <div class="hero-content">
-      <h1 class="hero-title">COSMOS</h1>
-      <p class="hero-subtitle">AI-Powered Trading Intelligence<br>Where Data Meets Destiny</p>
+      <p class="hero-subtitle">"In the realm of infinite possibilities, every decision echoes through eternity.<br>Trade not just with data, but with wisdom."</p>
     </div>
   </main>
 
@@ -687,7 +694,7 @@
     </div>
   </div>
 
-  <button class="chat-button" id="chatButton">채팅하기</button>
+  <button class="chat-button" id="chatButton">X-Talk</button>
 
   </div>
 
