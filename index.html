@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
 
   <style>
+    #app{position:relative; z-index:2}
     /* ========== Reset / Base ========== */
     *{margin:0;padding:0;box-sizing:border-box}
     html{scroll-behavior:smooth}
@@ -26,7 +27,7 @@
       width:100vw; height:100vh;
       min-width:100%; min-height:100%;
       object-fit:cover; object-position:center;
-      z-index:-10;
+      z-index:0;
       background:#000;
       pointer-events:none; /* 클릭/스크롤 침범 방지 */
     }
@@ -37,7 +38,7 @@
     .video-overlay{
       position:fixed; inset:0;
       background:rgba(0,0,0,.28);
-      z-index:-5; pointer-events:none;
+      z-index:1; pointer-events:none;
     }
     .video-overlay::before{
       content:""; position:absolute; inset:0; pointer-events:none;
@@ -47,12 +48,8 @@
     }
 
     /* 데이터절약/모션감소/모바일/세로 비율에선 mp4 비활성화 (그라디언트만 표시) */
-    @media (max-width: 820px), (prefers-reduced-data: reduce), (prefers-reduced-motion: reduce) {
-      .video-background{ display:none; }
-    }
-    @media (orientation: portrait) and (max-width: 1024px){
-      .video-background{ display:none; }
-    }
+    /* mp4 kept visible: removed mobile/data/motion hide */
+    /* mp4 kept visible on portrait */
 
     /* ========== Top-left Logo ========== */
     .brand-logo{
@@ -273,6 +270,8 @@
   </video>
   <div class="video-overlay"></div>
 
+  <div id="app">
+
   <!-- Logo -->
   <a href="/" class="brand-logo" aria-label="TWO.4 home">
     <img src="/logo1.png" alt="TWO.4">
@@ -410,6 +409,8 @@
 
   <button class="chat-button" id="chatButton">채팅하기</button>
 
+  </div>
+
   <script>
     /* 비디오가 일부 기기에서 자동재생 멈추는 경우 대비 */
     (function ensureVideoPlays(){
@@ -432,7 +433,7 @@
       const narrow = window.innerWidth < 820;
 
       // 데이터 절약/모션 감소/좁은 화면이면 비디오 완전 비활성화 (다운로드 방지)
-      if (saveData || reduceData || reduceMotion || narrow) {
+      if (saveData || reduceData || reduceMotion) {
         try { v.pause(); } catch(e){}
         v.removeAttribute('src');
         while(v.firstChild) v.removeChild(v.firstChild);
