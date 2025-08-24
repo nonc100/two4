@@ -72,9 +72,13 @@
 <body>
     <div class="fallback-bg"></div>
 
-    <video class="video-background" autoplay muted loop playsinline>
-        <source src="/background.mp4" type="video/mp4">
-        <source src="background.mp4" type="video/mp4">
+<video class="video-background" autoplay muted loop playsinline preload="auto">
+  <!-- 세로(포트레이트)일 때: background1.mp4 사용 -->
+  <source src="/background1.mp4" type="video/mp4" media="(orientation: portrait)">
+  <!-- 가로(랜드스케이프/데스크톱)일 때: 기존 배경 -->
+  <source src="/background.mp4" type="video/mp4" media="(orientation: landscape)">
+  <!-- 아주 구형 브라우저 대비용 -->
+  <source src="/background.mp4" type="video/mp4">
     </video>
 
     <div class="video-overlay"></div>
