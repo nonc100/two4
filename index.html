@@ -6,635 +6,63 @@
     <title>TWO.4 - TIME NEVER SLEEPS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #000;
-            color: #ffffff;
-            overflow-x: hidden;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        
-        .video-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            z-index: -10;
-            object-fit: cover;
-        }
-        
-        .video-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: -5;
-        }
-        
-        .fallback-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 25%, #6366f1 50%, #8b5cf6 75%, #a855f7 100%);
-            z-index: -15;
-        }
-        
-        .nav {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
-        
-        .nav-home {
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            font-size: 18px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .nav-home:hover {
-            color: #8b5cf6;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
-        
-        .menu-btn {
-            width: 50px;
-            height: 50px;
-            background: rgba(139, 92, 246, 0.2);
-            border: 2px solid rgba(139, 92, 246, 0.4);
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(20px);
-        }
-        
-        .menu-btn:hover {
-            background: rgba(139, 92, 246, 0.3);
-            border-color: rgba(139, 92, 246, 0.7);
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
-        }
-        
-        .menu-icon {
-            width: 20px;
-            height: 20px;
-            position: relative;
-        }
-        
-        .menu-line {
-            position: absolute;
-            width: 20px;
-            height: 2px;
-            background: #8b5cf6;
-            transition: all 0.3s ease;
-        }
-        
-        .menu-line:nth-child(1) { top: 0; }
-        .menu-line:nth-child(2) { top: 8px; }
-        .menu-line:nth-child(3) { top: 16px; }
-        
-        .brand-section {
-            position: absolute;
-            top: 40px;
-            left: 40px;
-            z-index: 100;
-        }
-        
-        .brand-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 28px;
-            font-weight: 800;
-            color: #8b5cf6;
-            text-shadow: 0 0 30px rgba(139, 92, 246, 1);
-            margin-bottom: 6px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-        }
-        
-        .brand-subtitle {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 12px;
-            color: rgba(139, 92, 246, 0.8);
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-            position: relative;
-            padding: 0 40px;
-        }
-        
-        .clock-planet-container {
-            position: relative;
-            margin: 60px 0;
-        }
-        
-        .clock-planet {
-            width: 400px;
-            height: 400px;
-            margin: 0 auto;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .planet-core {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 3px solid #8b5cf6;
-            border-radius: 50%;
-            background: 
-                radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.6) 0%, rgba(139, 92, 246, 0.4) 25%, rgba(139, 92, 246, 0.2) 50%, rgba(139, 92, 246, 0.1) 75%, transparent 100%);
-            box-shadow: 
-                0 0 40px rgba(139, 92, 246, 0.8),
-                0 0 80px rgba(139, 92, 246, 0.6),
-                0 0 120px rgba(139, 92, 246, 0.4),
-                inset 0 0 40px rgba(139, 92, 246, 0.3);
-            animation: planetGlow 4s ease-in-out infinite;
-            overflow: hidden;
-        }
-        
-        @keyframes planetGlow {
-            0%, 100% { 
-                box-shadow: 
-                    0 0 40px rgba(139, 92, 246, 0.8),
-                    0 0 80px rgba(139, 92, 246, 0.6),
-                    0 0 120px rgba(139, 92, 246, 0.4),
-                    inset 0 0 40px rgba(139, 92, 246, 0.3);
-                transform: scale(1);
-            }
-            50% { 
-                box-shadow: 
-                    0 0 60px rgba(139, 92, 246, 1),
-                    0 0 120px rgba(139, 92, 246, 0.8),
-                    0 0 180px rgba(139, 92, 246, 0.6),
-                    inset 0 0 60px rgba(139, 92, 246, 0.4);
-                transform: scale(1.03);
-            }
-        }
-        
-        .planet-surface {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: 
-                conic-gradient(from 0deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
-            animation: surfaceRotate 20s linear infinite;
-        }
-        
-        @keyframes surfaceRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .time-display-center {
-            position: relative;
-            z-index: 20;
-            text-align: center;
-            color: #000;
-        }
-        
-        .current-time {
-            font-family: 'Orbitron', monospace;
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #000000;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-        
-        .zone-indicator {
-            position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Orbitron', monospace;
-            font-size: 0.9rem;
-            color: rgba(139, 92, 246, 0.7);
-            font-weight: 500;
-            letter-spacing: 3px;
-            opacity: 0.8;
-            z-index: 5;
-        }
-        
-        .content-section {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
-            min-height: 100vh;
-            padding: 100px 20px;
-            position: relative;
-            z-index: 1;
-            border-top: 1px solid rgba(139, 92, 246, 0.3);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .section-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 3rem;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 3rem;
-            color: #8b5cf6;
-            text-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
-        }
-        
-        .section-content {
-            display: grid;
-            gap: 3rem;
-        }
-        
-        .chart-container {
-            background: rgba(139, 92, 246, 0.05);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            height: 600px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .chart-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-        
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
-        }
-        
-        .chart-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .chart-selector {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        
-        .chart-selector:focus {
-            border-color: rgba(139, 92, 246, 0.6);
-            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
-        }
-        
-        .chart-selector option {
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-        }
-        
-        .chart-legend {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.8);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .legend-item:hover {
-            color: white;
-            transform: translateY(-1px);
-        }
-        
-        .legend-color {
-            width: 12px;
-            height: 3px;
-            border-radius: 2px;
-        }
-        
-        .price-display {
-            color: #8b5cf6;
-            font-weight: 600;
-            font-size: 16px;
-            font-family: 'Orbitron', monospace;
-        }
-        
-        .cosmos-chart-canvas {
-            width: 100%;
-            height: 480px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            border: 1px solid rgba(139, 92, 246, 0.1);
-            cursor: crosshair;
-        }
-        
-        .news-grid, .coin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .news-card, .coin-card {
-            background: rgba(139, 92, 246, 0.05);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 15px;
-            padding: 2rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        
-        .news-card:hover, .coin-card:hover {
-            background: rgba(139, 92, 246, 0.1);
-            border-color: rgba(139, 92, 246, 0.4);
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
-        }
-        
-        .card-title {
-            color: #8b5cf6;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        
-        .card-content {
-            color: rgba(255, 255, 255, 0.8);
-            line-height: 1.6;
-        }
-        
-        .chat-button {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-            border: none;
-            padding: 16px 24px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
-            z-index: 1000;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(139, 92, 246, 0.3);
-            animation: chatPulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes chatPulse {
-            0%, 100% { 
-                transform: scale(1); 
-                box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
-            }
-            50% { 
-                transform: scale(1.05); 
-                box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
-            }
-        }
-        
-        .chat-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
-        }
-        
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            right: -450px;
-            width: 450px;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.97);
-            backdrop-filter: blur(30px);
-            border-left: 2px solid rgba(139, 92, 246, 0.4);
-            z-index: 2000;
-            transition: right 0.4s ease;
-            padding: 80px 40px 40px;
-            overflow-y: auto;
-        }
-        
-        .menu-overlay.active {
-            right: 0;
-        }
-        
-        .menu-close {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #8b5cf6;
-            font-size: 24px;
-            transition: all 0.3s ease;
-            border-radius: 50%;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-        }
-        
-        .menu-close:hover {
-            color: #fff;
-            background: rgba(139, 92, 246, 0.2);
-            border-color: rgba(139, 92, 246, 0.6);
-        }
-        
-        .menu-section {
-            margin-bottom: 30px;
-        }
-        
-        .menu-items {
-            list-style: none;
-        }
-        
-        .menu-item {
-            margin-bottom: 6px;
-        }
-        
-        .menu-link {
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            font-family: 'Space Grotesk', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            display: block;
-            padding: 10px 16px;
-            border-radius: 8px;
-            position: relative;
-        }
-        
-        .menu-link:hover {
-            color: #fff;
-            background: rgba(139, 92, 246, 0.1);
-            transform: translateX(8px);
-            text-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
-        }
-        
-        .korean-desc {
-            color: rgba(139, 92, 246, 0.8);
-            font-size: 12px;
-            font-weight: 400;
-            text-transform: none;
-            letter-spacing: 0;
-            margin-left: 8px;
-            display: none;
-        }
-        
-        .menu-link:hover .korean-desc {
-            display: inline;
-        }
-        
-        .menu-link.featured {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.1));
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            font-weight: 600;
-            color: rgba(139, 92, 246, 0.9);
-        }
-        
-        .menu-link.featured:hover {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(168, 85, 247, 0.15));
-            border-color: rgba(139, 92, 246, 0.6);
-            color: #fff;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
-        }
-        
-        @media (max-width: 768px) {
-            .brand-section {
-                top: 20px;
-                left: 20px;
-            }
-            
-            .brand-title {
-                font-size: 24px;
-            }
-            
-            .nav {
-                top: 20px;
-                right: 20px;
-                gap: 15px;
-            }
-            
-            .clock-planet {
-                width: 300px;
-                height: 300px;
-            }
-            
-            .current-time {
-                font-size: 1.8rem;
-            }
-            
-            .section-title {
-                font-size: 2rem;
-            }
-            
-            .content-section {
-                padding: 60px 20px;
-            }
-            
-            .menu-overlay {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .korean-desc {
-                display: none !important;
-            }
-            
-            .chat-button {
-                right: 20px;
-                bottom: 20px;
-                padding: 12px 20px;
-                font-size: 14px;
-            }
-            
-            .chart-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-            
-            .chart-legend {
-                justify-content: center;
-            }
-        }
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+        html{scroll-behavior:smooth}
+        body{font-family:'Inter',sans-serif;background:#000;color:#fff;overflow-x:hidden;line-height:1.6;min-height:100vh}
+        .video-background{position:fixed;top:0;left:0;min-width:100%;min-height:100%;width:auto;height:auto;z-index:-10;object-fit:cover}
+        .video-overlay{position:fixed;top:0;left:0;width:100%;height:100vh;background:rgba(0,0,0,.3);z-index:-5}
+        .fallback-bg{position:fixed;top:0;left:0;width:100%;height:100vh;background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 25%,#6366f1 50%,#8b5cf6 75%,#a855f7 100%);z-index:-15}
+        .nav{position:fixed;top:30px;right:30px;z-index:1000;display:flex;align-items:center;gap:30px}
+        .nav-home{color:rgba(255,255,255,.9);text-decoration:none;font-size:18px;font-weight:600;transition:all .3s ease;text-transform:uppercase;letter-spacing:1px}
+        .nav-home:hover{color:#8b5cf6;text-shadow:0 0 20px rgba(139,92,246,.8)}
+        .menu-btn{width:50px;height:50px;background:rgba(139,92,246,.2);border:2px solid rgba(139,92,246,.4);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease;backdrop-filter:blur(20px)}
+        .menu-btn:hover{background:rgba(139,92,246,.3);border-color:rgba(139,92,246,.7);box-shadow:0 0 30px rgba(139,92,246,.5)}
+        .menu-icon{width:20px;height:20px;position:relative}
+        .menu-line{position:absolute;width:20px;height:2px;background:#8b5cf6;transition:all .3s ease}
+        .menu-line:nth-child(1){top:0}.menu-line:nth-child(2){top:8px}.menu-line:nth-child(3){top:16px}
+        .main-container{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;position:relative;padding:0 40px}
+        /* 아래 행성/시계/존 인디케이터 관련 스타일은 더 이상 사용하지 않지만 남겨둬도 동작에는 영향 없음
+           (.clock-planet-*, .planet-*, .time-display-center, .current-time, .zone-indicator 등) */
+        .content-section{background:rgba(0,0,0,.8);backdrop-filter:blur(20px);min-height:100vh;padding:100px 20px;position:relative;z-index:1;border-top:1px solid rgba(139,92,246,.3)}
+        .container{max-width:1200px;margin:0 auto}
+        .section-title{font-family:'Space Grotesk',sans-serif;font-size:3rem;font-weight:700;text-align:center;margin-bottom:3rem;color:#8b5cf6;text-shadow:0 0 30px rgba(139,92,246,.8)}
+        .section-content{display:grid;gap:3rem}
+        .chart-container{background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.3);border-radius:20px;padding:2rem;box-shadow:0 20px 40px rgba(0,0,0,.3);height:600px;position:relative;overflow:hidden}
+        .chart-container::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(139,92,246,.1),transparent);animation:shimmer 3s ease-in-out infinite}
+        @keyframes shimmer{0%{left:-100%}100%{left:100%}}
+        .chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid rgba(139,92,246,.2)}
+        .chart-controls{display:flex;gap:15px;align-items:center}
+        .chart-selector{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);color:#fff;padding:8px 12px;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:all .3s ease}
+        .chart-selector:focus{border-color:rgba(139,92,246,.6);box-shadow:0 0 15px rgba(139,92,246,.3)}
+        .chart-selector option{background:rgba(0,0,0,.9);color:#fff}
+        .chart-legend{display:flex;gap:20px;flex-wrap:wrap}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;color:rgba(255,255,255,.8);cursor:pointer;transition:all .3s ease}
+        .legend-item:hover{color:#fff;transform:translateY(-1px)}
+        .legend-color{width:12px;height:3px;border-radius:2px}
+        .price-display{color:#8b5cf6;font-weight:600;font-size:16px;font-family:'Orbitron',monospace}
+        .cosmos-chart-canvas{width:100%;height:480px;background:rgba(0,0,0,.2);border-radius:10px;border:1px solid rgba(139,92,246,.1);cursor:crosshair}
+        .news-grid,.coin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}
+        .news-card,.coin-card{background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.2);border-radius:15px;padding:2rem;transition:all .3s ease;backdrop-filter:blur(10px)}
+        .news-card:hover,.coin-card:hover{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.4);transform:translateY(-5px);box-shadow:0 20px 40px rgba(139,92,246,.2)}
+        .card-title{color:#8b5cf6;font-size:1.2rem;font-weight:600;margin-bottom:1rem}
+        .card-content{color:rgba(255,255,255,.8);line-height:1.6}
+        .chat-button{position:fixed;bottom:30px;right:30px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;padding:16px 24px;border-radius:50px;cursor:pointer;box-shadow:0 10px 30px rgba(139,92,246,.4);z-index:1000;font-family:'Inter',sans-serif;font-weight:600;font-size:16px;transition:all .3s ease;backdrop-filter:blur(10px);border:2px solid rgba(139,92,246,.3);animation:chatPulse 2s ease-in-out infinite}
+        @keyframes chatPulse{0%,100%{transform:scale(1);box-shadow:0 10px 30px rgba(139,92,246,.4)}50%{transform:scale(1.05);box-shadow:0 15px 40px rgba(139,92,246,.6)}}
+        .chat-button:hover{transform:translateY(-3px);box-shadow:0 15px 40px rgba(139,92,246,.6)}
+        .menu-overlay{position:fixed;top:0;right:-450px;width:450px;height:100vh;background:rgba(0,0,0,.97);backdrop-filter:blur(30px);border-left:2px solid rgba(139,92,246,.4);z-index:2000;transition:right .4s ease;padding:80px 40px 40px;overflow-y:auto}
+        .menu-overlay.active{right:0}
+        .menu-close{position:absolute;top:30px;right:30px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#8b5cf6;font-size:24px;transition:all .3s ease;border-radius:50%;border:1px solid rgba(139,92,246,.3)}
+        .menu-close:hover{color:#fff;background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.6)}
+        .menu-section{margin-bottom:30px}
+        .menu-items{list-style:none}
+        .menu-item{margin-bottom:6px}
+        .menu-link{color:rgba(255,255,255,.8);text-decoration:none;font-size:14px;font-weight:500;font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:1px;transition:all .3s ease;display:block;padding:10px 16px;border-radius:8px;position:relative}
+        .menu-link:hover{color:#fff;background:rgba(139,92,246,.1);transform:translateX(8px);text-shadow:0 0 15px rgba(139,92,246,.6)}
+        .korean-desc{color:rgba(139,92,246,.8);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;display:none}
+        .menu-link:hover .korean-desc{display:inline}
+        .menu-link.featured{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.3);font-weight:600;color:rgba(139,92,246,.9)}
+        .menu-link.featured:hover{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(168,85,247,.15));border-color:rgba(139,92,246,.6);color:#fff;box-shadow:0 0 20px rgba(139,92,246,.4)}
+        @media (max-width:768px){.nav{top:20px;right:20px;gap:15px}.main-container{min-height:70vh;padding-top:20vh}.section-title{font-size:2rem}.content-section{padding:60px 20px}.menu-overlay{width:100%;right:-100%}.korean-desc{display:none!important}.chat-button{right:20px;bottom:20px;padding:12px 20px;font-size:14px}.chart-header{flex-direction:column;gap:15px;align-items:flex-start}.chart-legend{justify-content:center}}
     </style>
 </head>
 <body>
@@ -646,12 +74,9 @@
     </video>
 
     <div class="video-overlay"></div>
-    
-    <div class="brand-section">
-        <div class="brand-title">TWO.4</div>
-        <div class="brand-subtitle">TIME NEVER SLEEPS</div>
-    </div>
-    
+
+    <!-- 브랜드 섹션 제거됨 (TWO.4 / TIME NEVER SLEEPS 삭제) -->
+
     <nav class="nav">
         <a href="#home" class="nav-home">Home</a>
         <div class="menu-btn" id="menuButton">
@@ -662,22 +87,14 @@
             </div>
         </div>
     </nav>
-    
+
     <main class="main-container" id="home">
-        <div class="clock-planet-container">
-            <div class="clock-planet">
-                <div class="planet-core">
-                    <div class="planet-surface"></div>
-                </div>
-                <div class="time-display-center">
-                    <div class="current-time" id="currentTime">PM19:31:40</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="zone-indicator">- KOREA ZONE -</div>
+        <!-- LOGO 영역: 준비한 로고를 아래 주석 예시처럼 넣어주세요. (중앙 정렬됨) -->
+        <!-- 예시: <img src="/logo.png" alt="TWO.4" style="height:120px;opacity:.95;" /> -->
     </main>
-    
+
+    <!-- KOREA ZONE 인디케이터 삭제됨 -->
+
     <section class="content-section">
         <div class="container">
             <div class="section-content">
@@ -697,9 +114,7 @@
                             </select>
                             <span class="price-display" id="marketCap">COSMOS Ready...</span>
                         </div>
-                        <div class="chart-legend" id="chartLegend">
-                            <!-- 범례가 동적으로 생성됩니다 -->
-                        </div>
+                        <div class="chart-legend" id="chartLegend"></div>
                     </div>
                     <canvas id="cosmosChart" class="cosmos-chart-canvas"></canvas>
                 </div>
@@ -710,43 +125,32 @@
                 <div class="news-grid">
                     <div class="news-card">
                         <h3 class="card-title">최신 암호화폐 뉴스 1</h3>
-                        <div class="card-content">
-                            비트코인이 새로운 최고가를 경신하며 시장에 활기를 불어넣고 있습니다. 
-                            기관 투자자들의 지속적인 유입이 주요 요인으로 분석됩니다.
-                        </div>
+                        <div class="card-content">비트코인이 새로운 최고가를 경신하며 시장에 활기를 불어넣고 있습니다. 기관 투자자들의 지속적인 유입이 주요 요인으로 분석됩니다.</div>
                     </div>
                     <div class="news-card">
                         <h3 class="card-title">최신 암호화폐 뉴스 2</h3>
-                        <div class="card-content">
-                            이더리움 네트워크 업그레이드가 성공적으로 완료되어 
-                            거래 속도 향상과 수수료 절감 효과가 기대됩니다.
-                        </div>
+                        <div class="card-content">이더리움 네트워크 업그레이드가 성공적으로 완료되어 거래 속도 향상과 수수료 절감 효과가 기대됩니다.</div>
                     </div>
                     <div class="news-card">
                         <h3 class="card-title">최신 암호화폐 뉴스 3</h3>
-                        <div class="card-content">
-                            DeFi 프로토콜들이 새로운 혁신을 선보이며 
-                            전통 금융과의 융합이 가속화되고 있습니다.
-                        </div>
+                        <div class="card-content">DeFi 프로토콜들이 새로운 혁신을 선보이며 전통 금융과의 융합이 가속화되고 있습니다.</div>
                     </div>
                 </div>
             </div>
 
-            <div class="section-content" style="text-align: center;">
+            <div class="section-content" style="text-align:center;">
                 <h2 class="section-title">사용자 게시판</h2>
-                <p style="font-size: 1.2rem; margin-bottom: 2rem; color: rgba(255,255,255,0.7);">
-                    방문자들의 이야기를 나누는 공간
-                </p>
-                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
-                    <div class="coin-card" style="max-width: 300px;">
+                <p style="font-size:1.2rem;margin-bottom:2rem;color:rgba(255,255,255,.7);">방문자들의 이야기를 나누는 공간</p>
+                <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;">
+                    <div class="coin-card" style="max-width:300px;">
                         <h3 class="card-title">일반 토론</h3>
                         <div class="card-content">자유롭게 의견을 나누는 공간</div>
                     </div>
-                    <div class="coin-card" style="max-width: 300px;">
+                    <div class="coin-card" style="max-width:300px;">
                         <h3 class="card-title">투자 전략</h3>
                         <div class="card-content">투자 경험과 노하우 공유</div>
                     </div>
-                    <div class="coin-card" style="max-width: 300px;">
+                    <div class="coin-card" style="max-width:300px;">
                         <h3 class="card-title">Q&A</h3>
                         <div class="card-content">궁금한 점들을 해결하는 공간</div>
                     </div>
@@ -754,587 +158,83 @@
             </div>
         </div>
     </section>
-    
+
     <div class="menu-overlay" id="menuOverlay">
         <div class="menu-close" id="menuClose">×</div>
-        
         <div class="menu-section">
             <ul class="menu-items">
-                <li class="menu-item">
-                    <a href="/charts" class="menu-link">
-                        COSMOS (CHARTS)<span class="korean-desc">차트</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="/signals" class="menu-link">
-                        ORBITS (SIGNALS / INDICATORS)<span class="korean-desc">지표/신호</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="/technique" class="menu-link">
-                        METHOD (TECHNIQUE)<span class="korean-desc">매매 기법</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="/psyche" class="menu-link">
-                        PSYCHE<span class="korean-desc">마음과 철학, 멘탈</span>
-                    </a>
-                </li>
+                <li class="menu-item"><a href="/charts" class="menu-link">COSMOS (CHARTS)<span class="korean-desc">차트</span></a></li>
+                <li class="menu-item"><a href="/signals" class="menu-link">ORBITS (SIGNALS / INDICATORS)<span class="korean-desc">지표/신호</span></a></li>
+                <li class="menu-item"><a href="/technique" class="menu-link">METHOD (TECHNIQUE)<span class="korean-desc">매매 기법</span></a></li>
+                <li class="menu-item"><a href="/psyche" class="menu-link">PSYCHE<span class="korean-desc">마음과 철학, 멘탈</span></a></li>
             </ul>
         </div>
-        
         <div class="menu-divider"></div>
-        
         <div class="menu-section">
             <ul class="menu-items">
-                <li class="menu-item">
-                    <a href="/observations" class="menu-link">
-                        ECHOES (OBSERVATIONS / NEWS)<span class="korean-desc">사건의 메아리, 관찰 기록</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="/community" class="menu-link">
-                        CONSTELLATION (COMMUNITY)<span class="korean-desc">사용자 커뮤니티</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="/alerts" class="menu-link">
-                        BEACONS (ALERTS)<span class="korean-desc">주의</span>
-                    </a>
-                </li>
+                <li class="menu-item"><a href="/observations" class="menu-link">ECHOES (OBSERVATIONS / NEWS)<span class="korean-desc">사건의 메아리, 관찰 기록</span></a></li>
+                <li class="menu-item"><a href="/community" class="menu-link">CONSTELLATION (COMMUNITY)<span class="korean-desc">사용자 커뮤니티</span></a></li>
+                <li class="menu-item"><a href="/alerts" class="menu-link">BEACONS (ALERTS)<span class="korean-desc">주의</span></a></li>
             </ul>
         </div>
-        
         <div class="menu-divider"></div>
-        
         <div class="menu-section">
             <ul class="menu-items">
-                <li class="menu-item">
-                    <a href="/seed" class="menu-link featured">
-                        SEED ORACLE (SEED AI Q/A)<span class="korean-desc">seed AI (챗봇 서비스)</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="/portal" class="menu-link featured">
-                        PORTAL<span class="korean-desc">(가입/로그인/로그아웃)</span>
-                    </a>
-                </li>
+                <li class="menu-item"><a href="/seed" class="menu-link featured">SEED ORACLE (SEED AI Q/A)<span class="korean-desc">seed AI (챗봇 서비스)</span></a></li>
+                <li class="menu-item"><a href="/portal" class="menu-link featured">PORTAL<span class="korean-desc">(가입/로그인/로그아웃)</span></a></li>
             </ul>
         </div>
     </div>
-    
+
     <button class="chat-button" id="chatButton">채팅하기</button>
 
     <script>
-        // COSMOS 차트 엔진 - 완전 자체 제작
-        let chartCanvas = null;
-        let chartContext = null;
-        let currentData = new Map();
-        let isAnimating = false;
-        let animationFrame = null;
-        
-        // 암호화폐 설정 (색상 개선 + 실제 가격)
-        const cryptoConfig = [
-            { id: 'bitcoin', name: 'BTC', color: '#ff9500', visible: true, basePrice: 112154 },
-            { id: 'ethereum', name: 'ETH', color: '#627eea', visible: true, basePrice: 3680 },
-            { id: 'binancecoin', name: 'BNB', color: '#f0b90b', visible: true, basePrice: 715 },
-            { id: 'solana', name: 'SOL', color: '#9945ff', visible: true, basePrice: 185 },
-            { id: 'cardano', name: 'ADA', color: '#0066cc', visible: true, basePrice: 1.12 },
-            { id: 'ripple', name: 'XRP', color: '#00d4aa', visible: true, basePrice: 5.124 },
-            { id: 'avalanche-2', name: 'AVAX', color: '#e84142', visible: true, basePrice: 52 },
-            { id: 'dogecoin', name: 'DOGE', color: '#c2a633', visible: true, basePrice: 0.384 }
+        // 메뉴 토글
+        function toggleMenu(){const e=document.getElementById('menuOverlay');e.classList.toggle('active')}
+        // 비디오 핸들링
+        function handleVideo(){const e=document.querySelector('.video-background');if(e){e.addEventListener('loadeddata',function(){console.log('비디오 로딩 성공!')});e.addEventListener('error',function(){console.log('비디오 로딩 실패 - 대체 배경 사용');e.style.display='none'});document.addEventListener('touchstart',function(){if(e.paused){e.play().catch(o=>console.log('비디오 재생 실패:',o))}});document.addEventListener('click',function(){if(e.paused){e.play().catch(o=>console.log('비디오 재생 실패:',o))}})}}
+
+        // ==== COSMOS 차트 엔진 (원본 유지) ====
+        let chartCanvas=null,chartContext=null,currentData=new Map,isAnimating=false,animationFrame=null;
+        const cryptoConfig=[
+            {id:'bitcoin',name:'BTC',color:'#ff9500',visible:true,basePrice:112154},
+            {id:'ethereum',name:'ETH',color:'#627eea',visible:true,basePrice:3680},
+            {id:'binancecoin',name:'BNB',color:'#f0b90b',visible:true,basePrice:715},
+            {id:'solana',name:'SOL',color:'#9945ff',visible:true,basePrice:185},
+            {id:'cardano',name:'ADA',color:'#0066cc',visible:true,basePrice:1.12},
+            {id:'ripple',name:'XRP',color:'#00d4aa',visible:true,basePrice:5.124},
+            {id:'avalanche-2',name:'AVAX',color:'#e84142',visible:true,basePrice:52},
+            {id:'dogecoin',name:'DOGE',color:'#c2a633',visible:true,basePrice:.384}
         ];
-        
-        function updateKoreanTime() {
-            const now = new Date();
-            const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-            
-            const hours = koreanTime.getHours();
-            const minutes = String(koreanTime.getMinutes()).padStart(2, '0');
-            const seconds = String(koreanTime.getSeconds()).padStart(2, '0');
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = String(hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours)).padStart(2, '0');
-            
-            const timeString = period + displayHours + ':' + minutes + ':' + seconds;
-            document.getElementById('currentTime').textContent = timeString;
-        }
-        
-        function toggleMenu() {
-            const menuOverlay = document.getElementById('menuOverlay');
-            menuOverlay.classList.toggle('active');
-        }
-        
-        function handleVideo() {
-            const video = document.querySelector('.video-background');
-            
-            if (video) {
-                video.addEventListener('loadeddata', function() {
-                    console.log('비디오 로딩 성공!');
-                });
-                
-                video.addEventListener('error', function() {
-                    console.log('비디오 로딩 실패 - 대체 배경 사용');
-                    video.style.display = 'none';
-                });
-                
-                document.addEventListener('touchstart', function() {
-                    if (video.paused) {
-                        video.play().catch(e => console.log('비디오 재생 실패:', e));
-                    }
-                });
-                
-                document.addEventListener('click', function() {
-                    if (video.paused) {
-                        video.play().catch(e => console.log('비디오 재생 실패:', e));
-                    }
-                });
-            }
-        }
-        
-        // COSMOS 차트 초기화
-        function initCosmosChart() {
-            console.log('🌌 TWO.4 COSMOS 엔진 부팅...');
-            
-            chartCanvas = document.getElementById('cosmosChart');
-            if (!chartCanvas) {
-                console.error('차트 캔버스를 찾을 수 없습니다.');
-                return;
-            }
-            
-            chartContext = chartCanvas.getContext('2d');
-            
-            // 캔버스 크기 설정
-            resizeChart();
-            
-            // 범례 생성
-            createChartLegend();
-            
-            // 데모 데이터 생성
-            generateAllCosmosData();
-            
-            // 애니메이션 시작
-            startChartAnimation();
-            
-            // 실시간 업데이트 시작
-            startRealTimeUpdates();
-            
-            // 리사이즈 이벤트
-            window.addEventListener('resize', resizeChart);
-            
-            console.log('✅ COSMOS 엔진 준비 완료!');
-            document.getElementById('marketCap').textContent = 'COSMOS Live: $3.85T';
-        }
-        
-        // 차트 크기 조정
-        function resizeChart() {
-            if (!chartCanvas) return;
-            
-            const container = chartCanvas.parentElement;
-            const rect = container.getBoundingClientRect();
-            
-            chartCanvas.width = rect.width - 4; // 패딩 고려
-            chartCanvas.height = 480;
-            
-            if (chartContext) {
-                drawChart();
-            }
-        }
-        
-        // 범례 생성
-        function createChartLegend() {
-            const legendContainer = document.getElementById('chartLegend');
-            legendContainer.innerHTML = '';
-            
-            cryptoConfig.forEach((crypto, index) => {
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
-                legendItem.innerHTML = `
-                    <div class="legend-color" style="background-color: ${crypto.color}"></div>
-                    <span>${crypto.name}</span>
-                `;
-                
-                legendItem.addEventListener('click', () => {
-                    toggleCryptoVisibility(index);
-                });
-                
-                legendContainer.appendChild(legendItem);
-            });
-        }
-        
-        // 암호화폐 표시 토글
-        function toggleCryptoVisibility(index) {
-            cryptoConfig[index].visible = !cryptoConfig[index].visible;
-            updateLegendVisibility(index, cryptoConfig[index].visible);
-            drawChart();
-        }
-        
-        // 범례 표시 상태 업데이트
-        function updateLegendVisibility(index, visible) {
-            const legendItems = document.querySelectorAll('.legend-item');
-            if (legendItems[index]) {
-                legendItems[index].style.opacity = visible ? '1' : '0.3';
-            }
-        }
-        
-        // 모든 COSMOS 데이터 생성
-        function generateAllCosmosData() {
-            console.log('🎭 COSMOS 데이터 매트릭스 생성...');
-            
-            cryptoConfig.forEach(crypto => {
-                const data = generateCosmosData(crypto, 100);
-                currentData.set(crypto.id, data);
-                console.log(`📊 ${crypto.name} 궤도 데이터 생성 완료`);
-            });
-        }
-        
-        // COSMOS 데이터 생성 (시뮬레이션)
-        function generateCosmosData(crypto, dataPoints) {
-            const data = [];
-            const now = Date.now();
-            const interval = 3600000; // 1시간
-            
-            let currentPrice = crypto.basePrice;
-            const basePrice = currentPrice;
-            
-            for (let i = dataPoints; i >= 0; i--) {
-                const timestamp = now - (i * interval);
-                
-                // 시간대별 변동성
-                const hour = new Date(timestamp).getHours();
-                let volatility = 0.015;
-                
-                if (hour >= 8 && hour <= 16) volatility = 0.025;
-                if (hour >= 14 && hour <= 22) volatility = 0.035;
-                
-                // 시장 심리 반영
-                const change = (Math.random() - 0.5) * volatility;
-                currentPrice *= (1 + change);
-                
-                // 우주적 트렌드 적용
-                const cosmicTrend = Math.sin((i / 30) * Math.PI) * 0.001;
-                currentPrice *= (1 + cosmicTrend);
-                
-                // 가격 범위 제한
-                if (currentPrice > basePrice * 1.4) currentPrice = basePrice * 1.35;
-                if (currentPrice < basePrice * 0.6) currentPrice = basePrice * 0.65;
-                
-                data.push({
-                    timestamp: timestamp,
-                    price: Math.max(currentPrice, 0.001)
-                });
-            }
-            
-            return data.sort((a, b) => a.timestamp - b.timestamp);
-        }
-        
-        // 차트 애니메이션 시작
-        function startChartAnimation() {
-            if (isAnimating) return;
-            isAnimating = true;
-            
-            function animate() {
-                drawChart();
-                animationFrame = requestAnimationFrame(animate);
-            }
-            
-            animate();
-        }
-        
-        // COSMOS 차트 그리기
-        function drawChart() {
-            if (!chartContext || !chartCanvas) return;
-            
-            const ctx = chartContext;
-            const width = chartCanvas.width;
-            const height = chartCanvas.height;
-            
-            // 우주 배경 렌더링
-            ctx.clearRect(0, 0, width, height);
-            
-            // 배경 그라디언트 (우주적)
-            const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-            bgGradient.addColorStop(0, 'rgba(139, 92, 246, 0.15)');
-            bgGradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
-            bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
-            ctx.fillStyle = bgGradient;
-            ctx.fillRect(0, 0, width, height);
-            
-            // 코스믹 그리드
-            drawCosmicGrid(ctx, width, height);
-            
-            // 각 암호화폐 궤도 그리기
-            cryptoConfig.forEach(crypto => {
-                if (crypto.visible && currentData.has(crypto.id)) {
-                    drawCryptoOrbit(ctx, crypto, currentData.get(crypto.id), width, height);
-                }
-            });
-        }
-        
-        // 코스믹 그리드 그리기 (여백 적용)
-        function drawCosmicGrid(ctx, width, height) {
-            const margin = {
-                left: 40,
-                right: 80,
-                top: 30,
-                bottom: 40
-            };
-            
-            const chartWidth = width - margin.left - margin.right;
-            const chartHeight = height - margin.top - margin.bottom;
-            
-            ctx.strokeStyle = 'rgba(139, 92, 246, 0.15)';
-            ctx.lineWidth = 0.5;
-            
-            // 수직 궤도선 (차트 영역 내에서만)
-            for (let i = 0; i <= 12; i++) {
-                const x = margin.left + (i / 12) * chartWidth;
-                ctx.beginPath();
-                ctx.moveTo(x, margin.top);
-                ctx.lineTo(x, height - margin.bottom);
-                ctx.stroke();
-            }
-            
-            // 수평 궤도선 (차트 영역 내에서만)
-            for (let i = 0; i <= 8; i++) {
-                const y = margin.top + (i / 8) * chartHeight;
-                ctx.beginPath();
-                ctx.moveTo(margin.left, y);
-                ctx.lineTo(width - margin.right, y);
-                ctx.stroke();
-            }
-        }
-        
-        // 암호화폐 궤도 그리기
-        function drawCryptoOrbit(ctx, crypto, data, width, height) {
-            if (!data || data.length < 2) return;
-            
-            // 여백 설정 (오른쪽 여백 늘림)
-            const margin = {
-                left: 40,
-                right: 80,  // 오른쪽 여백 크게
-                top: 30,
-                bottom: 40
-            };
-            
-            const chartWidth = width - margin.left - margin.right;
-            const chartHeight = height - margin.top - margin.bottom;
-            
-            // 가격 범위 계산
-            const prices = data.map(d => d.price);
-            const minPrice = Math.min(...prices);
-            const maxPrice = Math.max(...prices);
-            const priceRange = maxPrice - minPrice || 1;
-            
-            // 시간 범위
-            const timeRange = data[data.length - 1].timestamp - data[0].timestamp;
-            
-            // 궤도 스타일 설정
-            ctx.strokeStyle = crypto.color;
-            ctx.lineWidth = 2.5;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            // 코스믹 글로우 효과
-            ctx.shadowColor = crypto.color;
-            ctx.shadowBlur = 8;
-            
-            ctx.beginPath();
-            
-            // 궤도 경로 그리기 (여백 적용)
-            data.forEach((point, index) => {
-                const x = margin.left + ((point.timestamp - data[0].timestamp) / timeRange) * chartWidth;
-                const y = margin.top + (chartHeight - ((point.price - minPrice) / priceRange) * chartHeight);
-                
-                if (index === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    // 부드러운 곡선으로 연결
-                    const prevPoint = data[index - 1];
-                    const prevX = margin.left + ((prevPoint.timestamp - data[0].timestamp) / timeRange) * chartWidth;
-                    const prevY = margin.top + (chartHeight - ((prevPoint.price - minPrice) / priceRange) * chartHeight);
-                    
-                    const controlX = (prevX + x) / 2;
-                    ctx.quadraticCurveTo(controlX, prevY, x, y);
-                }
-            });
-            
-            ctx.stroke();
-            
-            // 현재 포인트 강조 (오른쪽 끝)
-            if (data.length > 0) {
-                const lastPoint = data[data.length - 1];
-                const x = margin.left + ((lastPoint.timestamp - data[0].timestamp) / timeRange) * chartWidth;
-                const y = margin.top + (chartHeight - ((lastPoint.price - minPrice) / priceRange) * chartHeight);
-                
-                // 큰 점으로 강조
-                ctx.beginPath();
-                ctx.arc(x, y, 5, 0, 2 * Math.PI);
-                ctx.fillStyle = crypto.color;
-                ctx.fill();
-                
-                // 현재 가격 표시 (오른쪽에)
-                ctx.fillStyle = crypto.color;
-                ctx.font = '12px Orbitron, monospace';
-                ctx.textAlign = 'left';
-                ctx.fillText(`${lastPoint.price.toFixed(crypto.basePrice < 1 ? 4 : 0)}`, x + 10, y + 4);
-            }
-            
-            ctx.shadowBlur = 0;
-            ctx.textAlign = 'start'; // 리셋
-        }
-        
-        // 실시간 우주 데이터 업데이트 (더 눈에 잘 보이게)
-        function updateCosmosData() {
-            let totalMarketChange = 0;
-            
-            cryptoConfig.forEach(crypto => {
-                if (currentData.has(crypto.id)) {
-                    const data = currentData.get(crypto.id);
-                    if (data.length > 0) {
-                        const lastPoint = data[data.length - 1];
-                        const now = Date.now();
-                        
-                        // 더 큰 변동으로 실시간 느낌 강화
-                        const cosmicVariation = (Math.random() - 0.5) * 0.04; // 2.5% → 4%
-                        const timeWave = Math.sin(now / 30000) * 0.01; // 30초 주기, 더 큰 파동
-                        const marketMomentum = (Math.random() - 0.48) * 0.02; // 약간의 상승 편향
-                        
-                        const totalChange = cosmicVariation + timeWave + marketMomentum;
-                        const newPrice = lastPoint.price * (1 + totalChange);
-                        
-                        const newPoint = {
-                            timestamp: now,
-                            price: Math.max(newPrice, 0.001)
-                        };
-                        
-                        data.push(newPoint);
-                        totalMarketChange += totalChange;
-                        
-                        // 우주 메모리 관리
-                        if (data.length > 120) {
-                            data.shift();
-                        }
-                    }
-                }
-            });
-            
-            // 시장총액도 실시간 업데이트
-            const avgChange = totalMarketChange / cryptoConfig.length;
-            const baseMarketCap = 2.31;
-            const currentMarketCap = baseMarketCap * (1 + avgChange * 10); // 변화 증폭
-            
-            document.getElementById('marketCap').textContent = 
-                `COSMOS Live: ${currentMarketCap.toFixed(2)}T`;
-            
-            console.log('🌠 COSMOS 궤도 실시간 업데이트');
-        }
-        
-        // 실시간 업데이트 시작 (더 빠르게)
-        function startRealTimeUpdates() {
-            // 2초마다 우주 데이터 업데이트 (3초 → 2초)
-            setInterval(() => {
-                updateCosmosData();
-            }, 2000);
-            
-            console.log('🔄 COSMOS 고속 실시간 시스템 온라인');
-        }
-        
-        // 이벤트 리스너 설정
-        function setupEventListeners() {
-            // 시간 범위 변경
-            document.getElementById('timeSelector').addEventListener('change', () => {
-                generateAllCosmosData();
-            });
-            
-            // 차트 타입 변경
-            document.getElementById('chartType').addEventListener('change', (e) => {
-                if (e.target.value === 'single') {
-                    alert('단일 궤도 모드는 곧 출시됩니다!');
-                    e.target.value = 'multi';
-                }
-            });
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            updateKoreanTime();
-            setInterval(updateKoreanTime, 1000);
+        function initCosmosChart(){console.log('🌌 TWO.4 COSMOS 엔진 부팅...');chartCanvas=document.getElementById('cosmosChart');if(!chartCanvas){console.error('차트 캔버스를 찾을 수 없습니다.');return}chartContext=chartCanvas.getContext('2d');resizeChart();createChartLegend();generateAllCosmosData();startChartAnimation();startRealTimeUpdates();window.addEventListener('resize',resizeChart);console.log('✅ COSMOS 엔진 준비 완료!');document.getElementById('marketCap').textContent='COSMOS Live: $3.85T'}
+        function resizeChart(){if(!chartCanvas)return;const e=chartCanvas.parentElement,t=e.getBoundingClientRect();chartCanvas.width=t.width-4;chartCanvas.height=480;chartContext&&drawChart()}
+        function createChartLegend(){const e=document.getElementById('chartLegend');e.innerHTML='';cryptoConfig.forEach((t,o)=>{const n=document.createElement('div');n.className='legend-item',n.innerHTML=`<div class="legend-color" style="background-color: ${t.color}"></div><span>${t.name}</span>`,n.addEventListener('click',()=>{toggleCryptoVisibility(o)}),e.appendChild(n)})}
+        function toggleCryptoVisibility(e){cryptoConfig[e].visible=!cryptoConfig[e].visible,updateLegendVisibility(e,cryptoConfig[e].visible),drawChart()}
+        function updateLegendVisibility(e,t){const o=document.querySelectorAll('.legend-item');o[e]&&(o[e].style.opacity=t?'1':'0.3')}
+        function generateAllCosmosData(){console.log('🎭 COSMOS 데이터 매트릭스 생성...');cryptoConfig.forEach(e=>{const t=generateCosmosData(e,100);currentData.set(e.id,t),console.log(`📊 ${e.name} 궤도 데이터 생성 완료`)})}
+        function generateCosmosData(e,t){const o=[],n=Date.now(),a=36e5;let r=e.basePrice,c=r;for(let s=t;s>=0;s--){const i=n-s*a,l=new Date(i).getHours();let d=.015;8<=l&&l<=16&&(d=.025),14<=l&&l<=22&&(d=.035);const g=(Math.random()-.5)*d;r*=(1+g);const u=Math.sin(s/30*Math.PI)*.001;r*=(1+u),r>1.4*c&&(r=1.35*c),r<.6*c&&(r=.65*c),o.push({timestamp:i,price:Math.max(r,.001)})}return o.sort((e,t)=>e.timestamp-t.timestamp)}
+        function startChartAnimation(){if(isAnimating)return;isAnimating=!0,function e(){drawChart(),animationFrame=requestAnimationFrame(e)}()}
+        function drawChart(){if(!chartContext||!chartCanvas)return;const e=chartContext,t=chartCanvas.width,o=chartCanvas.height;e.clearRect(0,0,t,o);const n=e.createLinearGradient(0,0,0,o);n.addColorStop(0,'rgba(139, 92, 246, 0.15)'),n.addColorStop(.5,'rgba(59, 130, 246, 0.08)'),n.addColorStop(1,'rgba(0, 0, 0, 0.4)'),e.fillStyle=n,e.fillRect(0,0,t,o),drawCosmicGrid(e,t,o),cryptoConfig.forEach(n=>{currentData.has(n.id)&&n.visible&&drawCryptoOrbit(e,n,currentData.get(n.id),t,o)})}
+        function drawCosmicGrid(e,t,o){const n={left:40,right:80,top:30,bottom:40},a=t-n.left-n.right,r=o-n.top-n.bottom;e.strokeStyle='rgba(139, 92, 246, 0.15)',e.lineWidth=.5;for(let c=0;c<=12;c++){const s=n.left+c/12*a;e.beginPath(),e.moveTo(s,n.top),e.lineTo(s,o-n.bottom),e.stroke()}for(let c=0;c<=8;c++){const s=n.top+c/8*r;e.beginPath(),e.moveTo(n.left,s),e.lineTo(t-n.right,s),e.stroke()}}
+        function drawCryptoOrbit(e,t,o,n,a){if(!o||o.length<2)return;const r={left:40,right:80,top:30,bottom:40},c=n-r.left-r.right,s=a-r.top-r.bottom,i=o.map(e=>e.price),l=Math.min(...i),d=Math.max(...i),g=d-l||1,u=o[o.length-1].timestamp-o[0].timestamp;e.strokeStyle=t.color,e.lineWidth=2.5,e.lineCap='round',e.lineJoin='round',e.shadowColor=t.color,e.shadowBlur=8,e.beginPath(),o.forEach((n,a)=>{const i=r.left+(n.timestamp-o[0].timestamp)/u*c,d=r.top+(s-(n.price-l)/g*s);if(0===a)e.moveTo(i,d);else{const n=o[a-1],c=r.left+(n.timestamp-o[0].timestamp)/u*c,s=r.top+(s-(n.price-l)/g*s),l=(c+i)/2;e.quadraticCurveTo(l,s,i,d)}}),e.stroke(),o.length>0&&(()=>{const o=o=>o,a=a=>a;const i=o(n),d=a(a),g=r.left+(o-i)/u*c;})();if(o.length>0){const n=o[o.length-1],i=r.left+(n.timestamp-o[0].timestamp)/u*c,d=r.top+(s-(n.price-l)/g*s);e.beginPath(),e.arc(i,d,5,0,2*Math.PI),e.fillStyle=t.color,e.fill(),e.fillStyle=t.color,e.font='12px Orbitron, monospace',e.textAlign='left',e.fillText(`${n.price.toFixed(t.basePrice<1?4:0)}`,i+10,d+4)}e.shadowBlur=0,e.textAlign='start'}
+        function updateCosmosData(){let e=0;cryptoConfig.forEach(t=>{if(currentData.has(t.id)){const o=currentData.get(t.id);if(o.length>0){const n=o[o.length-1],a=Date.now(),r=(Math.random()-.5)*.04,c=Math.sin(a/3e4)*.01,s=(Math.random()-.48)*.02,i=r+c+s,l={timestamp:a,price:Math.max(n.price*(1+i),.001)};o.push(l),e+=i,o.length>120&&o.shift()}}});const t=e/cryptoConfig.length,o=2.31,n=o*(1+10*t);document.getElementById('marketCap').textContent=`COSMOS Live: ${n.toFixed(2)}T`,console.log('🌠 COSMOS 궤도 실시간 업데이트')}
+        function startRealTimeUpdates(){setInterval(()=>{updateCosmosData()},2e3),console.log('🔄 COSMOS 고속 실시간 시스템 온라인')}
+        function setupEventListeners(){document.getElementById('timeSelector').addEventListener('change',()=>{generateAllCosmosData()});document.getElementById('chartType').addEventListener('change',e=>{'single'===e.target.value&&(alert('단일 궤도 모드는 곧 출시됩니다!'),e.target.value='multi')})}
+
+        document.addEventListener('DOMContentLoaded',function(){
             handleVideo();
-            
-            // COSMOS 즉시 부팅
-            setTimeout(() => {
-                console.log('🚀 TWO.4 COSMOS 시스템 온라인...');
-                initCosmosChart();
-                setupEventListeners();
-            }, 300);
-            
-            const menuButton = document.getElementById('menuButton');
-            const menuClose = document.getElementById('menuClose');
-            const menuOverlay = document.getElementById('menuOverlay');
-            const chatButton = document.getElementById('chatButton');
-            
-            if (menuButton) {
-                menuButton.addEventListener('click', toggleMenu);
-            }
-            
-            if (menuClose) {
-                menuClose.addEventListener('click', toggleMenu);
-            }
-            
-            if (chatButton) {
-                chatButton.addEventListener('click', function() {
-                    alert('SEED ORACLE 채팅 기능 준비중입니다.');
-                });
-            }
-            
-            document.addEventListener('click', function(e) {
-                if (menuOverlay && menuButton && !menuOverlay.contains(e.target) && !menuButton.contains(e.target)) {
-                    menuOverlay.classList.remove('active');
-                }
-            });
-            
-            // 보안 시스템
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                return false;
-            });
-            
-            document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && ['c', 'v', 'a', 's', 'p'].includes(e.key.toLowerCase())) {
-                    e.preventDefault();
-                    return false;
-                }
-                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || (e.ctrlKey && e.key.toLowerCase() === 'u')) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-            
-            document.addEventListener('dragstart', function(e) {
-                e.preventDefault();
-                return false;
-            });
-            
-            document.addEventListener('selectstart', function(e) {
-                e.preventDefault();
-                return false;
-            });
-            
-            // COSMOS 보안 모니터링
-            let devtools = { open: false };
-            setInterval(function() {
-                if (window.outerHeight - window.innerHeight > 160 || window.outerWidth - window.innerWidth > 160) {
-                    if (!devtools.open) {
-                        devtools.open = true;
-                        if (typeof console.clear === 'function') {
-                            console.clear();
-                        }
-                        console.log('⚠️ TWO.4 COSMOS 보안 시스템 활성화');
-                        console.log('🔒 TIME NEVER SLEEPS - 우주 데이터 보호 중');
-                    }
-                } else {
-                    devtools.open = false;
-                }
-            }, 500);
+            setTimeout(()=>{console.log('🚀 TWO.4 COSMOS 시스템 온라인...');initCosmosChart();setupEventListeners()},300);
+            const e=document.getElementById('menuButton'),t=document.getElementById('menuClose'),o=document.getElementById('menuOverlay'),n=document.getElementById('chatButton');
+            e&&e.addEventListener('click',toggleMenu);
+            t&&t.addEventListener('click',toggleMenu);
+            n&&n.addEventListener('click',function(){alert('SEED ORACLE 채팅 기능 준비중입니다.')});
+            document.addEventListener('click',function(n){o&&e&&!o.contains(n.target)&&!e.contains(n.target)&&o.classList.remove('active')});
+            // 보안 시스템 (원본 유지)
+            document.addEventListener('contextmenu',function(e){e.preventDefault();return false});
+            document.addEventListener('keydown',function(e){if(e.ctrlKey&&['c','v','a','s','p'].includes(e.key.toLowerCase())){e.preventDefault();return false}if('F12'===e.key||(e.ctrlKey&&e.shiftKey&&'i'===e.key.toLowerCase())||(e.ctrlKey&&'u'===e.key.toLowerCase())){e.preventDefault();return false}});
+            document.addEventListener('dragstart',function(e){e.preventDefault();return false});
+            document.addEventListener('selectstart',function(e){e.preventDefault();return false});
+            let devtools={open:false};setInterval(function(){if(window.outerHeight-window.innerHeight>160||window.outerWidth-window.innerWidth>160){if(!devtools.open){devtools.open=true;typeof console.clear=='function'&&console.clear();console.log('⚠️ TWO.4 COSMOS 보안 시스템 활성화');console.log('🔒 TIME NEVER SLEEPS - 우주 데이터 보호 중')}}else devtools.open=false},500)
         });
     </script>
 </body>
