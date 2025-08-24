@@ -2,302 +2,274 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TWO.4</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@700;800&display=swap');
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TWO.4 – Infinity Clock</title>
 
-    /* Reset */
-    *{margin:0;padding:0;box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{
-      font-family:'Inter',system-ui,sans-serif;
-      background:#000;color:#fff;line-height:1.6;min-height:100vh;overflow-x:hidden;
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ===== Reset ===== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { height:100%; }
+    body {
+      background:#000;
+      color:#fff;
+      min-height:100vh;
+      font-family:'Space Grotesk', system-ui, sans-serif;
+      overflow:hidden;
     }
 
-    /* Background video + overlay + fallback */
-    .video-background{
-      position:fixed;inset:0;width:100%;height:100%;
-      object-fit:cover;z-index:-10;background:#000;
+    /* ===== Video background ===== */
+    .video-background {
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+      min-width:100%;
+      min-height:100%;
+      object-fit:cover;
+      object-position:center center;
+      z-index:-10;
+      background:#000;
     }
     .video-overlay{
-      position:fixed;inset:0;height:100vh;width:100%;
-      background:rgba(0,0,0,.3);z-index:-5;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.28); /* 살짝 어둡게 */
+      z-index:-5;
+      pointer-events:none;
     }
-    .fallback-bg{
-      position:fixed;inset:0;height:100vh;width:100%;
-      background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 25%,#6366f1 50%,#8b5cf6 75%,#a855f7 100%);
-      z-index:-15;
+    /* 세로 화면에서 프레이밍 보정이 필요하면 아래 값을 살짝 조정해줘 (위쪽 더 보이게 등) */
+    @media (orientation:portrait){
+      .video-background{ object-position:center 32%; }
     }
 
-    /* Top-left logo (more up) */
-    .brand-logo{position:fixed;top:10px;left:16px;z-index:1200;display:block}
+    /* ===== Top-left brand logo ===== */
+    .brand-logo{
+      position:fixed;
+      top:12px;
+      left:16px;
+      z-index:1200;
+      display:block;
+      pointer-events:auto;
+    }
     .brand-logo img{
-      display:block;height:clamp(56px,7.2vw,110px);width:auto;
-      filter:drop-shadow(0 0 12px rgba(139,92,246,.85)) drop-shadow(0 0 24px rgba(56,189,248,.45));
+      display:block;
+      height:clamp(28px, 4.2vw, 44px);
+      width:auto;
+      filter:drop-shadow(0 2px 8px rgba(0,0,0,.35));
+      opacity:.95;
     }
     @media (max-width:768px){
-      .brand-logo{top:calc(8px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px))}
-      .brand-logo img{height:clamp(52px,9vw,96px)}
+      .brand-logo{ top:8px; left:12px; }
     }
 
-    /* Nav (menu button only) */
-    .nav{position:fixed;top:20px;right:20px;z-index:1100;display:flex;gap:16px;align-items:center}
-    .menu-btn{
-      width:50px;height:50px;border-radius:50%;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(139,92,246,.2);border:2px solid rgba(139,92,246,.4);
-      backdrop-filter:blur(20px);transition:.3s;
+    /* ===== Infinity Clock (네가 보낸 코드 원형 유지) ===== */
+    .infinity-clock {
+      position: absolute;
+      top: clamp(4px, 1.5vh, 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      gap: clamp(3px, 0.6vh, 6px);
+      pointer-events: none;
+      z-index: 1200;
     }
-    .menu-btn:hover{background:rgba(139,92,246,.3);border-color:rgba(139,92,246,.7);box-shadow:0 0 30px rgba(139,92,246,.5)}
-    .menu-icon{width:20px;height:20px;position:relative}
-    .menu-line{position:absolute;width:20px;height:2px;background:#8b5cf6;left:0;transition:.3s}
-    .menu-line:nth-child(1){top:0}.menu-line:nth-child(2){top:8px}.menu-line:nth-child(3){top:16px}
+    .inf-svg {
+      width: clamp(200px, 35vw, 400px);
+      height: auto;
+    }
+    .esc {
+      font: 600 clamp(13px, 2.4vw, 17px) 'Space Grotesk', system-ui, sans-serif;
+      fill: rgba(255, 255, 255, 0.8);
+      letter-spacing: 1.5px;
+      opacity: 0.9;
+    }
+    .inf-base {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+    .inf-prog {
+      fill: none;
+      stroke: url(#inf-grad);
+      stroke-width: 6;
+      stroke-linecap: round;
+    }
+    .inf-cursor { fill: rgba(255, 255, 255, 0.8); }
+    .inf-mark   { fill: rgba(255, 255, 255, 0.3); }
 
-    /* Dayband (24h timeline) */
-    .dayband{
-      position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);
-      left:50%;transform:translateX(-50%);width:min(820px,94vw);
-      z-index:1300;pointer-events:none;font-family:'Orbitron','Inter',sans-serif;
+    .inf-digital {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-weight: 500;
+      font-size: clamp(12px, 1.8vw, 16px);
+      color: rgba(255, 255, 255, 0.95);
+      letter-spacing: 1px;
+      background: rgba(0, 0, 0, 0.15);
+      padding: clamp(6px, 1vw, 10px) clamp(10px, 1.8vw, 16px);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(8px);
     }
-    .dayband__bar{
-      position:relative;height:14px;border-radius:999px;overflow:hidden;
-      background:
-        radial-gradient(1200px 180px at 10% 50%, rgba(56,189,248,.10), transparent 55%),
-        radial-gradient(900px 160px at 90% 50%, rgba(139,92,246,.12), transparent 60%),
-        rgba(255,255,255,.08);
-      border:1px solid rgba(139,92,246,.35);
-      backdrop-filter:blur(8px);
-      box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 0 14px rgba(139,92,246,.14), 0 0 22px rgba(56,189,248,.08);
+    .time-quote {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-weight: 300;
+      font-size: clamp(9px, 1.2vw, 11px);
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      margin-top: clamp(4px, 0.8vh, 8px);
+      line-height: 1.3;
+      letter-spacing: 0.2px;
+      font-style: italic;
+      opacity: 0.7;
     }
-    .dayband__fill{
-      position:absolute;inset:0 auto 0 0;width:0%;
-      background:linear-gradient(90deg,#22c55e 0%,#84cc16 16%,#eab308 32%,#f97316 48%,#ef4444 72%,#7f1d1d 100%);
-      box-shadow:inset 0 0 18px rgba(139,92,246,.18);transition:width .4s ease;
-    }
-    .dayband__fill::before{
-      content:"";position:absolute;inset:0;
-      background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.12) 50%,transparent 100%);
-      mix-blend-mode:screen;transform:translateX(-100%);animation:two4Sheen 3.5s linear infinite;pointer-events:none;
-    }
-    @keyframes two4Sheen{from{transform:translateX(-100%)}to{transform:translateX(0%)}}
-
-    .dayband__marker{
-      position:absolute;top:-6px;bottom:-6px;width:2px;background:#facc15;
-      box-shadow:0 0 10px rgba(250,204,21,.85),0 0 16px rgba(250,204,21,.5);
-      transform:translateX(-1px);
-    }
-    .dayband__marker::after{
-      content:attr(data-label);position:absolute;bottom:100%;left:50%;transform:translate(-50%,-6px);
-      font-size:11px;color:#e9d5ff;white-space:nowrap;text-shadow:0 0 6px rgba(139,92,246,.6);
-      background:rgba(10,10,22,.35);border:1px solid rgba(139,92,246,.28);border-radius:6px;padding:2px 6px;
-    }
-    .dayband__marker--mid{
-      width:3px;background:#fde047;
-      box-shadow:0 0 16px rgba(250,204,21,.95),0 0 28px rgba(139,92,246,.45);
-    }
-    .dayband__marker--mid::after{font-weight:800;letter-spacing:.6px}
-    .dayband.is-esc-hot .dayband__marker--mid{
-      box-shadow:0 0 20px rgba(250,204,21,1),0 0 40px rgba(139,92,246,.55),0 0 60px rgba(56,189,248,.35);
-      animation:escPulse 1.6s ease-in-out infinite;
-    }
-    @keyframes escPulse{0%,100%{transform:translateX(-1px) scaleY(1)}50%{transform:translateX(-1px) scaleY(1.15)}}
-
-    .dayband__labels{
-      display:grid;grid-template-columns:1fr 1fr auto;align-items:center;margin-top:6px;
-      color:#e9d5ff;font-size:12px;text-shadow:0 0 6px rgba(139,92,246,.6);
-    }
-    .dayband__edge:first-child{justify-self:start;opacity:.7}
-    .dayband__edge:last-child{justify-self:end;opacity:.7}
-    .dayband__now{justify-self:end;font-size:11px;color:#e9d5ff;text-shadow:0 0 6px rgba(139,92,246,.85),0 0 12px rgba(56,189,248,.35)}
-    @media (max-width:768px){
-      .dayband{width:min(680px,94vw);top:calc(env(safe-area-inset-top,0px)+8px)}
-      .dayband__now{display:none}
-    }
-
-    /* Menu overlay */
-    .menu-overlay{
-      position:fixed;top:0;right:-450px;width:450px;height:100vh;
-      background:rgba(0,0,0,.97);backdrop-filter:blur(30px);
-      border-left:2px solid rgba(139,92,246,.4);z-index:2000;transition:right .4s ease;
-      padding:80px 40px 40px;overflow-y:auto
-    }
-    .menu-overlay.active{right:0}
-    .menu-close{
-      position:absolute;top:30px;right:30px;width:40px;height:40px;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;color:#8b5cf6;font-size:24px;
-      border-radius:50%;border:1px solid rgba(139,92,246,.3);transition:.3s
-    }
-    .menu-close:hover{color:#fff;background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.6)}
-    .menu-section{margin-bottom:30px}
-    .menu-items{list-style:none}
-    .menu-item{margin-bottom:6px}
-    .menu-link{
-      color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:600;
-      font-family:'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:1px;
-      display:block;padding:10px 16px;border-radius:8px;transition:.25s
-    }
-    .menu-link:hover{color:#fff;background:rgba(139,92,246,.1);transform:translateX(8px);text-shadow:0 0 15px rgba(139,92,246,.6)}
-    .korean-desc{color:rgba(139,92,246,.8);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;display:none}
-    .menu-link:hover .korean-desc{display:inline}
-    .menu-link.featured{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.3);color:rgba(139,92,246,.95)}
-    .menu-link.featured:hover{background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(168,85,247,.15));border-color:rgba(139,92,246,.6);color:#fff;box-shadow:0 0 20px rgba(139,92,246,.4)}
-    @media (max-width:768px){.menu-overlay{width:100%;right:-100%}.korean-desc{display:none!important}}
-
-    /* Chat button */
-    .chat-button{
-      position:fixed;right:20px;bottom:20px;z-index:1000;cursor:pointer;
-      background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;
-      padding:14px 20px;border-radius:50px;border:2px solid rgba(139,92,246,.3);
-      box-shadow:0 10px 30px rgba(139,92,246,.4);font-weight:600
+    @media (max-width: 768px) {
+      .infinity-clock { top: clamp(2px, 1vh, 8px); gap: clamp(2px, 0.4vh, 4px); }
+      .inf-svg { width: clamp(280px, 85vw, 400px); }
     }
   </style>
 </head>
 <body>
-  <div class="fallback-bg"></div>
 
-  <!-- Responsive background video: portrait / landscape -->
-  <video class="video-background" autoplay muted loop playsinline preload="auto">
+  <!-- Background video: portrait/landscape 자동 분기 -->
+  <video class="video-background" autoplay muted loop playsinline preload="auto" id="bgVideo">
+    <!-- 세로(포트레이트) -->
     <source src="/background-portrait.mp4" type="video/mp4" media="(orientation: portrait)">
-    <source src="/background.mp4"           type="video/mp4" media="(orientation: landscape)">
+    <!-- 가로(랜드스케이프) -->
+    <source src="/background.mp4" type="video/mp4" media="(orientation: landscape)">
+    <!-- 아주 구형 브라우저 대비 -->
+    <source src="/background.mp4" type="video/mp4">
   </video>
   <div class="video-overlay"></div>
 
-  <!-- Top-left logo -->
-  <a href="/" class="brand-logo" aria-label="home">
+  <!-- Left-top logo -->
+  <a href="/" class="brand-logo" aria-label="TWO.4 home">
     <img src="/logo1.png" alt="TWO.4">
   </a>
 
-  <!-- Menu button -->
-  <nav class="nav">
-    <div class="menu-btn" id="menuButton" aria-label="menu">
-      <div class="menu-icon">
-        <div class="menu-line"></div>
-        <div class="menu-line"></div>
-        <div class="menu-line"></div>
-      </div>
-    </div>
-  </nav>
+  <!-- Infinity Clock (from your friend) -->
+  <div class="infinity-clock">
+    <svg class="inf-svg" viewBox="0 0 600 280">
+      <defs>
+        <linearGradient id="inf-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0"    stop-color="#10b981"/>
+          <stop offset="0.25" stop-color="#eab308"/>
+          <stop offset="0.5"  stop-color="#f59e0b"/>
+          <stop offset="0.75" stop-color="#ef4444"/>
+          <stop offset="1"    stop-color="#dc2626"/>
+        </linearGradient>
+      </defs>
 
-  <!-- 24H DAY-BAND (00:00 → 24:00) -->
-  <div class="dayband" id="dayBand" aria-label="24h day progress">
-    <div class="dayband__bar">
-      <div class="dayband__fill" id="dayBandFill"></div>
-      <!-- markers -->
-      <div class="dayband__marker" data-label="오전 9시" data-hm="09:00"></div>
-      <div class="dayband__marker dayband__marker--mid" data-label="ESC" data-hm="12:00" title="Noon pivot"></div>
-      <div class="dayband__marker" data-label="오후 10:30" data-hm="22:30"></div>
-    </div>
-    <div class="dayband__labels">
-      <span class="dayband__edge">00:00</span>
-      <span class="dayband__edge">24:00</span>
-      <span class="dayband__now" id="dayBandNow">AM 12:00:00</span>
-    </div>
-  </div>
+      <!-- ESC 라벨(디자인 그대로: E-SC) -->
+      <text x="300" y="32" text-anchor="middle" class="esc">E-SC</text>
 
-  <!-- Menu overlay -->
-  <div class="menu-overlay" id="menuOverlay">
-    <div class="menu-close" id="menuClose">×</div>
+      <!-- 무한대 베이스 & 진행선 (경로 동일) -->
+      <path id="infBase"
+            d="M300 140
+               C250 60 110 60 110 140
+               S250 220 300 140
+               S490 60 490 140
+               S350 220 300 140"
+            class="inf-base"/>
+      <path id="infProg"
+            d="M300 140
+               C250 60 110 60 110 140
+               S250 220 300 140
+               S490 60 490 140
+               S350 220 300 140"
+            class="inf-prog"/>
 
-    <div class="menu-section">
-      <ul class="menu-items">
-        <li class="menu-item"><a href="/charts" class="menu-link">COSMOS (CHARTS)<span class="korean-desc">차트</span></a></li>
-        <li class="menu-item"><a href="/signals" class="menu-link">ORBITS (INDICATORS)<span class="korean-desc">지표/신호</span></a></li>
-        <li class="menu-item"><a href="/technique" class="menu-link">METHOD (TECHNIQUE)<span class="korean-desc">매매 기법</span></a></li>
-        <li class="menu-item"><a href="/psyche" class="menu-link">PSYCHE<span class="korean-desc">마음과 철학, 멘탈</span></a></li>
-      </ul>
-    </div>
+      <!-- 현재 위치 커서 + 마커 -->
+      <circle id="infCursor" r="4" class="inf-cursor"/>
+      <circle id="markA" r="3" class="inf-mark"/>
+      <circle id="markB" r="3" class="inf-mark"/>
+    </svg>
 
-    <div class="menu-section">
-      <ul class="menu-items">
-        <li class="menu-item"><a href="/observations" class="menu-link">ECHOES (NEWS)<span class="korean-desc">관찰 기록</span></a></li>
-        <li class="menu-item"><a href="/community" class="menu-link">CONSTELLATION (COMMUNITY)<span class="korean-desc">사용자 커뮤니티</span></a></li>
-        <li class="menu-item"><a href="/alerts" class="menu-link">BEACONS (ALERTS)<span class="korean-desc">주의</span></a></li>
-      </ul>
-    </div>
-
-    <div class="menu-section">
-      <ul class="menu-items">
-        <li class="menu-item"><a href="/seed" class="menu-link featured">SEED ORACLE (Q/A)<span class="korean-desc">seed AI</span></a></li>
-        <li class="menu-item"><a href="/portal" class="menu-link featured">PORTAL<span class="korean-desc">가입/로그인</span></a></li>
-      </ul>
+    <div class="inf-digital" id="infDigital">AM 00:00:00</div>
+    <div class="time-quote" id="timeQuote">
+      Time is what we want most, but what we use worst.
     </div>
   </div>
-
-  <button class="chat-button" id="chatButton">채팅하기</button>
 
   <script>
-    // --- Menu toggle ---
-    function toggleMenu(){ document.getElementById('menuOverlay')?.classList.toggle('active'); }
-
-    // --- Dayband (24h, KST) ---
-    function initDayBand24(){
-      const elFill = document.getElementById('dayBandFill');
-      const elNow  = document.getElementById('dayBandNow');
-      const band   = document.getElementById('dayBand');
-      const markers= Array.from(document.querySelectorAll('.dayband__marker'));
-      if(!elFill) return;
-
-      const TZ='Asia/Seoul';
-      const pad=n=>String(n).padStart(2,'0');
-      const toKST=(d=new Date())=>new Date(d.toLocaleString('en-US',{timeZone:TZ}));
-      const hmToPercent=hm=>{const [H,M]=hm.split(':').map(Number);return ((H+M/60)/24)*100};
-
-      // place markers
-      markers.forEach(m=>{ const p=hmToPercent(m.dataset.hm||'00:00'); m.style.left=`${p}%`; });
-
-      const fmtAMPM=(H,M,S)=>{const ap=H>=12?'PM':'AM';let h=H%12;if(h===0)h=12;return `${ap} ${pad(h)}:${pad(M)}:${pad(S)}`};
-
-      function tick(){
-        const now=toKST();
-        const start=new Date(now); start.setHours(0,0,0,0);
-        const end=new Date(start); end.setDate(end.getDate()+1);
-
-        const total=end-start, passed=now-start;
-        const pct=Math.max(0,Math.min(100,(passed/total)*100));
-        elFill.style.width=`${pct}%`;
-
-        // ESC pulse (±3분)
-        const noon=new Date(start); noon.setHours(12,0,0,0);
-        band?.classList.toggle('is-esc-hot', Math.abs(now - noon) <= 3*60*1000);
-
-        if(elNow) elNow.textContent=fmtAMPM(now.getHours(),now.getMinutes(),now.getSeconds());
-      }
-      tick(); setInterval(tick,1000);
-      document.addEventListener('visibilitychange',()=>{ if(!document.hidden) tick(); });
-    }
-
-    // --- Video helpers ---
-    function handleVideo(){
-      const v=document.querySelector('.video-background');
+    /* 배경 동영상이 iOS/안드로이드에서 멈춰있으면 첫 터치에 play 재시도 */
+    (function ensureVideoPlays(){
+      const v = document.getElementById('bgVideo');
       if(!v) return;
-      v.addEventListener('error',()=>{ v.style.display='none'; });
-      ['touchstart','click'].forEach(evt=>{
-        document.addEventListener(evt,()=>{ if(v.paused){ v.play().catch(()=>{}); } },{passive:true});
-      });
+      const tryPlay = () => v.play().catch(()=>{});
+      document.addEventListener('touchstart', tryPlay, { once:true });
+      document.addEventListener('click', tryPlay, { once:true });
+    })();
+
+    /* ===== Infinity Clock (원본 로직 그대로) ===== */
+    const dailyQuotes = [
+      "Time is what we want most, but what we use worst.",
+      "Lost time is never found again.",
+      "Time flies over us, but leaves its shadow behind.",
+      "The two most powerful warriors are patience and time.",
+      "Time is a created thing. Say 'I don't have time,' not 'I don't have time.'",
+      "Time you enjoy wasting is not wasted time.",
+      "Yesterday is gone. Tomorrow has not yet come. We have only today."
+    ];
+
+    function initClock() {
+      const base = document.getElementById('infBase');
+      const prog = document.getElementById('infProg');
+      const cursor = document.getElementById('infCursor');
+      const digital = document.getElementById('infDigital');
+      const timeQuote = document.getElementById('timeQuote');
+      const markA = document.getElementById('markA');
+      const markB = document.getElementById('markB');
+
+      if (!base || !prog) return;
+
+      const totalLength = base.getTotalLength();
+      prog.style.strokeDasharray = `0 ${totalLength}`;
+
+      // 지금 버전은 0~60초를 무한대 경로에 매핑 (네가 준 코드 그대로 유지)
+      const secondsToLength = (seconds) => ((seconds % 60) / 60) * totalLength;
+
+      const placeElement = (element, length) => {
+        const point = base.getPointAtLength(length);
+        element.setAttribute('cx', point.x);
+        element.setAttribute('cy', point.y);
+      };
+
+      // 마커 두 개(15초, 45초 위치)
+      placeElement(markA, secondsToLength(15));
+      placeElement(markB, secondsToLength(45));
+
+      function updateClock() {
+        const now = new Date();
+        const seconds = now.getSeconds();
+        const progressLength = secondsToLength(seconds);
+
+        prog.style.strokeDasharray = `${progressLength} ${totalLength - progressLength}`;
+        placeElement(cursor, progressLength);
+
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const displayHours = String(((hours + 11) % 12) + 1).padStart(2, '0');
+        const displayMinutes = String(minutes).padStart(2, '0');
+        const displaySeconds = String(seconds).padStart(2, '0');
+        const ampm = hours < 12 ? 'AM' : 'PM';
+
+        digital.textContent = `${ampm} ${displayHours}:${displayMinutes}:${displaySeconds}`;
+
+        const dayOfWeek = now.getDay();
+        const quoteIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        timeQuote.textContent = dailyQuotes[quoteIndex];
+      }
+
+      updateClock();
+      setInterval(updateClock, 1000);
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
-      // init
-      handleVideo();
-      initDayBand24();
-
-      // menu
-      const btn=document.getElementById('menuButton');
-      const closeBtn=document.getElementById('menuClose');
-      const overlay=document.getElementById('menuOverlay');
-      btn?.addEventListener('click',toggleMenu);
-      closeBtn?.addEventListener('click',toggleMenu);
-      document.addEventListener('click',(e)=>{
-        if(!overlay) return;
-        if(overlay.classList.contains('active') && !overlay.contains(e.target) && !btn.contains(e.target)){
-          overlay.classList.remove('active');
-        }
-      });
-
-      // chat
-      document.getElementById('chatButton')?.addEventListener('click',()=>alert('SEED ORACLE 채팅 준비중입니다.'));
-    });
+    document.addEventListener('DOMContentLoaded', initClock);
   </script>
 </body>
 </html>
