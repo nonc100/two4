@@ -70,11 +70,17 @@
 /* 세로 모드에서 영상 전체 보이게 (크롭 방지) */
 @media (orientation: portrait){
   .video-background{
-    object-fit: contain;
+    position: fixed;
+    inset: 0;                 /* top:0; right:0; bottom:0; left:0 */
+    width: 100vw;
+    height: 100vh;
+    min-width: 0 !important;  /* 기본 min-* 100% 무효화 */
+    min-height: 0 !important;
+    object-fit: contain;      /* 전체 프레임 보이게 */
     object-position: 50% 50%;
-    background:#000;
+    background: #000;         /* 레터박스 영역 */
   }
-  .video-overlay{ background: rgba(0,0,0,.38); } /* portrait에서만 진하게 */
+  .video-overlay{ background: rgba(0,0,0,0.38); } /* 필요 시 농도 조절 */
 }
 
 /* 로고 더 위로 & HOME 숨기기(원하면) */
