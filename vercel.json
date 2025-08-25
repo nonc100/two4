@@ -1,4 +1,5 @@
-json{
-  "buildCommand": "echo 'Static files only'",
+
+{
+  "buildCommand": "echo \"Static files only\"",
   "outputDirectory": "."
 }
