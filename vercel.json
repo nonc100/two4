@@ -1,5 +1,4 @@
-
 {
-  "buildCommand": "echo \"Static files only\"",
-  "outputDirectory": "."
+  "version": 2,
+  "public": "apps/web"
 }
