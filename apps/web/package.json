@@ -1,4 +1,7 @@
-"scripts": {
-  "start": "node server.js",
-  "build": "true"
+{
+  "name": "two4-web",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  }
 }
