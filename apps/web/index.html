@@ -700,27 +700,17 @@
 
   <script>
     /* 비디오 자동재생 보장 */
-    (function ensureVideoPlays(){
-      const v=document.getElementById('bgVideo');
-      if(!v) return;
-      
-      // preload를 auto로 설정하여 확실히 로드
-      v.preload = 'auto';
-      
-      const tryPlay=()=>{
-        v.play().catch(e=>console.log('Video autoplay prevented:', e));
+(function () {
+  const v = document.getElementById('bgVideo');
+      if (!v) return;
+      const tryPlay = () => {
+        const p = v.play && v.play();
+        if (p && p.catch) p.catch(() => setTimeout(tryPlay, 400));
       };
-      
-      // 즉시 재생 시도
-      tryPlay();
-      
-      // 사용자 인터랙션 시에도 재생 보장
-      document.addEventListener('touchstart',tryPlay,{once:true});
-      document.addEventListener('click',tryPlay,{once:true});
-      
-      // 비디오 로드 완료 시 재생
-      v.addEventListener('loadeddata', tryPlay);
-      v.addEventListener('canplay', tryPlay);
+      if (document.visibilityState === 'visible') tryPlay();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') tryPlay();
+      });
     })();
 
     // 비디오 소스 선택 - 비율별 최적화
