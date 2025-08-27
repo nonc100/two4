@@ -116,32 +116,113 @@
       display:flex; align-items:center; gap:20px;
     }
 
-    .menu-btn{
-      width:56px; height:56px;
-      background:linear-gradient(135deg, rgba(139,92,246,.12), rgba(59,130,246,.08));
-      border:2px solid rgba(139,92,246,.3);
-      border-radius:12px;
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:all .3s ease;
-      backdrop-filter:blur(20px);
-      box-shadow:0 4px 20px rgba(0,0,0,.15);
+    .menu-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .menu-btn:hover{
-      background:linear-gradient(135deg, rgba(139,92,246,.2), rgba(59,130,246,.12));
-      border-color:rgba(139,92,246,.5);
-      box-shadow:0 8px 32px rgba(139,92,246,.25);
-      transform:translateY(-2px);
+
+    .star-z {
+      width: 50px;
+      height: 50px;
+      position: relative;
     }
-    .menu-icon{ width:24px; height:24px; position:relative }
-    .menu-line{
-      position:absolute; left:0; width:24px; height:2.5px; 
-      background:linear-gradient(90deg, #8b5cf6, #06b6d4); 
-      border-radius:2px;
-      transition:.3s ease;
+
+    .star-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, rgba(0,188,212,0.9) 0%, rgba(0,188,212,0.5) 20%, rgba(0,188,212,0.2) 40%, transparent 60%);
+      border-radius: 50%;
+      animation: starPulse 2s ease-in-out infinite;
+      z-index: 1;
     }
-    .menu-line:nth-child(1){ top:0 }
-    .menu-line:nth-child(2){ top:10px }
-    .menu-line:nth-child(3){ top:20px }
+
+    .star-rays {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      z-index: 0;
+    }
+
+    .ray {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, rgba(0,188,212,0.6), transparent);
+      transform-origin: center;
+    }
+
+    .ray1 { width: 30px; height: 2px; top: 50%; left: 15px; animation: rayRotate1 4s linear infinite; }
+    .ray2 { width: 20px; height: 1px; top: 30%; left: 20px; animation: rayRotate2 6s linear infinite; }
+    .ray3 { width: 25px; height: 1.5px; top: 70%; left: 17px; animation: rayRotate3 5s linear infinite; }
+    .ray4 { width: 18px; height: 1px; top: 60%; left: 21px; animation: rayRotate4 3.5s linear infinite; }
+
+    .z-letter {
+      position: relative;
+      z-index: 2;
+      fill: #000000;
+      stroke: url(#zStroke);
+      stroke-width: 1.5;
+      filter: drop-shadow(0 0 5px rgba(0,229,255,0.6));
+      transition: all 0.3s ease;
+    }
+
+    .menu-btn:hover .star-glow {
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 15%, rgba(0,188,212,0.4) 35%, rgba(0,188,212,0.1) 50%, transparent 70%);
+      animation: starPulseHover 1s ease-in-out infinite;
+    }
+
+    .menu-btn:hover .z-letter {
+      stroke: rgba(255,255,255,0.9);
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
+    }
+
+    .menu-btn:hover .ray {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    }
+
+    @keyframes starPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    }
+
+    @keyframes starPulseHover {
+      0%, 100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
+      50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+    }
+
+    @keyframes rayRotate1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes rayRotate2 { from { transform: rotate(45deg); } to { transform: rotate(405deg); } }
+    @keyframes rayRotate3 { from { transform: rotate(90deg); } to { transform: rotate(450deg); } }
+    @keyframes rayRotate4 { from { transform: rotate(135deg); } to { transform: rotate(495deg); } }
+
+    .sparkle-dot {
+      position: absolute;
+      background: rgba(255,255,255,0.8);
+      border-radius: 50%;
+      animation: sparkle 2s ease-in-out infinite;
+    }
+
+    .sparkle1 { width: 2px; height: 2px; top: 15px; left: 20px; animation-delay: 0s; }
+    .sparkle2 { width: 3px; height: 3px; top: 80px; right: 15px; animation-delay: 0.7s; }
+    .sparkle3 { width: 1.5px; height: 1.5px; bottom: 10px; left: 10px; animation-delay: 1.4s; }
+    .sparkle4 { width: 2.5px; height: 2.5px; top: 10px; right: 25px; animation-delay: 0.3s; }
+
+    @keyframes sparkle {
+      0%, 70% { opacity: 0; transform: scale(0); }
+      35% { opacity: 1; transform: scale(1); }
+    }
 
     /* ========== Infinity Clock ========== */
     .infinity-clock{
@@ -564,11 +645,28 @@
   <!-- Nav -->
   <nav class="nav">
     <div class="menu-btn" id="menuButton" aria-label="Open menu">
-      <div class="menu-icon">
-        <div class="menu-line"></div>
-        <div class="menu-line"></div>
-        <div class="menu-line"></div>
+      <div class="star-rays">
+        <div class="ray ray1"></div>
+        <div class="ray ray2"></div>
+        <div class="ray ray3"></div>
+        <div class="ray ray4"></div>
       </div>
+            <div class="star-glow"></div>
+      <div class="sparkle-dot sparkle1"></div>
+      <div class="sparkle-dot sparkle2"></div>
+      <div class="sparkle-dot sparkle3"></div>
+      <div class="sparkle-dot sparkle4"></div>
+      <svg class="star-z" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="zStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00e5ff"/>
+            <stop offset="30%" stop-color="#26c6da"/>
+            <stop offset="70%" stop-color="#9c27b0"/>
+            <stop offset="100%" stop-color="#7b1fa2"/>
+          </linearGradient>
+        </defs>
+        <path d="M 15 15 L 45 15 L 45 20 L 25 40 L 45 40 L 45 45 L 15 45 L 15 40 L 35 20 L 15 20 Z" class="z-letter"/>
+      </svg>
     </div>
   </nav>
 
