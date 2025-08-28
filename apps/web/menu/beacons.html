@@ -1,11 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>BEACONS | Two.4</title>
-  <link rel="stylesheet" href="../style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BEACONS - Two.4</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .site-header {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+    }
+    .logo {
+      width: 100px;
+      cursor: pointer;
+      filter: drop-shadow(0 0 6px #0ff);
+    }
+    .page-content {
+      padding-top: 150px;
+      text-align: center;
+      font-size: 24px;
+      color: #0ff;
+    }
+  </style>
 </head>
 <body>
-  <h1>BEACONS (ALERTS)</h1>
-  <p>Price warnings, critical zones, and structural beacons.</p>
+  <header class="site-header">
+    <a href="/index.html">
+      <img src="/assets/logo.png" alt="Two.4 Logo" class="logo" />
+    </a>
+  </header>
+
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+    <!-- Z 메뉴 오버레이 삽입 영역 -->
+  </div>
+
+  <main class="page-content">
+    <p>[ BEACONS (알림 / 시황) ] 페이지는 현재 업데이트 진행 중입니다.</p>
+  </main>
+
+  <script src="/assets/menu-toggle.js"></script>
 </body>
 </html>
