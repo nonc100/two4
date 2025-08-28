@@ -1,30 +1,18 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ECHOES | Two.4</title>
-  <link rel="stylesheet" href="../style.css" />
+  <style>
+    body{margin:0;background:linear-gradient(180deg,#03040a,#0a0713,#120024);color:cyan;
+         font-family:system-ui,Segoe UI,Roboto,sans-serif;text-align:center;padding-top:160px}
+    .page-title{opacity:.9}
+  </style>
 </head>
-<body style="background-color: black; color: cyan; text-align: center; padding-top: 150px;">
-  
-  <!-- 🔹 로고 (홈으로 이동) -->
-  <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-    <a href="/index.html">
-      <img src="../media/logo.png" alt="Two.4 Logo" style="width: 120px;">
-    </a>
-  </div>
-
-  <!-- 🔹 Z 버튼 (메뉴 열기) -->
-  <div style="position: fixed; top: 20px; right: 20px; z-index: 2000; background:black; padding:5px;">
-    <button style="font-size: 28px; color: cyan; background: black; border: 1px solid cyan; cursor: pointer;"
-      onclick="window.location.href='/index.html#menuOverlay'">
-      Z
-    </button>
-  </div>
-
-  <!-- 🔹 페이지 본문 -->
-  <h2>[ ECHOES (시장 관찰 / 뉴스) ] 페이지는 현재 업데이트 진행 중입니다.</h2>
-
+<body>
+  <div include-html="header.html"></div>
+  <h2 class="page-title">[ ECHOES (OBSERVATIONS / NEWS) ] 페이지는 현재 업데이트 진행 중입니다.</h2>
+  <script src="../include.js"></script>
 </body>
 </html>
