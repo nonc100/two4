@@ -1,71 +1,18 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BEACONS | Two.4</title>
-  <link rel="stylesheet" href="../style.css" />
   <style>
-    body {
-      margin: 0;
-      background: linear-gradient(180deg, #050009, #0a0014, #120024);
-      color: cyan;
-      text-align: center;
-      padding-top: 150px;
-      font-family: 'Orbitron', sans-serif;
-    }
-    h2 {
-      font-weight: bold;
-    }
+    body{margin:0;background:linear-gradient(180deg,#03040a,#0a0713,#120024);color:cyan;
+         font-family:system-ui,Segoe UI,Roboto,sans-serif;text-align:center;padding-top:160px}
+    .page-title{opacity:.9}
   </style>
 </head>
 <body>
-  
-  <!-- 🔹 로고 (홈으로 이동, 크기 줄임) -->
-  <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-    <a href="/index.html">
-      <img src="../media/logo.png" alt="Two.4 Logo" style="width: 80px;">
-    </a>
-  </div>
-
-  <!-- 🔹 페이지 본문 -->
-  <h2>[ BEACONS (알림 / 시황) ] 페이지는 현재 업데이트 진행 중입니다.</h2>
-
-  <!-- ✅ 메뉴 오버레이 전체 코드 -->
-  <div class="menu-overlay" id="menuOverlay" aria-hidden="true" 
-       style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:0.3s;visibility:hidden;">
-    <div id="menuClose" style="position:absolute;top:20px;right:40px;font-size:32px;cursor:pointer;">×</div>
-    <ul style="list-style:none;padding:0;font-size:24px;line-height:2;text-align:center;">
-      <li><a href="cosmos.html" style="color:cyan;text-decoration:none;">COSMOS (CHARTS)</a></li>
-      <li><a href="orbits.html" style="color:cyan;text-decoration:none;">ORBITS (INDICATORS)</a></li>
-      <li><a href="method.html" style="color:cyan;text-decoration:none;">METHOD (TECHNIQUE)</a></li>
-      <li><a href="psyche.html" style="color:cyan;text-decoration:none;">PSYCHE</a></li>
-      <li><a href="echoes.html" style="color:cyan;text-decoration:none;">ECHOES (NEWS)</a></li>
-      <li><a href="constellation.html" style="color:cyan;text-decoration:none;">CONSTELLATION</a></li>
-      <li><a href="beacons.html" style="color:cyan;text-decoration:none;">BEACONS</a></li>
-      <li><a href="seed-oracle.html" style="color:cyan;text-decoration:none;">SEED ORACLE</a></li>
-      <li><a href="portal.html" style="color:cyan;text-decoration:none;">PORTAL</a></li>
-    </ul>
-  </div>
-
-  <!-- ✅ 토글 스크립트 -->
-  <script>
-    const menuToggle = document.createElement('button');
-    menuToggle.innerText = "Z";
-    menuToggle.style.cssText = "position:fixed;top:20px;right:20px;z-index:2000;font-size:28px;color:cyan;background:black;border:1px solid cyan;cursor:pointer;";
-    document.body.appendChild(menuToggle);
-
-    const menuOverlay = document.getElementById('menuOverlay');
-    const menuClose = document.getElementById('menuClose');
-
-    menuToggle.addEventListener('click', () => {
-      menuOverlay.style.visibility = menuOverlay.style.visibility === 'visible' ? 'hidden' : 'visible';
-    });
-
-    menuClose.addEventListener('click', () => {
-      menuOverlay.style.visibility = 'hidden';
-    });
-  </script>
-
+  <div include-html="header.html"></div>
+  <h2 class="page-title">[ BEACONS (ALERTS) ] 페이지는 현재 업데이트 진행 중입니다.</h2>
+  <script src="../include.js"></script>
 </body>
 </html>
