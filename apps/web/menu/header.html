@@ -1,0 +1,116 @@
+<!-- header.html : 공통 헤더 (로고 + Z 아이콘 + 메뉴 오버레이) -->
+<style>
+  .two4-header{position:fixed;top:16px;left:16px;right:16px;z-index:2000;
+    display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+  .two4-header a,.two4-header button,.two4-header div{pointer-events:auto}
+  .two4-logo{height:42px;display:block;filter:drop-shadow(0 0 6px rgba(0,255,255,.4))}
+
+  .menu-btn{background:transparent;border:none;cursor:pointer;position:relative;
+    width:60px;height:60px;display:flex;align-items:center;justify-content:center}
+  .star-z{width:50px;height:50px;position:relative}
+  .star-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:60px;height:60px;border-radius:50%;
+    background:radial-gradient(circle,rgba(0,188,212,.9) 0%,rgba(0,188,212,.5) 20%,
+      rgba(0,188,212,.2) 40%,transparent 60%);
+    animation:starPulse 2s ease-in-out infinite;z-index:1}
+  .star-rays{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:60px;height:60px;z-index:0}
+  .ray{position:absolute;background:linear-gradient(90deg,transparent,rgba(0,188,212,.6),transparent);
+    transform-origin:center}
+  .ray1{width:30px;height:2px;top:50%;left:15px;animation:rayRotate1 4s linear infinite}
+  .ray2{width:20px;height:1px;top:30%;left:20px;animation:rayRotate2 6s linear infinite}
+  .ray3{width:25px;height:1.5px;top:70%;left:17px;animation:rayRotate3 5s linear infinite}
+  .ray4{width:18px;height:1px;top:60%;left:21px;animation:rayRotate4 3.5s linear infinite}
+  .z-letter{position:relative;z-index:2;fill:#000;stroke:url(#zStroke);stroke-width:1.5;
+    filter:drop-shadow(0 0 5px rgba(0,229,255,.6));transition:.3s}
+  .menu-btn:hover .star-glow{background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.7) 15%,
+      rgba(0,188,212,.4) 35%,rgba(0,188,212,.1) 50%,transparent 70%);
+    animation:starPulseHover 1s ease-in-out infinite}
+  .menu-btn:hover .z-letter{stroke:rgba(255,255,255,.9);
+    filter:drop-shadow(0 0 10px rgba(255,255,255,.85))}
+  .menu-btn:hover .ray{background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent)}
+  @keyframes starPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.8}
+    50%{transform:translate(-50%,-50%) scale(1.2);opacity:1}}
+  @keyframes starPulseHover{0%,100%{transform:translate(-50%,-50%) scale(1.2);opacity:.9}
+    50%{transform:translate(-50%,-50%) scale(1.5);opacity:1}}
+  @keyframes rayRotate1{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes rayRotate2{from{transform:rotate(45deg)}to{transform:rotate(405deg)}}
+  @keyframes rayRotate3{from{transform:rotate(90deg)}to{transform:rotate(450deg)}}
+  @keyframes rayRotate4{from{transform:rotate(135deg)}to{transform:rotate(495deg)}}
+  .sparkle-dot{position:absolute;background:rgba(255,255,255,.8);border-radius:50%;animation:sparkle 2s ease-in-out infinite}
+  .sparkle1{width:2px;height:2px;top:15px;left:20px;animation-delay:0s}
+  .sparkle2{width:3px;height:3px;top:8px;right:15px;animation-delay:.7s}
+  .sparkle3{width:1.5px;height:1.5px;bottom:10px;left:10px;animation-delay:1.4s}
+  .sparkle4{width:2.5px;height:2.5px;top:10px;right:25px;animation-delay:.3s}
+  @keyframes sparkle{0%,70%{opacity:0;transform:scale(0)}35%{opacity:1;transform:scale(1)}}
+
+  .menu-btn .tooltip{position:absolute;top:50%;left:110%;transform:translateY(-50%);
+    background:rgba(0,0,0,.5);color:cyan;padding:6px 12px;border-radius:8px;font-size:14px;
+    white-space:nowrap;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    box-shadow:0 0 12px rgba(0,255,255,.45);opacity:0;visibility:hidden;transition:opacity .2s}
+  .menu-btn:hover .tooltip{opacity:1;visibility:visible}
+  @media (max-width:640px){.menu-btn .tooltip{content:'차트'}}
+
+  .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);color:#e7ffff;z-index:9999;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:.25s}
+  .menu-overlay.open{visibility:visible;opacity:1}
+  .menu-close{position:absolute;top:18px;right:28px;font-size:30px;cursor:pointer;color:cyan}
+  .menu-links{list-style:none;padding:0;margin:0}
+  .menu-links li{margin:8px 0;text-align:center;font-size:22px}
+  .menu-links a{color:cyan;text-decoration:none}
+</style>
+
+<div class="two4-header">
+  <a href="/index.html"><img src="../media/logo.png" alt="Two.4" class="two4-logo"></a>
+  <button class="menu-btn" id="menuToggle" aria-label="메뉴 열기">
+    <div class="star-rays">
+      <div class="ray ray1"></div><div class="ray ray2"></div>
+      <div class="ray ray3"></div><div class="ray ray4"></div>
+    </div>
+    <div class="star-glow"></div>
+    <div class="sparkle-dot sparkle1"></div>
+    <div class="sparkle-dot sparkle2"></div>
+    <div class="sparkle-dot sparkle3"></div>
+    <div class="sparkle-dot sparkle4"></div>
+    <svg class="star-z" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="zStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00e5ff"/>
+          <stop offset="30%" stop-color="#26c6da"/>
+          <stop offset="70%" stop-color="#9c27b0"/>
+          <stop offset="100%" stop-color="#7b1fa2"/>
+        </linearGradient>
+      </defs>
+      <path d="M 15 15 L 45 15 L 45 20 L 25 40 L 45 40 L 45 45 L 15 45 L 15 40 L 35 20 L 15 20 Z" class="z-letter"/>
+    </svg>
+    <span class="tooltip">cosmos / chart >>> 차트</span>
+  </button>
+</div>
+
+<div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+  <div class="menu-close" id="menuClose" aria-label="닫기">×</div>
+  <ul class="menu-links">
+    <li><a href="cosmos.html">COSMOS (CHARTS)</a></li>
+    <li><a href="orbits.html">ORBITS (INDICATORS)</a></li>
+    <li><a href="method.html">METHOD (TECHNIQUE)</a></li>
+    <li><a href="psyche.html">PSYCHE</a></li>
+    <li><a href="echoes.html">ECHOES (NEWS)</a></li>
+    <li><a href="constellation.html">CONSTELLATION</a></li>
+    <li><a href="beacons.html">BEACONS</a></li>
+    <li><a href="seed-oracle.html">SEED ORACLE</a></li>
+    <li><a href="portal.html">PORTAL</a></li>
+  </ul>
+</div>
+
+<script>
+  window.__two4_init_menu = function(){
+    const t = document.getElementById('menuToggle');
+    const o = document.getElementById('menuOverlay');
+    const c = document.getElementById('menuClose');
+    if(!t||!o||!c) return;
+    const open = ()=>{o.classList.add('open');o.setAttribute('aria-hidden','false')};
+    const hide = ()=>{o.classList.remove('open');o.setAttribute('aria-hidden','true')};
+    t.addEventListener('click', ()=>o.classList.contains('open')?hide():open());
+    c.addEventListener('click', hide);
+  };
+</script>
