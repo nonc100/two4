@@ -1,2 +1,2 @@
 [build]
-root = "apps/web"
+root = "."
