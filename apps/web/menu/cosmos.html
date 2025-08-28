@@ -1,36 +1,51 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>COSMOS | Two.4</title>
-  <link rel="stylesheet" href="../style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COSMOS - Two.4</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
   <style>
     body {
-      background: #000;
       margin: 0;
-      font-family: 'Arial', sans-serif;
-      color: #00ffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .site-header {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+    }
+    .logo {
+      width: 100px;
+      cursor: pointer;
+      filter: drop-shadow(0 0 6px #0ff);
+    }
+    .page-content {
+      padding-top: 150px;
       text-align: center;
-    }
-    h1 {
-      font-size: 3rem;
-      text-shadow: 0 0 12px #00ffff;
-      margin-bottom: 1rem;
-    }
-    p {
-      font-size: 1.1rem;
-      color: #cccccc;
+      font-size: 24px;
+      color: #0ff;
     }
   </style>
 </head>
 <body>
-  <h1>WELCOME TO THE COSMOS</h1>
-  <p>Two.4 우주 차트 센터에 오신 것을 환영합니다.</p>
-  <p><strong>[ 이 페이지는 업데이트 진행중입니다 ]</strong></p>
+  <header class="site-header">
+    <a href="/index.html">
+      <img src="/assets/logo.png" alt="Two.4 Logo" class="logo" />
+    </a>
+  </header>
+
+  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+    <!-- Z 메뉴 오버레이 삽입 영역 -->
+  </div>
+
+  <main class="page-content">
+    <p>[ COSMOS (CHARTS) ] 페이지는 현재 업데이트 진행 중입니다.</p>
+  </main>
+
+  <script src="/assets/menu-toggle.js"></script>
 </body>
 </html>
