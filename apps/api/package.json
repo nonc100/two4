@@ -2,14 +2,7 @@
   "name": "two4-api",
   "version": "1.0.0",
   "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
-  "dependencies": {
+    "dependencies": {
     "fastify": "^4.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0"
-  }
+        }
 }
