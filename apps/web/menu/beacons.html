@@ -1,51 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BEACONS - Two.4</title>
-  <link rel="stylesheet" href="/assets/styles.css" />
-  <style>
-    body {
-      margin: 0;
-      background-color: #000;
-      color: #fff;
-      font-family: 'Orbitron', sans-serif;
-    }
-    .site-header {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-    }
-    .logo {
-      width: 100px;
-      cursor: pointer;
-      filter: drop-shadow(0 0 6px #0ff);
-    }
-    .page-content {
-      padding-top: 150px;
-      text-align: center;
-      font-size: 24px;
-      color: #0ff;
-    }
-  </style>
+  <title>BEACONS | Two.4</title>
+  <link rel="stylesheet" href="../style.css" />
 </head>
-<body>
-  <header class="site-header">
+<body style="background-color: black; color: cyan; text-align: center; padding-top: 150px;">
+  
+  <!-- 🔹 로고 (홈으로 이동) -->
+  <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
     <a href="/index.html">
-      <img src="/assets/logo.png" alt="Two.4 Logo" class="logo" />
+      <img src="../media/logo.png" alt="Two.4 Logo" style="width: 120px;">
     </a>
-  </header>
-
-  <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
-    <!-- Z 메뉴 오버레이 삽입 영역 -->
   </div>
 
-  <main class="page-content">
-    <p>[ BEACONS (알림 / 시황) ] 페이지는 현재 업데이트 진행 중입니다.</p>
-  </main>
+  <!-- 🔹 Z 버튼 (메뉴 열기) -->
+  <div style="position: fixed; top: 20px; right: 20px; z-index: 2000; background:black; padding:5px;">
+    <button style="font-size: 28px; color: cyan; background: black; border: 1px solid cyan; cursor: pointer;"
+      onclick="window.location.href='/index.html#menuOverlay'">
+      Z
+    </button>
+  </div>
 
-  <script src="/assets/menu-toggle.js"></script>
+  <!-- 🔹 페이지 본문 -->
+  <h2>[ BEACONS (알림 / 시황) ] 페이지는 현재 업데이트 진행 중입니다.</h2>
+
 </body>
 </html>
