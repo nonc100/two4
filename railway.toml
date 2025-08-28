@@ -1,2 +1,5 @@
 [build]
-root = "."
+root = "apps/web"
+
+[build.env]
+NIXPACKS_INSTALL_CMD = "npm ci"
