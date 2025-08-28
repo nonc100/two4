@@ -475,7 +475,8 @@
     <script>
         let chartInstances = {};
         let isLoading = false;
-
+ const API_BASE = window.location.origin.replace(/:\d+$/, ':3001');
+        
         function formatNumber(num) {
             if (!num && num !== 0) return '0';
             const number = parseFloat(num);
@@ -553,7 +554,7 @@
 
         async function loadGlobalData() {
             try {
-                const response = await fetch('/api/global');
+                const response = await fetch(`${API_BASE}/api/global`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -584,7 +585,7 @@
 
         async function loadTrendingCoins() {
             try {
-                const response = await fetch('/api/trending');
+                const response = await fetch(`${API_BASE}/api/trending`);
                 const data = await response.json();
                 
                 const trendingHtml = data.coins.slice(0, 5).map((coin, index) => `
@@ -613,7 +614,7 @@
 
         async function loadTopGainers() {
             try {
-                const response = await fetch('/api/coins/markets?vs_currency=usd&order=percent_change_24h_desc&per_page=5&page=1&sparkline=false&price_change_percentage=24h');
+                const response = await fetch(`${API_BASE}/api/coins/markets?vs_currency=usd&order=percent_change_24h_desc&per_page=5&page=1&sparkline=false&price_change_percentage=24h`);
                 const data = await response.json();
                 
                 const gainersHtml = data.map(coin => `
@@ -643,7 +644,7 @@
 
         async function loadMainTable() {
             try {
-                const response = await fetch('/api/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=1&sparkline=true&price_change_percentage=1h%2C24h%2C7d');
+                const response = await fetch(`${API_BASE}/api/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=1&sparkline=true&price_change_percentage=1h%2C24h%2C7d`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
