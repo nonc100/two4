@@ -1,8 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const fetch = require('node-fetch');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import fetch from 'node-fetch';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.COSMOS_PORT || 3001;
@@ -160,7 +166,7 @@ app.listen(PORT, '0.0.0.0', () => {
 
 process.on('SIGTERM', () => {
     console.log('🛑 Cosmos 서버 종료 신호 받음');
-    process.exit(0);
+export default app;
 });
 
 module.exports = app;
