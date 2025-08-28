@@ -10,7 +10,9 @@ const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 
 console.log('🌌 Cosmos 암호화폐 대시보드 서버 시작...');
 console.log('🔑 API 키 상태:', COINGECKO_API_KEY ? '✅ 설정됨' : '❌ 설정 안됨');
-
+if (!COINGECKO_API_KEY) {
+    console.warn('⚠️ COINGECKO_API_KEY가 설정되지 않았습니다. 글로벌 시장 데이터 엔드포인트는 키가 제공될 때까지 안내 메시지를 반환합니다.');
+}
 // CORS 설정
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
@@ -88,8 +90,9 @@ app.get('/health', (req, res) => {
 // 전체 시장 데이터
 app.get('/api/global', async (req, res) => {
     if (!COINGECKO_API_KEY) {
-        return res.status(500).json({ 
-            error: 'API 키가 설정되지 않았습니다.' 
+        console.warn('⚠️ 요청 거부: COINGECKO_API_KEY가 설정되지 않았습니다.');
+        return res.status(400).json({
+            error: 'COINGECKO_API_KEY가 필요합니다. https://www.coingecko.com/en/api 에서 무료 키를 발급받으세요.'
         });
     }
 
