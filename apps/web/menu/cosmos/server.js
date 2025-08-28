@@ -5,7 +5,7 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.COSMOS_PORT || 3001;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 
 console.log('🌌 Cosmos 암호화폐 대시보드 서버 시작...');
