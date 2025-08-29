@@ -1,26 +1,46 @@
 // apps/web/menu/server.js
-import express from 'express';
-import path from 'path';
-import fs from 'fs';
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
+// ===== Two.4 Menu Server (Railway) =====
+
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+import path from "path";
+import fs from "fs";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
-// ---- 경로 상수 ----
+// ----- ESM __dirname -----
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-const MENU_DIR  = __dirname;                  // apps/web/menu
-const WEB_DIR   = path.join(__dirname, '..'); // apps/web
-const MEDIA_DIR = path.join(WEB_DIR, 'media');
+// ----- Paths (monorepo)
+const MENU_DIR = __dirname;                       // apps/web/menu
+const WEB_DIR  = path.join(__dirname, "..");      // apps/web
+const MEDIA_DIR = path.join(WEB_DIR, "media");    // apps/web/media
 
-// ---- 앱/포트 ----
-const app  = express();
+// ----- App / Port / Key -----
+const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const CG_KEY = process.env.COINGECKO_API_KEY || "";
 
-// ---- 아주 간단한 메모리 캐시(기본 30초) ----
+console.log("🌌 Two.4 menu server booting…");
+console.log("📁 MENU_DIR :", MENU_DIR);
+console.log("📁 WEB_DIR  :", WEB_DIR);
+console.log("📁 MEDIA_DIR:", MEDIA_DIR);
+console.log("🔑 COINGECKO_API_KEY:", CG_KEY ? "set" : "missing");
+
+// ----- CORS / Parsers -----
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+app.use(express.json());
+
+// ----- Ultra-simple in-memory cache (default 30s) -----
 const cache = new Map();
 async function cached(key, ttlMs, fn) {
   const now = Date.now();
@@ -31,154 +51,180 @@ async function cached(key, ttlMs, fn) {
   return v;
 }
 
-// ---- 미들웨어/정적 서빙 ----
-app.use(express.json());
-app.use(express.static(MENU_DIR));            // /menu/*.html
-app.use(express.static(WEB_DIR));             // /index.html, /style.css
-app.use('/media', express.static(MEDIA_DIR)); // /media/*
+// ----- Static files -----
+// NOTE: root에 mount해서 /, /index.html, /style.css 다 바로 제공
+app.use(express.static(MENU_DIR));          // /, /index.html, /style.css …
+app.use("/media", express.static(MEDIA_DIR)); // /media/background.mp4 등
+// (필요 시 web 루트도 탐색)
+app.use(express.static(WEB_DIR));
 
-// 루트는 web/index.html
-app.get('/', (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')));
-
-// ---- CoinGecko 프록시 공통 ----
-const CG_KEY  = process.env.COINGECKO_API_KEY || '';
-const CG_BASE = 'https://api.coingecko.com/api/v3';
-
-async function callCG(pathname, query = '') {
-  const url = `${CG_BASE}${pathname}${query ? `?${query}` : ''}`;
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), 15000);
+// ----- Debug / Health -----
+app.get("/__debug", (req, res) => {
+  let files = [];
+  let media = [];
   try {
-    const res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        ...(CG_KEY ? { 'x-cg-demo-api-key': CG_KEY } : {})
-      },
-      signal: controller.signal
-    });
-    clearTimeout(t);
-    if (!res.ok) {
-      return { ok: false, code: res.status, error: await res.text() };
-    }
-    return { ok: true, json: await res.json() };
+    files = fs.readdirSync(MENU_DIR);
   } catch (e) {
-    return { ok: false, code: 500, error: e.message };
+    files = ["<err> " + e.message];
   }
+  try {
+    media = fs.readdirSync(MEDIA_DIR);
+  } catch (e) {
+    media = ["<err> " + e.message];
+  }
+  res.json({
+    dirname: MENU_DIR,
+    cwd: process.cwd(),
+    files,
+    media,
+    ts: new Date().toISOString(),
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    ts: new Date().toISOString(),
+    key: !!CG_KEY,
+  });
+});
+
+// ----- CoinGecko helper -----
+async function cg(endpoint, { ttl = 30_000 } = {}) {
+  return cached(`cg:${endpoint}`, ttl, async () => {
+    const url = `https://api.coingecko.com/api/v3${endpoint}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    const headers = {
+      Accept: "application/json",
+      "User-Agent": "Two4-Cosmos/1.0",
+    };
+    // Demo/Pro 키 헤더
+    if (CG_KEY) headers["x-cg-demo-api-key"] = CG_KEY;
+
+    const resp = await fetch(url, { headers, signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new Error(`CG ${resp.status} ${resp.statusText} :: ${text}`);
+    }
+    return await resp.json();
+  });
 }
 
-// ---- API 라우트 묶음 ----
-function attachApi(base) {
-  // 헬스
-  app.get(`${base}/health`, (_req, res) =>
-    res.json({ ok: true, ts: new Date().toISOString(), key: !!CG_KEY })
-  );
-
-  // 트렌딩 (30초 캐시)
-  app.get(`${base}/trending`, async (_req, res) => {
-    const r = await cached(`${base}:trending`, 30000, async () => await callCG('/search/trending'));
-    if (r.ok) return res.json(r.json);
-    res.status(r.code || 500).json({ error: r.error });
-  });
-
-  // 글로벌 원본 (키 필요, 30초 캐시)
-  app.get(`${base}/global`, async (_req, res) => {
-    if (!CG_KEY) return res.status(400).json({ error: 'COINGECKO_API_KEY required' });
-    const r = await cached(`${base}:global`, 30000, async () => await callCG('/global'));
-    if (r.ok) return res.json(r.json);
-    res.status(r.code || 500).json({ error: r.error });
-  });
-
-  // 글로벌 요약(시총/24h/활성코인/BTC%)
-  app.get(`${base}/global/summary`, async (_req, res) => {
-    if (!CG_KEY) return res.status(400).json({ error: 'COINGECKO_API_KEY required for global summary' });
-    const r = await cached(`${base}:globalSummary`, 30000, async () => await callCG('/global'));
-    if (!r.ok) return res.status(r.code || 500).json({ error: r.error });
-
-    const g = r.json.data || r.json;
-    res.json({
-      marketCapUSD : g?.total_market_cap?.usd ?? null,
-      volume24hUSD : g?.total_volume?.usd ?? null,
-      activeCoins  : g?.active_cryptocurrencies ?? null,
-      btcDominance : g?.market_cap_percentage?.btc ?? null,
-      updatedAt    : new Date().toISOString()
+// ----- API routes -----
+// 글로벌(키 필요) – raw/summary 형태
+app.get("/api/global", async (req, res) => {
+  if (!CG_KEY)
+    return res.status(400).json({
+      error: "COINGECKO_API_KEY is required for /api/global",
     });
-  });
+  try {
+    const data = await cg("/global", { ttl: 60_000 });
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
 
-  // 마켓 리스트 (테이블용, 15초 캐시)
-  app.get(`${base}/coins/markets`, async (req, res) => {
-    const q = new URLSearchParams();
-    q.set('vs_currency', req.query.vs_currency || 'usd');
-    q.set('order', req.query.order || 'market_cap_desc');
-    q.set('per_page', Math.min(parseInt(req.query.per_page || '20', 10), 50).toString());
-    q.set('page', Math.max(parseInt(req.query.page || '1', 10), 1).toString());
-    if (req.query.sparkline) q.set('sparkline', req.query.sparkline);
-    if (req.query.price_change_percentage) q.set('price_change_percentage', req.query.price_change_percentage);
-    if (req.query.ids) q.set('ids', req.query.ids);
+app.get("/api/global/summary", async (req, res) => {
+  if (!CG_KEY)
+    return res.status(400).json({
+      error: "COINGECKO_API_KEY is required for /api/global/summary",
+    });
+  try {
+    const data = await cg("/global", { ttl: 60_000 });
+    res.json({
+      active_cryptocurrencies: data?.data?.active_cryptocurrencies ?? null,
+      markets: data?.data?.markets ?? null,
+      market_cap_change_percentage_24h_usd:
+        data?.data?.market_cap_change_percentage_24h_usd ?? null,
+      updated_at: data?.data?.updated_at ?? null,
+    });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
 
-    const key = `${base}:markets:${q.toString()}`;
-    const r = await cached(key, 15000, async () => await callCG('/coins/markets', q.toString()));
-    if (r.ok) return res.json(r.json);
-    res.status(r.code || 500).json({ error: r.error });
-  });
+// 트렌딩(키 없이 가능)
+app.get("/api/trending", async (req, res) => {
+  try {
+    const data = await cg("/search/trending", { ttl: 30_000 });
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
 
-  // 최댓상승(24h) 상위 N개 (30초 캐시)
-  app.get(`${base}/top-gainers`, async (req, res) => {
-    const vs    = req.query.vs_currency || 'usd';
-    const limit = Math.min(parseInt(req.query.limit || '10', 10), 50);
-    const perPage = Math.min(parseInt(req.query.per_page || '200', 10), 250); // 넉넉히 가져와서 상위만 추출
+// Top gainers (정렬/슬라이스)
+app.get("/api/top-gainers", async (req, res) => {
+  try {
+    const vs = (req.query.vs_currency || "usd").toLowerCase();
+    const limit = Math.min(parseInt(req.query.limit || "10", 10), 50);
 
     const q = new URLSearchParams({
       vs_currency: vs,
-      order: 'market_cap_desc',
-      per_page: String(perPage),
-      page: '1',
-      price_change_percentage: '24h'
-    });
+      order: "market_cap_desc",
+      per_page: "100",
+      page: "1",
+      price_change_percentage: "24h",
+    }).toString();
 
-    const key = `${base}:topGainers:${q.toString()}`;
-    const r = await cached(key, 30000, async () => await callCG('/coins/markets', q.toString()));
-    if (!r.ok) return res.status(r.code || 500).json({ error: r.error });
+    const rows = await cg(`/coins/markets?${q}`, { ttl: 30_000 });
 
-    const rows = (r.json || [])
-      .map(x => ({
-        id   : x.id,
-        symbol: x.symbol,
-        name : x.name,
-        rank : x.market_cap_rank,
-        price: x.current_price,
-        price_change_24h_pct: x.price_change_percentage_24h_in_currency,
-        market_cap: x.market_cap
-      }))
-      .filter(x => typeof x.price_change_24h_pct === 'number')
-      .sort((a, b) => b.price_change_24h_pct - a.price_change_24h_pct)
-      .slice(0, limit);
+    const top = rows
+      .filter((r) => typeof r.price_change_percentage_24h === "number")
+      .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+      .slice(0, limit)
+      .map((r, i) => ({
+        vs_currency: vs,
+        limit,
+        rows: undefined,
+        rank: i + 1,
+        id: r.id,
+        symbol: r.symbol,
+        name: r.name,
+        price: r.current_price,
+        price_change_24h_pct: r.price_change_percentage_24h,
+        market_cap: r.market_cap,
+      }));
 
-    res.json({ vs_currency: vs, limit, rows });
-  });
-}
-
-// 두 베이스 모두 활성화 (상대/절대 경로 모두 커버)
-attachApi('/api');
-attachApi('/menu/cosmos/api');
-
-// ---- (선택) 디버그 엔드포인트 ----
-app.get('/__debug', (_req, res) => {
-  const out = {
-    MENU_DIR, WEB_DIR, MEDIA_DIR,
-    menuFiles : (() => { try { return fs.readdirSync(MENU_DIR)  } catch { return 'err' } })(),
-    webFiles  : (() => { try { return fs.readdirSync(WEB_DIR)   } catch { return 'err' } })(),
-    mediaFiles: (() => { try { return fs.readdirSync(MEDIA_DIR) } catch { return 'err' } })(),
-    ts: new Date().toISOString(),
-  };
-  res.json(out);
+    res.json({ vs_currency: vs, limit, rows: top.length, list: top });
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
 });
 
-// ---- 404 ----
-app.use((_req, res) => res.status(404).send('Not Found'));
+// Markets pass-through
+app.get("/api/coins/markets", async (req, res) => {
+  try {
+    const p = new URLSearchParams();
+    p.set("vs_currency", (req.query.vs_currency || "usd").toLowerCase());
+    p.set("order", req.query.order || "market_cap_desc");
+    p.set("per_page", String(Math.min(parseInt(req.query.per_page || "20", 10), 50)));
+    p.set("page", String(Math.max(parseInt(req.query.page || "1", 10), 1)));
+    if (req.query.sparkline) p.set("sparkline", String(req.query.sparkline));
+    if (req.query.price_change_percentage)
+      p.set("price_change_percentage", String(req.query.price_change_percentage));
+    if (req.query.ids) p.set("ids", String(req.query.ids));
 
-// ---- start ----
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Two4] serving on :${PORT}`);
+    const data = await cg(`/coins/markets?${p.toString()}`, { ttl: 30_000 });
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
 });
 
-export default app;
+// ----- Fallbacks -----
+// 필요한 경우 /menu로 리다이렉트(정적이 root에 걸려있으면 생략 가능)
+app.get("/menu", (req, res) => {
+  res.sendFile(path.join(MENU_DIR, "index.html"));
+});
+
+// ----- Start server -----
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Two.4 menu serving on :${PORT}`);
+  console.log(`🔎 Health: /api/health   Debug: /__debug`);
+});
