@@ -611,6 +611,47 @@
     .chat-button:hover::before{
       opacity:1;
     }
+    
+    /* ========== Seed Container ========== */
+    #seed-container{
+      position:fixed;
+      bottom:10%;
+      left:8%;
+      width:120px;
+      height:130px;
+      opacity:.85;
+      transition:opacity .3s ease;
+      transform-origin:bottom left;
+      z-index:900;
+    }
+    #seed-container:hover{opacity:1;}
+    #planet-canvas{width:100px;height:100px;}
+    .seed-tooltip{
+      position:absolute;
+      top:92px;
+      left:50%;
+      transform:translateX(-50%) translateY(5px);
+      color:#00ffcc;
+      font-size:11px;
+      font-weight:700;
+      font-family:'Arial',sans-serif;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      white-space:nowrap;
+      opacity:0;
+      visibility:hidden;
+      transition:opacity .4s ease, visibility .4s ease, transform .4s ease;
+      pointer-events:none;
+      text-shadow:
+        0 0 10px rgba(0,255,204,.8),
+        0 0 20px rgba(0,255,204,.4),
+        0 0 30px rgba(0,255,204,.2);
+    }
+    #seed-container:hover .seed-tooltip{
+      opacity:1;
+      visibility:visible;
+      transform:translateX(-50%) translateY(0);
+    }
 
     /* ========== Mobile tweaks ========== */
     @media (max-width:768px){
@@ -623,6 +664,11 @@
       .chart-container{ height:550px; padding:1.5rem }
       .cosmos-chart-canvas{ height:400px }
       .hero-title{ font-size:2.5rem }
+    }
+    
+    @media (max-width:600px){
+      #seed-container{transform:scale(.8);}
+      .seed-tooltip{font-size:9px;}
     }
   </style>
 </head>
@@ -795,8 +841,105 @@
   </div>
 
   <button class="chat-button" id="chatButton">X-Talk</button>
-
+  <div id="seed-container">
+    <canvas id="planet-canvas"></canvas>
+    <div class="seed-tooltip">C.518D - Seed Ai</div>
   </div>
+    
+  </div>
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    function createSeedPlanet() {
+      const canvas = document.getElementById('planet-canvas');
+      if (!canvas) return;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      renderer.setSize(100, 100);
+      renderer.setClearColor(0x000000, 0);
+      const geometry = new THREE.SphereGeometry(1, 12, 8);
+      const planetMaterial = new THREE.MeshBasicMaterial({ color: 0x9966ff, wireframe: true, opacity: 0.3, transparent: true });
+      const planet = new THREE.Mesh(geometry, planetMaterial);
+      scene.add(planet);
+      const auraGeometry1 = new THREE.SphereGeometry(1.2, 10, 6);
+      const auraMaterial1 = new THREE.MeshBasicMaterial({ color: 0xbb88ff, wireframe: true, opacity: 0.25, transparent: true });
+      const aura1 = new THREE.Mesh(auraGeometry1, auraMaterial1);
+      scene.add(aura1);
+      const auraGeometry2 = new THREE.SphereGeometry(1.5, 8, 5);
+      const auraMaterial2 = new THREE.MeshBasicMaterial({ color: 0xdd99ff, wireframe: true, opacity: 0.15, transparent: true });
+      const aura2 = new THREE.Mesh(auraGeometry2, auraMaterial2);
+      scene.add(aura2);
+      const auraGeometry3 = new THREE.SphereGeometry(1.8, 6, 4);
+      const auraMaterial3 = new THREE.MeshBasicMaterial({ color: 0xeeaaff, wireframe: true, opacity: 0.1, transparent: true });
+      const aura3 = new THREE.Mesh(auraGeometry3, auraMaterial3);
+      scene.add(aura3);
+      const particleCount = 80;
+      const particles = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i++) {
+        const phi = Math.random() * Math.PI * 2;
+        const theta = Math.random() * Math.PI;
+        const radius = 1.6 + Math.random() * 0.8;
+        positions[i * 3] = radius * Math.sin(theta) * Math.cos(phi);
+        positions[i * 3 + 1] = radius * Math.sin(theta) * Math.sin(phi);
+        positions[i * 3 + 2] = radius * Math.cos(theta);
+      }
+      particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const particleMaterial = new THREE.PointsMaterial({ color: 0x9966ff, size: 0.03, opacity: 0.5, transparent: true });
+      const particleSystem = new THREE.Points(particles, particleMaterial);
+      scene.add(particleSystem);
+      camera.position.z = 3;
+      let mouseX = 0;
+      let mouseY = 0;
+      let isHovered = false;
+      canvas.addEventListener('mouseenter', () => { isHovered = true; });
+      canvas.addEventListener('mouseleave', () => { isHovered = false; });
+      canvas.addEventListener('mousemove', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      });
+      function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.001;
+        planet.rotation.y += 0.008;
+        planet.rotation.x += 0.003;
+        aura1.rotation.y -= 0.006;
+        aura1.rotation.x += 0.002;
+        aura2.rotation.y += 0.004;
+        aura2.rotation.x -= 0.001;
+        aura3.rotation.y -= 0.003;
+        particleSystem.rotation.y += 0.005;
+        particleSystem.rotation.x += 0.002;
+        auraMaterial1.opacity = 0.25 + Math.sin(time * 2) * 0.1;
+        auraMaterial2.opacity = 0.15 + Math.cos(time * 1.8) * 0.08;
+        auraMaterial3.opacity = 0.1 + Math.sin(time * 2.5) * 0.05;
+        particleMaterial.opacity = 0.5 + Math.sin(time * 3) * 0.15;
+        if (isHovered) {
+          planet.rotation.y += mouseX * 0.015;
+          planet.rotation.x += mouseY * 0.015;
+          planetMaterial.opacity = 0.6;
+          auraMaterial1.opacity = Math.min(0.5, auraMaterial1.opacity + 0.2);
+          auraMaterial2.opacity = Math.min(0.4, auraMaterial2.opacity + 0.15);
+          auraMaterial3.opacity = Math.min(0.3, auraMaterial3.opacity + 0.1);
+          planet.scale.setScalar(1.08);
+          aura1.scale.setScalar(1.1);
+          aura2.scale.setScalar(1.15);
+          aura3.scale.setScalar(1.2);
+        } else {
+          planetMaterial.opacity = 0.3;
+          planet.scale.setScalar(1.0);
+          aura1.scale.setScalar(1.0);
+          aura2.scale.setScalar(1.0);
+          aura3.scale.setScalar(1.0);
+        }
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+    createSeedPlanet();
+  </script>
 
   <script>
     /* 비디오 자동재생 보장 */
