@@ -19,6 +19,17 @@ const MEDIA_DIR = path.join(WEB_DIR, 'media');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// --- 아주 간단한 메모리 캐시 (기본 30초) ---
+const cache = new Map();
+async function cached(key, ttlMs, fn) {
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.t < ttlMs) return hit.v;
+  const v = await fn();
+  cache.set(key, { t: now, v });
+  return v;
+}
+
 app.use(express.json());
 
 // ---------- 정적 서빙 ----------
