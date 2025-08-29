@@ -40,6 +40,125 @@ app.use('/media', express.static(MEDIA_DIR)); // /media/*
 // 루트는 web/index.html
 app.get('/', (_req, res) => res.sendFile(path.join(WEB_DIR, 'index.html')));
 
+// ----- CoinGecko 프록시 공통 유틸 -----
+const CG_KEY  = process.env.COINGECKO_API_KEY || '';
+const CG_BASE = 'https://api.coingecko.com/api/v3';
+
+async function callCG(pathname, query = '') {
+  const url = `${CG_BASE}${pathname}${query ? `?${query}` : ''}`;
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        ...(CG_KEY ? { 'x-cg-demo-api-key': CG_KEY } : {})
+      },
+      signal: controller.signal
+    });
+    clearTimeout(t);
+    if (!res.ok) {
+      return { ok: false, code: res.status, error: await res.text() };
+    }
+    return { ok: true, json: await res.json() };
+  } catch (e) {
+    return { ok: false, code: 500, error: e.message };
+  }
+}
+
+// ----- API 묶음: 이 함수가 attachApi(base) 입니다 -----
+function attachApi(base) {
+  // 헬스
+  app.get(`${base}/health`, (_req, res) =>
+    res.json({ ok: true, ts: new Date().toISOString(), key: !!CG_KEY })
+  );
+
+  // 트렌딩 (30초 캐시)
+  app.get(`${base}/trending`, async (_req, res) => {
+    const r = await cached(`${base}:trending`, 30000, async () => await callCG('/search/trending'));
+    if (r.ok) return res.json(r.json);
+    res.status(r.code || 500).json({ error: r.error });
+  });
+
+  // 글로벌 원본 (키 필요, 30초 캐시)
+  app.get(`${base}/global`, async (_req, res) => {
+    if (!CG_KEY) return res.status(400).json({ error: 'COINGECKO_API_KEY required' });
+    const r = await cached(`${base}:global`, 30000, async () => await callCG('/global'));
+    if (r.ok) return res.json(r.json);
+    res.status(r.code || 500).json({ error: r.error });
+  });
+
+  // 글로벌 요약(시총/24h/활성코인/BTC%)
+  app.get(`${base}/global/summary`, async (_req, res) => {
+    if (!CG_KEY) return res.status(400).json({ error: 'COINGECKO_API_KEY required for global summary' });
+    const r = await cached(`${base}:globalSummary`, 30000, async () => await callCG('/global'));
+    if (!r.ok) return res.status(r.code || 500).json({ error: r.error });
+    const g = r.json.data || r.json;
+    res.json({
+      marketCapUSD: g?.total_market_cap?.usd ?? null,
+      volume24hUSD: g?.total_volume?.usd ?? null,
+      activeCoins: g?.active_cryptocurrencies ?? null,
+      btcDominance: g?.market_cap_percentage?.btc ?? null,
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+  // 마켓 리스트 (테이블용, 15초 캐시)
+  app.get(`${base}/coins/markets`, async (req, res) => {
+    const q = new URLSearchParams();
+    q.set('vs_currency', req.query.vs_currency || 'usd');
+    q.set('order', req.query.order || 'market_cap_desc');
+    q.set('per_page', Math.min(parseInt(req.query.per_page || '20', 10), 50).toString());
+    q.set('page', Math.max(parseInt(req.query.page || '1', 10), 1).toString());
+    if (req.query.sparkline) q.set('sparkline', req.query.sparkline);
+    if (req.query.price_change_percentage) q.set('price_change_percentage', req.query.price_change_percentage);
+    if (req.query.ids) q.set('ids', req.query.ids);
+
+    const key = `${base}:markets:${q.toString()}`;
+    const r = await cached(key, 15000, async () => await callCG('/coins/markets', q.toString()));
+    if (r.ok) return res.json(r.json);
+    res.status(r.code || 500).json({ error: r.error });
+  });
+
+  // 최댓상승(24h) 상위 N개 (30초 캐시)
+  app.get(`${base}/top-gainers`, async (req, res) => {
+    const vs = req.query.vs_currency || 'usd';
+    const limit = Math.min(parseInt(req.query.limit || '10', 10), 50);
+    const perPage = Math.min(parseInt(req.query.per_page || '200', 10), 250); // 넉넉히 가져와서 상위 추출
+
+    const q = new URLSearchParams({
+      vs_currency: vs,
+      order: 'market_cap_desc',
+      per_page: String(perPage),
+      page: '1',
+      price_change_percentage: '24h'
+    });
+
+    const key = `${base}:topGainers:${q.toString()}`;
+    const r = await cached(key, 30000, async () => await callCG('/coins/markets', q.toString()));
+    if (!r.ok) return res.status(r.code || 500).json({ error: r.error });
+
+    const rows = (r.json || []).map(x => ({
+      id: x.id,
+      symbol: x.symbol,
+      name: x.name,
+      rank: x.market_cap_rank,
+      price: x.current_price,
+      price_change_24h_pct: x.price_change_percentage_24h_in_currency,
+      market_cap: x.market_cap
+    }))
+    .filter(x => typeof x.price_change_24h_pct === 'number')
+    .sort((a,b) => b.price_change_24h_pct - a.price_change_24h_pct)
+    .slice(0, limit);
+
+    res.json({ vs_currency: vs, limit, rows });
+  });
+}
+
+// 이 두 줄은 파일 하단의 app.listen(...) "위"에 있어야 합니다.
+attachApi('/api');
+attachApi('/menu/cosmos/api');
+
 // ---------- CoinGecko 프록시 API ----------
 const CG_KEY = process.env.COINGECKO_API_KEY || '';
 const CG_BASE = 'https://api.coingecko.com/api/v3';
