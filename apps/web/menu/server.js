@@ -24,8 +24,8 @@ const app  = express();
 const PORT = Number(process.env.PORT) || 3000;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
 
-// 로그
-console.log('🚀 Two4/Menu server booting…');
+// 로그(선택)
+console.log('🚀 Two4/Menu server starting…');
 console.log('📁 MENU_DIR :', MENU_DIR);
 console.log('📁 WEB_DIR  :', WEB_DIR);
 console.log('📁 MEDIA_DIR:', MEDIA_DIR);
@@ -47,58 +47,72 @@ async function cached(key, ttlMs, fn) {
 }
 
 // ---- 정적 서빙 ----
-// 루트(/)에서 menu 정적 파일 접근 가능: /index.html, /style.css …
-app.use(express.static(MENU_DIR));
-// /media/* 정적 파일
-app.use('/media', express.static(MEDIA_DIR));
-// /menu/* 로 접근해도 동일하게 menu 정적 파일 서빙
-app.use('/menu', express.static(MENU_DIR));
+app.use(express.static(MENU_DIR));              // /index.html, /style.css …
+app.use('/menu', express.static(MENU_DIR));     // /menu/* 경로로도 접근 가능
+app.use('/media', express.static(MEDIA_DIR));   // /media/* 정적 파일
+app.use(express.static(WEB_DIR));               // web 루트에 있는 리소스도 커버
 
-// 라우트: 기본 페이지
+// 루트 페이지
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(MENU_DIR, 'index.html'));
+  // web/index.html을 기본 루트로
+  const indexPath = path.join(WEB_DIR, 'index.html');
+  if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+  // 없으면 menu/index.html
+  return res.sendFile(path.join(MENU_DIR, 'index.html'));
 });
 
 // ----------------------------------------------------
-// CoinGecko API 유틸
+// CoinGecko API 유틸 (헤더 + 쿼리 파라미터에 키 동시 전송)
 // ----------------------------------------------------
-async function callCoinGeckoAPI(endpoint, retries = 2) {
-  const url = `https://api.coingecko.com/api/v3${endpoint}`;
+async function callCoinGeckoAPI(endpoint, qs = {}, retries = 2) {
+  const BASE = 'https://api.coingecko.com/api/v3';
+
+  const headers = {
+    'Accept': 'application/json',
+    'User-Agent': 'Two4-Cosmos/1.0'
+  };
+
+  // 데모/프로 일부 엔드포인트 편차 대응: 헤더와 쿼리 모두에 키 전달
+  if (COINGECKO_API_KEY) {
+    headers['x-cg-demo-api-key'] = COINGECKO_API_KEY;
+    headers['x-cg-pro-api-key']  = COINGECKO_API_KEY; // 프로 플랜 호환
+    qs['x_cg_demo_api_key'] = COINGECKO_API_KEY;      // 쿼리 키를 요구하는 케이스 호환
+  }
+
+  const params = new URLSearchParams(qs);
+  const url = `${BASE}${endpoint}${params.toString() ? `?${params}` : ''}`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
 
-      // demo/pro 두 헤더를 모두 세팅 (서버 쪽에서 필요한 헤더를 사용)
-      const headers = {
-        'Accept': 'application/json',
-        'User-Agent': 'Two4-Cosmos/1.0',
-        ...(COINGECKO_API_KEY ? {
-          'x-cg-demo-api-key': COINGECKO_API_KEY,
-          'x-cg-pro-api-key' : COINGECKO_API_KEY
-        } : {})
-      };
-
-      const response = await fetch(url, { headers, signal: controller.signal });
+      const res = await fetch(url, { headers, signal: controller.signal });
+      const text = await res.text(); // 실패 원문 파악 위해 text 우선
       clearTimeout(timeout);
 
-      if (!response.ok) {
-        if (response.status === 429) throw new Error('Rate limit exceeded - 요청 한도 초과');
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      let data;
+      try { data = JSON.parse(text); } catch { data = text; }
 
-      const data = await response.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          statusCode: res.status,
+          error: typeof data === 'string'
+            ? `HTTP ${res.status}: ${res.statusText} - ${data}`
+            : data
+        };
+      }
       return { success: true, data };
     } catch (err) {
       if (attempt === retries) {
         return {
           success: false,
-          error: err.message,
-          statusCode: err.name === 'AbortError' ? 408 : 500
+          statusCode: err.name === 'AbortError' ? 408 : 500,
+          error: err.message || 'Fetch error'
         };
       }
-      await new Promise(r => setTimeout(r, 1000 * attempt));
+      await new Promise(r => setTimeout(r, 800 * attempt));
     }
   }
 }
@@ -113,75 +127,112 @@ api.get('/health', (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString(), key: !!COINGECKO_API_KEY });
 });
 
-// 글로벌 시장 요약
+// 글로벌 (키 필요) - 원본
 api.get('/global', async (_req, res) => {
-  const result = await cached('global:30s', 30_000, () => callCoinGeckoAPI('/global'));
+  const result = await cached('global:30s', 30_000, () =>
+    callCoinGeckoAPI('/global')
+  );
   if (result.success) return res.json(result.data);
   res.status(result.statusCode || 500).json({ error: result.error });
 });
 
+// 글로벌 요약(시총/볼륨/활성코인/BTC%)
+api.get('/global/summary', async (_req, res) => {
+  const result = await cached('globalSummary:30s', 30_000, () =>
+    callCoinGeckoAPI('/global')
+  );
+  if (!result.success) return res.status(result.statusCode || 500).json({ error: result.error });
+
+  const g = result.data?.data || result.data;
+  return res.json({
+    marketCapUSD : g?.total_market_cap?.usd ?? null,
+    volume24hUSD : g?.total_volume?.usd ?? null,
+    activeCoins  : g?.active_cryptocurrencies ?? null,
+    btcDominance : g?.market_cap_percentage?.btc ?? null,
+    updatedAt    : new Date().toISOString()
+  });
+});
+
 // 트렌딩
 api.get('/trending', async (_req, res) => {
-  const result = await cached('trending:30s', 30_000, () => callCoinGeckoAPI('/search/trending'));
+  const result = await cached('trending:30s', 30_000, () =>
+    callCoinGeckoAPI('/search/trending')
+  );
   if (result.success) return res.json(result.data);
   res.status(result.statusCode || 500).json({ error: result.error });
 });
 
 // 코인 마켓 데이터 프록시
 api.get('/coins/markets', async (req, res) => {
-  const q = new URLSearchParams();
-  q.set('vs_currency', req.query.vs_currency || 'usd');
-  q.set('order', req.query.order || 'market_cap_desc');
-  q.set('per_page', Math.min(parseInt(req.query.per_page) || 20, 50));
-  q.set('page', Math.max(parseInt(req.query.page) || 1, 1));
-  if (req.query.sparkline) q.set('sparkline', req.query.sparkline);
-  if (req.query.price_change_percentage) q.set('price_change_percentage', req.query.price_change_percentage);
-  if (req.query.ids) q.set('ids', req.query.ids);
+  const qs = {
+    vs_currency: req.query.vs_currency || 'usd',
+    order: req.query.order || 'market_cap_desc',
+    per_page: Math.min(parseInt(req.query.per_page) || 20, 50),
+    page: Math.max(parseInt(req.query.page) || 1, 1),
+  };
+  if (req.query.sparkline) qs.sparkline = req.query.sparkline;
+  if (req.query.price_change_percentage) qs.price_change_percentage = req.query.price_change_percentage;
+  if (req.query.ids) qs.ids = req.query.ids;
 
-  const key = `markets:${q.toString()}`;
-  const result = await cached(key, 30_000, () => callCoinGeckoAPI(`/coins/markets?${q.toString()}`));
+  const key = `markets:${new URLSearchParams(qs).toString()}`;
+  const result = await cached(key, 30_000, () =>
+    callCoinGeckoAPI('/coins/markets', qs)
+  );
   if (result.success) return res.json(result.data);
   res.status(result.statusCode || 500).json({ error: result.error });
 });
 
-// 상위 상승 코인
+// 상위 상승 코인(24h)
 api.get('/top-gainers', async (req, res) => {
-  const vs = req.query.vs_currency || 'usd';
+  const vs = (req.query.vs_currency || 'usd').toLowerCase();
   const limit = Math.min(parseInt(req.query.limit) || 10, 50);
 
-  const url = `/coins/markets?vs_currency=${encodeURIComponent(vs)}&order=market_cap_desc&per_page=250&page=1&price_change_percentage=24h`;
-  const result = await cached(`top:${vs}`, 30_000, () => callCoinGeckoAPI(url));
+  const qs = {
+    vs_currency: vs,
+    order: 'market_cap_desc',
+    per_page: 250,
+    page: 1,
+    price_change_percentage: '24h'
+  };
+
+  const result = await cached(`top:${vs}`, 30_000, () =>
+    callCoinGeckoAPI('/coins/markets', qs)
+  );
   if (!result.success) return res.status(result.statusCode || 500).json({ error: result.error });
 
-  const rows = (result.data || [])
-    .filter(x => typeof x.price_change_percentage_24h === 'number')
-    .sort((a, b) => (b.price_change_percentage_24h ?? -Infinity) - (a.price_change_percentage_24h ?? -Infinity))
-    .slice(0, limit)
-    .map(x => ({
-      id: x.id,
-      symbol: x.symbol,
-      name: x.name,
-      rank: x.market_cap_rank,
-      price: x.current_price,
-      price_change_24h_pct: x.price_change_percentage_24h,
-      market_cap: x.market_cap
-    }));
+  const arr = Array.isArray(result.data) ? result.data : [];
+  const list = arr
+    .map(x => {
+      const pct = x.price_change_percentage_24h_in_currency ?? x.price_change_percentage_24h;
+      return {
+        id: x.id,
+        symbol: x.symbol,
+        name: x.name,
+        rank: x.market_cap_rank,
+        price: x.current_price,
+        price_change_24h_pct: pct,
+        market_cap: x.market_cap
+      };
+    })
+    .filter(x => typeof x.price_change_24h_pct === 'number')
+    .sort((a, b) => b.price_change_24h_pct - a.price_change_24h_pct)
+    .slice(0, limit);
 
-  res.json({ vs_currency: vs, limit, rows });
+  res.json({ vs_currency: vs, limit, rows: list });
 });
 
-// 디버그 (필요할 때만 확인)
+// 디버그(선택)
 api.get('/__debug', (_req, res) => {
   res.json({
     dirname: MENU_DIR,
     cwd: process.cwd(),
-    files: fs.readdirSync(MENU_DIR),
-    media: (fs.existsSync(MEDIA_DIR) ? 'ok' : 'err'),
+    files: (() => { try { return fs.readdirSync(MENU_DIR) } catch { return 'err' } })(),
+    media: (() => { try { return fs.readdirSync(MEDIA_DIR) } catch { return 'err' } })(),
     ts: new Date().toISOString()
   });
 });
 
-// API 라우터 마운트
+// API 라우터 마운트 (두 경로)
 app.use('/api', api);
 app.use('/menu/cosmos/api', api);
 
@@ -199,9 +250,8 @@ app.use((err, _req, res, _next) => {
 // 서버 시작
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Two4/Menu server running on :${PORT}`);
-  console.log(`   • static: /  -> ${MENU_DIR}`);
-  console.log(`   • static: /media  -> ${MEDIA_DIR}`);
-  console.log(`   • api:    /api/*  & /menu/cosmos/api/*`);
+  console.log('   • static: /, /menu, /media/');
+  console.log('   • api:    /api/*  &  /menu/cosmos/api/*');
 });
 
 export default app;
