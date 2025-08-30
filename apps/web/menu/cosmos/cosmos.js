@@ -36,15 +36,35 @@ const $=(s,sc=document)=>sc.querySelector(s); const $$=(s,sc=document)=>Array.fr
 const safeSetHTML=(sel,html)=>{const el=typeof sel==="string"?$(sel):sel; if(el) el.innerHTML=html}
 
 /* --- Fetchers (direct → proxy fallback) --- */
-async function fetchMarkets({vs="usd",perPage=200,page=1}={}){
-  const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
-  const d=`https://api.coingecko.com/api/v3/coins/markets?${q}`;
-  const p=`/api/coins/markets?${q}`;
-  try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("markets failed");return await r2.json()}
+// 1) 시장 목록
+async function fetchMarkets({vs="usd",perPage=200,page=1}={}) {
+  const q = `vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
+  const proxy = `/api/coins/markets?${q}`;
+  const direct = `https://api.coingecko.com/api/v3/coins/markets?${q}`;
+  try {
+    const r = await fetch(proxy, { cache: "no-store" });
+    if (!r.ok) throw 0;
+    return await r.json();
+  } catch {
+    const r2 = await fetch(direct, { cache: "no-store" });
+    if (!r2.ok) throw new Error("markets failed");
+    return await r2.json();
+  }
 }
-async function fetchGlobal(){
-  const d=`https://api.coingecko.com/api/v3/global`; const p=`/api/global`;
-  try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("global failed");return await r2.json()}
+
+// 2) 글로벌(도미넌스 계산용)
+async function fetchGlobal() {
+  const proxy = `/api/global`;
+  const direct = `https://api.coingecko.com/api/v3/global`;
+  try {
+    const r = await fetch(proxy, { cache: "no-store" });
+    if (!r.ok) throw 0;
+    return await r.json();
+  } catch {
+    const r2 = await fetch(direct, { cache: "no-store" });
+    if (!r2.ok) throw new Error("global failed");
+    return await r2.json();
+  }
 }
 
 /* --- State --- */
