@@ -53,6 +53,7 @@ window.safeSetHTML = function (selectorOrEl, html) {
 
 // ---- UTILS ----
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+
 function safeLocale(num, minFD = 0, maxFD = 2) {
   let min = Number.isFinite(minFD) ? clamp(minFD, 0, 20) : 0;
   let max = Number.isFinite(maxFD) ? clamp(maxFD, 0, 20) : 2;
@@ -76,10 +77,12 @@ function fmtPrice(v) {
   else d = 2;
   return safeLocale(v, 0, clamp(d, 0, 8));
 }
+
 function fmtNum(v, maxDigits = 2) {
   if (v == null || Number.isNaN(v)) return "-";
   return safeLocale(v, 0, clamp(maxDigits, 0, 8));
 }
+
 function fmtPct(v) {
   if (v == null || Number.isNaN(v)) return "-";
   const n = Number(v).toFixed(2);
