@@ -72,27 +72,42 @@ const state={all:[],filtered:[],page:1,perPage:50,sortKey:"market_cap",sortDir:-
 
 /* --- Table row (모바일 카드모드를 위해 data-label 포함) --- */
 function buildRowHTML(c){
-  const id=c.id;
-  const price=fmtPrice(c.current_price);
-  const s7=c.sparkline_in_7d?.price || null;
-  const sym=(c.symbol||"").toUpperCase();
-  const href=`./chart.html?id=${encodeURIComponent(id)}`;
+ var id = (c && c.id) ? c.id : "";
+  var price = fmtPrice(c.current_price);
+  var s7Arr = (c && c.sparkline_in_7d && Array.isArray(c.sparkline_in_7d.price)) ? c.sparkline_in_7d.price : null;
+  var sym = ((c && c.symbol) ? c.symbol : "").toUpperCase();
+  var href = "./chart.html?id=" + encodeURIComponent(id);
 
-  return `<tr class="row">
-    <td class="row-index" data-label="순위">${c.market_cap_rank ?? "-"}</td>
-    <td class="coin-cell" data-label="코인">
-      <img class="coin-img" src="${c.image}" alt="${sym}">
-      <a class="coin-name" href="${href}" title="전체 차트 보기">${sym}</a>
-      <span class="coin-sym">${c.name}</span>
-    </td>
-    <td class="text-right" data-label="시세">$${price}</td>
-    <td class="text-right" data-label="1시간">${fmtPct(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
-    <td class="text-right" data-label="24시간">${fmtPct(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null)}</td>
-    <td class="text-right" data-label="7일">${fmtPct(c.price_change_percentage_7d_in_currency ?? null)}</td>
-    <td class="text-right" data-label="시가총액">$${fmtNum(c.market_cap,0)}</td>
-    <td class="text-right" data-label="거래량">$${fmtNum(c.total_volume,0)}</td>
-    <td class="text-right spark-col" data-label="7일 차트"><span class="spark">${s7 ? sparklineSVG(s7) : "-"}</span></td>
-  </tr>`;
+  // 변화율 안전 추출
+  var ch1h = (c && (c.price_change_percentage_1h_in_currency != null
+                    ? c.price_change_percentage_1h_in_currency
+                    : c.price_change_percentage_1h));
+  var ch24 = (c && (c.price_change_percentage_24h_in_currency != null
+                    ? c.price_change_percentage_24h_in_currency
+                    : c.price_change_percentage_24h));
+  var ch7d = (c && c.price_change_percentage_7d_in_currency != null)
+              ? c.price_change_percentage_7d_in_currency
+              : null;
+
+  return (
+    '<tr class="row">' +
+      '<td class="row-index" data-label="순위">' + (c.market_cap_rank != null ? c.market_cap_rank : '-') + '</td>' +
+      '<td class="coin-cell" data-label="코인">' +
+        '<img class="coin-img" src="' + c.image + '" alt="' + sym + '">' +
+        '<a class="coin-name" href="' + href + '" title="전체 차트 보기">' + sym + '</a>' +
+        '<span class="coin-sym">' + (c.name || '') + '</span>' +
+      '</td>' +
+      '<td class="text-right" data-label="시세">$' + price + '</td>' +
+      '<td class="text-right" data-label="1시간">' + fmtPct(ch1h) + '</td>' +
+      '<td class="text-right" data-label="24시간">' + fmtPct(ch24) + '</td>' +
+      '<td class="text-right" data-label="7일">' + fmtPct(ch7d) + '</td>' +
+      '<td class="text-right" data-label="시가총액">$' + fmtNum(c.market_cap,0) + '</td>' +
+      '<td class="text-right" data-label="거래량">$' + fmtNum(c.total_volume,0) + '</td>' +
+      '<td class="text-right spark-col" data-label="7일 차트"><span class="spark">' +
+        (s7Arr ? sparklineSVG(s7Arr) : '-') +
+      '</span></td>' +
+    '</tr>'
+  );
 }
 function renderTableSlice(rows){
   const tb=$("#cosmos-tbody"); if(!tb) return;
