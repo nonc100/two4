@@ -184,3 +184,8 @@ footer {
 }
 
 
+.color-up{color:#28e07a}
+.color-down{color:#ff5b6e}
+.coin-img{width:20px;height:20px;border-radius:9999px;vertical-align:middle;margin-right:6px}
+.coin-sym{opacity:.6;font-size:.8em;margin-left:6px;text-transform:uppercase}
+
