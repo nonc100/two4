@@ -8,19 +8,18 @@
     :root{
       --bg:#0d121a; --panel:#121826; --text:#e8eefc; --muted:#a8b0c2;
       --up:#28e07a; --down:#ff5b6e; --warn:#e6d34a;
-      --top-space:40px; --after-title-gap:32px;
-      --glass-alpha:.34; --glass-blur:22px;
+      --glass-blur:22px;
       --gb1: rgba(255,255,255,.34); --gb2: rgba(255,255,255,.18); --gb3: rgba(255,255,255,.08);
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji";}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji");}
     a{color:inherit;text-decoration:none}
     .wrap{max-width:1250px; margin:0 auto; padding:0 18px 80px;}
     /* Title */
-    .brand{display:flex; align-items:center; gap:14px; margin-top:var(--top-space);}
+    .brand{display:flex; align-items:center; gap:14px; margin-top:32px;}
     .brand img{width:168px; height:auto; object-fit:contain;}
     .brand h1{margin:0; font-size:42px; letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.25);}
-    .after-title{height:var(--after-title-gap);}
+    .after-title{height:20px;}
 
     /* Glass card */
     .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:18px;}
@@ -29,7 +28,7 @@
     .right-2{grid-column:4/5; display:grid; gap:18px;}
     .card{
       position:relative; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border-radius:16px; padding:14px 16px; color:var(--text); overflow:hidden;
+      border-radius:16px; padding:14px 16px; overflow:hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
       backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
     }
@@ -39,24 +38,27 @@
       -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite:xor; mask-composite:exclude; opacity:.75;
     }
-    .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
+    .card h3{margin:0 0 10px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
     .kpi{font-size:22px; font-weight:800;}
-    .sub{font-size:12px; opacity:.8}
+    .sub{font-size:12px; opacity:.85}
 
     /* gauges */
-    .gauge-2{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; display:flex; gap:0}
+    .gauge-2{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; display:flex}
     .gauge-2 .bar{height:100%}
     .gauge-2 .long{background:var(--up)}
     .gauge-2 .short{background:var(--down)}
-    .gauge-1{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; position:relative}
+    .gauge-1{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden}
     .gauge-1 .fill{height:100%; background:var(--up); width:0%}
+
     /* fear/greed coloring */
-    #card-fng.low .kpi{color:var(--down)}
-    #card-fng.low .gauge-1 .fill{background:var(--down)}
-    #card-fng.mid .kpi{color:var(--warn)}
-    #card-fng.mid .gauge-1 .fill{background:var(--warn)}
-    #card-fng.high .kpi{color:var(--up)}
-    #card-fng.high .gauge-1 .fill{background:var(--up)}
+    #card-fng.low .kpi{color:var(--down)}   #card-fng.low  .gauge-1 .fill{background:var(--down)}
+    #card-fng.mid .kpi{color:var(--warn)}   #card-fng.mid  .gauge-1 .fill{background:var(--warn)}
+    #card-fng.high .kpi{color:var(--up)}    #card-fng.high .gauge-1 .fill{background:var(--up)}
+
+    /* segmented (1H/4H/1D) */
+    .seg{position:absolute; top:12px; right:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:2px; display:flex; gap:2px}
+    .seg button{border:0; background:transparent; color:var(--text); font-weight:700; font-size:11.5px; padding:6px 10px; border-radius:999px; cursor:pointer}
+    .seg button.on{background:rgba(255,255,255,.18)}
 
     /* Controls */
     .controls{display:flex; gap:10px; align-items:center; margin:22px 0 10px;}
@@ -74,42 +76,63 @@
     .row-index{width:42px; text-align:right; opacity:.7; font-weight:700}
     .coin-cell{display:flex; align-items:center; gap:8px; min-width:88px}
     .coin-img{width:18px; height:18px; min-width:18px; border-radius:50%; object-fit:contain; opacity:.9}
-    /* 티커만 보이게 */
-    .coin-name{font-weight:800; letter-spacing:.02em}
+    .coin-name{font-weight:800; letter-spacing:.02em} /* 티커만 */
     .coin-sym{display:none}
 
     .text-right{text-align:right}
-    .spark{width:100px; height:24px}
-    .spark-col{min-width:110px}
 
-    /* Star field (existing) */
-    .stars{position:fixed; right:16px; top:18px; z-index:20; display:flex; align-items:center; gap:8px; opacity:.9}
-    .stars .bar{width:160px; height:8px; background:rgba(255,255,255,.08); border-radius:999px; position:relative}
-    .stars .dot{position:absolute; inset:0 0 0 0; display:block}
-    .stars .ctrl{display:flex; gap:6px; align-items:center}
-    .stars .btn{width:28px; height:28px; display:grid; place-items:center; border-radius:999px; background:rgba(255,255,255,.08); user-select:none}
+    /* right lists */
+    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
+    .list .row{display:grid; grid-template-columns:1.8em 3.8em 1fr auto; align-items:center; font-size:13.5px; white-space:nowrap; column-gap:8px;}
+    #card-volume .row{grid-template-columns:1.8em 4.2em 1fr;}
+    .list .rank{text-align:right; opacity:.7; font-weight:700;}
+    .list .sym{font-weight:800; letter-spacing:.02em;}
+    .list .meta{justify-self:end; opacity:.85; margin-right:6px;} /* price 자리 */
+    .list .value{justify-self:end; font-weight:800;}
+    .up{color:var(--up)} .down{color:var(--down)}
 
-    /* Responsive – mobile 2/2/2/1 for 7 cards, ticker-only compact table */
+    /* header mini charts container heights */
+    #mini-btc, #mini-usdt{height:92px; margin-top:8px}
+
+    /* star field */
+    #star-field{position:fixed; inset:0; z-index:0; pointer-events:none;}
+    .star{position:absolute; width:2px; height:2px; border-radius:50%; background:rgba(255,255,255,.9); filter:blur(.3px); animation:twinkle 2.4s infinite ease-in-out;}
+    @keyframes twinkle{0%,100%{opacity:.2; transform:scale(1)} 50%{opacity:1; transform:scale(1.4)}}
+
+    /* star control (top-right fixed) */
+    .stars-ctrl{position:fixed; top:14px; right:14px; z-index:25; display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:4px 8px; backdrop-filter:blur(10px)}
+    .stars-ctrl button{width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-weight:800;cursor:pointer}
+    .stars-ctrl input[type="range"]{width:120px;height:4px; accent-color:#9cc0ff}
+
+    /* Responsive – mobile 2/2/2/1 */
     @media (max-width:820px){
-      .brand{margin-top:18px}
+      .brand{margin-top:12px}
       .brand img{width:140px}
-      .after-title{height:18px}
+      .after-title{height:12px}
       .cards{grid-template-columns:1fr 1fr}
       .left-5{grid-column:1/-1; grid-template-columns:1fr 1fr}
       .left-5 .row-2{grid-template-columns:1fr 1fr}
       .right-2{grid-column:1/-1; grid-template-columns:1fr 1fr}
-      /* 마지막 카드 한 줄 꽉 차게(2/2/2/1) */
-      #card-volume{grid-column:1 / -1}
-      /* 표 간소화 */
+      #card-volume{grid-column:1 / -1}  /* 2/2/2/1 */
+
       .coin-img{width:16px;height:16px}
       .row-index{width:36px}
       tbody td{padding:8px 6px}
-      .spark-col{display:none}
     }
+
     footer{margin:24px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
   </style>
 </head>
 <body>
+<!-- star field -->
+<div id="star-field" aria-hidden="true"></div>
+<!-- star controller -->
+<div class="stars-ctrl" id="starsCtrl">
+  <button id="starsLess" aria-label="less">-</button>
+  <input id="starsRange" type="range" min="0" max="100" value="55" aria-label="stars" />
+  <button id="starsMore" aria-label="more">+</button>
+</div>
+
 <div class="wrap">
   <div class="brand">
     <img src="/media/logo.png" alt="TWO4">
@@ -122,7 +145,12 @@
     <div class="left-5">
       <!-- 롱/숏 -->
       <div class="card" id="card-longshort">
-        <h3>BTC 롱/숏 비율 (1h)</h3>
+        <h3>BTC 롱/숏 비율</h3>
+        <div class="seg" id="lsSeg">
+          <button data-p="1h" class="on">1H</button>
+          <button data-p="4h">4H</button>
+          <button data-p="1d">1D</button>
+        </div>
         <div class="kpi" id="kpi-longshort">-</div>
         <div class="gauge-2" id="ls-gauge" aria-label="Long/Short gauge">
           <div class="bar long" style="width:0%"></div>
@@ -150,14 +178,14 @@
           <h3>BTC Market Cap</h3>
           <div class="kpi" id="kpi-btc-mcap">-</div>
           <div class="sub">시총(USD)</div>
-          <div style="height:92px;margin-top:8px" id="mini-btc"></div>
+          <div id="mini-btc"></div>
         </div>
         <!-- USDT mcap -->
         <div class="card" id="card-usdt">
           <h3>USDT Market Cap</h3>
           <div class="kpi" id="kpi-usdt-mcap">-</div>
           <div class="sub">테더(USDT) 시가총액(USD)</div>
-          <div style="height:92px;margin-top:8px" id="mini-usdt"></div>
+          <div id="mini-usdt"></div>
         </div>
       </div>
     </div>
@@ -204,7 +232,7 @@
           <th class="text-right">7일</th>
           <th class="text-right">시가총액</th>
           <th class="text-right">거래량</th>
-          <th class="text-right spark-col">7일 차트</th>
+          <th class="text-right">7일 차트</th>
         </tr>
       </thead>
       <tbody id="cosmos-tbody"></tbody>
@@ -215,6 +243,6 @@
     🚀 Cosmos 암호화폐 대시보드 – CoinGecko / Alternative.me / Binance | 30초 자동 업데이트
   </footer>
 </div>
-<script src="./cosmos.js?v=ticker-gauges-mobile221"></script>
+<script src="./cosmos.js?v=ls-timeframes-stars-compact"></script>
 </body>
 </html>
