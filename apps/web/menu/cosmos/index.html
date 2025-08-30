@@ -22,32 +22,48 @@
     /* 별(슬라이더만 영향을 줌) */
     #starCanvas{position:fixed; inset:0; z-index:0; pointer-events:none}
 
-    /* 우측 상단 컨트롤러 (작고 심플) */
+    /* 우측 상단 컨트롤러 — 컴팩트(대략 절반 크기) */
     .ctrl{
-      position:fixed; top:12px; right:12px; z-index:5; display:flex; align-items:center; gap:8px;
-      padding:6px 8px; border-radius:999px;
+           display:flex; align-items:center; gap:6px;
+      padding:4px 6px; border-radius:999px;
       background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.12); box-shadow:var(--shadow);
-      backdrop-filter:blur(12px);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 8px 20px rgba(0,0,0,.28);
+      backdrop-filter:blur(10px);
+      opacity:.65; transition:opacity .15s ease, transform .15s ease;
+      z-index:5; /* 두 모드에서 공통 */
     }
+        .ctrl:hover{ opacity:1 }
+
+    /* 위치 모드 */
+    .ctrl--fixed{ position:fixed; top:8px; right:8px; }
+    .ctrl--pinned{ position:absolute; top:8px; right:8px; } /* .wrap 가 relative라 페이지 상단 우측에 고정됨 */
+
+    /* 버튼/슬라이더 크기 축소 */
     .ctrl .back{
-      appearance:none; border:none; cursor:pointer; border-radius:10px; padding:6px 10px; font-weight:700;
-      background:linear-gradient(180deg,#141b2b,#0f1522); color:#cfe3ff; border:1px solid rgba(255,255,255,.14);
+          appearance:none; border:none; cursor:pointer;
+      border-radius:8px; padding:4px 6px;
+      font-weight:700; font-size:12px; line-height:1;
+      background:linear-gradient(180deg,#141b2b,#0f1522);
+      color:#cfe3ff; border:1px solid rgba(255,255,255,.14);
     }
     .ctrl .range{
-      -webkit-appearance:none; appearance:none; width:clamp(140px,24vw,240px); height:10px; border-radius:999px; outline:none;
+      -webkit-appearance:none; appearance:none;
+      width:clamp(90px,16vw,140px); height:6px; border-radius:999px; outline:none;
       background:linear-gradient(90deg, rgba(255,255,255,.10) 0%, rgba(200,220,255,.35) 100%);
     }
     .ctrl .range::-webkit-slider-thumb{
-      -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%;
+      -webkit-appearance:none; appearance:none;
+      width:12px; height:12px; border-radius:50%;
       background:#e9eefc; border:1px solid rgba(255,255,255,.6);
-      box-shadow:0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.8);
-      cursor:pointer; margin-top:-4px;
+      box-shadow:0 6px 12px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.8);
+      cursor:pointer; margin-top:-3px;
     }
+    
     @media (max-width:640px){
-      .ctrl{right:10px; top:10px}
-      .ctrl .range{width:min(54vw,200px)}
-      .ctrl .back{padding:6px 8px}
+      .ctrl{right:6px; top:6px; opacity:.9}
+      .ctrl .range{width:min(48vw,130px)}
+      .ctrl .back{padding:4px 6px; font-size:12px}
     }
 
     /* 래퍼/헤더 */
@@ -155,7 +171,8 @@
 <canvas id="starCanvas" aria-hidden="true"></canvas>
 
 <!-- 우측 상단 컨트롤러 -->
-<div class="ctrl">
+<!-- 항상 떠다니게 하고 싶으면 ctrl--fixed 로 바꾸면 됨 -->
+<div class="ctrl ctrl--pinned">
   <button class="back" onclick="history.back()">←</button>
   <input id="starRange" class="range" type="range" min="0" max="100" value="55" aria-label="별 밝기/밀도 조절">
 </div>
