@@ -1,7 +1,38 @@
-// COSMOS JS v4 – safe format + robust tbody finder + proxy fallback
-console.log("COSMOS JS v4 loaded");
+/* ================= COSMOS JS (full) =================
+   - Safe number formatting (max/min fraction digits clamped)
+   - Robust <tbody> finder (id 없으면 자동 탐지/생성)
+   - CoinGecko direct fetch → proxy(/api/...) 자동 재시도
+   - Window helpers exposed for debugging
+===================================================== */
 
-// ---------- Number formatting (bulletproof) ----------
+// ---------- Global safety patch ----------
+(() => {
+  const orig = Number.prototype.toLocaleString;
+  Number.prototype.toLocaleString = function (locale, opts) {
+    if (opts && typeof opts === "object") {
+      let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
+      if (!Number.isFinite(min)) min = undefined;
+      if (!Number.isFinite(max)) max = undefined;
+      if (min !== undefined) min = Math.min(20, Math.max(0, min));
+      if (max !== undefined) max = Math.min(20, Math.max(0, max));
+      if (min !== undefined && max !== undefined && max < min) max = min;
+      opts = {
+        ...opts,
+        ...(min !== undefined ? { minimumFractionDigits: min } : {}),
+        ...(max !== undefined ? { maximumFractionDigits: max } : {}),
+      };
+    }
+    return orig.call(this, locale || "en-US", opts);
+  };
+})();
+
+// innerHTML 안전 헬퍼 (대상 없으면 조용히 스킵)
+window.safeSetHTML = function (selectorOrEl, html) {
+  const el = typeof selectorOrEl === "string" ? document.querySelector(selectorOrEl) : selectorOrEl;
+  if (el) el.innerHTML = html;
+};
+
+// ---------- Utils ----------
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
 function safeLocale(num, minFD = 0, maxFD = 2) {
   let min = Number.isFinite(minFD) ? clamp(minFD, 0, 20) : 0;
@@ -13,7 +44,6 @@ function safeLocale(num, minFD = 0, maxFD = 2) {
       maximumFractionDigits: max,
     });
   } catch {
-    // 최후 보루
     return String(Number(num ?? 0).toFixed(max));
   }
 }
@@ -24,7 +54,7 @@ function fmtPrice(v) {
   if (v >= 100) d = 2;
   else if (v >= 1) d = 4;
   else if (v > 0) d = Math.ceil(Math.abs(Math.log10(v))) + 2;
-  else d = 2; // 0 또는 음수 보호
+  else d = 2;
   return safeLocale(v, 0, clamp(d, 0, 8));
 }
 function fmtNum(v, maxDigits = 2) {
@@ -39,28 +69,34 @@ function fmtPct(v) {
   return `<span class="${cls}">${sign}${n}%</span>`;
 }
 
-// ---------- tbody target (id 없어도 자동 탐지/생성) ----------
+// ---------- Target <tbody> ----------
 function ensureTbody() {
-  // 우선 명시적 id
+  // 1) 명시적 id 우선
   let tb = document.getElementById("cosmos-tbody") || document.getElementById("market-table-body");
   if (tb) return tb;
 
-  // thead가 있는 표를 우선
+  // 2) 헤더 텍스트로 표 추정
   const tables = Array.from(document.querySelectorAll("table"));
   for (const t of tables) {
     const headText = (t.tHead && t.tHead.innerText) || "";
     if (/시가총액|24시간|7일|거래량|순위|코인/i.test(headText)) {
-      if (t.tBodies && t.tBodies[0]) return (t.tBodies[0].id ||= "cosmos-tbody", t.tBodies[0]);
+      if (t.tBodies && t.tBodies[0]) {
+        t.tBodies[0].id ||= "cosmos-tbody";
+        return t.tBodies[0];
+      }
       const created = document.createElement("tbody");
       created.id = "cosmos-tbody";
       t.appendChild(created);
       return created;
     }
   }
-  // 마지막 표라도 사용
+  // 3) 마지막 표라도 사용
   const last = tables.at(-1);
   if (last) {
-    if (last.tBodies && last.tBodies[0]) return (last.tBodies[0].id ||= "cosmos-tbody", last.tBodies[0]);
+    if (last.tBodies && last.tBodies[0]) {
+      last.tBodies[0].id ||= "cosmos-tbody";
+      return last.tBodies[0];
+    }
     const created = document.createElement("tbody");
     created.id = "cosmos-tbody";
     last.appendChild(created);
@@ -69,12 +105,12 @@ function ensureTbody() {
   return null;
 }
 
-// ---------- data fetch (direct → proxy fallback) ----------
+// ---------- Data fetch (direct → proxy fallback) ----------
 async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   const q = `vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h,7d`;
   const direct = `https://api.coingecko.com/api/v3/coins/markets?${q}`;
   const proxy  = `/api/coins/markets?${q}`;
-  // 1차: 직접
+
   try {
     const r = await fetch(direct);
     if (!r.ok) throw new Error(String(r.status));
@@ -82,7 +118,6 @@ async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
     d.sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0));
     return d;
   } catch {
-    // 2차: 프록시
     const r2 = await fetch(proxy);
     if (!r2.ok) throw new Error("Proxy " + r2.status);
     const d2 = await r2.json();
@@ -91,10 +126,10 @@ async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   }
 }
 
-// ---------- render ----------
+// ---------- Render ----------
 function renderTable(rows) {
   const tbody = ensureTbody();
-  if (!tbody) return; // 대상 못 찾으면 조용히 종료
+  if (!tbody) return;
   const html = rows.map(c => `
     <tr class="row">
       <td>${c.market_cap_rank ?? "-"}</td>
@@ -109,7 +144,32 @@ function renderTable(rows) {
       <td class="text-right">$${fmtNum(c.market_cap, 0)}</td>
     </tr>
   `).join("");
-  try { tbody.innerHTML = html; } catch { /* no-op */ }
+  window.safeSetHTML(tbody, html);
 }
 
-// ---------- i
+// ---------- Init ----------
+async function initCosmos() {
+  const tbody = ensureTbody();
+  if (!tbody) return;
+  try {
+    const rows = await fetchByMarketCap({ vs: "usd", perPage: 200, page: 1 });
+    renderTable(rows);
+  } catch (e) {
+    console.error(e);
+    window.safeSetHTML(tbody, `<tr><td colspan="6" class="text-center">데이터 로딩 실패</td></tr>`);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // DOM 안정화 후 실행
+  setTimeout(() => {
+    initCosmos();
+    setInterval(initCosmos, 30_000);
+  }, 50);
+});
+
+// 디버깅용 전역 노출
+window.fetchByMarketCap = fetchByMarketCap;
+window.initCosmos = initCosmos;
+
+console.log("COSMOS JS loaded");
