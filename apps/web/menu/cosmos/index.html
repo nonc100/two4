@@ -1,82 +1,118 @@
 <!doctype html>
-<canvas class="mini" id="mini-btc-mcap"></canvas>
-</article>
-<article class="card" id="card-global-mcap">
-<h4>Global Market Cap</h4>
-<div class="stat" data-field="global-mcap">—</div>
-<div class="sub" data-field="global-sub">전체 암호화폐 시가총액(USD)</div>
-<canvas class="mini" id="mini-global-mcap"></canvas>
-</article>
-<article class="card span-3" id="card-top7">
-<h4>등락률 TOP 7 (24h)</h4>
-<ul class="list" id="list-top7"></ul>
-</article>
-<article class="card span-3" id="card-volume-rank">
-<h4>코인 거래량 순위 (24h)</h4>
-<ul class="list" id="list-volume"></ul>
-</article>
-</section>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TWO4 • Cosmos Dashboard</title>
+  <link rel="icon" href="../../media/logo.png" />
+  <!-- 로컬 CSS (인라인 대신) -->
+  <link rel="stylesheet" href="./cosmos.css" />
+  <!-- 로컬 Chart.js (CDN 대신). 없으면 상세차트만 비활성 -->
+  <script src="./chart.umd.min.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="logo" href="#">
+      <img src="../../media/logo.png" alt="TWO4" />
+      <span class="brand">COSMOS</span>
+    </a>
+  </header>
 
+  <main class="container">
+    <section class="info-grid" aria-label="시장 요약">
+      <article class="card" id="card-oi">
+        <h4>BTC 미결제약정 (OI)</h4>
+        <div class="stat" data-field="oi-value">—</div>
+        <div class="sub">연동 예정 • 파생 API 합산</div>
+      </article>
+      <article class="card" id="card-fgi">
+        <h4>공포/탐욕 지수</h4>
+        <div class="stat" data-field="fgi-value">—</div>
+        <div class="sub">연동 예정 • alternative.me</div>
+      </article>
+      <article class="card" id="card-dominance">
+        <h4>BTC Dominance</h4>
+        <div class="stat" data-field="dom-value">—</div>
+        <div class="sub" data-field="dom-sub">—</div>
+      </article>
+      <article class="card" id="card-btc-mcap">
+        <h4>BTC Market Cap</h4>
+        <div class="stat" data-field="btc-mcap">—</div>
+        <div class="sub">시총(USD)</div>
+        <canvas class="mini" id="mini-btc-mcap"></canvas>
+      </article>
+      <article class="card" id="card-global-mcap">
+        <h4>Global Market Cap</h4>
+        <div class="stat" data-field="global-mcap">—</div>
+        <div class="sub" data-field="global-sub">전체 암호화폐 시가총액(USD)</div>
+        <canvas class="mini" id="mini-global-mcap"></canvas>
+      </article>
+      <article class="card span-3" id="card-top7">
+        <h4>등락률 TOP 7 (24h)</h4>
+        <ul class="list" id="list-top7"></ul>
+      </article>
+      <article class="card span-3" id="card-volume-rank">
+        <h4>코인 거래량 순위 (24h)</h4>
+        <ul class="list" id="list-volume"></ul>
+      </article>
+    </section>
 
-<!-- Controls -->
-<section class="controls">
-<div class="search">
-<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="1.5"/></svg>
-<input id="searchInput" placeholder="코인 이름/심볼 검색… (예: btc, eth)" />
-</div>
-<div class="page-meta"><span id="pageMeta">—</span></div>
-</section>
+    <section class="controls">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+          stroke="currentColor" stroke-width="1.5"/></svg>
+        <input id="searchInput" placeholder="코인 이름/심볼 검색… (예: btc, eth)" />
+      </div>
+      <div class="page-meta"><span id="pageMeta">—</span></div>
+    </section>
 
+    <section class="table-wrap">
+      <table id="coinsTable">
+        <thead>
+          <tr>
+            <th data-key="market_cap_rank" class="rank th-sort"># <span class="arrows"></span></th>
+            <th data-key="name" class="th-sort">코인 <span class="arrows"></span></th>
+            <th data-key="current_price" class="th-sort">가격 <span class="arrows"></span></th>
+            <th data-key="price_change_percentage_1h_in_currency" class="th-sort hide-xs">1h <span class="arrows"></span></th>
+            <th data-key="price_change_percentage_24h_in_currency" class="th-sort">24h <span class="arrows"></span></th>
+            <th data-key="price_change_percentage_7d_in_currency" class="th-sort">7d <span class="arrows"></span></th>
+            <th data-key="market_cap" class="th-sort">시총 <span class="arrows"></span></th>
+            <th data-key="total_volume" class="th-sort">거래량(24h) <span class="arrows"></span></th>
+            <th class="hide-sm">7d 스파크라인</th>
+          </tr>
+        </thead>
+        <tbody id="coinsTbody"></tbody>
+      </table>
+      <div class="pagination">
+        <button class="btn" id="prevBtn">이전</button>
+        <span id="pageLabel" class="page-meta">—</span>
+        <button class="btn" id="nextBtn">다음</button>
+      </div>
+    </section>
+  </main>
 
-<!-- Table -->
-<section class="table-wrap">
-<table id="coinsTable">
-<thead>
-<tr>
-<th data-key="market_cap_rank" class="rank th-sort"># <span class="arrows"></span></th>
-<th data-key="name" class="th-sort">코인 <span class="arrows"></span></th>
-<th data-key="current_price" class="th-sort">가격 <span class="arrows"></span></th>
-<th data-key="price_change_percentage_1h_in_currency" class="th-sort hide-xs">1h <span class="arrows"></span></th>
-<th data-key="price_change_percentage_24h_in_currency" class="th-sort">24h <span class="arrows"></span></th>
-<th data-key="price_change_percentage_7d_in_currency" class="th-sort">7d <span class="arrows"></span></th>
-<th data-key="market_cap" class="th-sort">시총 <span class="arrows"></span></th>
-<th data-key="total_volume" class="th-sort">거래량(24h) <span class="arrows"></span></th>
-<th class="hide-sm">7d 스파크라인</th>
-</tr>
-</thead>
-<tbody id="coinsTbody"></tbody>
-</table>
-<div class="pagination">
-<button class="btn" id="prevBtn">이전</button>
-<span id="pageLabel" class="page-meta">—</span>
-<button class="btn" id="nextBtn">다음</button>
-</div>
-</section>
-</main>
+  <!-- 상세 차트 모달 -->
+  <div class="modal" id="detailModal" aria-hidden="true" aria-label="상세 차트">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-title" id="modalTitle">—</div>
+        <div class="x" id="modalClose">✕</div>
+      </div>
+      <div class="range" id="rangeBtns">
+        <button class="chip" data-days="1">24H</button>
+        <button class="chip" data-days="7">7D</button>
+        <button class="chip active" data-days="30">30D</button>
+        <button class="chip" data-days="90">90D</button>
+        <button class="chip" data-days="180">180D</button>
+        <button class="chip" data-days="365">1Y</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="detailChart" height="360"></canvas>
+      </div>
+    </div>
+  </div>
 
-
-<!-- Modal: 상세 차트 -->
-<div class="modal" id="detailModal" aria-hidden="true" aria-label="상세 차트">
-<div class="modal-card">
-<div class="modal-head">
-<div class="modal-title" id="modalTitle">—</div>
-<div class="x" id="modalClose">✕</div>
-</div>
-<div class="range" id="rangeBtns">
-<button class="chip" data-days="1">24H</button>
-<button class="chip" data-days="7">7D</button>
-<button class="chip active" data-days="30">30D</button>
-<button class="chip" data-days="90">90D</button>
-<button class="chip" data-days="180">180D</button>
-<button class="chip" data-days="365">1Y</button>
-</div>
-<div class="modal-body">
-<canvas id="detailChart" height="360"></canvas>
-</div>
-</div>
-</div>
-
-
-<script src="./cosmos.js"></script>
+  <script src="./cosmos.js"></script>
 </body>
 </html>
