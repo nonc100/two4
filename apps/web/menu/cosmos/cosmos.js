@@ -166,24 +166,23 @@ async function fetchGlobal(){
 const state = {
   rows: [],
   filtered: [],
-  sortKey: null,   // 'price' | 'change1h' | 'change24h' | 'change7d' | 'market_cap' | 'volume'
-  sortDir: 'desc', // 'asc' | 'desc'
+  sortKey: 'market_cap', // 초기: 시가총액 기준
+  sortDir: 'desc',
   page: 1,
   perPage: 50,
 };
 
 /* ---------- TABLE RENDER ---------- */
 function buildRowHTML(c) {
-  const ICON = 22;
   return `
     <tr class="row">
       <td>${c.market_cap_rank ?? "-"}</td>
       <td>
         <a class="coin-link" href="#" data-coin-id="${c.id}">
           <img src="${c.image}" alt="${c.symbol}"
-            style="width:${ICON}px;height:${ICON}px;min-width:${ICON}px;min-height:${ICON}px;border-radius:50%;object-fit:contain;display:inline-block;">
-          <span class="coin-name">${(c.symbol||"").toUpperCase()}</span>
-          &nbsp;<span class="coin-sym">· ${c.name}</span>
+            style="width:22px;height:22px;min-width:22px;min-height:22px;border-radius:50%;object-fit:contain;display:inline-block;">
+          <span class="coin-ticker">${(c.symbol||"").toUpperCase()}</span>
+          <span class="coin-name"> · ${c.name}</span>
         </a>
       </td>
       <td class="text-right">$${fmtPrice(c.current_price)}</td>
@@ -278,27 +277,36 @@ function bindSearch() {
 
 /* ---------- DASHBOARD CARDS (NO-KEY) ---------- */
 function renderDashboard(rows){
-  // 1) 24h 상승 상위 7
+  // 1) 24h 등락률 상위 TOP 7 (티커만, 순위+값)
   const gainers = [...rows]
     .sort((a,b)=>(b.price_change_percentage_24h ?? b.price_change_percentage_24h_in_currency ?? 0) -
                   (a.price_change_percentage_24h ?? a.price_change_percentage_24h_in_currency ?? 0))
     .slice(0,7)
-    .map(c=>`<div class="row">
-      <span>${(c.symbol||'').toUpperCase()} · ${c.name}</span>
-      <span class="${(c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? 0) >= 0 ? 'up':'down'}">
-        ${(c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? 0).toFixed(2)}%
-      </span>
-    </div>`).join("");
+    .map((c,i)=>{
+      const sym = (c.symbol||'').toUpperCase();
+      const chg = (c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? 0);
+      return `<div class="row">
+        <span class="rank">${i+1}.</span>
+        <span class="sym">${sym}</span>
+        <span class="sep">-</span>
+        <span class="value ${chg>=0?'up':'down'}">${chg.toFixed(2)}%</span>
+      </div>`;
+    }).join("");
   safeSetHTML("#k-gainers", gainers || "<div class='sub'>데이터 없음</div>");
 
-  // 2) 거래량 상위 7 (우측 박스 밸런스 맞춤)
+  // 2) 거래량 순위 (티커만, 순위+금액)
   const volumes = [...rows]
     .sort((a,b)=>(b.total_volume||0)-(a.total_volume||0))
     .slice(0,7)
-    .map(c=>`<div class="row">
-      <span>${(c.symbol||'').toUpperCase()} · ${c.name}</span>
-      <span>$${fmtNum(c.total_volume, 0)}</span>
-    </div>`).join("");
+    .map((c,i)=>{
+      const sym = (c.symbol||'').toUpperCase();
+      return `<div class="row">
+        <span class="rank">${i+1}.</span>
+        <span class="sym">${sym}</span>
+        <span class="sep">-</span>
+        <span class="value">$${fmtNum(c.total_volume, 0)}</span>
+      </div>`;
+    }).join("");
   safeSetHTML("#k-volume", volumes || "<div class='sub'>데이터 없음</div>");
 
   // 3) BTC 시총
@@ -329,7 +337,6 @@ async function initCosmos() {
     state.rows = Array.isArray(rows) ? rows : [];
     bindSearch();
     bindSortHeaders();
-    // 기본: CoinGecko가 이미 market_cap_desc로 정렬해 줌
     applySearchSort();      // table + pager
     renderDashboard(state.rows);
     renderGlobalCards();
