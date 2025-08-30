@@ -1,12 +1,12 @@
-/* ================= COSMOS JS v5 (full) =================
-   - Global clamp: Number.toLocaleString + Intl.NumberFormat (모든 스크립트에 적용)
+/* ================= COSMOS JS v6 (full) =================
+   - Global clamp: Number.toLocaleString + Intl.NumberFormat
    - Robust <tbody> finder (id 없으면 자동 탐지/생성)
-   - CoinGecko direct fetch → proxy(/api/...) 자동 재시도
+   - CoinGecko fetch (sparkline=true, 1h/24h/7d 퍼센트 포함)
+   - Columns: Rank / Coin / Price / 1h / 24h / 7d / MktCap / Volume / 7d Sparkline
 ========================================================= */
 
-// ---- GLOBAL SAFETY CLAMPS ----
+// ---- GLOBAL SAFETY CLAMPS (자릿수 에러 방지) ----
 (() => {
-  // 1) clamp for Number.prototype.toLocaleString
   const origToLS = Number.prototype.toLocaleString;
   Number.prototype.toLocaleString = function (locale, opts) {
     if (opts && typeof opts === "object") {
@@ -25,7 +25,6 @@
     return origToLS.call(this, locale || "en-US", opts);
   };
 
-  // 2) clamp for Intl.NumberFormat(...).format()
   const OrigNF = Intl.NumberFormat;
   Intl.NumberFormat = function (locale, opts) {
     if (opts && typeof opts === "object") {
@@ -45,7 +44,7 @@
   };
 })();
 
-// innerHTML 안전 헬퍼 (대상 없으면 조용히 스킵)
+// innerHTML 안전 헬퍼(대상 없으면 조용히 스킵)
 window.safeSetHTML = function (selectorOrEl, html) {
   const el = typeof selectorOrEl === "string" ? document.querySelector(selectorOrEl) : selectorOrEl;
   if (el) el.innerHTML = html;
@@ -53,7 +52,6 @@ window.safeSetHTML = function (selectorOrEl, html) {
 
 // ---- UTILS ----
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
-
 function safeLocale(num, minFD = 0, maxFD = 2) {
   let min = Number.isFinite(minFD) ? clamp(minFD, 0, 20) : 0;
   let max = Number.isFinite(maxFD) ? clamp(maxFD, 0, 20) : 2;
@@ -67,7 +65,6 @@ function safeLocale(num, minFD = 0, maxFD = 2) {
     return String(Number(num ?? 0).toFixed(max));
   }
 }
-
 function fmtPrice(v) {
   if (v == null || Number.isNaN(v)) return "-";
   let d;
@@ -77,14 +74,12 @@ function fmtPrice(v) {
   else d = 2;
   return safeLocale(v, 0, clamp(d, 0, 8));
 }
-
 function fmtNum(v, maxDigits = 2) {
   if (v == null || Number.isNaN(v)) return "-";
   return safeLocale(v, 0, clamp(maxDigits, 0, 8));
 }
-
 function fmtPct(v) {
-  if (v == null || Number.isNaN(v)) return "-";
+  if (v == null || !isFinite(v)) return "-";
   const n = Number(v).toFixed(2);
   const sign = n > 0 ? "+" : "";
   const cls = n > 0 ? "color-up" : n < 0 ? "color-down" : "";
@@ -101,7 +96,7 @@ function ensureTbody() {
   const tables = Array.from(document.querySelectorAll("table"));
   for (const t of tables) {
     const headText = (t.tHead && t.tHead.innerText) || "";
-    if (/시가총액|24시간|7일|거래량|순위|코인/i.test(headText)) {
+    if (/시가총액|24시간|7일|거래량|순위|코인|1시간/i.test(headText)) {
       if (t.tBodies && t.tBodies[0]) {
         t.tBodies[0].id ||= "cosmos-tbody";
         return t.tBodies[0];
@@ -127,9 +122,30 @@ function ensureTbody() {
   return null;
 }
 
-// ---- FETCH (direct → proxy fallback) ----
+// ---- Sparkline SVG (7일 미니차트) ----
+function sparklineSVG(prices, w = 80, h = 24) {
+  if (!prices || prices.length < 2) return "-";
+  const min = Math.min(...prices), max = Math.max(...prices);
+  const span = max - min || 1;
+  const pts = prices.map((p, i) => {
+    const x = (i / (prices.length - 1)) * w;
+    const y = h - ((p - min) / span) * h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const up = prices[prices.length - 1] >= prices[0];
+  const color = up ? "#28e07a" : "#ff5b6e";
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/>
+  </svg>`;
+}
+
+// ---- FETCH (sparkline=true, 1h/24h/7d 포함) ----
 async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
-  const q = `vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h,7d`;
+  const q =
+    `vs_currency=${vs}` +
+    `&order=market_cap_desc&per_page=${perPage}&page=${page}` +
+    `&sparkline=true&price_change_percentage=1h,24h,7d`;
+
   const direct = `https://api.coingecko.com/api/v3/coins/markets?${q}`;
   const proxy  = `/api/coins/markets?${q}`;
 
@@ -148,40 +164,37 @@ async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   }
 }
 
-// ---- RENDER ----
+// ---- RENDER (열 9개) ----
 function renderTable(rows) {
   const tbody = ensureTbody();
   if (!tbody) return;
 
-  const ICON = 22; // 원하는 픽셀 크기 (20~24 추천)
+  const ICON = 22; // 아이콘 크기
 
   const html = rows.map(c => `
     <tr class="row">
       <td>${c.market_cap_rank ?? "-"}</td>
+
       <td class="coin-cell" style="display:flex;align-items:center;gap:8px;">
         <img
-          src="${c.image}"
-          alt="${c.symbol}"
-          class="coin-img"
+          src="${c.image}" alt="${c.symbol}" class="coin-img"
           style="
-            width:${ICON}px !important;
-            height:${ICON}px !important;
-            min-width:${ICON}px !important;
-            min-height:${ICON}px !important;
-            max-width:${ICON}px !important;
-            max-height:${ICON}px !important;
-            border-radius:50%;
-            object-fit:contain;
-            display:inline-block;
-          "
+            width:${ICON}px !important;height:${ICON}px !important;
+            min-width:${ICON}px !important;min-height:${ICON}px !important;
+            max-width:${ICON}px !important;max-height:${ICON}px !important;
+            border-radius:50%;object-fit:contain;display:inline-block;"
         />
         <span class="coin-name">${c.name}</span>
         <span class="coin-sym">${(c.symbol || "").toUpperCase()}</span>
       </td>
+
       <td class="text-right">$${fmtPrice(c.current_price)}</td>
-      <td class="text-right">${fmtPct(c.price_change_percentage_24h)}</td>
+      <td class="text-right">${fmtPct(c.price_change_percentage_1h_in_currency ?? null)}</td>
+      <td class="text-right">${fmtPct(c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? null)}</td>
       <td class="text-right">${fmtPct(c.price_change_percentage_7d_in_currency ?? null)}</td>
       <td class="text-right">$${fmtNum(c.market_cap, 0)}</td>
+      <td class="text-right">$${fmtNum(c.total_volume, 0)}</td>
+      <td class="text-right">${sparklineSVG(c.sparkline_in_7d && c.sparkline_in_7d.price)}</td>
     </tr>
   `).join("");
 
@@ -197,7 +210,7 @@ async function initCosmos() {
     renderTable(rows);
   } catch (e) {
     console.error(e);
-    window.safeSetHTML(tbody, `<tr><td colspan="6" class="text-center">데이터 로딩 실패</td></tr>`);
+    window.safeSetHTML(tbody, `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
   }
 }
 
@@ -211,4 +224,4 @@ document.addEventListener("DOMContentLoaded", () => {
 // 디버깅용 전역 노출
 window.fetchByMarketCap = fetchByMarketCap;
 window.initCosmos = initCosmos;
-console.log("COSMOS JS v5 loaded");
+console.log("COSMOS JS v6 loaded");
