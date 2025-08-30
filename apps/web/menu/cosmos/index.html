@@ -5,34 +5,37 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>COSMOS</title>
 
-  <!-- 미래지향 타이틀 폰트 -->
+  <!-- 타이틀 폰트 -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
+      /* ===== 색/배경 ===== */
       --bg:#0e1220;
       --stroke:rgba(255,255,255,.10);
       --primary:#1f5cff;
 
-      /* 상단/폭/여백 */
-      --top-space: 110px;         /* 타이틀 위 여백 */
-      --container-max: 1440px;    /* 중앙 고정 폭 */
-      --side-pad: 10px;           /* 좌우 패딩 */
+      /* ===== 여백/폭 (요기만 조절하면 전체 간격이 변해요) ===== */
+      --top-space: 56px;        /* COSMOS를 화면 상단에 더 붙이기(↓면 위로 붙음) */
+      --after-title-gap: 64px;  /* COSMOS ↔ 7개 카드 사이 간격(↑면 더 떨어짐) */
+      --container-max: 1420px;  /* 중앙 고정 폭 */
+      --side-pad: 10px;         /* 좌우 패딩 */
 
-      /* 로고/배경 */
-      --logo-h: clamp(24px, 3.0vw, 44px);
-      --hero-bg: url("../../media/your-galaxy.jpg"); /* 🔁 배경 이미지 경로 교체 */
+      /* ===== 배경/로고 ===== */
+      --logo-h: clamp(24px, 2.7vw, 42px);
+      --hero-bg: url("../../media/your-galaxy.jpg"); /* 배경 이미지 있으면 교체 */
 
-      /* Glass card (회색 그라데이션 + 유리) */
-      --glass-bg: rgba(18,24,46,.72);
-      --border-w: 1px;
-      --gb1: rgba(255,255,255,.38);
-      --gb2: rgba(255,255,255,.20);
-      --gb3: rgba(255,255,255,.08);
+      /* ===== 유리 카드 (투명 느낌) ===== */
+      --glass-alpha: .48;       /* 0(완전 투명)~1(완전 불투명) → 투명 느낌은 0.4~0.6 추천 */
+      --glass-blur: 16px;       /* 배경 블러 강도 */
+      --border-w: 1px;          /* 유리 테두리 두께 */
+      --gb1: rgba(255,255,255,.42);
+      --gb2: rgba(255,255,255,.22);
+      --gb3: rgba(255,255,255,.10);
     }
 
     html,body{margin:0;background:var(--bg);color:#e8ebf3;}
-    /* 은하수 배경 + 은은한 보조 그라데이션 */
+    /* 은하수 배경 + 은은한 광 */
     body::before{
       content:""; position:fixed; inset:0; z-index:-1;
       background:
@@ -45,63 +48,52 @@
     .container{ max-width:var(--container-max); margin:0 auto; padding:0 var(--side-pad); }
 
     /* ===== 헤더 ===== */
-    .site-header{ position:relative; padding: var(--top-space) 0 30px; } /* 상단 여백 크게 */
+    .site-header{ position:relative; padding: var(--top-space) 0 14px; } /* 위 간격 좁게 */
     .brand{ display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
     .brand img{
-      height:var(--logo-h); width:auto; object-fit:contain;
+      height:var(--logo-h); width:auto; object-fit:contain; max-width:360px;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
-      max-width:320px;
     }
     .brand h1{
       margin:0; font-family:"Orbitron",system-ui; font-weight:700; letter-spacing:.04em;
-      font-size:calc(var(--logo-h) * .9); line-height:1;
+      font-size:calc(var(--logo-h) * .92); line-height:1;
     }
-    .header-bg{ position:absolute; inset:auto 0 0 0; height:60px;
-      background:linear-gradient(90deg, rgba(31,92,255,.20), rgba(120,80,255,.14), rgba(31,92,255,.20));
-      filter:blur(22px); opacity:.35; }
 
-    /* ===== 대시보드: 좌5 / 우2 (우측: Top7 ▶ Volume) =====
-       3열 그리드: [좌 2열] + [우 1열]
-       행 배치(정중앙 컨테이너에 고정)
-       1행: l1 l2 r1
-       2행: l3 l4 r1   ← r1은 2행 높이(등락률 Top7)
-       3행: l5 l5 r2   ← l5는 가로로 넓게, r2는 하단(거래량 순위)
+    /* ===== 상단 대시보드 (정중앙 기준: 좌 5 / 우 2) =====
+       .dash: 좌(2fr) / 우(1fr)
+       좌(.dash-left): 윗줄 3개, 아랫줄 2개
+       우(.dash-right): 1행 2열(왼: Top7 / 오른쪽: Volume)
     */
-    .dash-areas{
-      display:grid;
-      grid-template-columns: 1.6fr 1.6fr 1fr;  /* 좌/좌/우 */
-      grid-template-areas:
-        "l1  l2  r1"
-        "l3  l4  r1"
-        "l5  l5  r2";
-      gap:16px;
-      margin-top: 36px;
+    .dash{
+      display:grid; grid-template-columns: 2fr 1fr; gap:18px;
+      margin-top: var(--after-title-gap);
+      align-items:start;
     }
+
+    .dash-left{ display:grid; gap:16px; }
+    .grid-top{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }  /* 윗줄 3개 */
+    .grid-bottom{ display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }/* 아랫줄 2개 */
+
+    .dash-right{
+      display:grid; grid-template-columns: 1fr 1fr; gap:16px; /* ← 오른쪽 1행 2열 */
+    }
+
+    /* 반응형 */
     @media (max-width:1100px){
-      /* 태블릿 이하: 2열 */
-      .dash-areas{
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas:
-          "l1  l2"
-          "l3  l4"
-          "l5  l5"
-          "r1  r1"
-          "r2  r2";
-      }
+      .dash{ grid-template-columns: 1fr; }
+      .dash-right{ grid-template-columns: 1fr; } /* 좁아지면 오른쪽도 세로로 */
+      .grid-top{ grid-template-columns: 1fr 1fr; }
+      .grid-bottom{ grid-template-columns: 1fr; }
     }
     @media (max-width:640px){
-      /* 모바일: 1열 */
-      .dash-areas{
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "l1" "l2" "l3" "l4" "l5" "r1" "r2";
-      }
+      .grid-top{ grid-template-columns: 1fr; }
     }
 
-    /* Glass + 회색 그라데이션 보더 */
+    /* ===== 유리 카드 ===== */
     .card{
-      position:relative; border-radius:14px; padding:14px; background: var(--glass-bg);
-      box-shadow: 0 8px 22px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
+      position:relative; border-radius:14px; padding:16px;
+      background: rgba(18,24,46,var(--glass-alpha));
+      box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.02);
       overflow:hidden;
     }
     .card::before{
@@ -109,14 +101,15 @@
       background: linear-gradient(135deg, var(--gb1), var(--gb2) 55%, var(--gb3));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor; mask-composite: exclude;
-      pointer-events:none; opacity:.85;
+      pointer-events:none; opacity:.9;
     }
     .card::after{
       content:""; position:absolute; inset:1px; border-radius: calc(14px - 1px);
-      backdrop-filter: blur(12px) saturate(120%); -webkit-backdrop-filter: blur(12px) saturate(120%);
+      backdrop-filter: blur(var(--glass-blur)) saturate(122%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(122%);
       background:
         radial-gradient(120% 100% at 50% 0, rgba(255,255,255,.14), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02) 40%, transparent);
+        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02) 40%, transparent);
       pointer-events:none;
     }
     .card > *{ position:relative; z-index:1; }
@@ -127,40 +120,29 @@
     .list .row{ display:flex; justify-content:space-between; gap:8px; font-size:14px; }
     .up{ color:#28e07a } .down{ color:#ff5b6e }
 
-    /* 각 카드 위치(왼쪽 5 / 우측 2 고정) */
-    #card-oi        { grid-area: l1; }  /* 좌1 */
-    #card-fng       { grid-area: l2; }  /* 좌2 */
-    #card-dominance { grid-area: l3; }  /* 좌3 */
-    #card-btc-mcap  { grid-area: l4; }  /* 좌4 */
-    #card-total-mcap{ grid-area: l5; }  /* 좌5 (가로 넓게) */
-    #card-gainers   { grid-area: r1; }  /* 우측 상단(2행 높이) : 등락률 Top7 */
-    #card-volume    { grid-area: r2; }  /* 우측 하단 : 거래량 순위 */
-
-    /* ===== 툴바 ===== */
+    /* ===== 툴바 / 테이블 / 페이저 ===== */
     .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0 6px; }
     .toolbar input{
       padding:8px 10px; border-radius:8px; border:1px solid var(--stroke);
       background:#11172e; color:#e8ebf3; min-width:220px;
     }
 
-    /* ===== 테이블 ===== */
     .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .cosmos-table{ min-width:920px; width:100%; border-collapse:collapse; }
     .cosmos-table th,.cosmos-table td{ padding:10px 12px; white-space:nowrap; border-bottom:1px solid rgba(255,255,255,.06); }
     .cosmos-table th.text-right,.cosmos-table td.text-right{ text-align:right; }
 
-    /* 헤더 정렬(▲/▼) */
+    /* 정렬 아이콘(▲/▼) */
     th[data-sort]{ cursor:pointer; user-select:none; }
     th[data-sort] .sort-ic{ display:inline-block; width:10px; margin-left:6px; opacity:.85; }
     th[data-sort].asc  .sort-ic::before{ content:"▲"; font-size:10px; }
     th[data-sort].desc .sort-ic::before{ content:"▼"; font-size:10px; }
 
-    /* 코인 링크 */
     .coin-link{ color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px; white-space:nowrap; }
     .coin-link:hover{ opacity:.9; }
     .coin-name{ text-overflow:ellipsis; overflow:hidden; max-width:160px; }
 
-    /* 7일 스파크라인 열 */
+    /* 7d 스파크라인 열 */
     .cosmos-table td:last-child svg{ display:block; margin:0 auto; }
     .cosmos-table th:last-child, .cosmos-table td:last-child{ width:90px; }
 
@@ -171,7 +153,6 @@
     @media (max-width:720px){  .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8){ display:none; } }  /* 거래량 */
     @media (max-width:620px){  .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7){ display:none; } .cosmos-table{ min-width:0; } } /* 시총 */
 
-    /* ===== 페이지네이션/푸터 ===== */
     .pager{ display:flex; gap:6px; justify-content:center; margin:12px 0; }
     .pager button{
       padding:6px 10px; border:1px solid var(--stroke);
@@ -186,53 +167,64 @@
     <!-- 헤더 -->
     <header class="site-header">
       <div class="brand">
+        <!-- 로고 경로: apps/web/menu/cosmos/index.html → ../../media/logo.png -->
         <img src="../../media/logo.png" alt="TWO.4">
         <h1>COSMOS</h1>
       </div>
-      <div class="header-bg"></div>
     </header>
 
-    <!-- 상단 대시보드: 좌5 / 우2 (우측: Top7 ▶ Volume) -->
-    <section class="dash-areas">
-      <div id="card-oi" class="card">
-        <h3>BTC 미결제약정(OI) · 24H</h3>
-        <div id="k-oi" class="kpi">연동 예정</div>
-        <div class="sub">※ OI 제공 API 연결 후 표시</div>
+    <!-- 대시보드: 좌 5 / 우 2(오른쪽은 1행 2열: 좌=Top7, 우=Volume) -->
+    <section class="dash">
+      <!-- 왼쪽 5개 -->
+      <div class="dash-left">
+        <!-- 윗줄 3개 -->
+        <div class="grid-top">
+          <div id="card-oi" class="card">
+            <h3>BTC 미결제약정(OI) · 24H</h3>
+            <div id="k-oi" class="kpi">연동 예정</div>
+            <div class="sub">※ OI 제공 API 연결 후 표시</div>
+          </div>
+
+          <div id="card-fng" class="card">
+            <h3>공포/탐욕 지수</h3>
+            <div id="k-fng" class="kpi">연동 예정</div>
+            <div class="sub">Alternative.me API</div>
+          </div>
+
+          <div id="card-dominance" class="card">
+            <h3>도미넌스</h3>
+            <div id="k-dominance" class="kpi">-</div>
+            <div class="sub">BTC Dominance</div>
+          </div>
+        </div>
+
+        <!-- 아랫줄 2개 -->
+        <div class="grid-bottom">
+          <div id="card-btc-mcap" class="card">
+            <h3>BTC Market Cap</h3>
+            <div id="k-btc-mcap" class="kpi">-</div>
+            <div class="sub">시총(USD)</div>
+          </div>
+
+          <div id="card-total-mcap" class="card">
+            <h3>Global Market Cap</h3>
+            <div id="k-total-mcap" class="kpi">-</div>
+            <div class="sub">전체 암호화폐 시가총액(USD)</div>
+          </div>
+        </div>
       </div>
 
-      <div id="card-fng" class="card">
-        <h3>공포/탐욕 지수</h3>
-        <div id="k-fng" class="kpi">연동 예정</div>
-        <div class="sub">Alternative.me API</div>
-      </div>
+      <!-- 오른쪽 2개 (1행 2열) -->
+      <div class="dash-right">
+        <div id="card-gainers" class="card">
+          <h3>등락률 상위 7위 [24h]</h3>
+          <div id="k-gainers" class="list"></div>
+        </div>
 
-      <div id="card-dominance" class="card">
-        <h3>도미넌스</h3>
-        <div id="k-dominance" class="kpi">-</div>
-        <div class="sub">BTC Dominance</div>
-      </div>
-
-      <div id="card-btc-mcap" class="card">
-        <h3>BTC Market Cap</h3>
-        <div id="k-btc-mcap" class="kpi">-</div>
-        <div class="sub">시총(USD)</div>
-      </div>
-
-      <div id="card-total-mcap" class="card">
-        <h3>Global Market Cap</h3>
-        <div id="k-total-mcap" class="kpi">-</div>
-        <div class="sub">전체 암호화폐 시가총액(USD)</div>
-      </div>
-
-      <!-- 우측 고정: 위(등락률 Top7), 아래(거래량 순위) -->
-      <div id="card-gainers" class="card">
-        <h3>등락률 상위 7위 [24h]</h3>
-        <div id="k-gainers" class="list"></div>
-      </div>
-
-      <div id="card-volume" class="card">
-        <h3>코인 거래량 순위</h3>
-        <div id="k-volume" class="list"></div>
+        <div id="card-volume" class="card">
+          <h3>코인 거래량 순위</h3>
+          <div id="k-volume" class="list"></div>
+        </div>
       </div>
     </section>
 
@@ -264,13 +256,13 @@
     <!-- 50개 단위 페이저 -->
     <div id="cosmos-pager" class="pager"></div>
 
-    <!-- 하단 배너(필수) -->
+    <!-- 하단 고정 문구(필수) -->
     <footer>
       🚀 Cosmos 암호화폐 대시보드 – CoinGecko API로 실시간 데이터 제공 | 안전한 백엔드 서버 통신 | 30초 자동 업데이트
     </footer>
   </div>
 
-  <!-- 스크립트 -->
+  <!-- 데이터/렌더 스크립트 -->
   <script src="./cosmos.js"></script>
 </body>
 </html>
