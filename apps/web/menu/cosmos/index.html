@@ -6,8 +6,7 @@
   <title>TWO4 COSMOS</title>
   <style>
     :root{
-      --bg:#0d121a; --panel:#121826; --text:#e8eefc; --muted:#a8b0c2;
-      --up:#28e07a; --down:#ff5b6e;
+      --bg:#0d121a; --text:#e8eefc; --muted:#a8b0c2; --up:#28e07a; --down:#ff5b6e;
       --top-space:56px; --after-title-gap:92px;
       --glass-blur:22px;
       --gb1: rgba(255,255,255,.34); --gb2: rgba(255,255,255,.18); --gb3: rgba(255,255,255,.08);
@@ -21,13 +20,39 @@
     }
     a{color:inherit;text-decoration:none}
 
-    /* star canvas behind everything */
-    .starfield{position:fixed; inset:0; pointer-events:none; z-index:0;}
+    /* 우측 상단 슬라이드형 별 트랙 */
+    .starrail{position:fixed; top:16px; right:16px; z-index:7; pointer-events:auto}
+    .starrail .rail{
+      width: clamp(280px, 36vw, 560px); height: 56px; border-radius: 999px; position:relative; overflow:hidden;
+      backdrop-filter: blur(18px);
+      background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .starrail .knob{
+      position:absolute; top:7px; left:8px; width:42px; height:42px; border-radius:999px; cursor:grab;
+      background: radial-gradient(50% 50% at 50% 50%, #ffffff 0%, #e9eefc 60%, #d2dbf7 100%);
+      box-shadow: 0 8px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    .starrail .knob:active{cursor:grabbing}
+    .starrail .stars{position:absolute; inset:0; pointer-events:none}
+    .starrail .dot{
+      position:absolute; top:50%; transform:translate(-50%,-50%) scale(.7);
+      width:6px; height:6px; border-radius:50%;
+      background:#fff; box-shadow:0 0 10px rgba(185,216,255,.9);
+      opacity:.15; transition:transform .2s, opacity .2s;
+    }
+    /* 화면 축소 시 바 크기 조절/접기 */
+    @media (max-width:720px){
+      .starrail{top:10px; right:10px}
+      .starrail .rail{width:min(86vw, 360px); height:48px}
+      .starrail .knob{width:36px; height:36px; top:6px}
+    }
 
-    .wrap{position:relative; z-index:1; max-width:1250px; margin:0 auto; padding:0 18px 80px;}
+    .wrap{position:relative; z-index:1; max-width:1250px; margin:0 auto; padding:56px 18px 80px;}
 
     /* Title */
-    .brand{display:flex; align-items:center; gap:14px; margin-top:var(--top-space);}
+    .brand{display:flex; align-items:center; gap:14px; margin-top:0;}
     .brand img{width:168px; height:auto; object-fit:contain;}
     .brand h1{
       margin:0; font-size:42px; letter-spacing:.12em; font-weight:800;
@@ -40,14 +65,25 @@
     @keyframes sheen{0%{background-position:0% 50%}100%{background-position:200% 50%}}
     .after-title{height:var(--after-title-gap);}
 
-    /* Cards layout */
-    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:18px;}
-    .left-5{grid-column:1/4; display:grid; gap:18px; grid-template-columns:repeat(3,1fr);}
-    .left-5 > .card{min-height:130px;}                 /* 상단 3카드 높이 */
-    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:18px;}
-    .left-5 .row-2 > .card{min-height:240px;}          /* BTC/Global 카드 높이 */
-    .right-2{grid-column:4/5; display:grid; gap:18px;}
-    .right-2 > .card{min-height:330px;}                /* 우측 세로 카드 */
+    /* 카드 레이아웃 (데스크톱: 왼쪽 5, 오른쪽 2(세로)) */
+    .cards{
+      display:grid; gap:18px;
+      grid-template-columns: 3fr 1fr;            /* 좌 3, 우 1 */
+      grid-template-rows: auto; align-items:stretch;
+    }
+    .left-5{
+      grid-column:1/2; display:grid; gap:18px;
+      grid-template-columns:repeat(3,1fr);       /* 상단 3 */
+      grid-auto-rows:minmax(130px,auto);
+    }
+    .left-5 .row-2{
+      grid-column:1/4; display:grid; gap:18px;
+      grid-template-columns:1fr 1fr;             /* 하단 2 */
+      grid-auto-rows:minmax(240px,auto);
+    }
+    .right-2{
+      grid-column:2/3; display:grid; gap:18px; grid-auto-rows:minmax(330px,auto);
+    }
 
     .card{
       position:relative; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
@@ -66,7 +102,7 @@
     .sub{font-size:12px; opacity:.7}
     .mini{width:100%; height:36px; margin-top:8px; display:block}
 
-    /* lists in right column */
+    /* 오른쪽 리스트 */
     .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
     .list .row{display:grid; grid-template-columns:2.2em 4.4em 1fr; align-items:center; font-size:13.5px;}
     .list .rank{text-align:right; opacity:.7; font-weight:700;}
@@ -74,13 +110,11 @@
     .list .value{justify-self:end; font-weight:700; font-variant-numeric:tabular-nums;}
     .up{color:var(--up)} .down{color:var(--down)}
 
-    /* Controls */
+    /* 컨트롤/테이블 */
     .controls{display:flex; gap:10px; align-items:center; margin:22px 0 10px;}
     .controls .search{flex:1}
     input[type="text"], select, button{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
     button.sortdir{min-width:40px}
-
-    /* Table */
     table{width:100%; border-collapse:separate; border-spacing:0 10px;}
     thead th{font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:0 10px;}
     tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
@@ -94,14 +128,16 @@
     .text-right{text-align:right}
     .spark{width:100px; height:24px}
 
-    /* Responsive */
-    @media (max-width:1200px){ .right-2 > .card{min-height:300px} .left-5 .row-2 > .card{min-height:220px} }
+    /* 반응형 */
+    @media (max-width:1200px){
+      .left-5 .row-2{grid-auto-rows:minmax(220px,auto)}
+      .right-2{grid-auto-rows:minmax(300px,auto)}
+    }
     @media (max-width:1024px){
-      .cards{grid-template-columns: 1fr;}
-      .left-5{grid-column:1/2; grid-template-columns:repeat(2,1fr);}
-      .left-5 .row-2{grid-template-columns:1fr;}
-      .right-2{grid-column:1/2; grid-template-columns:1fr;}
-      .right-2 > .card{min-height:260px}
+      .cards{grid-template-columns:1fr}
+      .left-5{grid-template-columns:repeat(2,1fr)}
+      .left-5 .row-2{grid-template-columns:1fr}
+      .right-2{grid-column:1/2; grid-template-columns:1fr}
       .after-title{height:56px}
     }
     @media (max-width:720px){
@@ -115,7 +151,14 @@
   </style>
 </head>
 <body>
-<canvas id="starfield" class="starfield" aria-hidden="true"></canvas>
+
+<!-- ⭐ 우측 상단 슬라이드형 별 효과 -->
+<div class="starrail" aria-hidden="true">
+  <div class="rail" id="star-rail">
+    <div class="stars" id="star-dots"></div>
+    <div class="knob" id="star-knob" tabindex="0" aria-label="Cosmos star slider"></div>
+  </div>
+</div>
 
 <div class="wrap">
   <div class="brand">
@@ -148,13 +191,13 @@
           <h3>BTC Market Cap</h3>
           <div class="kpi" id="kpi-btc-mcap">-</div>
           <div class="sub">시총(USD)</div>
-          <div class="mini" id="mini-btc"></div>
+          <div class="mini" id="mini-btc"></div><!-- 7d mini -->
         </div>
         <div class="card">
           <h3>Global Market Cap</h3>
           <div class="kpi" id="kpi-global-mcap">-</div>
           <div class="sub">전체 암호화폐 시가총액(USD)</div>
-          <div class="mini" id="mini-global"></div>
+          <div class="mini" id="mini-global"></div><!-- 7d mini -->
         </div>
       </div>
     </div>
