@@ -30,9 +30,7 @@ function fmtPct(v) {
 async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   // 직접 CoinGecko 호출. 필요시 프록시로 바꿔도 됨: /api/coins/markets?...
   const url =
-    `https://api.coingecko.com/api/v3/coins/markets` +
-    `?vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}` +
-    `&sparkline=false&price_change_percentage=24h,7d`;
+    `/api/coins/markets?vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h,7d`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error("CoinGecko error: " + res.status);
