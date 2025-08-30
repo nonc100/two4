@@ -187,4 +187,37 @@ function initStars(){
       ctx.beginPath(); ctx.arc(st.x, st.y, st.r*(0.7+intensity*0.6), 0, Math.PI*2); ctx.fill();
     }
     ctx.globalCompositeOperation="source-over";
-    requestAnimationFrame(draw
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  range.addEventListener("input", ()=>{ intensity = clamp(range.value/100,0,1); });
+}
+
+/* --- Init --- */
+async function init(){
+  try{
+    const [markets, global] = await Promise.all([fetchMarkets(), fetchGlobal()]);
+    state.all=markets;
+    renderKPIs(markets, global);
+    await renderHeaderMinis(markets);
+    renderRightLists(markets);
+    applySortFilter();
+  }catch(e){
+    console.error(e);
+    safeSetHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("#search").addEventListener("input", ()=>{ state.page=1; applySortFilter(); });
+  $("#sortkey").addEventListener("change", e=>{ state.sortKey=e.target.value; applySortFilter(); });
+  $("#sortdir").addEventListener("click", e=>{ state.sortDir = state.sortDir===-1 ? 1 : -1; e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲"; applySortFilter(); });
+  $("#page").addEventListener("change", e=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
+
+  initStars();   // ⭐ 슬라이더는 별에만 영향
+  init();
+  setInterval(init, 30000);
+});
+
+window._cosmos={state,init};
