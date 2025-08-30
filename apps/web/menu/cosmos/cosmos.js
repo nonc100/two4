@@ -1,4 +1,4 @@
-/* ===== COSMOS JS — header minis bigger + right-2 row + star slider ===== */
+/* ===== COSMOS JS — 모바일 테이블 카드모드 포함, BTC/USDT 미니차트(시장 데이터 기반) ===== */
 
 /* --- Locale guards --- */
 (()=>{const o=Number.prototype.toLocaleString;Number.prototype.toLocaleString=function(l,a){if(a&&"object"==typeof a){let{minimumFractionDigits:n,maximumFractionDigits:t}=a;Number.isFinite(n)||(n=void 0),Number.isFinite(t)||(t=void 0),void 0!==n&&(n=Math.min(20,Math.max(0,n))),void 0!==t&&(t=Math.min(20,Math.max(0,t))),void 0!==n&&void 0!==t&&t<n&&(t=n),a={...a,...(void 0!==n?{minimumFractionDigits:n}:{}),...(void 0!==t?{maximumFractionDigits:t}:{})}}return o.call(this,l||"en-US",a)};const e=Intl.NumberFormat;Intl.NumberFormat=function(l,a){if(a&&"object"==typeof a){let{minimumFractionDigits:n,maximumFractionDigits:t}=a;Number.isFinite(n)||(n=void 0),Number.isFinite(t)||(t=void 0),void 0!==n&&(n=Math.min(20,Math.max(0,n))),void 0!==t&&(t=Math.min(20,Math.max(0,t))),void 0!==n&&void 0!==t&&t<n&&(t=n),a={...a,...(void 0!==n?{minimumFractionDigits:n}:{}),...(void 0!==t?{maximumFractionDigits:t}:{})}}return new e(l||"en-US",a)}})();
@@ -10,28 +10,25 @@ function fmtPrice(v){if(v==null||Number.isNaN(v))return"-";let d; if(v>=100)d=2;
 function fmtNum(v,max=2){if(v==null||Number.isNaN(v))return"-";return safeLocale(v,0,clamp(max,0,8))}
 function fmtPct(v){if(v==null||Number.isNaN(v))return"-";const n=Number(v),s=n>0?"+":"";return `<span class="${n>0?"up":n<0?"down":""}">${s}${n.toFixed(2)}%</span>`}
 
-/* sparkline with area fill (full-bleed, bigger) */
+/* sparkline with area fill (for header minis) */
 function sparklineSVGFilled(arr,w=400,h=88){
   if(!arr||arr.length<2) return "-";
   const min=Math.min(...arr), max=Math.max(...arr), span=(max-min)||1;
-  const mapY = v => h-((v-min)/span)*h;
-  const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${mapY(p)}`).join(" ");
-  const up = arr[arr.length-1] >= arr[0];
-  const color = up ? "#28e07a" : "#ff5b6e";
-  return `
-<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-  <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" points="${pts}"/>
-  <polygon points="0,${h} ${pts} ${w},${h}" fill="${color}" opacity="0.12"/>
-</svg>`;
+  const y=v=>h-((v-min)/span)*h;
+  const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${y(p)}`).join(" ");
+  const up=arr[arr.length-1]>=arr[0]; const color=up?"#28e07a":"#ff5b6e";
+  return `<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" points="${pts}"/>
+    <polygon points="0,${h} ${pts} ${w},${h}" fill="${color}" opacity="0.12"/>
+  </svg>`;
 }
 
-/* simple sparkline (table 7d) */
+/* table sparkline */
 function sparklineSVG(arr,w=100,h=24){
   if(!arr||arr.length<2) return "-";
   const min=Math.min(...arr), max=Math.max(...arr), span=(max-min)||1;
   const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${h-((p-min)/span)*h}`).join(" ");
-  const up = arr[arr.length-1] >= arr[0];
-  const color = up ? "#28e07a" : "#ff5b6e";
+  const up=arr[arr.length-1]>=arr[0]; const color=up?"#28e07a":"#ff5b6e";
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/></svg>`;
 }
 
@@ -39,27 +36,42 @@ const $=(s,sc=document)=>sc.querySelector(s); const $$=(s,sc=document)=>Array.fr
 const safeSetHTML=(sel,html)=>{const el=typeof sel==="string"?$(sel):sel; if(el) el.innerHTML=html}
 
 /* --- Fetchers (direct → proxy fallback) --- */
-async function fetchMarkets({vs="usd",perPage=200,page=1}={}){const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;const d=`https://api.coingecko.com/api/v3/coins/markets?${q}`;const p=`/api/coins/markets?${q}`;try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("markets failed");return await r2.json()}}
-async function fetchGlobal(){const d=`https://api.coingecko.com/api/v3/global`;const p=`/api/global`;try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("global failed");return await r2.json()}}
-async function fetchMarketChart(id,vs='usd',days=7,interval='daily'){const q=`vs_currency=${vs}&days=${days}&interval=${interval}`;const d=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`;const p=`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`;try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("chart failed");return await r2.json()}}
+async function fetchMarkets({vs="usd",perPage=200,page=1}={}){
+  const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
+  const d=`https://api.coingecko.com/api/v3/coins/markets?${q}`;
+  const p=`/api/coins/markets?${q}`;
+  try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("markets failed");return await r2.json()}
+}
+async function fetchGlobal(){
+  const d=`https://api.coingecko.com/api/v3/global`; const p=`/api/global`;
+  try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("global failed");return await r2.json()}
+}
 
 /* --- State --- */
 const state={all:[],filtered:[],page:1,perPage:50,sortKey:"market_cap",sortDir:-1};
 
-/* --- Table --- */
+/* --- Table row (모바일 카드모드를 위해 data-label 포함) --- */
 function buildRowHTML(c){
-  const id=c.id, price=fmtPrice(c.current_price), s7=c.sparkline_in_7d?.price || null, sym=(c.symbol||"").toUpperCase();
+  const id=c.id;
+  const price=fmtPrice(c.current_price);
+  const s7=c.sparkline_in_7d?.price || null;
+  const sym=(c.symbol||"").toUpperCase();
   const href=`./chart.html?id=${encodeURIComponent(id)}`;
+
   return `<tr class="row">
-    <td class="row-index">${c.market_cap_rank ?? "-"}</td>
-    <td class="coin-cell"><img class="coin-img" src="${c.image}" alt="${sym}"><a class="coin-name" href="${href}" title="전체 차트 보기">${sym}</a><span class="coin-sym">${c.name}</span></td>
-    <td class="text-right">$${price}</td>
-    <td class="text-right">${fmtPct(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
-    <td class="text-right">${fmtPct(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null)}</td>
-    <td class="text-right">${fmtPct(c.price_change_percentage_7d_in_currency ?? null)}</td>
-    <td class="text-right">$${fmtNum(c.market_cap,0)}</td>
-    <td class="text-right">$${fmtNum(c.total_volume,0)}</td>
-    <td class="text-right spark-col"><span class="spark">${s7 ? sparklineSVG(s7) : "-"}</span></td>
+    <td class="row-index" data-label="순위">${c.market_cap_rank ?? "-"}</td>
+    <td class="coin-cell" data-label="코인">
+      <img class="coin-img" src="${c.image}" alt="${sym}">
+      <a class="coin-name" href="${href}" title="전체 차트 보기">${sym}</a>
+      <span class="coin-sym">${c.name}</span>
+    </td>
+    <td class="text-right" data-label="시세">$${price}</td>
+    <td class="text-right" data-label="1시간">${fmtPct(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
+    <td class="text-right" data-label="24시간">${fmtPct(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null)}</td>
+    <td class="text-right" data-label="7일">${fmtPct(c.price_change_percentage_7d_in_currency ?? null)}</td>
+    <td class="text-right" data-label="시가총액">$${fmtNum(c.market_cap,0)}</td>
+    <td class="text-right" data-label="거래량">$${fmtNum(c.total_volume,0)}</td>
+    <td class="text-right spark-col" data-label="7일 차트"><span class="spark">${s7 ? sparklineSVG(s7) : "-"}</span></td>
   </tr>`;
 }
 function renderTableSlice(rows){
@@ -69,47 +81,45 @@ function renderTableSlice(rows){
   safeSetHTML(tb, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
 }
 
-/* --- Header minis (BTC / Global; bigger & full-bleed) --- */
+/* --- Header minis (BTC / USDT from markets only) --- */
 async function renderHeaderMinis(markets){
-  // BTC Market Cap (7d)
+  // BTC
   try{
-    const d=await fetchMarketChart('bitcoin','usd',7,'daily');
-    const caps=(d.market_caps||[]).map(p=>Array.isArray(p)?p[1]:p).filter(Boolean);
-    const el=$("#mini-btc"); if(el) el.innerHTML = sparklineSVGFilled(caps,400,88);
-  }catch(e){ /* noop */ }
-
-  // Global Market Cap (aggregate top 100 → fallback 50 → 30)
-  try{
-    let agg=null;
-    for(const n of [100,50,30]){
-      const top=markets.slice(0,n).filter(c=>Array.isArray(c.sparkline_in_7d?.price) && c.market_cap && c.current_price);
-      if(top.length){
-        const len=top[0].sparkline_in_7d.price.length;
-        const arr=new Array(len).fill(0);
-        top.forEach(c=>{
-          const supply=c.market_cap/c.current_price;
-          const s=c.sparkline_in_7d.price;
-          for(let i=0;i<len;i++) arr[i]+= s[i]*supply;
-        });
-        if(arr.some(v=>Number.isFinite(v))) { agg=arr; break; }
-      }
+    const btc = markets.find(x => x.id === "bitcoin");
+    if (btc && btc.market_cap && btc.current_price && Array.isArray(btc.sparkline_in_7d?.price)) {
+      const supply = btc.market_cap / btc.current_price;
+      const caps = btc.sparkline_in_7d.price.map(p => p * supply);
+      const el = $("#mini-btc"); if (el && caps.length>1) el.innerHTML = sparklineSVGFilled(caps,400,88);
     }
-    const el=$("#mini-global"); if(el && agg) el.innerHTML = sparklineSVGFilled(agg,400,88);
-  }catch(e){ /* noop */ }
+  }catch(e){}
+
+  // USDT
+  try{
+    const usdt = markets.find(x => x.id === "tether");
+    if (usdt && usdt.market_cap && usdt.current_price && Array.isArray(usdt.sparkline_in_7d?.price)) {
+      const supply = usdt.market_cap / usdt.current_price;
+      const caps = usdt.sparkline_in_7d.price.map(p => p * supply);
+      const el = $("#mini-usdt"); if (el && caps.length>1) el.innerHTML = sparklineSVGFilled(caps,400,88);
+    }
+  }catch(e){}
 }
 
-/* --- KPIs / Lists (gainers includes price) --- */
-function renderKPIs(markets,global){
-  const btc=markets.find(x=>x.id==="bitcoin");
-  const total=global?.data?.total_market_cap?.usd ?? null;
-  const btcCap=btc?.market_cap ?? null;
-  const dom=(btcCap&&total)?(btcCap/total*100):null;
+/* --- KPIs / Lists --- */
+function renderKPIs(markets, global){
+  const btc = markets.find(x=>x.id==="bitcoin");
+  const usdt = markets.find(x=>x.id==="tether");
+  const total = global?.data?.total_market_cap?.usd ?? markets.reduce((s,c)=>s+(c.market_cap||0),0) || null;
+  const btcCap = btc?.market_cap ?? null;
+  const usdtCap = usdt?.market_cap ?? null;
+  const dom = (btcCap && total) ? (btcCap/total*100) : null;
+
   safeSetHTML("#kpi-btc-mcap", btcCap ? "$"+fmtNum(btcCap,0) : "-");
-  safeSetHTML("#kpi-global-mcap", total ? "$"+fmtNum(total,0) : "-");
+  safeSetHTML("#kpi-usdt-mcap", usdtCap ? "$"+fmtNum(usdtCap,0) : "-");
   safeSetHTML("#kpi-dominance", dom!=null ? fmtNum(dom,2)+"%" : "-");
 }
+
 function renderRightLists(markets){
-  // gainers by 24h %
+  // gainers by 24h % + 가격
   const gainers=markets.slice().filter(x=>Number.isFinite(x.price_change_percentage_24h)).sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h).slice(0,7);
   safeSetHTML("#list-gainers", gainers.map((c,i)=>{
     const sym=(c.symbol||"").toUpperCase();
@@ -131,7 +141,7 @@ function renderRightLists(markets){
   }).join(""));
 }
 
-/* --- Filter/Sort --- */
+/* --- Filter/Sort/Paging --- */
 function applySortFilter(){
   const q=($("#search").value||"").trim().toLowerCase();
   state.filtered=state.all.filter(c=>!q || (c.symbol||"").toLowerCase().includes(q) || (c.name||"").toLowerCase().includes(q));
@@ -197,7 +207,7 @@ function initStars(){
 /* --- Init --- */
 async function init(){
   try{
-    const [markets, global] = await Promise.all([fetchMarkets(), fetchGlobal()]);
+    const [markets, global] = await Promise.all([fetchMarkets(), fetchGlobal().catch(()=>null)]);
     state.all=markets;
     renderKPIs(markets, global);
     await renderHeaderMinis(markets);
