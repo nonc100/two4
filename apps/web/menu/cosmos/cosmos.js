@@ -275,4 +275,86 @@ function applySortFilter(){
   var k=state.sortKey, dir=state.sortDir;
   function get(c){
     if(k==="market_cap") return c.market_cap!=null?c.market_cap:-1;
-    if(k==="price") return c.current_price!=null?c_
+    if(k==="price") return c.current_price!=null?c.current_price:-1;
+    if(k==="volume") return c.total_volume!=null?c.total_volume:-1;
+    if(k==="change1h") return (c.price_change_percentage_1h_in_currency!=null?c.price_change_percentage_1h_in_currency:c.price_change_percentage_1h) || -1;
+    if(k==="change24h") return (c.price_change_percentage_24h_in_currency!=null?c.price_change_percentage_24h_in_currency:c.price_change_percentage_24h) || -1;
+    if(k==="change7d") return c.price_change_percentage_7d_in_currency!=null?c.price_change_percentage_7d_in_currency:-1;
+    if(k==="rank") return c.market_cap_rank!=null?c.market_cap_rank:1e9;
+    return 0;
+  }
+  state.filtered.sort(function(a,b){
+    var va=get(a), vb=get(b);
+    return (va>vb?1:(va<vb?-1:0))*dir;
+  });
+  var sel=$("#page");
+  var totalPages=Math.max(1, Math.ceil(state.filtered.length/state.perPage));
+  sel.innerHTML = Array.from({length:totalPages}, function(_,i){
+    var s=i*state.perPage+1, e=Math.min(state.filtered.length,(i+1)*state.perPage);
+    return '<option value="'+(i+1)+'">'+s+'~'+e+'</option>';
+  }).join("");
+  if(state.page>totalPages) state.page=totalPages;
+  renderTableSlice(state.filtered);
+}
+
+/* --- Stars layer --- */
+function initStars(){
+  var cv=$("#starCanvas"), range=$("#starRange"); if(!cv||!range) return;
+  var ctx=cv.getContext("2d");
+  var W=0,H=0; var BASE=280; var intensity=range.value/100;
+  function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; }
+  resize(); addEventListener("resize", resize);
+  var stars=new Array(BASE).fill(0).map(function(){ return {
+    x: Math.random()*W, y: Math.random()*H*0.75, r: 0.6 + Math.random()*1.4,
+    p: Math.random()*Math.PI*2, s: 0.5 + Math.random()*1.5
+  };});
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    var active = Math.floor(BASE*(0.2 + 0.8*intensity));
+    var baseA  = 0.18 + intensity*0.6;
+    cv.style.filter = 'blur(' + ((1-intensity)*3) + 'px)';
+    cv.style.opacity = 0.35 + intensity*0.55;
+    ctx.globalCompositeOperation="lighter";
+    for(var i=0;i<active;i++){
+      var st=stars[i]; var tw = 0.5 + 0.5*Math.sin(t*0.001*st.s + st.p); var a = baseA * tw;
+      ctx.shadowBlur = 8 + 18*intensity; ctx.shadowColor = "#b9d8ff";
+      ctx.fillStyle = "rgba(200,220,255,"+a+")";
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r*(0.7+intensity*0.6), 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalCompositeOperation="source-over";
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+  range.addEventListener("input", function(){ intensity = clamp(range.value/100,0,1); });
+}
+
+/* --- Init --- */
+async function init(){
+  try{
+    var global=null, fng=null, ls=null;
+    try{ global = await fetchGlobal(); }catch(e){ global=null; }
+    try{ fng = await fetchFNG(); }catch(e){ fng=null; }
+    try{ ls  = await fetchLongShort(); }catch(e){ ls=null; }
+
+    var markets = await fetchMarkets();
+    state.all = markets;
+
+    renderKPIs(markets, global, fng, ls);
+    renderHeaderMinis(markets);
+    renderRightLists(markets);
+    applySortFilter();
+  }catch(e){
+    console.error(e);
+    safeSetHTML("#cosmos-tbody", '<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>');
+  }
+}
+document.addEventListener("DOMContentLoaded", function(){
+  $("#search").addEventListener("input", function(){ state.page=1; applySortFilter(); });
+  $("#sortkey").addEventListener("change", function(e){ state.sortKey=e.target.value; applySortFilter(); });
+  $("#sortdir").addEventListener("click", function(e){ state.sortDir = state.sortDir===-1 ? 1 : -1; e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲"; applySortFilter(); });
+  $("#page").addEventListener("change", function(e){ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
+  initStars();
+  init();
+  setInterval(init, 30000);
+});
+window._cosmos = { state:state, init:init };
