@@ -6,47 +6,24 @@
   <title>TWO4 COSMOS</title>
   <style>
     :root{
-      --bg:#0d121a;
-      --panel:#121826;
-      --text:#e8eefc;
-      --muted:#a8b0c2;
-      --up:#28e07a;
-      --down:#ff5b6e;
-      --top-space:24px;            /* 로고를 더 위로 */
-      --after-title-gap:56px;      /* 로고 아래 광고 박스 공간 확보 */
-      --glass-alpha:.34;
-      --glass-blur:22px;
-      --gb1: rgba(255,255,255,.34);
-      --gb2: rgba(255,255,255,.18);
-      --gb3: rgba(255,255,255,.08);
+      --bg:#0d121a; --panel:#121826; --text:#e8eefc; --muted:#a8b0c2;
+      --up:#28e07a; --down:#ff5b6e; --warn:#e6d34a;
+      --top-space:40px; --after-title-gap:32px;
+      --glass-alpha:.34; --glass-blur:22px;
+      --gb1: rgba(255,255,255,.34); --gb2: rgba(255,255,255,.18); --gb3: rgba(255,255,255,.08);
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial;}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji";}
     a{color:inherit;text-decoration:none}
     .wrap{max-width:1250px; margin:0 auto; padding:0 18px 80px;}
-
-    /* brand */
+    /* Title */
     .brand{display:flex; align-items:center; gap:14px; margin-top:var(--top-space);}
     .brand img{width:168px; height:auto; object-fit:contain;}
     .brand h1{margin:0; font-size:42px; letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.25);}
     .after-title{height:var(--after-title-gap);}
 
-    /* stars controller (고정) */
-    .star-ctl{
-      position:fixed; right:18px; top:14px; z-index:50;
-      display:flex; align-items:center; gap:8px; padding:8px 10px;
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
-      border-radius:999px; backdrop-filter: blur(10px);
-      transform: scale(.9); opacity:.9;
-    }
-    .star-ctl .back{width:32px;height:32px;border-radius:999px;border:1px solid rgba(255,255,255,.12);display:grid;place-items:center}
-    .star-ctl input[type="range"]{width:140px}
-
-    /* star canvas */
-    #starCanvas{position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55; filter:blur(1.5px);}
-
-    /* Cards */
-    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:18px; position:relative; z-index:1;}
+    /* Glass card */
+    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:18px;}
     .left-5{grid-column:1/4; display:grid; gap:18px; grid-template-columns:repeat(3,1fr);}
     .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:18px;}
     .right-2{grid-column:4/5; display:grid; gap:18px;}
@@ -54,74 +31,85 @@
       position:relative; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border-radius:16px; padding:14px 16px; color:var(--text); overflow:hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(var(--glass-blur));
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+    .card::before{
+      content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none; padding:1px;
+      background:linear-gradient(140deg, var(--gb1), var(--gb2) 40%, var(--gb3));
+      -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude; opacity:.75;
     }
     .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
     .kpi{font-size:22px; font-weight:800;}
-    .sub{font-size:12px; opacity:.7}
-    .mini{height:90px; margin-top:8px; border-radius:10px; background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06); overflow:hidden}
+    .sub{font-size:12px; opacity:.8}
 
-    /* right lists */
-    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-    .list .row{display:grid; grid-template-columns:2.2em 4.8em 1fr auto; align-items:center; font-size:13.5px; gap:6px;}
-    .list .rank{text-align:right; opacity:.7; font-weight:700;}
-    .list .sym{font-weight:700; letter-spacing:.02em;}
-    .list .price{opacity:.9}
-    .list .value{justify-self:end; font-weight:700; font-variant-numeric:tabular-nums;}
-    .up{color:var(--up)} .down{color:var(--down)}
+    /* gauges */
+    .gauge-2{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; display:flex; gap:0}
+    .gauge-2 .bar{height:100%}
+    .gauge-2 .long{background:var(--up)}
+    .gauge-2 .short{background:var(--down)}
+    .gauge-1{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; position:relative}
+    .gauge-1 .fill{height:100%; background:var(--up); width:0%}
+    /* fear/greed coloring */
+    #card-fng.low .kpi{color:var(--down)}
+    #card-fng.low .gauge-1 .fill{background:var(--down)}
+    #card-fng.mid .kpi{color:var(--warn)}
+    #card-fng.mid .gauge-1 .fill{background:var(--warn)}
+    #card-fng.high .kpi{color:var(--up)}
+    #card-fng.high .gauge-1 .fill{background:var(--up)}
 
-    /* controls */
+    /* Controls */
     .controls{display:flex; gap:10px; align-items:center; margin:22px 0 10px;}
     .controls .search{flex:1}
     input[type="text"], select, button{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
     button.sortdir{min-width:40px}
 
-    /* table (desktop) */
-    .table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px;}
-    .cosmos-table{width:100%; border-collapse:separate; border-spacing:0 10px; min-width:1100px;}
-    thead th{position:sticky; top:0; background:rgba(13,18,26,.92); backdrop-filter: blur(6px); z-index:5;
-      font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px;}
-    tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
+    /* Table */
+    .table-wrap{overflow-x:auto}
+    table{min-width:900px; width:100%; border-collapse:separate; border-spacing:0 10px;}
+    thead th{font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:0 10px;}
+    tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:10px 8px; vertical-align:middle}
     tbody tr td:first-child{border-radius:12px 0 0 12px}
     tbody tr td:last-child{border-radius:0 12px 12px 0}
-    .row-index{width:56px; text-align:right; opacity:.7; font-weight:700; position:sticky; left:0; z-index:3; background:rgba(18,24,38,.9); backdrop-filter: blur(4px);}
-    .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px}
-    .coin-sticky{position:sticky; left:56px; z-index:3; background:rgba(18,24,38,.9); backdrop-filter: blur(4px);}
-    .coin-img{width:22px; height:22px; min-width:22px; min-height:22px; border-radius:50%; object-fit:contain}
-    .coin-name{font-weight:700}
-    .coin-sym{opacity:.7; margin-left:4px}
+    .row-index{width:42px; text-align:right; opacity:.7; font-weight:700}
+    .coin-cell{display:flex; align-items:center; gap:8px; min-width:88px}
+    .coin-img{width:18px; height:18px; min-width:18px; border-radius:50%; object-fit:contain; opacity:.9}
+    /* 티커만 보이게 */
+    .coin-name{font-weight:800; letter-spacing:.02em}
+    .coin-sym{display:none}
+
     .text-right{text-align:right}
     .spark{width:100px; height:24px}
-    .spark-col{width:120px}
+    .spark-col{min-width:110px}
 
-    /* mobile */
-    @media (max-width: 900px){
+    /* Star field (existing) */
+    .stars{position:fixed; right:16px; top:18px; z-index:20; display:flex; align-items:center; gap:8px; opacity:.9}
+    .stars .bar{width:160px; height:8px; background:rgba(255,255,255,.08); border-radius:999px; position:relative}
+    .stars .dot{position:absolute; inset:0 0 0 0; display:block}
+    .stars .ctrl{display:flex; gap:6px; align-items:center}
+    .stars .btn{width:28px; height:28px; display:grid; place-items:center; border-radius:999px; background:rgba(255,255,255,.08); user-select:none}
+
+    /* Responsive – mobile 2/2/2/1 for 7 cards, ticker-only compact table */
+    @media (max-width:820px){
+      .brand{margin-top:18px}
+      .brand img{width:140px}
+      .after-title{height:18px}
+      .cards{grid-template-columns:1fr 1fr}
+      .left-5{grid-column:1/-1; grid-template-columns:1fr 1fr}
+      .left-5 .row-2{grid-template-columns:1fr 1fr}
+      .right-2{grid-column:1/-1; grid-template-columns:1fr 1fr}
+      /* 마지막 카드 한 줄 꽉 차게(2/2/2/1) */
+      #card-volume{grid-column:1 / -1}
+      /* 표 간소화 */
+      .coin-img{width:16px;height:16px}
+      .row-index{width:36px}
+      tbody td{padding:8px 6px}
       .spark-col{display:none}
-      .wrap{padding:0 12px 64px;}
-      .brand h1{font-size:36px}
-      .after-title{height:42px}
-      .cards{gap:12px}
-      .left-5{gap:12px}
-      .left-5 .row-2{gap:12px}
-      .right-2{gap:12px}
-      .list .row{grid-template-columns:2.2em 4.4em 1fr auto}
-      .cosmos-table{min-width:960px} /* 가로 슬라이드 */
-      thead th{font-size:11px}
     }
-
-    footer{margin:36px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
+    footer{margin:24px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
   </style>
 </head>
 <body>
-<canvas id="starCanvas"></canvas>
-
-<!-- 별 컨트롤러/뒤로가기 -->
-<div class="star-ctl">
-  <a class="back" href="javascript:history.back()" title="뒤로가기">⟵</a>
-  <input id="starRange" type="range" min="0" max="100" step="1" value="55" title="별 밝기" />
-</div>
-
 <div class="wrap">
   <div class="brand">
     <img src="/media/logo.png" alt="TWO4">
@@ -132,44 +120,54 @@
   <!-- KPI area -->
   <div class="cards">
     <div class="left-5">
-      <div class="card">
+      <!-- 롱/숏 -->
+      <div class="card" id="card-longshort">
         <h3>BTC 롱/숏 비율 (1h)</h3>
         <div class="kpi" id="kpi-longshort">-</div>
+        <div class="gauge-2" id="ls-gauge" aria-label="Long/Short gauge">
+          <div class="bar long" style="width:0%"></div>
+          <div class="bar short" style="width:100%"></div>
+        </div>
         <div class="sub" id="kpi-longshort-sub">Binance 공개지표</div>
       </div>
-      <div class="card">
+      <!-- 공포/탐욕 -->
+      <div class="card" id="card-fng">
         <h3>공포/탐욕 지수</h3>
-        <div class="kpi" id="kpi-fng">연동 중…</div>
+        <div class="kpi" id="kpi-fng">연동 예정</div>
+        <div class="gauge-1"><div class="fill" id="fng-fill" style="width:0%"></div></div>
         <div class="sub" id="kpi-fng-sub">Alternative.me</div>
       </div>
-      <div class="card">
+      <!-- 도미넌스 -->
+      <div class="card" id="card-dom">
         <h3>도미넌스</h3>
         <div class="kpi" id="kpi-dominance">-</div>
         <div class="sub">BTC Dominance</div>
       </div>
 
       <div class="row-2">
-        <div class="card">
+        <!-- BTC mcap -->
+        <div class="card" id="card-btc">
           <h3>BTC Market Cap</h3>
           <div class="kpi" id="kpi-btc-mcap">-</div>
-          <div class="mini" id="mini-btc"></div>
           <div class="sub">시총(USD)</div>
+          <div style="height:92px;margin-top:8px" id="mini-btc"></div>
         </div>
-        <div class="card">
+        <!-- USDT mcap -->
+        <div class="card" id="card-usdt">
           <h3>USDT Market Cap</h3>
           <div class="kpi" id="kpi-usdt-mcap">-</div>
-          <div class="mini" id="mini-usdt"></div>
           <div class="sub">테더(USDT) 시가총액(USD)</div>
+          <div style="height:92px;margin-top:8px" id="mini-usdt"></div>
         </div>
       </div>
     </div>
 
     <div class="right-2">
-      <div class="card">
+      <div class="card" id="card-gainers">
         <h3>등락률 상위 TOP 10 (24H)</h3>
         <div class="list" id="list-gainers"></div>
       </div>
-      <div class="card">
+      <div class="card" id="card-volume">
         <h3>코인 거래량 순위 TOP 10</h3>
         <div class="list" id="list-volume"></div>
       </div>
@@ -181,12 +179,9 @@
     <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
     <label>정렬:
       <select id="sortkey">
-        <option value="market_cap">시가총액</option>
-        <option value="price">가격</option>
-        <option value="volume">거래량</option>
-        <option value="change1h">1시간</option>
-        <option value="change24h">24시간</option>
-        <option value="change7d">7일</option>
+        <option value="market_cap">시가총액</option><option value="price">가격</option>
+        <option value="volume">거래량</option><option value="change1h">1시간</option>
+        <option value="change24h">24시간</option><option value="change7d">7일</option>
         <option value="rank">순위</option>
       </select>
     </label>
@@ -196,9 +191,9 @@
     </label>
   </div>
 
-  <!-- Table (모바일: 세로축 고정, 가로 슬라이드) -->
+  <!-- Table -->
   <div class="table-wrap">
-    <table class="cosmos-table">
+    <table>
       <thead>
         <tr>
           <th class="text-right">순위</th>
@@ -217,9 +212,9 @@
   </div>
 
   <footer>
-    🚀 Cosmos 암호화폐 대시보드 – CoinGecko API | Fear&Greed, Binance 롱/숏 | 30초 자동 업데이트
+    🚀 Cosmos 암호화폐 대시보드 – CoinGecko / Alternative.me / Binance | 30초 자동 업데이트
   </footer>
 </div>
-<script src="./cosmos.js?v=mobile-excel-top10-fng-ls-1"></script>
+<script src="./cosmos.js?v=ticker-gauges-mobile221"></script>
 </body>
 </html>
