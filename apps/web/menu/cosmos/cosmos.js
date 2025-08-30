@@ -131,6 +131,21 @@ async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   const proxy  = `/api/coins/markets?${q}`;
 
   try {
+    const r = await fetch(direct);
+    if (!r.ok) throw new Error(String(r.status));
+    const d = await r.json();
+    d.sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0));
+    return d;
+  } catch {
+    const r2 = await fetch(proxy);
+    if (!r2.ok) throw new Error("Proxy " + r2.status);
+    const d2 = await r2.json();
+    d2.sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0));
+    return d2;
+  }
+}
+
+// ---- RENDER ----
 function renderTable(rows) {
   const tbody = ensureTbody();
   if (!tbody) return;
