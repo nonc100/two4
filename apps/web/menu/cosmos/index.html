@@ -59,6 +59,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🌌 Cosmos - 암호화폐 시세 대시보드</title>
+      <link rel="icon" href="./favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
@@ -424,6 +425,28 @@
             }
         }
     </style>
+      <style>
+.table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.cosmos-table{ min-width: 920px; width:100%; border-collapse: collapse; }
+.cosmos-table th, .cosmos-table td{ padding:10px 12px; white-space:nowrap; }
+.cosmos-table th.text-right, .cosmos-table td.text-right{ text-align:right; }
+.cosmos-table .coin-cell{ display:flex; align-items:center; gap:8px; }
+.cosmos-table .coin-name{ max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+@media (max-width: 480px){ .cosmos-table .coin-name{ max-width:100px; } }
+
+/* 화면 폭에 따라 덜 중요한 칼럼 숨김 */
+@media (max-width: 1100px){ .cosmos-table th:nth-child(9), .cosmos-table td:nth-child(9){ display:none; } }
+@media (max-width: 980px){  .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4){ display:none; } }
+@media (max-width: 840px){  .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6){ display:none; } }
+@media (max-width: 720px){  .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8){ display:none; } }
+@media (max-width: 620px){  .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7){ display:none; } .cosmos-table{ min-width:0; } }
+.cosmos-table td:last-child svg{ display:block; margin:0 auto; }
+.cosmos-table th:last-child, .cosmos-table td:last-child{ width:90px; }
+
+/* 링크/버튼 자잘한 UX */
+.coin-link:hover .coin-name{ text-decoration:underline; }
+@media (max-width: 520px){ .coin-link .sep{ display:none; } }
+</style>
 </head>
 <body>
     <div class="header">
@@ -523,8 +546,8 @@
           </button>
         </div>
 
-        <div class="table-container">
-        <table class="w-full">
+        <div class="table-wrap">
+        <table class="cosmos-table">
               <thead>
                 <tr>
                   <th>순위</th>
