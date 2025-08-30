@@ -16,8 +16,8 @@
 
       /* 상단/폭/여백 */
       --top-space: 110px;         /* 타이틀 위 여백 */
-      --container-max: 1440px;    /* 컨텐츠 최대폭(좌우 여백 줄이려면 ↑) */
-      --side-pad: 10px;           /* 화면 좌우 패딩 */
+      --container-max: 1440px;    /* 중앙 고정 폭 */
+      --side-pad: 10px;           /* 좌우 패딩 */
 
       /* 로고/배경 */
       --logo-h: clamp(24px, 3.0vw, 44px);
@@ -60,33 +60,33 @@
       background:linear-gradient(90deg, rgba(31,92,255,.20), rgba(120,80,255,.14), rgba(31,92,255,.20));
       filter:blur(22px); opacity:.35; }
 
-    /* ===== 대시보드: “왼쪽 5 / 오른쪽 2(세로 길게)” — 오른쪽 스샷 레이아웃 =====
-       3열 그리드: [왼쪽 2열] + [오른쪽 1열]
-       행배치
-       1행: a  b  r1   (왼쪽 작은 2, 오른쪽 긴 상단)
-       2행: c  c  r1   (왼쪽 가로 넓은 1, 오른쪽 긴 상단 계속)
-       3행: d  e  r2   (왼쪽 작은 2, 오른쪽 긴 하단)
+    /* ===== 대시보드: 좌5 / 우2 (우측: Top7 ▶ Volume) =====
+       3열 그리드: [좌 2열] + [우 1열]
+       행 배치(정중앙 컨테이너에 고정)
+       1행: l1 l2 r1
+       2행: l3 l4 r1   ← r1은 2행 높이(등락률 Top7)
+       3행: l5 l5 r2   ← l5는 가로로 넓게, r2는 하단(거래량 순위)
     */
     .dash-areas{
       display:grid;
-      grid-template-columns: 1.6fr 1.6fr 1fr;
+      grid-template-columns: 1.6fr 1.6fr 1fr;  /* 좌/좌/우 */
       grid-template-areas:
-        "a  b  r1"
-        "c  c  r1"
-        "d  e  r2";
+        "l1  l2  r1"
+        "l3  l4  r1"
+        "l5  l5  r2";
       gap:16px;
       margin-top: 36px;
     }
     @media (max-width:1100px){
-      /* 태블릿 이하: 2열로 단순화 */
+      /* 태블릿 이하: 2열 */
       .dash-areas{
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
-          "a  b"
-          "c  c"
-          "d  e"
-          "r1 r1"
-          "r2 r2";
+          "l1  l2"
+          "l3  l4"
+          "l5  l5"
+          "r1  r1"
+          "r2  r2";
       }
     }
     @media (max-width:640px){
@@ -94,7 +94,7 @@
       .dash-areas{
         grid-template-columns: 1fr;
         grid-template-areas:
-          "a" "b" "c" "d" "e" "r1" "r2";
+          "l1" "l2" "l3" "l4" "l5" "r1" "r2";
       }
     }
 
@@ -127,14 +127,14 @@
     .list .row{ display:flex; justify-content:space-between; gap:8px; font-size:14px; }
     .up{ color:#28e07a } .down{ color:#ff5b6e }
 
-    /* 각 카드 위치 지정(그리드 영역) */
-    #card-oi        { grid-area: a; }
-    #card-fng       { grid-area: b; }
-    #card-gainers   { grid-area: c; }
-    #card-volume    { grid-area: d; }
-    #card-dominance { grid-area: e; }
-    #card-btc-mcap  { grid-area: r1; } /* 오른쪽 상단(세로로 2행) */
-    #card-total-mcap{ grid-area: r2; } /* 오른쪽 하단 */
+    /* 각 카드 위치(왼쪽 5 / 우측 2 고정) */
+    #card-oi        { grid-area: l1; }  /* 좌1 */
+    #card-fng       { grid-area: l2; }  /* 좌2 */
+    #card-dominance { grid-area: l3; }  /* 좌3 */
+    #card-btc-mcap  { grid-area: l4; }  /* 좌4 */
+    #card-total-mcap{ grid-area: l5; }  /* 좌5 (가로 넓게) */
+    #card-gainers   { grid-area: r1; }  /* 우측 상단(2행 높이) : 등락률 Top7 */
+    #card-volume    { grid-area: r2; }  /* 우측 하단 : 거래량 순위 */
 
     /* ===== 툴바 ===== */
     .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0 6px; }
@@ -192,7 +192,7 @@
       <div class="header-bg"></div>
     </header>
 
-    <!-- 상단 대시보드: 오른쪽 스샷 레이아웃(왼쪽 5 / 오른쪽 2) -->
+    <!-- 상단 대시보드: 좌5 / 우2 (우측: Top7 ▶ Volume) -->
     <section class="dash-areas">
       <div id="card-oi" class="card">
         <h3>BTC 미결제약정(OI) · 24H</h3>
@@ -204,16 +204,6 @@
         <h3>공포/탐욕 지수</h3>
         <div id="k-fng" class="kpi">연동 예정</div>
         <div class="sub">Alternative.me API</div>
-      </div>
-
-      <div id="card-gainers" class="card">
-        <h3>등락률 상위 7위 [24h]</h3>
-        <div id="k-gainers" class="list"></div>
-      </div>
-
-      <div id="card-volume" class="card">
-        <h3>코인 거래량 순위</h3>
-        <div id="k-volume" class="list"></div>
       </div>
 
       <div id="card-dominance" class="card">
@@ -232,6 +222,17 @@
         <h3>Global Market Cap</h3>
         <div id="k-total-mcap" class="kpi">-</div>
         <div class="sub">전체 암호화폐 시가총액(USD)</div>
+      </div>
+
+      <!-- 우측 고정: 위(등락률 Top7), 아래(거래량 순위) -->
+      <div id="card-gainers" class="card">
+        <h3>등락률 상위 7위 [24h]</h3>
+        <div id="k-gainers" class="list"></div>
+      </div>
+
+      <div id="card-volume" class="card">
+        <h3>코인 거래량 순위</h3>
+        <div id="k-volume" class="list"></div>
       </div>
     </section>
 
