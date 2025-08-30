@@ -222,19 +222,11 @@ function renderTable(rows) {
             max-width:${ICON}px !important;max-height:${ICON}px !important;
             border-radius:50%;object-fit:contain;display:inline-block;"
         />
-
-        <!-- 티커 먼저 · 이름 뒤 · 클릭 시 차트 페이지 -->
-        <a class="coin-link" href="./chart.html?id=${c.id}"
-           style="display:flex;align-items:center;gap:6px;color:#cfe3ff;text-decoration:none">
+        <!-- 텍스트(티커 · 이름)만 클릭 가능 -->
+        <a class="coin-link" href="./chart.html?id=${c.id}">
           <span class="coin-sym" style="font-weight:700;">${(c.symbol || "").toUpperCase()}</span>
           <span class="sep" style="opacity:.6;">·</span>
-          <span class="coin-name" style="text-decoration:underline;text-underline-offset:3px;">${c.name}</span>
-        </a>
-
-        <a class="btn-chart" href="./chart.html?id=${c.id}"
-           style="margin-left:6px;padding:4px 8px;border:1px solid rgba(255,255,255,.14);
-                  border-radius:8px;background:#1f5cff;color:#fff;font-size:12px;">
-          차트
+                    <span class="coin-name">${c.name}</span>
         </a>
       </td>
 
