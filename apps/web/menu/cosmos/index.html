@@ -1,118 +1,194 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TWO4 • Cosmos Dashboard</title>
-  <link rel="icon" href="../../media/logo.png" />
-  <!-- 로컬 CSS (인라인 대신) -->
-  <link rel="stylesheet" href="./cosmos.css" />
-  <!-- 로컬 Chart.js (CDN 대신). 없으면 상세차트만 비활성 -->
-  <script src="./chart.umd.min.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>TWO4 COSMOS</title>
+  <style>
+    :root{
+      --bg:#0d121a; --panel:#121826; --text:#e8eefc; --muted:#a8b0c2;
+      --up:#28e07a; --down:#ff5b6e;
+      --top-space:56px; --after-title-gap:92px;
+      --glass-alpha:.34; --glass-blur:22px;
+      --gb1: rgba(255,255,255,.34); --gb2: rgba(255,255,255,.18); --gb3: rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji";}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1250px; margin:0 auto; padding:0 18px 80px;}
+
+    /* Title */
+    .brand{display:flex; align-items:center; gap:14px; margin-top:var(--top-space);}
+    .brand img{width:168px; height:auto; object-fit:contain;}
+    .brand h1{
+      margin:0; font-size:42px; letter-spacing:.12em; font-weight:800;
+      background:linear-gradient(90deg,#8b5cf6,#22d3ee,#8b5cf6);
+      background-size:200% 100%;
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow:0 4px 24px rgba(114,157,255,.12);
+      animation:sheen 8s linear infinite;
+    }
+    @keyframes sheen{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+    .after-title{height:var(--after-title-gap);}
+
+    /* Glass card */
+    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows:auto; gap:18px;}
+    .left-5{grid-column:1/4; display:grid; gap:18px; grid-template-columns:repeat(3,1fr);}
+    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+    .right-2{grid-column:4/5; display:grid; gap:18px;}
+    .card{
+      position:relative; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border-radius:16px; padding:14px 16px; color:var(--text); overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+    .card::before{
+      content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
+      padding:1px; background: linear-gradient(140deg, var(--gb1), var(--gb2) 40%, var(--gb3));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; opacity:.75;
+    }
+    .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
+    .kpi{font-size:22px; font-weight:700;}
+    .sub{font-size:12px; opacity:.7}
+    .mini{width:100%; height:36px; margin-top:8px; display:block}
+
+    /* lists in right column */
+    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
+    .list .row{display:grid; grid-template-columns:2.2em 4.4em 1fr; align-items:center; font-size:13.5px;}
+    .list .rank{text-align:right; opacity:.7; font-weight:700;}
+    .list .sym{font-weight:700; letter-spacing:.02em;}
+    .list .value{justify-self:end; font-weight:700; font-variant-numeric:tabular-nums;}
+    .up{color:var(--up)} .down{color:var(--down)}
+
+    /* Controls */
+    .controls{display:flex; gap:10px; align-items:center; margin:22px 0 10px;}
+    .controls .search{flex:1}
+    input[type="text"], select, button{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
+    button.sortdir{min-width:40px}
+
+    /* Table */
+    table{width:100%; border-collapse:separate; border-spacing:0 10px;}
+    thead th{font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:0 10px;}
+    tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
+    tbody tr td:first-child{border-radius:12px 0 0 12px}
+    tbody tr td:last-child{border-radius:0 12px 12px 0}
+    .row-index{width:46px; text-align:right; opacity:.7; font-weight:700}
+    .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px}
+    .coin-img{width:22px; height:22px; min-width:22px; min-height:22px; border-radius:50%; object-fit:contain}
+    .coin-name{font-weight:700}
+    .coin-sym{opacity:.7; margin-left:4px}
+
+    .text-right{text-align:right}
+    .spark{width:100px; height:24px}
+
+    /* responsive – keep 7d chart except on very narrow; small screens enable horizontal scroll */
+    @media (max-width:900px){ .spark-col{display:none} }
+    @media (max-width:720px){
+      .wrap{overflow-x:auto}
+      .cosmos-table{min-width: 900px}
+    }
+
+    footer{margin:36px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <a class="logo" href="#">
-      <img src="../../media/logo.png" alt="TWO4" />
-      <span class="brand">COSMOS</span>
-    </a>
-  </header>
+<div class="wrap">
+  <div class="brand">
+    <img src="/media/logo.png" alt="TWO4">
+    <h1>COSMOS</h1>
+  </div>
+  <div class="after-title"></div>
 
-  <main class="container">
-    <section class="info-grid" aria-label="시장 요약">
-      <article class="card" id="card-oi">
-        <h4>BTC 미결제약정 (OI)</h4>
-        <div class="stat" data-field="oi-value">—</div>
-        <div class="sub">연동 예정 • 파생 API 합산</div>
-      </article>
-      <article class="card" id="card-fgi">
-        <h4>공포/탐욕 지수</h4>
-        <div class="stat" data-field="fgi-value">—</div>
-        <div class="sub">연동 예정 • alternative.me</div>
-      </article>
-      <article class="card" id="card-dominance">
-        <h4>BTC Dominance</h4>
-        <div class="stat" data-field="dom-value">—</div>
-        <div class="sub" data-field="dom-sub">—</div>
-      </article>
-      <article class="card" id="card-btc-mcap">
-        <h4>BTC Market Cap</h4>
-        <div class="stat" data-field="btc-mcap">—</div>
-        <div class="sub">시총(USD)</div>
-        <canvas class="mini" id="mini-btc-mcap"></canvas>
-      </article>
-      <article class="card" id="card-global-mcap">
-        <h4>Global Market Cap</h4>
-        <div class="stat" data-field="global-mcap">—</div>
-        <div class="sub" data-field="global-sub">전체 암호화폐 시가총액(USD)</div>
-        <canvas class="mini" id="mini-global-mcap"></canvas>
-      </article>
-      <article class="card span-3" id="card-top7">
-        <h4>등락률 TOP 7 (24h)</h4>
-        <ul class="list" id="list-top7"></ul>
-      </article>
-      <article class="card span-3" id="card-volume-rank">
-        <h4>코인 거래량 순위 (24h)</h4>
-        <ul class="list" id="list-volume"></ul>
-      </article>
-    </section>
+  <!-- KPI area -->
+  <div class="cards">
+    <div class="left-5">
+      <div class="card">
+        <h3>BTC 미결제약정(미) · 24H</h3>
+        <div class="kpi">연동 예정</div>
+        <div class="sub">※ 외부 파트너 API 연결 후 표시</div>
+      </div>
+      <div class="card">
+        <h3>공포/탐욕 지수</h3>
+        <div class="kpi">연동 예정</div>
+        <div class="sub">Alternative.me API</div>
+      </div>
+      <div class="card">
+        <h3>도미넌스</h3>
+        <div class="kpi" id="kpi-dominance">-</div>
+        <div class="sub">BTC Dominance</div>
+      </div>
 
-    <section class="controls">
-      <div class="search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-          xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
-          stroke="currentColor" stroke-width="1.5"/></svg>
-        <input id="searchInput" placeholder="코인 이름/심볼 검색… (예: btc, eth)" />
+      <div class="row-2">
+        <div class="card">
+          <h3>BTC Market Cap</h3>
+          <div class="kpi" id="kpi-btc-mcap">-</div>
+          <div class="sub">시총(USD)</div>
+          <div class="mini" id="mini-btc"></div><!-- 7d mini -->
+        </div>
+        <div class="card">
+          <h3>Global Market Cap</h3>
+          <div class="kpi" id="kpi-global-mcap">-</div>
+          <div class="sub">전체 암호화폐 시가총액(USD)</div>
+          <div class="mini" id="mini-global"></div><!-- 7d mini -->
+        </div>
       </div>
-      <div class="page-meta"><span id="pageMeta">—</span></div>
-    </section>
+    </div>
 
-    <section class="table-wrap">
-      <table id="coinsTable">
-        <thead>
-          <tr>
-            <th data-key="market_cap_rank" class="rank th-sort"># <span class="arrows"></span></th>
-            <th data-key="name" class="th-sort">코인 <span class="arrows"></span></th>
-            <th data-key="current_price" class="th-sort">가격 <span class="arrows"></span></th>
-            <th data-key="price_change_percentage_1h_in_currency" class="th-sort hide-xs">1h <span class="arrows"></span></th>
-            <th data-key="price_change_percentage_24h_in_currency" class="th-sort">24h <span class="arrows"></span></th>
-            <th data-key="price_change_percentage_7d_in_currency" class="th-sort">7d <span class="arrows"></span></th>
-            <th data-key="market_cap" class="th-sort">시총 <span class="arrows"></span></th>
-            <th data-key="total_volume" class="th-sort">거래량(24h) <span class="arrows"></span></th>
-            <th class="hide-sm">7d 스파크라인</th>
-          </tr>
-        </thead>
-        <tbody id="coinsTbody"></tbody>
-      </table>
-      <div class="pagination">
-        <button class="btn" id="prevBtn">이전</button>
-        <span id="pageLabel" class="page-meta">—</span>
-        <button class="btn" id="nextBtn">다음</button>
+    <div class="right-2">
+      <div class="card">
+        <h3>등락률 상위 TOP 7 (24H)</h3>
+        <div class="list" id="list-gainers"></div>
       </div>
-    </section>
-  </main>
-
-  <!-- 상세 차트 모달 -->
-  <div class="modal" id="detailModal" aria-hidden="true" aria-label="상세 차트">
-    <div class="modal-card">
-      <div class="modal-head">
-        <div class="modal-title" id="modalTitle">—</div>
-        <div class="x" id="modalClose">✕</div>
-      </div>
-      <div class="range" id="rangeBtns">
-        <button class="chip" data-days="1">24H</button>
-        <button class="chip" data-days="7">7D</button>
-        <button class="chip active" data-days="30">30D</button>
-        <button class="chip" data-days="90">90D</button>
-        <button class="chip" data-days="180">180D</button>
-        <button class="chip" data-days="365">1Y</button>
-      </div>
-      <div class="modal-body">
-        <canvas id="detailChart" height="360"></canvas>
+      <div class="card">
+        <h3>코인 거래량 순위</h3>
+        <div class="list" id="list-volume"></div>
       </div>
     </div>
   </div>
 
-  <script src="./cosmos.js"></script>
+  <!-- Controls -->
+  <div class="controls">
+    <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
+    <label>정렬:
+      <select id="sortkey">
+        <option value="market_cap">시가총액</option>
+        <option value="price">가격</option>
+        <option value="volume">거래량</option>
+        <option value="change1h">1시간</option>
+        <option value="change24h">24시간</option>
+        <option value="change7d">7일</option>
+        <option value="rank">순위</option>
+      </select>
+    </label>
+    <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
+    <label>페이지:
+      <select id="page"></select>
+    </label>
+  </div>
+
+  <!-- Table -->
+  <table class="cosmos-table">
+    <thead>
+      <tr>
+        <th class="text-right">순위</th>
+        <th>코인</th>
+        <th class="text-right">시세</th>
+        <th class="text-right">1시간</th>
+        <th class="text-right">24시간</th>
+        <th class="text-right">7일</th>
+        <th class="text-right">시가총액</th>
+        <th class="text-right">거래량</th>
+        <th class="text-right spark-col">7일 차트</th>
+      </tr>
+    </thead>
+    <tbody id="cosmos-tbody"></tbody>
+  </table>
+
+  <footer>
+    🚀 Cosmos 암호화폐 대시보드 – CoinGecko API로 실시간 데이터 제공 | 안전한 백엔드 서버 통신 | 30초 자동 업데이트
+  </footer>
+</div>
+<script src="./cosmos.js"></script>
 </body>
 </html>
