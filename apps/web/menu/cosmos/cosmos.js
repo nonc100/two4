@@ -367,10 +367,23 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#page").addEventListener("change", (e)=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
 
-  // long/short period buttons
+// ---- period 버튼 강조 표시 헬퍼
+  function markPeriod(){
+    ["1h","4h","1d"].forEach(p=>{
+      const el = document.querySelector(`[data-p="${p}"]`);
+      if(!el) return;
+      el.style.opacity = (state.lsPeriod===p) ? "1" : "0.55";
+      el.style.fontWeight = (state.lsPeriod===p) ? "800" : "600";
+      el.style.border = (state.lsPeriod===p)
+        ? "1px solid rgba(255,255,255,.35)"
+        : "1px solid rgba(255,255,255,.15)";
+    });
+  }
+
+  // ---- period 버튼 클릭 이벤트
   ["ls-1h","ls-4h","ls-1d"].forEach(id=>{
     $("#"+id).addEventListener("click", async (ev)=>{
-      state.lsPeriod = ev.currentTarget.dataset.p;
+      state.lsPeriod = ev.currentTarget.dataset.p || "1h";
       try{
         const lsRaw = await fetchLongShort(state.lsPeriod);
         const last = Array.isArray(lsRaw) && lsRaw.length ? lsRaw[lsRaw.length-1] : null;
@@ -380,9 +393,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
           setLongShort(L/sum*100, S/sum*100, (Number(last.longShortRatio)||0).toFixed(2), state.lsPeriod);
         }
       }catch(e){ console.error(e); }
-      $("#ls-1h").style.opacity = state.lsPeriod==="1h"?. 1: .6;
+      markPeriod();
     });
   });
+ 
+  // 초기 표시 한번
+  markPeriod();
 
   // back
   $("#backBtn").addEventListener("click", ()=>{ history.back(); });
