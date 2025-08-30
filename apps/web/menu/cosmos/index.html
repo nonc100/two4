@@ -444,7 +444,9 @@
 .cosmos-table th:last-child, .cosmos-table td:last-child{ width:90px; }
 
 /* 링크/버튼 자잘한 UX */
-.coin-link:hover .coin-name{ text-decoration:underline; }
+.coin-link{ color: inherit; text-decoration: none; display:flex; align-items:center; gap:6px; }
+.coin-link:hover{ color:#cfe3ff; }
+.coin-name{ text-decoration: none; }
 @media (max-width: 520px){ .coin-link .sep{ display:none; } }
 </style>
 </head>
