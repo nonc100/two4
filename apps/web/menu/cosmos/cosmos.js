@@ -222,7 +222,12 @@ function renderTable(rows) {
             max-width:${ICON}px !important;max-height:${ICON}px !important;
             border-radius:50%;object-fit:contain;display:inline-block;"
         />
-        <span class="coin-name">${c.name}</span>
+               <span class="coin-name">
+          <a href="./chart.html?id=${c.id}"
+             style="color:#9ecbff;text-decoration:underline;text-underline-offset:3px;">
+             ${c.name}
+          </a>
+        </span>
         <span class="coin-sym">${(c.symbol || "").toUpperCase()}</span>
       </td>
 
