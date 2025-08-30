@@ -22,28 +22,22 @@
     /* 별(슬라이더만 영향을 줌) */
     #starCanvas{position:fixed; inset:0; z-index:0; pointer-events:none}
 
-    /* 우측 상단 컨트롤러 — 컴팩트(대략 절반 크기) */
+    /* 우측 상단 컨트롤러 — 컴팩트 + 상단 고정(스크롤하면 화면 밖으로 올라감) */
     .ctrl{
-           display:flex; align-items:center; gap:6px;
+      display:flex; align-items:center; gap:6px;
       padding:4px 6px; border-radius:999px;
       background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.12);
       box-shadow:0 8px 20px rgba(0,0,0,.28);
       backdrop-filter:blur(10px);
       opacity:.65; transition:opacity .15s ease, transform .15s ease;
-      z-index:5; /* 두 모드에서 공통 */
+      z-index:5;
     }
-        .ctrl:hover{ opacity:1 }
-
-    /* 위치 모드 */
-    .ctrl--fixed{ position:fixed; top:8px; right:8px; }
-    .ctrl--pinned{ position:absolute; top:8px; right:8px; } /* .wrap 가 relative라 페이지 상단 우측에 고정됨 */
-
-    /* 버튼/슬라이더 크기 축소 */
+    .ctrl:hover{opacity:1}
+    .ctrl--pinned{ position:absolute; top:8px; right:8px; } /* .wrap가 relative라 페이지 상단 우측에 고정 */
     .ctrl .back{
-          appearance:none; border:none; cursor:pointer;
-      border-radius:8px; padding:4px 6px;
-      font-weight:700; font-size:12px; line-height:1;
+      appearance:none; border:none; cursor:pointer;
+      border-radius:8px; padding:4px 6px; font-weight:700; font-size:12px; line-height:1;
       background:linear-gradient(180deg,#141b2b,#0f1522);
       color:#cfe3ff; border:1px solid rgba(255,255,255,.14);
     }
@@ -59,7 +53,6 @@
       box-shadow:0 6px 12px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.8);
       cursor:pointer; margin-top:-3px;
     }
-    
     @media (max-width:640px){
       .ctrl{right:6px; top:6px; opacity:.9}
       .ctrl .range{width:min(48vw,130px)}
@@ -83,30 +76,17 @@
     @media (max-width:640px){ .after-title{height:72px} }
 
     /* 카드 레이아웃: 좌5(3+2) / 우2(가로 나란히) */
-    .cards{
-      display:grid; gap:18px;
-      grid-template-columns:5fr 3fr; /* 우측 폭을 넓혀서 잘림 방지 */
-      align-items:stretch;
-    }
-    .left-5{
-      grid-column:1/2; display:grid; gap:18px;
-      grid-template-columns:repeat(3,1fr); grid-auto-rows:minmax(128px,auto);
-    }
-    .left-5 .row-2{
-      grid-column:1/4; display:grid; gap:18px;
-      grid-template-columns:1fr 1fr; grid-auto-rows:minmax(240px,auto);
-    }
-    .right-2{
-      grid-column:2/3; display:grid; gap:18px;
-      grid-template-columns:minmax(300px,1fr) minmax(300px,1fr); /* 두 장이 안정적으로 들어가도록 */
-      grid-auto-rows:minmax(240px,auto);
-    }
+    .cards{ display:grid; gap:18px; grid-template-columns:5fr 3fr; align-items:stretch; }
+    .left-5{ grid-column:1/2; display:grid; gap:18px; grid-template-columns:repeat(3,1fr); grid-auto-rows:minmax(128px,auto); }
+    .left-5 .row-2{ grid-column:1/4; display:grid; gap:18px; grid-template-columns:1fr 1fr; grid-auto-rows:minmax(220px,auto); }
+    .right-2{ grid-column:2/3; display:grid; gap:18px; grid-template-columns:minmax(300px,1fr) minmax(300px,1fr); grid-auto-rows:minmax(220px,auto); }
 
     .card{
       position:relative; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border-radius:16px; padding:14px 14px 12px; color:var(--text); overflow:hidden;
       box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.08);
       backdrop-filter:blur(var(--glass-blur)); -webkit-backdrop-filter:blur(var(--glass-blur));
+      min-height:132px;
     }
     .card::before{
       content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
@@ -125,9 +105,7 @@
 
     /* 오른쪽 리스트(가격 포함) */
     .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-    .list .row{
-      display:grid; grid-template-columns:2.2em 5.2em 1fr 5.2em; align-items:center; font-size:13.5px; gap:6px;
-    }
+    .list .row{display:grid; grid-template-columns:2.2em 5.2em 1fr 5.2em; align-items:center; font-size:13.5px; gap:6px;}
     .list .rank{text-align:right; opacity:.7; font-weight:700;}
     .list .sym{font-weight:700; letter-spacing:.02em;}
     .list .price{text-align:right; opacity:.9; font-variant-numeric:tabular-nums;}
@@ -152,16 +130,39 @@
     .text-right{text-align:right}
     .spark{width:100px; height:24px}
 
-    /* 반응형 */
+    /* 테이블 래퍼(가로 스크롤 힌트) */
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; position:relative; border-radius:14px; }
+    .table-wrap::after{
+      content:""; position:absolute; top:0; right:0; width:24px; height:100%; pointer-events:none;
+      background:linear-gradient(90deg, transparent, rgba(0,0,0,.28)); border-radius:0 14px 14px 0;
+    }
+
+    /* 반응형 – 카드/리스트/테이블 */
     @media (max-width:1280px){
-      .cards{grid-template-columns:1fr} /* 1280↓에서는 한 열로 안전하게 */
+      .cards{grid-template-columns:1fr}
       .right-2{grid-column:1/2; grid-template-columns:1fr}
     }
-    @media (max-width:640px){
-      .wrap{overflow-x:auto}
-      .cosmos-table{min-width:900px}
-      .brand img{width:140px}
-      .brand h1{font-size:34px}
+
+    /* ===== 모바일 카드 모드 (≤720px): 테이블을 카드형으로 전환 ===== */
+    @media (max-width:720px){
+      .cosmos-table{ width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
+      .cosmos-table thead{ display:none; }
+      .cosmos-table tbody tr{
+        display:block; margin:12px 0; padding:8px; border-radius:12px;
+        background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      }
+      .cosmos-table tbody td{
+        display:grid; grid-template-columns:9.5em 1fr; gap:6px;
+        background:transparent; border:none; padding:6px 8px;
+      }
+      .cosmos-table tbody td::before{
+        content:attr(data-label); color:var(--muted); font-weight:700; font-size:12px;
+      }
+      .row-index{ grid-template-columns:1fr!important; text-align:left; padding-bottom:4px; font-weight:700; opacity:.9 }
+      .coin-cell{ gap:8px; }
+      .coin-name{ font-weight:800 }
+      .spark-col .spark{ width:100%; height:36px }
+      .after-title{ height:56px; }
     }
 
     footer{margin:36px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
@@ -170,14 +171,13 @@
 <body>
 <canvas id="starCanvas" aria-hidden="true"></canvas>
 
-<!-- 우측 상단 컨트롤러 -->
-<!-- 항상 떠다니게 하고 싶으면 ctrl--fixed 로 바꾸면 됨 -->
-<div class="ctrl ctrl--pinned">
-  <button class="back" onclick="history.back()">←</button>
-  <input id="starRange" class="range" type="range" min="0" max="100" value="55" aria-label="별 밝기/밀도 조절">
-</div>
-
 <div class="wrap">
+  <!-- 우측 상단 컨트롤러 (상단 고정, 작게) -->
+  <div class="ctrl ctrl--pinned">
+    <button class="back" onclick="history.back()">←</button>
+    <input id="starRange" class="range" type="range" min="0" max="100" value="55" aria-label="별 밝기/밀도 조절">
+  </div>
+
   <div class="brand">
     <img src="/media/logo.png" alt="TWO4">
     <h1>COSMOS</h1>
@@ -253,22 +253,25 @@
     </label>
   </div>
 
-  <table class="cosmos-table">
-    <thead>
-      <tr>
-        <th class="text-right">순위</th>
-        <th>코인</th>
-        <th class="text-right">시세</th>
-        <th class="text-right">1시간</th>
-        <th class="text-right">24시간</th>
-        <th class="text-right">7일</th>
-        <th class="text-right">시가총액</th>
-        <th class="text-right">거래량</th>
-        <th class="text-right spark-col">7일 차트</th>
-      </tr>
-    </thead>
-    <tbody id="cosmos-tbody"></tbody>
-  </table>
+  <!-- 테이블 (모바일에선 카드형으로 자동 전환) -->
+  <div class="table-wrap">
+    <table class="cosmos-table">
+      <thead>
+        <tr>
+          <th class="text-right">순위</th>
+          <th>코인</th>
+          <th class="text-right">시세</th>
+          <th class="text-right">1시간</th>
+          <th class="text-right">24시간</th>
+          <th class="text-right">7일</th>
+          <th class="text-right">시가총액</th>
+          <th class="text-right">거래량</th>
+          <th class="text-right spark-col">7일 차트</th>
+        </tr>
+      </thead>
+      <tbody id="cosmos-tbody"></tbody>
+    </table>
+  </div>
 
   <footer>
     🚀 Cosmos 암호화폐 대시보드 – CoinGecko API로 실시간 데이터 제공 | 안전한 백엔드 서버 통신 | 30초 자동 업데이트
