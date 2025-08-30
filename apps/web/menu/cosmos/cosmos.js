@@ -1,4 +1,4 @@
-/* ===== COSMOS JS – header minis + grid + star slider ===== */
+/* ===== COSMOS JS — header minis + grid + star slider (stars only) ===== */
 
 /* --- Locale guards --- */
 (()=>{const o=Number.prototype.toLocaleString;Number.prototype.toLocaleString=function(l,a){if(a&&"object"==typeof a){let{minimumFractionDigits:n,maximumFractionDigits:t}=a;Number.isFinite(n)||(n=void 0),Number.isFinite(t)||(t=void 0),void 0!==n&&(n=Math.min(20,Math.max(0,n))),void 0!==t&&(t=Math.min(20,Math.max(0,t))),void 0!==n&&void 0!==t&&t<n&&(t=n),a={...a,...(void 0!==n?{minimumFractionDigits:n}:{}),...(void 0!==t?{maximumFractionDigits:t}:{})}}return o.call(this,l||"en-US",a)};const e=Intl.NumberFormat;Intl.NumberFormat=function(l,a){if(a&&"object"==typeof a){let{minimumFractionDigits:n,maximumFractionDigits:t}=a;Number.isFinite(n)||(n=void 0),Number.isFinite(t)||(t=void 0),void 0!==n&&(n=Math.min(20,Math.max(0,n))),void 0!==t&&(t=Math.min(20,Math.max(0,t))),void 0!==n&&void 0!==t&&t<n&&(t=n),a={...a,...(void 0!==n?{minimumFractionDigits:n}:{}),...(void 0!==t?{maximumFractionDigits:t}:{})}}return new e(l||"en-US",a)}})();
@@ -9,11 +9,37 @@ function safeLocale(v,minFD=0,maxFD=2){let m=Number.isFinite(minFD)?clamp(minFD,
 function fmtPrice(v){if(v==null||Number.isNaN(v))return"-";let d; if(v>=100)d=2; else if(v>=1)d=4; else if(v>0)d=Math.ceil(Math.abs(Math.log10(v)))+2; else d=2; return safeLocale(v,0,clamp(d,0,8))}
 function fmtNum(v,max=2){if(v==null||Number.isNaN(v))return"-";return safeLocale(v,0,clamp(max,0,8))}
 function fmtPct(v){if(v==null||Number.isNaN(v))return"-";const n=Number(v),s=n>0?"+":"";return `<span class="${n>0?"up":n<0?"down":""}">${s}${n.toFixed(2)}%</span>`}
-function sparklineSVG(arr,w=100,h=24){ if(!arr||arr.length<2) return "-"; const min=Math.min(...arr),max=Math.max(...arr),span=(max-min)||1; const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${h-((p-min)/span)*h}`).join(" "); const up=arr[arr.length-1]>=arr[0]; const color=up?"#28e07a":"#ff5b6e"; return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/></svg>`}
+
+/* sparkline with area fill (full-bleed) */
+function sparklineSVGFilled(arr,w=300,h=64){
+  if(!arr||arr.length<2) return "-";
+  const min=Math.min(...arr), max=Math.max(...arr), span=(max-min)||1;
+  const mapY = v => h-((v-min)/span)*h;
+  const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${mapY(p)}`).join(" ");
+  const up = arr[arr.length-1] >= arr[0];
+  const color = up ? "#28e07a" : "#ff5b6e";
+  const firstY = mapY(arr[0]), lastY = mapY(arr[arr.length-1]);
+  return `
+<svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+  <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" points="${pts}"/>
+  <polygon points="0,${h} ${pts} ${w},${h}" fill="${color}" opacity="0.12"/>
+</svg>`;
+}
+
+/* simple sparkline (table 7d) */
+function sparklineSVG(arr,w=100,h=24){
+  if(!arr||arr.length<2) return "-";
+  const min=Math.min(...arr), max=Math.max(...arr), span=(max-min)||1;
+  const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${h-((p-min)/span)*h}`).join(" ");
+  const up = arr[arr.length-1] >= arr[0];
+  const color = up ? "#28e07a" : "#ff5b6e";
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/></svg>`;
+}
+
 const $=(s,sc=document)=>sc.querySelector(s); const $$=(s,sc=document)=>Array.from(sc.querySelectorAll(s));
 const safeSetHTML=(sel,html)=>{const el=typeof sel==="string"?$(sel):sel; if(el) el.innerHTML=html}
 
-/* --- Data fetchers (direct -> proxy fallback) --- */
+/* --- Fetchers (direct → proxy fallback) --- */
 async function fetchMarkets({vs="usd",perPage=200,page=1}={}){const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;const d=`https://api.coingecko.com/api/v3/coins/markets?${q}`;const p=`/api/coins/markets?${q}`;try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("markets failed");return await r2.json()}}
 async function fetchGlobal(){const d=`https://api.coingecko.com/api/v3/global`;const p=`/api/global`;try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("global failed");return await r2.json()}}
 async function fetchMarketChart(id,vs='usd',days=7,interval='daily'){const q=`vs_currency=${vs}&days=${days}&interval=${interval}`;const d=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`;const p=`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`;try{const r=await fetch(d);if(!r.ok)throw 0;return await r.json()}catch{const r2=await fetch(p);if(!r2.ok)throw new Error("chart failed");return await r2.json()}}
@@ -44,16 +70,29 @@ function renderTableSlice(rows){
   safeSetHTML(tb, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
 }
 
-/* --- Header minis (BTC/Global) --- */
+/* --- Header minis (BTC / Global; full-bleed) --- */
 async function renderHeaderMinis(markets){
-  try{ const d=await fetchMarketChart('bitcoin','usd',7,'daily'); const caps=(d.market_caps||[]).map(p=>Array.isArray(p)?p[1]:p).filter(Boolean); safeSetHTML('#mini-btc', sparklineSVG(caps,180,36)); }catch{}
+  // BTC Market Cap (7d)
   try{
-    const top=markets.slice(0,100).filter(c=>Array.isArray(c.sparkline_in_7d?.price));
-    if(top.length){ const len=top[0].sparkline_in_7d.price.length; const agg=new Array(len).fill(0);
-      top.forEach(c=>{ const supply=(c.market_cap&&c.current_price)?(c.market_cap/c.current_price):0; const s=c.sparkline_in_7d.price; for(let i=0;i<len;i++) agg[i]+=s[i]*supply; });
-      safeSetHTML('#mini-global', sparklineSVG(agg,180,36));
+    const d=await fetchMarketChart('bitcoin','usd',7,'daily');
+    const caps=(d.market_caps||[]).map(p=>Array.isArray(p)?p[1]:p).filter(Boolean);
+    $("#mini-btc") && ($("#mini-btc").innerHTML = sparklineSVGFilled(caps,300,64));
+  }catch(e){ /* noop */ }
+
+  // Global Market Cap (approx via top 100 aggregate)
+  try{
+    const top=markets.slice(0,100).filter(c=>Array.isArray(c.sparkline_in_7d?.price) && c.market_cap && c.current_price);
+    if(top.length){
+      const len=top[0].sparkline_in_7d.price.length;
+      const agg=new Array(len).fill(0);
+      top.forEach(c=>{
+        const supply=c.market_cap/c.current_price;
+        const s=c.sparkline_in_7d.price;
+        for(let i=0;i<len;i++) agg[i]+= s[i]*supply;
+      });
+      $("#mini-global") && ($("#mini-global").innerHTML = sparklineSVGFilled(agg,300,64));
     }
-  }catch{}
+  }catch(e){ /* noop */ }
 }
 
 /* --- KPIs / Lists --- */
@@ -97,72 +136,43 @@ function applySortFilter(){
   renderTableSlice(state.filtered);
 }
 
-/* --- Star slider (우측 상단, 드래그/자동 슬라이드, 별 트윙클) --- */
-function initStarSlider(){
-  const rail=$("#star-rail"), knob=$("#star-knob"), dotsWrap=$("#star-dots");
-  if(!rail||!knob||!dotsWrap) return;
+/* --- Stars (slider controls stars only) --- */
+function initStars(){
+  const cv=$("#starCanvas"), range=$("#starRange"); if(!cv||!range) return;
+  const ctx=cv.getContext("2d");
+  let W=0,H=0; const BASE=280; let intensity=range.value/100; // 0..1
 
-  // 별 점 생성 (고정 간격)
-  function buildDots(){
-    dotsWrap.innerHTML="";
-    const W=rail.clientWidth, H=rail.clientHeight;
-    const pad=24, usable=W-pad*2, N=18; // 점 개수
-    for(let i=0;i<N;i++){
-      const x=pad + (usable/(N-1))*i;
-      const d=document.createElement("div");
-      d.className="dot";
-      d.style.left = `${x}px`;
-      dotsWrap.appendChild(d);
+  function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; }
+  resize(); addEventListener("resize", resize);
+
+  const stars=new Array(BASE).fill(0).map(()=>({
+    x: Math.random()*W, y: Math.random()*H*0.75, r: 0.6 + Math.random()*1.4,
+    p: Math.random()*Math.PI*2, s: 0.5 + Math.random()*1.5
+  }));
+
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    const active = Math.floor(BASE*(0.2 + 0.8*intensity));
+    const baseA  = 0.18 + intensity*0.6;             // 밝기
+    cv.style.filter = `blur(${(1-intensity)*3}px)`;   // 블러(배경은 그대로)
+    cv.style.opacity = 0.35 + intensity*0.55;
+
+    ctx.globalCompositeOperation="lighter";
+    for(let i=0;i<active;i++){
+      const st=stars[i];
+      const tw = 0.5 + 0.5*Math.sin(t*0.001*st.s + st.p);
+      const a = baseA * tw;
+      ctx.shadowBlur = 8 + 18*intensity;
+      ctx.shadowColor = "#b9d8ff";
+      ctx.fillStyle = `rgba(200,220,255,${a})`;
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r*(0.7+intensity*0.6), 0, Math.PI*2); ctx.fill();
     }
+    ctx.globalCompositeOperation="source-over";
+    requestAnimationFrame(draw);
   }
-  buildDots(); addEventListener("resize", buildDots);
+  requestAnimationFrame(draw);
 
-  let dragging=false, auto=true, pos=8, v=1; // pos(px), v(px per frame)
-  const minX=8, maxX=()=>rail.clientWidth- (knob.clientWidth+8);
-
-  function setKnob(x){
-    const max=maxX();
-    pos = Math.max(minX, Math.min(max, x));
-    knob.style.left = pos+"px";
-    // 주변 별 트윙클(가우시안 근사)
-    const dots=$$(".dot", dotsWrap);
-    const center = pos + knob.clientWidth/2;
-    dots.forEach(dot=>{
-      const dx = center - dot.offsetLeft;
-      const w = knob.clientWidth*0.9;
-      const amp = Math.exp(-(dx*dx)/(2*(w*w)));
-      const op = .15 + amp*.85;
-      const scale = .7 + amp*.6;
-      dot.style.opacity = op.toFixed(2);
-      dot.style.transform = `translate(-50%,-50%) scale(${scale.toFixed(2)})`;
-    });
-  }
-  setKnob(pos);
-
-  // 드래그
-  const getX = e => (e.touches?e.touches[0].clientX:e.clientX) - rail.getBoundingClientRect().left - knob.clientWidth/2;
-  const onDown = e => { dragging=true; auto=false; setKnob(getX(e)); e.preventDefault(); }
-  const onMove = e => { if(!dragging) return; setKnob(getX(e)); }
-  const onUp   = () => { dragging=false; setTimeout(()=>auto=true, 1500); }
-
-  knob.addEventListener("mousedown", onDown);
-  addEventListener("mousemove", onMove);
-  addEventListener("mouseup", onUp);
-  knob.addEventListener("touchstart", onDown, {passive:false});
-  addEventListener("touchmove", onMove, {passive:false});
-  addEventListener("touchend", onUp);
-
-  // 자동 왕복 슬라이드
-  function tick(){
-    if(auto && !dragging){
-      const max=maxX();
-      pos += v;
-      if(pos<=minX || pos>=max) v*=-1;
-      setKnob(pos);
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
+  range.addEventListener("input", ()=>{ intensity = clamp(range.value/100,0,1); });
 }
 
 /* --- Init --- */
@@ -187,7 +197,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#sortdir").addEventListener("click", e=>{ state.sortDir = state.sortDir===-1 ? 1 : -1; e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲"; applySortFilter(); });
   $("#page").addEventListener("change", e=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
 
-  initStarSlider();   // ⭐ 우측 상단 슬라이드형 별 효과
+  initStars();   // ⭐ only stars respond to slider
   init();
   setInterval(init, 30000);
 });
