@@ -1,10 +1,11 @@
-/* ================= COSMOS JS v7 (full) =================
-   - sparkline=true & price_change_percentage=1h,24h,7d
-   - 검색(q) + 정렬(key/order) + "변동률(24h) 내림차순" 버튼
-   - 기본 정렬: 시가총액 내림차순
-========================================================= */
+/* ================= COSMOS JS (no-key dashboards) =================
+   ✅ 외부키 없이 즉시 동작하는 카드 5개
+      - 등락률 Top7(24h), 거래량 순위, BTC 시총, Global 시총, BTC Dominance
+   ✅ 표: 시가총액 순(기본), 검색, 헤더 클릭 정렬(▲/▼), 50개 페이징, 7d 스파크라인
+   ✅ CoinGecko 직접 호출 실패 시 /api/* 프록시 자동 재시도
+=================================================================== */
 
-// ---- GLOBAL SAFETY CLAMPS (자릿수 에러 방지) ----
+/* ---------- GLOBAL CLAMPS (Locale 안전 가드) ---------- */
 (() => {
   const origToLS = Number.prototype.toLocaleString;
   Number.prototype.toLocaleString = function (locale, opts) {
@@ -42,16 +43,8 @@
   };
 })();
 
-// innerHTML 안전 헬퍼
-window.safeSetHTML = function (selectorOrEl, html) {
-  const el = typeof selectorOrEl === "string" ? document.querySelector(selectorOrEl) : selectorOrEl;
-  if (el) el.innerHTML = html;
-};
-
-// ---- UTILS ----
+/* ---------- HELPERS ---------- */
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
-const debounce = (fn, ms=250) => { let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; };
-
 function safeLocale(num, minFD = 0, maxFD = 2) {
   let min = Number.isFinite(minFD) ? clamp(minFD, 0, 20) : 0;
   let max = Number.isFinite(maxFD) ? clamp(maxFD, 0, 20) : 2;
@@ -79,21 +72,28 @@ function fmtNum(v, maxDigits = 2) {
   return safeLocale(v, 0, clamp(maxDigits, 0, 8));
 }
 function fmtPct(v) {
-  if (v == null || !isFinite(v)) return "-";
-  const n = Number(v).toFixed(2);
+  if (v == null || Number.isNaN(v)) return "-";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "-";
+  const s = n.toFixed(2);
   const sign = n > 0 ? "+" : "";
-  const cls = n > 0 ? "color-up" : n < 0 ? "color-down" : "";
-  return `<span class="${cls}">${sign}${n}%</span>`;
+  const cls = n > 0 ? "up" : n < 0 ? "down" : "";
+  return `<span class="${cls}">${sign}${s}%</span>`;
+}
+function $(sel) { return document.querySelector(sel); }
+function safeSetHTML(selectorOrEl, html) {
+  const el = typeof selectorOrEl === "string" ? $(selectorOrEl) : selectorOrEl;
+  if (el) el.innerHTML = html;
 }
 
-// ---- TARGET <tbody> ----
+/* ---------- TARGET <tbody> ---------- */
 function ensureTbody() {
-  let tb = document.getElementById("cosmos-tbody") || document.getElementById("market-table-body");
+  let tb = document.getElementById("cosmos-tbody");
   if (tb) return tb;
   const tables = Array.from(document.querySelectorAll("table"));
   for (const t of tables) {
     const headText = (t.tHead && t.tHead.innerText) || "";
-    if (/시가총액|24시간|7일|거래량|순위|코인|1시간/i.test(headText)) {
+    if (/시가총액|거래량|순위|코인|24시간|7일/i.test(headText)) {
       if (t.tBodies && t.tBodies[0]) {
         t.tBodies[0].id ||= "cosmos-tbody";
         return t.tBodies[0];
@@ -118,7 +118,7 @@ function ensureTbody() {
   return null;
 }
 
-// ---- Sparkline SVG ----
+/* ---------- SPARKLINE (7d) ---------- */
 function sparklineSVG(prices, w = 80, h = 24) {
   if (!prices || prices.length < 2) return "-";
   const min = Math.min(...prices), max = Math.max(...prices);
@@ -135,162 +135,219 @@ function sparklineSVG(prices, w = 80, h = 24) {
   </svg>`;
 }
 
-// ---- FETCH (sparkline=true, 1h/24h/7d 포함) ----
+/* ---------- FETCHERS (direct → proxy fallback) ---------- */
 async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
-  const q =
-    `vs_currency=${vs}` +
-    `&order=market_cap_desc&per_page=${perPage}&page=${page}` +
-    `&sparkline=true&price_change_percentage=1h,24h,7d`;
-
+  const q = `vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
   const direct = `https://api.coingecko.com/api/v3/coins/markets?${q}`;
   const proxy  = `/api/coins/markets?${q}`;
-
   try {
     const r = await fetch(direct);
-    if (!r.ok) throw new Error(String(r.status));
-    const d = await r.json();
-    d.sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0));
-    return d;
+    if (!r.ok) throw 0;
+    return await r.json();
   } catch {
     const r2 = await fetch(proxy);
-    if (!r2.ok) throw new Error("Proxy " + r2.status);
-    const d2 = await r2.json();
-    d2.sort((a, b) => (b.market_cap ?? 0) - (a.market_cap ?? 0));
-    return d2;
+    if (!r2.ok) throw new Error("fetch coins failed");
+    return await r2.json();
+  }
+}
+async function fetchGlobal(){
+  try{
+    const r = await fetch("https://api.coingecko.com/api/v3/global");
+    if(!r.ok) throw 0;
+    return await r.json();
+  }catch{
+    const r2 = await fetch("/api/global");
+    if(!r2.ok) throw new Error("fetch global failed");
+    return await r2.json();
   }
 }
 
-// ---- 상태 + 정렬 보조 ----
-let RAW_ROWS = [];
-const STATE = {
-  q: "",
-  sortKey: "market_cap",
-  sortOrder: "desc", // 'asc' | 'desc'
+/* ---------- STATE ---------- */
+const state = {
+  rows: [],
+  filtered: [],
+  sortKey: null,   // 'price' | 'change1h' | 'change24h' | 'change7d' | 'market_cap' | 'volume'
+  sortDir: 'desc', // 'asc' | 'desc'
+  page: 1,
+  perPage: 50,
 };
 
-function pickValue(c, key) {
-  switch (key) {
-    case "price":     return c.current_price;
-    case "volume":    return c.total_volume;
-    case "change1h":  return c.price_change_percentage_1h_in_currency;
-    case "change24h": return c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
-    case "change7d":  return c.price_change_percentage_7d_in_currency;
-    case "market_cap":
-    default:          return c.market_cap;
-  }
-}
-
-function applyAndRender() {
-  const dir = STATE.sortOrder === "asc" ? 1 : -1;
-  const q = STATE.q.trim().toLowerCase();
-
-  let rows = RAW_ROWS.slice();
-  if (q) {
-    rows = rows.filter(c =>
-      (c.name || "").toLowerCase().includes(q) ||
-      (c.symbol || "").toLowerCase().includes(q)
-    );
-  }
-
-  rows.sort((a, b) => {
-    const av = pickValue(a, STATE.sortKey);
-    const bv = pickValue(b, STATE.sortKey);
-    const aa = (av == null || !isFinite(av)) ? -Infinity : av;
-    const bb = (bv == null || !isFinite(bv)) ? -Infinity : bv;
-    return (aa > bb ? 1 : aa < bb ? -1 : 0) * dir;
-  });
-
-  renderTable(rows);
-}
-
-// ---- RENDER (열 9개) ----
-function renderTable(rows) {
-  const tbody = ensureTbody();
-  if (!tbody) return;
-
-  const ICON = (window.innerWidth <= 620 ? 18 : 22);
-
-  const html = rows.map(c => `
+/* ---------- TABLE RENDER ---------- */
+function buildRowHTML(c) {
+  const ICON = 22;
+  return `
     <tr class="row">
       <td>${c.market_cap_rank ?? "-"}</td>
-      <td class="coin-cell" style="display:flex;align-items:center;gap:8px;">
-        <img
-          src="${c.image}" alt="${c.symbol}" class="coin-img"
-          style="
-            width:${ICON}px !important;height:${ICON}px !important;
-            min-width:${ICON}px !important;min-height:${ICON}px !important;
-            max-width:${ICON}px !important;max-height:${ICON}px !important;
-            border-radius:50%;object-fit:contain;display:inline-block;"
-        />
-        <!-- 텍스트(티커 · 이름)만 클릭 가능 -->
-        <a class="coin-link" href="./chart.html?id=${c.id}">
-          <span class="coin-sym" style="font-weight:700;">${(c.symbol || "").toUpperCase()}</span>
-          <span class="sep" style="opacity:.6;">·</span>
-                    <span class="coin-name">${c.name}</span>
+      <td>
+        <a class="coin-link" href="#" data-coin-id="${c.id}">
+          <img src="${c.image}" alt="${c.symbol}"
+            style="width:${ICON}px;height:${ICON}px;min-width:${ICON}px;min-height:${ICON}px;border-radius:50%;object-fit:contain;display:inline-block;">
+          <span class="coin-name">${(c.symbol||"").toUpperCase()}</span>
+          &nbsp;<span class="coin-sym">· ${c.name}</span>
         </a>
       </td>
-
       <td class="text-right">$${fmtPrice(c.current_price)}</td>
-      <td class="text-right">${fmtPct(c.price_change_percentage_1h_in_currency)}</td>
-      <td class="text-right">${fmtPct(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h)}</td>
-      <td class="text-right">${fmtPct(c.price_change_percentage_7d_in_currency)}</td>
+      <td class="text-right">${fmtPct(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
+      <td class="text-right">${fmtPct(c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? null)}</td>
+      <td class="text-right">${fmtPct(c.price_change_percentage_7d_in_currency ?? null)}</td>
       <td class="text-right">$${fmtNum(c.market_cap, 0)}</td>
       <td class="text-right">$${fmtNum(c.total_volume, 0)}</td>
       <td class="text-right">${sparklineSVG(c.sparkline_in_7d && c.sparkline_in_7d.price)}</td>
     </tr>
-  `).join("");
-
-  window.safeSetHTML(tbody, html);
+  `;
 }
-
-// ---- 컨트롤 초기화 ----
-function initControls() {
-  const elQ = document.getElementById("cosmos-q");
-  const elKey = document.getElementById("cosmos-sort-key");
-  const elOrd = document.getElementById("cosmos-sort-order");
-  const elBtn = document.getElementById("cosmos-btn-topchange");
-
-  if (elQ)   elQ.addEventListener("input", debounce(e => { STATE.q = e.target.value; applyAndRender(); }, 150));
-  if (elKey) elKey.addEventListener("change", e => { STATE.sortKey = e.target.value; applyAndRender(); });
-  if (elOrd) elOrd.addEventListener("change", e => { STATE.sortOrder = e.target.value; applyAndRender(); });
-  if (elBtn) elBtn.addEventListener("click", () => {
-    STATE.sortKey = "change24h";
-    STATE.sortOrder = "desc";
-    if (elKey) elKey.value = "change24h";
-    if (elOrd) elOrd.value = "desc";
-    applyAndRender();
+function renderTableSlice(rows) {
+  const tbody = ensureTbody();
+  if (!tbody) return;
+  const start = (state.page - 1) * state.perPage;
+  const end = start + state.perPage;
+  const slice = rows.slice(start, end);
+  safeSetHTML(tbody, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
+}
+function renderPager(rows) {
+  const host = $("#cosmos-pager");
+  if (!host) return;
+  const pages = Math.max(1, Math.ceil(rows.length / state.perPage));
+  const btns = [];
+  for (let p = 1; p <= pages; p++) {
+    btns.push(`<button data-p="${p}" class="${p===state.page?'active':''}">${p}</button>`);
+  }
+  host.innerHTML = btns.join("");
+  host.querySelectorAll("button").forEach(b=>{
+    b.onclick = () => {
+      state.page = Number(b.dataset.p)||1;
+      renderTableSlice(state.filtered);
+      renderPager(state.filtered);
+    };
   });
 }
 
-// ---- INIT ----
-async function initCosmos() {
-  initControls();
-  const tbody = ensureTbody();
-  if (!tbody) return;
-  try {
-    RAW_ROWS = await fetchByMarketCap({ vs: "usd", perPage: 200, page: 1 });
-    // 기본: 시총 내림차순
-    STATE.sortKey = "market_cap"; STATE.sortOrder = "desc";
-    applyAndRender();
-  } catch (e) {
-    console.error(e);
-    window.safeSetHTML(tbody, `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
+/* ---------- SEARCH & SORT ---------- */
+function applySearchSort() {
+  const q = ($("#cosmos-q")?.value || "").trim().toLowerCase();
+  let arr = [...state.rows];
+  if (q) {
+    arr = arr.filter(c =>
+      (c.name||"").toLowerCase().includes(q) ||
+      (c.symbol||"").toLowerCase().includes(q)
+    );
+  }
+  const keyMap = {
+    price:      c => c.current_price,
+    change1h:   c => c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h,
+    change24h:  c => c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency,
+    change7d:   c => c.price_change_percentage_7d_in_currency,
+    market_cap: c => c.market_cap,
+    volume:     c => c.total_volume,
+  };
+  if (state.sortKey && keyMap[state.sortKey]) {
+    const get = keyMap[state.sortKey];
+    arr.sort((a,b)=>{
+      const va = get(a) ?? -Infinity;
+      const vb = get(b) ?? -Infinity;
+      return state.sortDir === 'asc' ? va - vb : vb - va;
+    });
+  }
+  state.filtered = arr;
+  state.page = 1; // 검색/정렬 시 첫 페이지로
+  renderTableSlice(arr);
+  renderPager(arr);
+}
+function bindSortHeaders() {
+  document.querySelectorAll("th[data-sort]").forEach(th=>{
+    th.addEventListener("click", ()=>{
+      const key = th.getAttribute("data-sort");
+      // 토글 asc/desc
+      if (state.sortKey === key) {
+        state.sortDir = (state.sortDir === 'asc') ? 'desc' : 'asc';
+      } else {
+        state.sortKey = key;
+        state.sortDir = 'desc'; // 기본 내림차순
+      }
+      // 헤더 아이콘 클래스 갱신
+      document.querySelectorAll("th[data-sort]").forEach(h=>h.classList.remove("asc","desc"));
+      th.classList.add(state.sortDir);
+      applySearchSort();
+    });
+  });
+}
+function bindSearch() {
+  const inp = $("#cosmos-q");
+  if (inp) inp.addEventListener("input", ()=> applySearchSort());
+}
+
+/* ---------- DASHBOARD CARDS (NO-KEY) ---------- */
+function renderDashboard(rows){
+  // 1) 24h 상승 상위 7
+  const gainers = [...rows]
+    .sort((a,b)=>(b.price_change_percentage_24h ?? b.price_change_percentage_24h_in_currency ?? 0) -
+                  (a.price_change_percentage_24h ?? a.price_change_percentage_24h_in_currency ?? 0))
+    .slice(0,7)
+    .map(c=>`<div class="row">
+      <span>${(c.symbol||'').toUpperCase()} · ${c.name}</span>
+      <span class="${(c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? 0) >= 0 ? 'up':'down'}">
+        ${(c.price_change_percentage_24h ?? c.price_change_percentage_24h_in_currency ?? 0).toFixed(2)}%
+      </span>
+    </div>`).join("");
+  safeSetHTML("#k-gainers", gainers || "<div class='sub'>데이터 없음</div>");
+
+  // 2) 거래량 상위 7 (우측 박스 밸런스 맞춤)
+  const volumes = [...rows]
+    .sort((a,b)=>(b.total_volume||0)-(a.total_volume||0))
+    .slice(0,7)
+    .map(c=>`<div class="row">
+      <span>${(c.symbol||'').toUpperCase()} · ${c.name}</span>
+      <span>$${fmtNum(c.total_volume, 0)}</span>
+    </div>`).join("");
+  safeSetHTML("#k-volume", volumes || "<div class='sub'>데이터 없음</div>");
+
+  // 3) BTC 시총
+  const btc = rows.find(x => (x.symbol||"").toLowerCase()==="btc" || x.id==="bitcoin");
+  $("#k-btc-mcap") && ($("#k-btc-mcap").textContent = btc ? "$"+fmtNum(btc.market_cap,0) : "-");
+}
+async function renderGlobalCards(){
+  try{
+    const g = await fetchGlobal();
+    const data = g.data || g;
+    const dom = data.market_cap_percentage?.btc;
+    const total = data.total_market_cap?.usd;
+    $("#k-dominance") && ($("#k-dominance").textContent = (dom!=null) ? (dom.toFixed(2)+"%") : "-");
+    $("#k-total-mcap") && ($("#k-total-mcap").textContent = total!=null ? "$"+fmtNum(total,0) : "-");
+  }catch(e){
+    console.warn("global fetch fail", e);
   }
 }
 
+/* ---------- INIT ---------- */
+async function initCosmos() {
+  const tbody = ensureTbody();
+  if (!tbody) return;
+
+  try {
+    // 200개 받아 두고, 표는 50개씩 페이징
+    const rows = await fetchByMarketCap({ vs: "usd", perPage: 200, page: 1 });
+    state.rows = Array.isArray(rows) ? rows : [];
+    bindSearch();
+    bindSortHeaders();
+    // 기본: CoinGecko가 이미 market_cap_desc로 정렬해 줌
+    applySearchSort();      // table + pager
+    renderDashboard(state.rows);
+    renderGlobalCards();
+  } catch (e) {
+    console.error(e);
+    safeSetHTML(tbody, `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
+  }
+}
+
+// 자동 새로고침(30초)
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     initCosmos();
-    setInterval(async () => {
-      try {
-        RAW_ROWS = await fetchByMarketCap({ vs: "usd", perPage: 200, page: 1 });
-        applyAndRender(); // 현재 필터/정렬 유지한 채 갱신
-      } catch (e) { console.error(e); }
-    }, 30_000);
+    setInterval(initCosmos, 30_000);
   }, 50);
 });
 
-// 전역 노출(디버그)
+// 디버깅용
 window.fetchByMarketCap = fetchByMarketCap;
 window.initCosmos = initCosmos;
-console.log("COSMOS JS v7 loaded");
+console.log("COSMOS JS (no-key dashboards) loaded");
