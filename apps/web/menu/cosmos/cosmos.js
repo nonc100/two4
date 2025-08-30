@@ -1,4 +1,4 @@
-/* ===== COSMOS JS — header minis + grid + star slider (stars only) ===== */
+/* ===== COSMOS JS — header minis bigger + right-2 row + star slider ===== */
 
 /* --- Locale guards --- */
 (()=>{const o=Number.prototype.toLocaleString;Number.prototype.toLocaleString=function(l,a){if(a&&"object"==typeof a){let{minimumFractionDigits:n,maximumFractionDigits:t}=a;Number.isFinite(n)||(n=void 0),Number.isFinite(t)||(t=void 0),void 0!==n&&(n=Math.min(20,Math.max(0,n))),void 0!==t&&(t=Math.min(20,Math.max(0,t))),void 0!==n&&void 0!==t&&t<n&&(t=n),a={...a,...(void 0!==n?{minimumFractionDigits:n}:{}),...(void 0!==t?{maximumFractionDigits:t}:{})}}return o.call(this,l||"en-US",a)};const e=Intl.NumberFormat;Intl.NumberFormat=function(l,a){if(a&&"object"==typeof a){let{minimumFractionDigits:n,maximumFractionDigits:t}=a;Number.isFinite(n)||(n=void 0),Number.isFinite(t)||(t=void 0),void 0!==n&&(n=Math.min(20,Math.max(0,n))),void 0!==t&&(t=Math.min(20,Math.max(0,t))),void 0!==n&&void 0!==t&&t<n&&(t=n),a={...a,...(void 0!==n?{minimumFractionDigits:n}:{}),...(void 0!==t?{maximumFractionDigits:t}:{})}}return new e(l||"en-US",a)}})();
@@ -10,15 +10,14 @@ function fmtPrice(v){if(v==null||Number.isNaN(v))return"-";let d; if(v>=100)d=2;
 function fmtNum(v,max=2){if(v==null||Number.isNaN(v))return"-";return safeLocale(v,0,clamp(max,0,8))}
 function fmtPct(v){if(v==null||Number.isNaN(v))return"-";const n=Number(v),s=n>0?"+":"";return `<span class="${n>0?"up":n<0?"down":""}">${s}${n.toFixed(2)}%</span>`}
 
-/* sparkline with area fill (full-bleed) */
-function sparklineSVGFilled(arr,w=300,h=64){
+/* sparkline with area fill (full-bleed, bigger) */
+function sparklineSVGFilled(arr,w=400,h=88){
   if(!arr||arr.length<2) return "-";
   const min=Math.min(...arr), max=Math.max(...arr), span=(max-min)||1;
   const mapY = v => h-((v-min)/span)*h;
   const pts=arr.map((p,i)=>`${(i/(arr.length-1))*w},${mapY(p)}`).join(" ");
   const up = arr[arr.length-1] >= arr[0];
   const color = up ? "#28e07a" : "#ff5b6e";
-  const firstY = mapY(arr[0]), lastY = mapY(arr[arr.length-1]);
   return `
 <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
   <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" points="${pts}"/>
@@ -70,32 +69,36 @@ function renderTableSlice(rows){
   safeSetHTML(tb, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
 }
 
-/* --- Header minis (BTC / Global; full-bleed) --- */
+/* --- Header minis (BTC / Global; bigger & full-bleed) --- */
 async function renderHeaderMinis(markets){
   // BTC Market Cap (7d)
   try{
     const d=await fetchMarketChart('bitcoin','usd',7,'daily');
     const caps=(d.market_caps||[]).map(p=>Array.isArray(p)?p[1]:p).filter(Boolean);
-    $("#mini-btc") && ($("#mini-btc").innerHTML = sparklineSVGFilled(caps,300,64));
+    const el=$("#mini-btc"); if(el) el.innerHTML = sparklineSVGFilled(caps,400,88);
   }catch(e){ /* noop */ }
 
-  // Global Market Cap (approx via top 100 aggregate)
+  // Global Market Cap (aggregate top 100)
   try{
-    const top=markets.slice(0,100).filter(c=>Array.isArray(c.sparkline_in_7d?.price) && c.market_cap && c.current_price);
-    if(top.length){
-      const len=top[0].sparkline_in_7d.price.length;
-      const agg=new Array(len).fill(0);
-      top.forEach(c=>{
-        const supply=c.market_cap/c.current_price;
-        const s=c.sparkline_in_7d.price;
-        for(let i=0;i<len;i++) agg[i]+= s[i]*supply;
-      });
-      $("#mini-global") && ($("#mini-global").innerHTML = sparklineSVGFilled(agg,300,64));
+    let N=100, agg=null;
+    for(const n of [100,50,30]){
+      const top=markets.slice(0,n).filter(c=>Array.isArray(c.sparkline_in_7d?.price) && c.market_cap && c.current_price);
+      if(top.length){
+        const len=top[0].sparkline_in_7d.price.length;
+        const arr=new Array(len).fill(0);
+        top.forEach(c=>{
+          const supply=c.market_cap/c.current_price;
+          const s=c.sparkline_in_7d.price;
+          for(let i=0;i<len;i++) arr[i]+= s[i]*supply;
+        });
+        if(arr.some(v=>Number.isFinite(v))) { agg=arr; N=n; break; }
+      }
     }
+    const el=$("#mini-global"); if(el && agg) el.innerHTML = sparklineSVGFilled(agg,400,88);
   }catch(e){ /* noop */ }
 }
 
-/* --- KPIs / Lists --- */
+/* --- KPIs / Lists (gainers includes price) --- */
 function renderKPIs(markets,global){
   const btc=markets.find(x=>x.id==="bitcoin");
   const total=global?.data?.total_market_cap?.usd ?? null;
@@ -106,10 +109,26 @@ function renderKPIs(markets,global){
   safeSetHTML("#kpi-dominance", dom!=null ? fmtNum(dom,2)+"%" : "-");
 }
 function renderRightLists(markets){
+  // gainers by 24h %
   const gainers=markets.slice().filter(x=>Number.isFinite(x.price_change_percentage_24h)).sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h).slice(0,7);
-  safeSetHTML("#list-gainers", gainers.map((c,i)=>{ const sym=(c.symbol||"").toUpperCase(); const v=c.price_change_percentage_24h; const cls=v>=0?"up":"down"; return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="value ${cls}">${v.toFixed(2)}%</div></div>`; }).join(""));
+  safeSetHTML("#list-gainers", gainers.map((c,i)=>{
+    const sym=(c.symbol||"").toUpperCase();
+    const pct=c.price_change_percentage_24h; const cls=pct>=0?"up":"down";
+    const price=fmtPrice(c.current_price);
+    return `<div class="row">
+      <div class="rank">${i+1}.</div>
+      <div class="sym">${sym}</div>
+      <div class="price">$${price}</div>
+      <div class="value ${cls}">${pct.toFixed(2)}%</div>
+    </div>`;
+  }).join(""));
+
+  // volume ranking (unchanged)
   const vol=markets.slice().sort((a,b)=>b.total_volume-a.total_volume).slice(0,7);
-  safeSetHTML("#list-volume", vol.map((c,i)=>{ const sym=(c.symbol||"").toUpperCase(); return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="value">$${fmtNum(c.total_volume,0)}</div></div>`; }).join(""));
+  safeSetHTML("#list-volume", vol.map((c,i)=>{
+    const sym=(c.symbol||"").toUpperCase();
+    return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="price">$${fmtNum(c.total_volume,0)}</div><div class="value"></div></div>`;
+  }).join(""));
 }
 
 /* --- Filter/Sort --- */
@@ -153,8 +172,8 @@ function initStars(){
   function draw(t){
     ctx.clearRect(0,0,W,H);
     const active = Math.floor(BASE*(0.2 + 0.8*intensity));
-    const baseA  = 0.18 + intensity*0.6;             // 밝기
-    cv.style.filter = `blur(${(1-intensity)*3}px)`;   // 블러(배경은 그대로)
+    const baseA  = 0.18 + intensity*0.6;             // brightness
+    cv.style.filter = `blur(${(1-intensity)*3}px)`;   // blur (stars only)
     cv.style.opacity = 0.35 + intensity*0.55;
 
     ctx.globalCompositeOperation="lighter";
@@ -191,13 +210,12 @@ async function init(){
 }
 
 document.addEventListener("DOMContentLoaded", ()=>{
-  // controls
   $("#search").addEventListener("input", ()=>{ state.page=1; applySortFilter(); });
   $("#sortkey").addEventListener("change", e=>{ state.sortKey=e.target.value; applySortFilter(); });
   $("#sortdir").addEventListener("click", e=>{ state.sortDir = state.sortDir===-1 ? 1 : -1; e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲"; applySortFilter(); });
   $("#page").addEventListener("change", e=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
 
-  initStars();   // ⭐ only stars respond to slider
+  initStars();   // stars slider
   init();
   setInterval(init, 30000);
 });
