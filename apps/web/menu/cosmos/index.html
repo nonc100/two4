@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>COSMOS</title>
 
-  <!-- 타이틀 폰트 -->
+  <!-- 타이틀/헤더 폰트 -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -15,41 +15,41 @@
       --stroke:rgba(255,255,255,.10);
       --primary:#1f5cff;
 
-      /* ===== 여백/폭 (요기만 조절하면 전체 간격이 변해요) ===== */
-      --top-space: 56px;        /* COSMOS를 화면 상단에 더 붙이기(↓면 위로 붙음) */
-      --after-title-gap: 64px;  /* COSMOS ↔ 7개 카드 사이 간격(↑면 더 떨어짐) */
-      --container-max: 1420px;  /* 중앙 고정 폭 */
-      --side-pad: 10px;         /* 좌우 패딩 */
+      /* ===== 여백/폭 ===== */
+      --top-space: 56px;        /* COSMOS를 화면 상단에 더 붙이고 싶으면 수치 줄이기 */
+      --after-title-gap: 64px;  /* COSMOS ↔ 7개 카드 사이 간격 */
+      --container-max: 1420px;
+      --side-pad: 10px;
 
       /* ===== 배경/로고 ===== */
       --logo-h: clamp(24px, 2.7vw, 42px);
-      --hero-bg: url("../../media/your-galaxy.jpg"); /* 배경 이미지 있으면 교체 */
+      --hero-bg: radial-gradient(900px 520px at 85% 0%, rgba(120,80,255,.18), transparent 60%),
+                 radial-gradient(800px 460px at 10% -10%, rgba(31,92,255,.22), transparent 60%);
 
-      /* ===== 유리 카드 (투명 느낌) ===== */
-      --glass-alpha: .48;       /* 0(완전 투명)~1(완전 불투명) → 투명 느낌은 0.4~0.6 추천 */
-      --glass-blur: 16px;       /* 배경 블러 강도 */
-      --border-w: 1px;          /* 유리 테두리 두께 */
+      /* ===== 유리 카드 ===== */
+      --glass-alpha: .48;       /* 0(투명)~1(불투명) */
+      --glass-blur: 16px;
+      --border-w: 1px;
       --gb1: rgba(255,255,255,.42);
       --gb2: rgba(255,255,255,.22);
       --gb3: rgba(255,255,255,.10);
+
+      /* 카드 텍스트 구분색 */
+      --head-color: #a9b4d6;   /* 카드 머릿말 */
+      --kpi-color:  #eef3ff;   /* KPI/값 */
     }
 
     html,body{margin:0;background:var(--bg);color:#e8ebf3;}
-    /* 은하수 배경 + 은은한 광 */
     body::before{
       content:""; position:fixed; inset:0; z-index:-1;
-      background:
-        radial-gradient(800px 460px at 10% -10%, rgba(31,92,255,.22), transparent 60%),
-        radial-gradient(900px 520px at 85% 0%, rgba(120,80,255,.18), transparent 60%),
-        var(--hero-bg) center/cover no-repeat;
+      background: var(--hero-bg);
       opacity:.25; filter:saturate(1.05) contrast(1.04);
     }
-
     .container{ max-width:var(--container-max); margin:0 auto; padding:0 var(--side-pad); }
 
     /* ===== 헤더 ===== */
-    .site-header{ position:relative; padding: var(--top-space) 0 14px; } /* 위 간격 좁게 */
-    .brand{ display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
+    .site-header{ padding: var(--top-space) 0 14px; }
+    .brand{ display:flex; align-items:center; gap:10px; }
     .brand img{
       height:var(--logo-h); width:auto; object-fit:contain; max-width:360px;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
@@ -59,29 +59,20 @@
       font-size:calc(var(--logo-h) * .92); line-height:1;
     }
 
-    /* ===== 상단 대시보드 (정중앙 기준: 좌 5 / 우 2) =====
-       .dash: 좌(2fr) / 우(1fr)
-       좌(.dash-left): 윗줄 3개, 아랫줄 2개
-       우(.dash-right): 1행 2열(왼: Top7 / 오른쪽: Volume)
-    */
+    /* ===== 상단 대시보드 (정중앙 기준: 좌 5 / 우 2) ===== */
     .dash{
       display:grid; grid-template-columns: 2fr 1fr; gap:18px;
       margin-top: var(--after-title-gap);
       align-items:start;
     }
-
     .dash-left{ display:grid; gap:16px; }
-    .grid-top{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }  /* 윗줄 3개 */
-    .grid-bottom{ display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }/* 아랫줄 2개 */
+    .grid-top{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }  /* 윗줄 3 */
+    .grid-bottom{ display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }/* 아랫줄 2 */
+    .dash-right{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }      /* 오른쪽 한 줄 2칸 */
 
-    .dash-right{
-      display:grid; grid-template-columns: 1fr 1fr; gap:16px; /* ← 오른쪽 1행 2열 */
-    }
-
-    /* 반응형 */
     @media (max-width:1100px){
       .dash{ grid-template-columns: 1fr; }
-      .dash-right{ grid-template-columns: 1fr; } /* 좁아지면 오른쪽도 세로로 */
+      .dash-right{ grid-template-columns: 1fr; }
       .grid-top{ grid-template-columns: 1fr 1fr; }
       .grid-bottom{ grid-template-columns: 1fr; }
     }
@@ -113,14 +104,25 @@
       pointer-events:none;
     }
     .card > *{ position:relative; z-index:1; }
-    .card h3{ margin:0 0 8px; font-family:"Orbitron",system-ui; font-size:16px; letter-spacing:.02em; }
-    .kpi{ font-size:22px; font-weight:700; }
+    .card h3{
+      margin:0 0 8px;
+      font-family:"Orbitron",system-ui;
+      font-size:13px; letter-spacing:.06em; font-weight:700; color:var(--head-color);
+      text-transform:uppercase; opacity:.95;
+    }
+    .kpi{ font-size:24px; font-weight:800; color:var(--kpi-color);
+          letter-spacing:.02em; font-variant-numeric: tabular-nums; }
     .sub{ opacity:.7; font-size:12px; }
+
     .list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .list .row{ display:flex; justify-content:space-between; gap:8px; font-size:14px; }
+    .list .row{ display:flex; align-items:center; gap:8px; font-size:14px; }
+    .list .rank{ width:1.8em; text-align:right; opacity:.7; font-weight:700; }
+    .list .sym{ font-weight:800; letter-spacing:.03em; }
+    .list .sep{ opacity:.5; margin:0 4px; }
+    .list .value{ margin-left:auto; font-weight:800; font-variant-numeric: tabular-nums; }
     .up{ color:#28e07a } .down{ color:#ff5b6e }
 
-    /* ===== 툴바 / 테이블 / 페이저 ===== */
+    /* ===== 툴바 / 테이블 ===== */
     .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0 6px; }
     .toolbar input{
       padding:8px 10px; border-radius:8px; border:1px solid var(--stroke);
@@ -139,8 +141,8 @@
     th[data-sort].desc .sort-ic::before{ content:"▼"; font-size:10px; }
 
     .coin-link{ color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px; white-space:nowrap; }
-    .coin-link:hover{ opacity:.9; }
-    .coin-name{ text-overflow:ellipsis; overflow:hidden; max-width:160px; }
+    .coin-ticker{ font-weight:900; letter-spacing:.03em; }
+    .coin-name{ opacity:.8; text-overflow:ellipsis; overflow:hidden; max-width:160px; }
 
     /* 7d 스파크라인 열 */
     .cosmos-table td:last-child svg{ display:block; margin:0 auto; }
@@ -217,7 +219,7 @@
       <!-- 오른쪽 2개 (1행 2열) -->
       <div class="dash-right">
         <div id="card-gainers" class="card">
-          <h3>등락률 상위 7위 [24h]</h3>
+          <h3>등락률 상위 TOP 7 [24h]</h3>
           <div id="k-gainers" class="list"></div>
         </div>
 
@@ -228,7 +230,7 @@
       </div>
     </section>
 
-    <!-- 툴바: 검색(이름/심볼). 정렬은 헤더 클릭 -->
+    <!-- 툴바: 검색(이름/심볼). 정렬은 헤더 클릭(▲/▼) -->
     <div class="toolbar">
       <input id="cosmos-q" placeholder="코인 검색 (이름/심볼)">
     </div>
