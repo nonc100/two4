@@ -78,9 +78,9 @@ async function renderHeaderMinis(markets){
     const el=$("#mini-btc"); if(el) el.innerHTML = sparklineSVGFilled(caps,400,88);
   }catch(e){ /* noop */ }
 
-  // Global Market Cap (aggregate top 100)
+  // Global Market Cap (aggregate top 100 → fallback 50 → 30)
   try{
-    let N=100, agg=null;
+    let agg=null;
     for(const n of [100,50,30]){
       const top=markets.slice(0,n).filter(c=>Array.isArray(c.sparkline_in_7d?.price) && c.market_cap && c.current_price);
       if(top.length){
@@ -91,7 +91,7 @@ async function renderHeaderMinis(markets){
           const s=c.sparkline_in_7d.price;
           for(let i=0;i<len;i++) arr[i]+= s[i]*supply;
         });
-        if(arr.some(v=>Number.isFinite(v))) { agg=arr; N=n; break; }
+        if(arr.some(v=>Number.isFinite(v))) { agg=arr; break; }
       }
     }
     const el=$("#mini-global"); if(el && agg) el.innerHTML = sparklineSVGFilled(agg,400,88);
@@ -123,7 +123,7 @@ function renderRightLists(markets){
     </div>`;
   }).join(""));
 
-  // volume ranking (unchanged)
+  // volume ranking
   const vol=markets.slice().sort((a,b)=>b.total_volume-a.total_volume).slice(0,7);
   safeSetHTML("#list-volume", vol.map((c,i)=>{
     const sym=(c.symbol||"").toUpperCase();
@@ -159,7 +159,7 @@ function applySortFilter(){
 function initStars(){
   const cv=$("#starCanvas"), range=$("#starRange"); if(!cv||!range) return;
   const ctx=cv.getContext("2d");
-  let W=0,H=0; const BASE=280; let intensity=range.value/100; // 0..1
+  let W=0,H=0; const BASE=280; let intensity=range.value/100;
 
   function resize(){ W=cv.width=innerWidth; H=cv.height=innerHeight; }
   resize(); addEventListener("resize", resize);
@@ -172,8 +172,8 @@ function initStars(){
   function draw(t){
     ctx.clearRect(0,0,W,H);
     const active = Math.floor(BASE*(0.2 + 0.8*intensity));
-    const baseA  = 0.18 + intensity*0.6;             // brightness
-    cv.style.filter = `blur(${(1-intensity)*3}px)`;   // blur (stars only)
+    const baseA  = 0.18 + intensity*0.6;
+    cv.style.filter = `blur(${(1-intensity)*3}px)`;   // 별만 블러 변화
     cv.style.opacity = 0.35 + intensity*0.55;
 
     ctx.globalCompositeOperation="lighter";
@@ -187,37 +187,4 @@ function initStars(){
       ctx.beginPath(); ctx.arc(st.x, st.y, st.r*(0.7+intensity*0.6), 0, Math.PI*2); ctx.fill();
     }
     ctx.globalCompositeOperation="source-over";
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
-
-  range.addEventListener("input", ()=>{ intensity = clamp(range.value/100,0,1); });
-}
-
-/* --- Init --- */
-async function init(){
-  try{
-    const [markets, global] = await Promise.all([fetchMarkets(), fetchGlobal()]);
-    state.all=markets;
-    renderKPIs(markets, global);
-    await renderHeaderMinis(markets);
-    renderRightLists(markets);
-    applySortFilter();
-  }catch(e){
-    console.error(e);
-    safeSetHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
-  }
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  $("#search").addEventListener("input", ()=>{ state.page=1; applySortFilter(); });
-  $("#sortkey").addEventListener("change", e=>{ state.sortKey=e.target.value; applySortFilter(); });
-  $("#sortdir").addEventListener("click", e=>{ state.sortDir = state.sortDir===-1 ? 1 : -1; e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲"; applySortFilter(); });
-  $("#page").addEventListener("change", e=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
-
-  initStars();   // stars slider
-  init();
-  setInterval(init, 30000);
-});
-
-window._cosmos={state,init};
+    requestAnimationFrame(draw
