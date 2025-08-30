@@ -82,7 +82,7 @@
 
     /* ===== 유리 카드 ===== */
     .card{
-      position:relative; border-radius:14px; padding:16px;
+      position:relative; border-radius:14px; padding:14px;
       background: rgba(18,24,46,var(--glass-alpha));
       box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.02);
       overflow:hidden;
@@ -92,7 +92,7 @@
       background: linear-gradient(135deg, var(--gb1), var(--gb2) 55%, var(--gb3));
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
       -webkit-mask-composite: xor; mask-composite: exclude;
-      pointer-events:none; opacity:.9;
+      pointer-events:none; opacity:.75;
     }
     .card::after{
       content:""; position:absolute; inset:1px; border-radius: calc(14px - 1px);
@@ -107,19 +107,24 @@
     .card h3{
       margin:0 0 8px;
       font-family:"Orbitron",system-ui;
-      font-size:13px; letter-spacing:.06em; font-weight:700; color:var(--head-color);
+         font-size:12.5px; letter-spacing:.06em; font-weight:700; color:var(--head-color);
       text-transform:uppercase; opacity:.95;
     }
-    .kpi{ font-size:24px; font-weight:800; color:var(--kpi-color);
+    .kpi{ font-size:22px; font-weight:700; color:var(--kpi-color);
           letter-spacing:.02em; font-variant-numeric: tabular-nums; }
     .sub{ opacity:.7; font-size:12px; }
 
-    .list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .list .row{ display:flex; align-items:center; gap:8px; font-size:14px; }
-    .list .rank{ width:1.8em; text-align:right; opacity:.7; font-weight:700; }
-    .list .sym{ font-weight:800; letter-spacing:.03em; }
-    .list .sep{ opacity:.5; margin:0 4px; }
-    .list .value{ margin-left:auto; font-weight:800; font-variant-numeric: tabular-nums; }
+     .list{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+    .list .row{
+      display:grid;
+      grid-template-columns: 2.2em 4.4em 1fr;
+      align-items:center;
+      font-size:13.5px;
+    }
+    .list .rank{ width:auto; text-align:right; opacity:.7; font-weight:700; }
+    .list .sym{ font-weight:700; letter-spacing:.02em; }
+    .list .sep{ display:none; }
+    .list .value{ justify-self:end; font-weight:700; font-variant-numeric: tabular-nums; }
     .up{ color:#28e07a } .down{ color:#ff5b6e }
 
     /* ===== 툴바 / 테이블 ===== */
