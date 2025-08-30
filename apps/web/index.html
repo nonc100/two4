@@ -5,6 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TWO.4 – Infinity Clock</title>
 
+  <script>
+  /* dev hotfix: auto-create missing #ids to avoid null.innerHTML errors */
+  (() => {
+    const mk = (id) => {
+      const el = document.createElement('div');
+      el.id = id;
+      el.style.display = 'none';  // 화면엔 보이지 않게
+      document.addEventListener('DOMContentLoaded', () => {
+        // body가 생기면 붙이기
+        (document.body || document.documentElement).appendChild(el);
+      });
+      return el;
+    };
+
+    const gebi = document.getElementById.bind(document);
+    document.getElementById = function(id){
+      return gebi(id) || mk(id);
+    };
+
+    const dQS = Document.prototype.querySelector;
+    Document.prototype.querySelector = function(sel){
+      const el = dQS.call(this, sel);
+      if (!el && sel.startsWith('#')) return mk(sel.slice(1));
+      return el;
+    };
+  })();
+  </script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
 
   <style>
