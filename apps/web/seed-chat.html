@@ -4,6 +4,33 @@
 <meta charset="UTF-8" />
 <title>Seed Chat</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+/* dev hotfix: auto-create missing #ids to avoid null.innerHTML errors */
+(() => {
+  const mk = (id) => {
+    const el = document.createElement('div');
+    el.id = id;
+    el.style.display = 'none';  // 화면엔 보이지 않게
+    document.addEventListener('DOMContentLoaded', () => {
+      // body가 생기면 붙이기
+      (document.body || document.documentElement).appendChild(el);
+    });
+    return el;
+  };
+
+  const gebi = document.getElementById.bind(document);
+  document.getElementById = function(id){
+    return gebi(id) || mk(id);
+  };
+
+  const dQS = Document.prototype.querySelector;
+  Document.prototype.querySelector = function(sel){
+    const el = dQS.call(this, sel);
+    if (!el && sel.startsWith('#')) return mk(sel.slice(1));
+    return el;
+  };
+})();
+</script>
 <style>
   :root { --purple:#8e44ad; --bg:#0b0b12; --card:#11121a; --line:#24242e; --fg:#fff; }
   *{ box-sizing:border-box; }
