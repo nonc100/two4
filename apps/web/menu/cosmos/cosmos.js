@@ -1,136 +1,195 @@
-/* ===== COSMOS JS – ticker-only table, mobile 2/2/2/1, gauges, stars, LS timeframes ===== */
-(function(){
-'use strict';
+/* ===== COSMOS JS – full build (cards + table + stars + gauges) ===== */
 
-/* --- locale guards --- */
-(function(){
-  var origToLS = Number.prototype.toLocaleString;
+/* --- Locale clamps to avoid maximumFractionDigits errors --- */
+(() => {
+  const origToLS = Number.prototype.toLocaleString;
   Number.prototype.toLocaleString = function (locale, opts) {
     if (opts && typeof opts === "object") {
-      var min = opts.minimumFractionDigits, max = opts.maximumFractionDigits;
-      if (!Number.isFinite(min)) min=undefined; if (!Number.isFinite(max)) max=undefined;
-      if (min!==undefined) min=Math.min(20,Math.max(0,min));
-      if (max!==undefined) max=Math.min(20,Math.max(0,max));
-      if (min!==undefined && max!==undefined && max<min) max=min;
-      opts = Object.assign({},opts,(min!==undefined?{minimumFractionDigits:min}:{}) ,(max!==undefined?{maximumFractionDigits:max}:{}) );
+      let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
+      if (!Number.isFinite(min)) min = undefined;
+      if (!Number.isFinite(max)) max = undefined;
+      if (min !== undefined) min = Math.min(20, Math.max(0, min));
+      if (max !== undefined) max = Math.min(20, Math.max(0, max));
+      if (min !== undefined && max !== undefined && max < min) max = min;
+      opts = { ...opts,
+        ...(min !== undefined ? { minimumFractionDigits: min } : {}),
+        ...(max !== undefined ? { maximumFractionDigits: max } : {}) };
     }
     return origToLS.call(this, locale || "en-US", opts);
   };
+  const OrigNF = Intl.NumberFormat;
+  Intl.NumberFormat = function (locale, opts) {
+    if (opts && typeof opts === "object") {
+      let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
+      if (!Number.isFinite(min)) min = undefined;
+      if (!Number.isFinite(max)) max = undefined;
+      if (min !== undefined) min = Math.min(20, Math.max(0, min));
+      if (max !== undefined) max = Math.min(20, Math.max(0, max));
+      if (min !== undefined && max !== undefined && max < min) max = min;
+      opts = { ...opts,
+        ...(min !== undefined ? { minimumFractionDigits: min } : {}),
+        ...(max !== undefined ? { maximumFractionDigits: max } : {}) };
+    }
+    return new OrigNF(locale || "en-US", opts);
+  };
 })();
 
-/* --- utils --- */
-function clamp(n,a,b){return Math.min(b,Math.max(a,n));}
-function safeLocale(num,minFD,maxFD){
-  var min=Number.isFinite(minFD)?clamp(minFD,0,20):0;
-  var max=Number.isFinite(maxFD)?clamp(maxFD,0,20):2;
+/* --- Utils --- */
+const clamp = (n,a,b)=>Math.min(b,Math.max(a,n));
+const $  = (s,sc=document)=>sc.querySelector(s);
+const $$ = (s,sc=document)=>Array.from(sc.querySelectorAll(s));
+const safeSetHTML = (sel,html) => { const el = typeof sel==="string"?$(sel):sel; if(el) el.innerHTML = html; };
+
+function safeLocale(num,minFD=0,maxFD=2){
+  let min = Number.isFinite(minFD) ? clamp(minFD,0,20) : 0;
+  let max = Number.isFinite(maxFD) ? clamp(maxFD,0,20) : 2;
   if(max<min) max=min;
   try{return Number(num??0).toLocaleString('en-US',{minimumFractionDigits:min,maximumFractionDigits:max});}
   catch{return String(Number(num??0).toFixed(max));}
 }
 function fmtPrice(v){
   if(v==null||Number.isNaN(v)) return "-";
-  var d; if(v>=100)d=2; else if(v>=1)d=4; else if(v>0)d=Math.ceil(Math.abs(Math.log10(v)))+2; else d=2;
+  let d; if(v>=100)d=2; else if(v>=1)d=4; else if(v>0)d=Math.ceil(Math.abs(Math.log10(v)))+2; else d=2;
   return safeLocale(v,0,clamp(d,0,8));
 }
-function abbrUSD(n){
-  n=Number(n||0); var a=Math.abs(n);
-  if(a>=1e12) return (n/1e12).toFixed(2)+'T';
-  if(a>=1e9) return (n/1e9).toFixed(2)+'B';
-  if(a>=1e6) return (n/1e6).toFixed(2)+'M';
-  if(a>=1e3) return (n/1e3).toFixed(2)+'K';
-  return safeLocale(n,0,0);
+function fmtNum(v,max=2){ if(v==null||Number.isNaN(v)) return "-"; return safeLocale(v,0,clamp(max,0,8)); }
+function fmtCompact(n){
+  if(n==null||!Number.isFinite(+n)) return "-";
+  const abs = Math.abs(n);
+  if(abs>=1e12) return "$"+(n/1e12).toLocaleString('en-US',{maximumFractionDigits:2})+"T";
+  if(abs>=1e9)  return "$"+(n/1e9 ).toLocaleString('en-US',{maximumFractionDigits:2})+"B";
+  if(abs>=1e6)  return "$"+(n/1e6 ).toLocaleString('en-US',{maximumFractionDigits:2})+"M";
+  return "$"+n.toLocaleString('en-US',{maximumFractionDigits:0});
 }
-function fmtNum(v,max){ if(v==null||Number.isNaN(v)) return "-"; return safeLocale(v,0,clamp(max??2,0,8)); }
-function fmtPct(v){
-  if(v==null||Number.isNaN(v)) return "-";
-  var n=Number(v); var sign=n>0?"+":""; var cls=n>0?"up":n<0?"down":"";
-  return '<span class="'+cls+'">'+sign+n.toFixed(2)+'%</span>';
+function fmtPctSpan(v){
+  if(v==null||Number.isNaN(+v)) return `<span>-</span>`;
+  const n = Number(v);
+  const sign = n>0?"+":"";
+  const cls = n>0?"up":n<0?"down":"";
+  return `<span class="${cls}">${sign}${n.toFixed(2)}%</span>`;
 }
-function sparklineSVGFilled(arr,w,h){
-  if(!arr||arr.length<2) return "-"; w=w||420; h=h||92;
-  var min=Math.min.apply(null,arr), max=Math.max.apply(null,arr), span=(max-min)||1;
-  function y(v){return h-((v-min)/span)*h;}
-  var pts=arr.map(function(p,i){return (i/(arr.length-1))*w+','+y(p);}).join(' ');
-  var up=arr[arr.length-1]>=arr[0]; var color=up?"#28e07a":"#ff5b6e";
-  return '<svg width="100%" height="100%" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+
-    '<polyline fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" points="'+pts+'"/>'+
-    '<polygon points="0,'+h+' '+pts+' '+w+','+h+'" fill="'+color+'" opacity=".12"/></svg>';
+function sparklineSVG(arr,w=280,h=110,color="#ff5b6e"){
+  if(!arr || arr.length < 2) return "-";
+  const min = Math.min(...arr), max = Math.max(...arr), span = (max-min)||1;
+  const pts = arr.map((p,i)=>{
+    const x=(i/(arr.length-1))*w;
+    const y=h-((p-min)/span)*h;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/>
+    </svg>`;
 }
-function sparklineSVG(arr,w,h){
-  if(!arr||arr.length<2) return "-"; w=w||100; h=h||24;
-  var min=Math.min.apply(null,arr), max=Math.max.apply(null,arr), span=(max-min)||1;
-  var pts=arr.map(function(p,i){return (i/(arr.length-1))*w+','+(h-((p-min)/span)*h);}).join(' ');
-  var up=arr[arr.length-1]>=arr[0]; var color=up?"#28e07a":"#ff5b6e";
-  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><polyline fill="none" stroke="'+color+'" stroke-width="2" points="'+pts+'"/></svg>';
-}
-var $=function(s,sc){return (sc||document).querySelector(s);}
-var $$=function(s,sc){return Array.from((sc||document).querySelectorAll(s));}
-function safeSetHTML(sel,html){var el=typeof sel==="string"?$(sel):sel; if(el) el.innerHTML=html;}
 
-/* --- fetchers --- */
+/* --- Fetchers (direct → proxy fallback) --- */
 async function fetchMarkets({vs="usd",perPage=200,page=1}={}){
   const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
-  try{const r=await fetch(`https://api.coingecko.com/api/v3/coins/markets?${q}`,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json();}
-  catch{const r2=await fetch(`/api/coins/markets?${q}`,{cache:'no-store'}); if(!r2.ok) throw new Error("markets failed"); return await r2.json();}
+  const direct=`https://api.coingecko.com/api/v3/coins/markets?${q}`;
+  const proxy =`/api/coins/markets?${q}`;
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("markets failed"); return await r2.json(); }
 }
 async function fetchGlobal(){
-  try{const r=await fetch('https://api.coingecko.com/api/v3/global',{cache:'no-store'}); if(!r.ok) throw 0; return await r.json();}
-  catch{const r2=await fetch('/api/global',{cache:'no-store'}); if(!r2.ok) throw new Error("global failed"); return await r2.json();}
+  const direct=`https://api.coingecko.com/api/v3/global`;
+  const proxy =`/api/global`;
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("global failed"); return await r2.json(); }
 }
-async function fetchFNG(){
-  try{const r=await fetch('https://api.alternative.me/fng/?limit=1&format=json&date_format=iso',{cache:'no-store'}); if(!r.ok) throw 0; return await r.json();}
-  catch{try{const r2=await fetch('/api/fng',{cache:'no-store'}); if(!r2.ok) throw 0; return await r2.json();}catch(e){return null;}}
+async function fetchMarketChart(id, vs='usd', days=7, interval='daily'){
+  const q=`vs_currency=${vs}&days=${days}&interval=${interval}`;
+  const direct=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`;
+  const proxy =`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`;
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("chart failed"); return await r2.json(); }
 }
-async function fetchLongShort(period){
-  const qs='symbol=BTCUSDT&period='+encodeURIComponent(period)+'&limit=1';
-  try{const r=await fetch('https://fapi.binance.com/futures/data/globalLongShortAccountRatio?'+qs,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json();}
-  catch{try{const r2=await fetch('/api/binance/globalLongShortAccountRatio?'+qs,{cache:'no-store'}); if(!r2.ok) throw 0; return await r2.json();}catch(e){return null;}}
+/* Fear & Greed (2개 받아 증감률) */
+async function fetchFGI(){
+  const direct=`https://api.alternative.me/fng/?limit=2&format=json`;
+  const proxy =`/api/fng?limit=2&format=json`;
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("fng failed"); return await r2.json(); }
+}
+/* Binance Long/Short */
+async function fetchLongShort(period='1h'){
+  const direct=`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=${period}&limit=30`;
+  const proxy =`/api/binance/globalLongShortAccountRatio?symbol=BTCUSDT&period=${period}&limit=30`;
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("ls failed"); return await r2.json(); }
 }
 
-/* --- state --- */
-var state={all:[],filtered:[],page:1,perPage:50,sortKey:'market_cap',sortDir:-1,longShortPeriod:'1h'};
+/* --- State --- */
+const state = {
+  all: [],
+  filtered: [],
+  page: 1,
+  perPage: 50,
+  sortKey: "market_cap",
+  sortDir: -1, // -1 desc, 1 asc
+  lsPeriod: '1h',
+};
 
-/* --- table row --- */
+/* --- Rendering: table --- */
 function buildRowHTML(c){
-  var id=c.id; var price=fmtPrice(c.current_price);
-  var s7=(c.sparkline_in_7d && c.sparkline_in_7d.price) || null;
-  var sym=(c.symbol||"").toUpperCase(); var href=`./chart.html?id=${encodeURIComponent(id)}`;
-  var ch1h=(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null);
-  var ch24=(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null);
-  var ch7d=(c.price_change_percentage_7d_in_currency ?? null);
-
+  const id   = c.id;
+  const price= fmtPrice(c.current_price);
+  const s7   = (c.sparkline_in_7d && c.sparkline_in_7d.price) || null;
+  const sym  = (c.symbol||"").toUpperCase();
+  const href = `./chart.html?id=${encodeURIComponent(id)}`;
   return `<tr class="row">
-    <td class="row-index" data-label="순위">${c.market_cap_rank ?? "-"}</td>
-    <td class="coin-cell coin-sticky" data-label="코인">
+    <td class="row-index">${c.market_cap_rank ?? "-"}</td>
+    <td class="coin-cell">
       <img class="coin-img" src="${c.image}" alt="${sym}">
-      <a class="coin-name" href="${href}" title="${sym} 전체 차트">${sym}</a>
+      <a class="coin-name" href="${href}" title="전체 차트 보기">${sym}</a>
     </td>
-    <td class="text-right" data-label="시세">$${price}</td>
-    <td class="text-right" data-label="1시간">${fmtPct(ch1h)}</td>
-    <td class="text-right" data-label="24시간">${fmtPct(ch24)}</td>
-    <td class="text-right" data-label="7일">${fmtPct(ch7d)}</td>
-    <td class="text-right" data-label="시가총액">${abbrUSD(c.market_cap)}</td>
-    <td class="text-right" data-label="거래량">${abbrUSD(c.total_volume)}</td>
-    <td class="text-right" data-label="7일 차트"><span class="spark">${s7 ? sparklineSVG(s7) : "-"}</span></td>
+    <td class="text-right">$${price}</td>
+    <td class="text-right">${fmtPctSpan(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
+    <td class="text-right">${fmtPctSpan(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null)}</td>
+    <td class="text-right">${fmtPctSpan(c.price_change_percentage_7d_in_currency ?? null)}</td>
+    <td class="text-right capcell">
+      <span>${fmtCompact(c.market_cap)}</span>
+      <span class="cap-spark" data-id="${id}"></span>
+    </td>
+    <td class="text-right">${fmtCompact(c.total_volume)}</td>
+    <td class="text-right spark-col"><span class="spark">${s7 ? sparklineSVG(s7,100,24, s7.at(-1)>=s7[0]?"#28e07a":"#ff5b6e") : "-"}</span></td>
   </tr>`;
 }
+function ensureTbody(){ return $("#cosmos-tbody"); }
+
 function renderTableSlice(rows){
-  var tbody=$("#cosmos-tbody"); if(!tbody) return;
-  var start=(state.page-1)*state.perPage, end=start+state.perPage;
-  var slice=rows.slice(start,end);
+  const tbody = ensureTbody(); if(!tbody) return;
+  const start = (state.page-1)*state.perPage, end = start + state.perPage;
+  const slice = rows.slice(start,end);
   safeSetHTML(tbody, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
+  loadCapSparklinesForPage(); // lazy load caps
 }
 
-/* --- sort/filter/paging --- */
+/* lazy load market cap mini charts for first 15 rows of the page */
+async function loadCapSparklinesForPage(){
+  const nodes = Array.from(document.querySelectorAll('.cap-spark[data-id]')).slice(0,15);
+  for(const el of nodes){
+    const id = el.dataset.id;
+    try{
+      const d = await fetchMarketChart(id,'usd',7,'daily');
+      const caps = (d.market_caps||[]).map(x=>Array.isArray(x)?x[1]:x).filter(Boolean);
+      el.innerHTML = sparklineSVG(caps,70,20, caps.at(-1)>=caps[0]?"#28e07a":"#ff5b6e");
+      el.removeAttribute('data-id');
+    }catch(e){/* ignore */}
+    await new Promise(r=>setTimeout(r,120));
+  }
+}
+
 function applySortFilter(){
-  var q=($("#search").value||"").trim().toLowerCase();
-  state.filtered=state.all.filter(function(c){
+  const q = ($("#search").value||"").trim().toLowerCase();
+  state.filtered = state.all.filter(c => {
     if(!q) return true;
-    var sym=(c.symbol||"").toLowerCase(), nm=(c.name||"").toLowerCase();
-    return sym.includes(q)||nm.includes(q);
+    const sym = (c.symbol||"").toLowerCase();
+    const nm  = (c.name||"").toLowerCase();
+    return sym.includes(q) || nm.includes(q);
   });
-  var dir=state.sortDir, k=state.sortKey;
-  var get=function(c){
+
+  const dir = state.sortDir;
+  const k = state.sortKey;
+  const get = (c)=>{
     switch(k){
       case "market_cap": return c.market_cap ?? -1;
       case "price": return c.current_price ?? -1;
@@ -142,191 +201,199 @@ function applySortFilter(){
       default: return 0;
     }
   };
-  state.filtered.sort(function(a,b){var va=get(a), vb=get(b); return (va>vb?1:va<vb?-1:0)*dir;});
-  var sel=$("#page"); var totalPages=Math.max(1, Math.ceil(state.filtered.length/state.perPage));
-  sel.innerHTML=Array.from({length:totalPages},function(_,i){var s=i*state.perPage+1, e=Math.min(state.filtered.length,(i+1)*state.perPage); return `<option value="${i+1}">${s}~${e}</option>`;}).join("");
-  if(state.page>totalPages) state.page=totalPages;
+  state.filtered.sort((a,b)=>{
+    const va = get(a), vb = get(b);
+    return (va>vb?1:va<vb?-1:0)*dir;
+  });
+
+  // pagination options
+  const sel = $("#page");
+  const totalPages = Math.max(1, Math.ceil(state.filtered.length / state.perPage));
+  sel.innerHTML = Array.from({length: totalPages}, (_,i)=>{
+    const s=i*state.perPage+1, e=Math.min(state.filtered.length,(i+1)*state.perPage);
+    return `<option value="${i+1}">${s}~${e}</option>`;
+  }).join("");
+  if(state.page>totalPages) state.page = totalPages;
+
   renderTableSlice(state.filtered);
 }
 
-/* --- KPI & lists --- */
-function setFNGStyle(val){
-  var card=$("#card-fng"); if(!card) return;
-  card.classList.remove('low','mid','high');
-  if(val<=40) card.classList.add('low');
-  else if(val<=60) card.classList.add('mid');
-  else card.classList.add('high');
+/* --- KPIs & lists & mini cards --- */
+function renderKPIs(markets, global){
+  const btc = markets.find(x=>x.id==="bitcoin");
+  const usdt = markets.find(x=>x.id==="tether");
+  const total = global?.data?.total_market_cap?.usd ?? null;
+  const btcCap = btc?.market_cap ?? null;
+  const dom = (btcCap && total) ? (btcCap/total*100) : null;
+
+  safeSetHTML("#kpi-btc-mcap", btcCap ? fmtCompact(btcCap) : "-");
+  safeSetHTML("#kpi-usdt-mcap", usdt?.market_cap ? fmtCompact(usdt.market_cap) : "-");
+  safeSetHTML("#kpi-dominance", dom!=null ? dom.toFixed(2)+"%" : "-");
 }
-function updateLongShortGauge(longPct, shortPct){
-  var g=$("#ls-gauge"); if(!g) return;
-  g.querySelector('.long').style.width = clamp(longPct,0,100)+'%';
-  g.querySelector('.short').style.width= clamp(shortPct,0,100)+'%';
-}
-function updateFngGauge(val){
-  var f=$("#fng-fill"); if(f) f.style.width = clamp(val,0,100)+'%';
-  setFNGStyle(val);
-}
-
-function renderKPIs(markets, global, fng, longshort){
-  var btc = markets.find(function(x){return x.id==="bitcoin";});
-  var usdt= markets.find(function(x){return x.id==="tether";});
-  var total = (global&&global.data&&global.data.total_market_cap&&global.data.total_market_cap.usd) ? global.data.total_market_cap.usd : null;
-
-  safeSetHTML("#kpi-btc-mcap", btc&&btc.market_cap ? "$"+abbrUSD(btc.market_cap) : "-");
-  safeSetHTML("#kpi-usdt-mcap", usdt&&usdt.market_cap ? "$"+abbrUSD(usdt.market_cap) : "-");
-  var dom = (btc&&btc.market_cap&&total) ? (btc.market_cap/total*100) : null;
-  safeSetHTML("#kpi-dominance", dom!=null ? fmtNum(dom,2)+"%" : "-");
-
-  // fear & greed
-  if(fng && fng.data && fng.data[0]){
-    var v=fng.data[0], val=Number(v.value||0);
-    safeSetHTML("#kpi-fng", `${val} / ${v.value_classification||""}`);
-    safeSetHTML("#kpi-fng-sub", `Alternative.me · ${v.timestamp || v.time_until_update || ""}`);
-    updateFngGauge(val);
-  }else{
-    safeSetHTML("#kpi-fng","연동 예정"); safeSetHTML("#kpi-fng-sub","Alternative.me");
-  }
-
-  // long/short
-  var ratio = null;
-  var rec = Array.isArray(longshort)? longshort[0] : (longshort && longshort.data && longshort.data[0]);
-  if(rec && rec.longShortRatio){
-    ratio = Number(rec.longShortRatio);
-  }
-  if(ratio!=null && isFinite(ratio)){
-    var longPct = ratio/(1+ratio)*100, shortPct = 100-longPct;
-    safeSetHTML("#kpi-longshort", `${longPct.toFixed(1)}% / ${shortPct.toFixed(1)}%`);
-    safeSetHTML("#kpi-longshort-sub", `BTCUSDT · ratio ${ratio.toFixed(2)} · ${state.longShortPeriod.toUpperCase()}`);
-    updateLongShortGauge(longPct, shortPct);
-  }else{
-    safeSetHTML("#kpi-longshort","-"); safeSetHTML("#kpi-longshort-sub","Binance 공개지표");
-  }
-}
-
 function renderRightLists(markets){
-  // 등락률 TOP 10 (24h)
-  const gainers = markets
-    .filter(x => Number.isFinite(x.price_change_percentage_24h))
-    .sort((a,b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+  // gainers by 24h %
+  const gainers = markets.slice()
+    .filter(x=>Number.isFinite(x.price_change_percentage_24h))
+    .sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h)
     .slice(0,10);
 
   safeSetHTML("#list-gainers", gainers.map((c,i)=>{
-    const sym = (c.symbol||"").toUpperCase();
-    const pct = c.price_change_percentage_24h || 0;
-    const cls = pct>=0 ? "up" : "down";
-    const price = (c.current_price!=null) ? `$${fmtPrice(c.current_price)}` : "-";
-    // 1 | TICKER | PRICE | PCT
-    return `
-      <div class="row">
-        <div class="rank">${i+1}.</div>
-        <div class="sym">${sym}</div>
-        <div class="meta">${price}</div>
-        <div class="value ${cls}">${pct.toFixed(2)}%</div>
-      </div>`;
+    const sym=(c.symbol||"").toUpperCase();
+    const cls=(c.price_change_percentage_24h||0)>=0?"up":"down";
+    const price=fmtPrice(c.current_price);
+    const pct  =(c.price_change_percentage_24h||0).toFixed(2);
+    return `<div class="r">
+      <div class="rank">${i+1}.</div>
+      <div class="sym">${sym} <span class="price">$${price}</span></div>
+      <div class="pct ${cls}">${pct}%</div>
+    </div>`;
   }).join(""));
 
-  // 거래량 TOP 10
-  const vol = markets.slice().sort((a,b)=> (b.total_volume||0) - (a.total_volume||0)).slice(0,10);
+  // volume ranking
+  const vol = markets.slice().sort((a,b)=>b.total_volume-a.total_volume).slice(0,10);
   safeSetHTML("#list-volume", vol.map((c,i)=>{
-    const sym = (c.symbol||"").toUpperCase();
-    // 1 | TICKER | VOLUME
-    return `
-      <div class="row">
-        <div class="rank">${i+1}.</div>
-        <div class="sym">${sym}</div>
-        <div class="value">$${abbrUSD(c.total_volume)}</div>
-      </div>`;
+    const sym=(c.symbol||"").toUpperCase();
+    return `<div class="r"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="value">${fmtCompact(c.total_volume)}</div></div>`;
   }).join(""));
 }
 
-/* --- header mini charts --- */
-async function renderHeaderMinis(markets){
-  try{
-    var btc = markets.find(function(x){return x.id==="bitcoin";});
-    if(btc && btc.market_cap && btc.current_price && btc.sparkline_in_7d && Array.isArray(btc.sparkline_in_7d.price)){
-      var supply=btc.market_cap/btc.current_price;
-      var caps=btc.sparkline_in_7d.price.map(function(p){return p*supply;});
-      var el=$("#mini-btc"); if(el) el.innerHTML=sparklineSVGFilled(caps,420,92);
-    }
-  }catch(e){}
-  try{
-    var usdt = markets.find(function(x){return x.id==="tether";});
-    if(usdt && usdt.market_cap && usdt.current_price && usdt.sparkline_in_7d && Array.isArray(usdt.sparkline_in_7d.price)){
-      var supply=usdt.market_cap/usdt.current_price;
-      var caps=usdt.sparkline_in_7d.price.map(function(p){return p*supply;});
-      var el=$("#mini-usdt"); if(el) el.innerHTML=sparklineSVGFilled(caps,420,92);
-    }
-  }catch(e){}
+/* --- Fear & Greed gauge + colorization --- */
+function setFGI(val, prevVal, labelText){
+  const v = clamp(+val||0,0,100);
+  $("#fgi-val").textContent = v.toString();
+  $("#fgi-label").textContent = labelText || "";
+  $("#fgi-src").textContent = "Alternative.me · " + new Date().toLocaleDateString('ko-KR');
+
+  // 색상(40↓ 루비, 41~60 노랑, 61↑ 에메랄드)
+  const badge = $("#fgi-badge");
+  badge.className = "badge " + (v<=40?"b-red":v<=60?"b-yellow":"b-green");
+  const diffPct = (prevVal>0) ? ((v-prevVal)/prevVal*100) : 0;
+  badge.textContent = `${v} ${diffPct>=0?"▲":"▼"} ${Math.abs(diffPct).toFixed(2)}%`;
+
+  // 바늘 (0..100 -> -90deg..90deg)
+  const deg = -90 + (v/100)*180;
+  $("#fgi-needle").style.transform = `rotate(${deg}deg)`;
 }
 
-/* --- stars --- */
-function buildStars(intensity/*0~100*/){
-  var field=$("#star-field"); if(!field) return;
-  field.innerHTML="";
-  var n = Math.round(intensity*2); // 0~200개
-  for(let i=0;i<n;i++){
-    var d=document.createElement('div');
-    d.className='star';
-    var x=Math.random()*100, y=Math.random()*100, s=Math.random()*1.5+0.6;
-    d.style.left=x+'%'; d.style.top=y+'%';
-    d.style.width=s+'px'; d.style.height=s+'px';
-    d.style.animationDelay=(Math.random()*2.4).toFixed(2)+'s';
-    field.appendChild(d);
+/* --- Long/Short render --- */
+function setLongShort(longPct, shortPct, ratioStr, period){
+  $("#ls-long-t").textContent = `${longPct.toFixed(1)}%`;
+  $("#ls-short-t").textContent = `${shortPct.toFixed(1)}%`;
+  $("#ls-long").style.width = `${clamp(longPct,0,100)}%`;
+  $("#ls-short").style.width = `${clamp(shortPct,0,100)}%`;
+  $("#ls-note").textContent = `BTCUSDT · ratio ${ratioStr} · ${period.toUpperCase()}`;
+
+  // 색 그라 판단은 CSS로 충분 (초록/빨강 bar)
+}
+
+/* --- Mini charts in KPI cards --- */
+async function drawMini(id, coinId, color){
+  try{
+    const d = await fetchMarketChart(coinId,'usd',30,'daily');
+    const caps = (d.market_caps||[]).map(x=>Array.isArray(x)?x[1]:x).filter(Boolean);
+    $(id).innerHTML = sparklineSVG(caps, 500, 120, color);
+  }catch(e){ /* ignore */ }
+}
+
+/* --- Star field --- */
+function makeStars(ctx,w,h,count){
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = `rgba(255,255,255,${0.55})`;
+  for(let i=0;i<count;i++){
+    const x=Math.random()*w, y=Math.random()*h, r=Math.random()*1.25+0.25;
+    ctx.globalAlpha = (Math.random()*0.7+0.3);
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
   }
 }
+function initStars(){
+  const canvas=$("#sky"); const ctx=canvas.getContext("2d");
+  function size(){ canvas.width=window.innerWidth*2; canvas.height=window.innerHeight*2; }
+  size(); makeStars(ctx,canvas.width,canvas.height, 160);
+  window.addEventListener('resize',()=>{ size(); makeStars(ctx,canvas.width,canvas.height, lastCount); });
 
-/* --- init --- */
+  let lastCount=160;
+  $("#starDensity").addEventListener('input',(e)=>{
+    lastCount = 40 + Math.floor((+e.target.value/100)*460);
+    makeStars(ctx,canvas.width,canvas.height,lastCount);
+  });
+}
+
+/* --- Init --- */
 async function init(){
   try{
-    const [markets, global, fng, longshort] = await Promise.all([
-      fetchMarkets(), fetchGlobal(), fetchFNG(), fetchLongShort(state.longShortPeriod)
+    const [markets, global, fgiRaw, lsRaw] = await Promise.all([
+      fetchMarkets({perPage:200}),
+      fetchGlobal(),
+      fetchFGI(),
+      fetchLongShort(state.lsPeriod)
     ]);
-    state.all=markets;
-    renderKPIs(markets, global, fng, longshort);
-    renderHeaderMinis(markets);
+    state.all = markets;
+
+    /* KPIs + Lists */
+    renderKPIs(markets, global);
     renderRightLists(markets);
     applySortFilter();
+
+    /* Card mini charts (BTC, USDT) */
+    drawMini("#mini-btc","bitcoin","#ff5b6e");
+    drawMini("#mini-usdt","tether","#28e07a");
+
+    /* Fear/Greed */
+    const arr = fgiRaw?.data || [];
+    const cur = arr[0]; const prev = arr[1] || {};
+    setFGI(Number(cur?.value||0), Number(prev?.value||0), cur?.value_classification||"-");
+
+    /* Long/Short */
+    const last = Array.isArray(lsRaw) && lsRaw.length ? lsRaw[lsRaw.length-1] : null;
+    if(last){
+      const L = Number(last.longAccount||0), S = Number(last.shortAccount||0);
+      const sum = (L+S)||1;
+      setLongShort(L/sum*100, S/sum*100, (Number(last.longShortRatio)||0).toFixed(2), state.lsPeriod);
+    }
   }catch(e){
     console.error(e);
     safeSetHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
   }
 }
 
-document.addEventListener("DOMContentLoaded", function(){
-  // table controls
-  $("#search").addEventListener("input", function(){ state.page=1; applySortFilter(); });
-  $("#sortkey").addEventListener("change", function(e){ state.sortKey=e.target.value; applySortFilter(); });
-  $("#sortdir").addEventListener("click", function(e){
+document.addEventListener("DOMContentLoaded", ()=>{
+  // table events
+  $("#search").addEventListener("input", ()=>{ state.page=1; applySortFilter(); });
+  $("#sortkey").addEventListener("change", (e)=>{ state.sortKey=e.target.value; applySortFilter(); });
+  $("#sortdir").addEventListener("click", (e)=>{
     state.sortDir = state.sortDir===-1 ? 1 : -1;
     e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲";
     applySortFilter();
   });
-  $("#page").addEventListener("change", function(e){ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
+  $("#page").addEventListener("change", (e)=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
 
-  // long/short timeframe seg
-  $("#lsSeg").addEventListener("click", async function(e){
-    var btn=e.target.closest('button'); if(!btn) return;
-    $$("#lsSeg button").forEach(b=>b.classList.remove('on'));
-    btn.classList.add('on');
-    state.longShortPeriod = btn.dataset.p || '1h';
-    try{
-      const ls=await fetchLongShort(state.longShortPeriod);
-      renderKPIs(state.all, null, null, ls); // long/short 부분만 갱신
-    }catch(_){}
+  // long/short period buttons
+  ["ls-1h","ls-4h","ls-1d"].forEach(id=>{
+    $("#"+id).addEventListener("click", async (ev)=>{
+      state.lsPeriod = ev.currentTarget.dataset.p;
+      try{
+        const lsRaw = await fetchLongShort(state.lsPeriod);
+        const last = Array.isArray(lsRaw) && lsRaw.length ? lsRaw[lsRaw.length-1] : null;
+        if(last){
+          const L = Number(last.longAccount||0), S = Number(last.shortAccount||0);
+          const sum = (L+S)||1;
+          setLongShort(L/sum*100, S/sum*100, (Number(last.longShortRatio)||0).toFixed(2), state.lsPeriod);
+        }
+      }catch(e){ console.error(e); }
+      $("#ls-1h").style.opacity = state.lsPeriod==="1h"?. 1: .6;
+    });
   });
 
-  // stars controller
-  var range=$("#starsRange"), less=$("#starsLess"), more=$("#starsMore");
-  function applyStars(){ buildStars(Number(range.value||0)); }
-  range.addEventListener('input', applyStars);
-  less.addEventListener('click', ()=>{ range.value=Math.max(0, Number(range.value)-10); applyStars();});
-  more.addEventListener('click', ()=>{ range.value=Math.min(100, Number(range.value)+10); applyStars();});
-  applyStars();
+  // back
+  $("#backBtn").addEventListener("click", ()=>{ history.back(); });
 
-  // first load + auto refresh
+  // stars
+  initStars();
+
+  // initial data
   init();
   setInterval(init, 30000);
 });
 
-window._cosmos={state,init,buildStars};
-})();
+// expose for debugging
+window._cosmos = { state, init };
