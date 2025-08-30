@@ -1,275 +1,194 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>COSMOS</title>
-
-  <!-- 타이틀/헤더 폰트 -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>TWO4 COSMOS</title>
   <style>
     :root{
-      /* ===== 색/배경 ===== */
-      --bg:#0e1220;
-      --stroke:rgba(255,255,255,.10);
-      --primary:#1f5cff;
-
-      /* ===== 여백/폭 ===== */
-      --top-space: 56px;        /* COSMOS를 화면 상단에 더 붙이고 싶으면 수치 줄이기 */
-     --after-title-gap: 92px;  /* COSMOS ↔ 7개 카드 사이 간격 */
-      --container-max: 1420px;
-      --side-pad: 10px;
-
-      /* ===== 배경/로고 ===== */
-      --logo-h: clamp(24px, 2.7vw, 42px);
-      --hero-bg: radial-gradient(900px 520px at 85% 0%, rgba(120,80,255,.18), transparent 60%),
-                 radial-gradient(800px 460px at 10% -10%, rgba(31,92,255,.22), transparent 60%);
-
-      /* ===== 유리 카드 ===== */
-      --glass-alpha: .34;       /* 0(투명)~1(불투명) */
-      --glass-blur: 22px;
-      --border-w: 1px;
+      --bg:#0d121a;
+      --panel:#121826;
+      --text:#e8eefc;
+      --muted:#a8b0c2;
+      --up:#28e07a;
+      --down:#ff5b6e;
+      --top-space:56px;
+      --after-title-gap:92px;
+      --glass-alpha:.34;
+      --glass-blur:22px;
       --gb1: rgba(255,255,255,.34);
       --gb2: rgba(255,255,255,.18);
       --gb3: rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji";}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1250px; margin:0 auto; padding:0 18px 80px;}
+    /* Title */
+    .brand{display:flex; align-items:center; gap:14px; margin-top:var(--top-space);}
+    .brand img{width:168px; height:auto; object-fit:contain;}
+    .brand h1{margin:0; font-size:42px; letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.25);}
+    .after-title{height:var(--after-title-gap);}
 
-      /* 카드 텍스트 구분색 */
-      --head-color: #a9b4d6;   /* 카드 머릿말 */
-      --kpi-color:  #eef3ff;   /* KPI/값 */
-    }
-
-    html,body{margin:0;background:var(--bg);color:#e8ebf3;}
-    body::before{
-      content:""; position:fixed; inset:0; z-index:-1;
-      background: var(--hero-bg);
-      opacity:.25; filter:saturate(1.05) contrast(1.04);
-    }
-    .container{ max-width:var(--container-max); margin:0 auto; padding:0 var(--side-pad); }
-
-    /* ===== 헤더 ===== */
-    .site-header{ padding: var(--top-space) 0 14px; }
-    .brand{ display:flex; align-items:center; gap:10px; }
-    .brand img{
-      height:var(--logo-h); width:auto; object-fit:contain; max-width:360px;
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
-    }
-    .brand h1{
-      margin:0; font-family:"Orbitron",system-ui; font-weight:700; letter-spacing:.04em;
-      font-size:calc(var(--logo-h) * .92); line-height:1;
-    }
-
-    /* ===== 상단 대시보드 (정중앙 기준: 좌 5 / 우 2) ===== */
-    .dash{
-      display:grid; grid-template-columns: 2fr 1fr; gap:18px;
-      margin-top: var(--after-title-gap);
-      align-items:start;
-    }
-    .dash-left{ display:grid; gap:16px; }
-    .grid-top{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }  /* 윗줄 3 */
-    .grid-bottom{ display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }/* 아랫줄 2 */
-    .dash-right{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }      /* 오른쪽 한 줄 2칸 */
-
-    @media (max-width:1100px){
-      .dash{ grid-template-columns: 1fr; }
-      .dash-right{ grid-template-columns: 1fr; }
-      .grid-top{ grid-template-columns: 1fr 1fr; }
-      .grid-bottom{ grid-template-columns: 1fr; }
-    }
-    @media (max-width:640px){
-      .grid-top{ grid-template-columns: 1fr; }
-    }
-
-    /* ===== 유리 카드 ===== */
+    /* Glass card */
+    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows:auto; gap:18px;}
+    .left-5{grid-column:1/4; display:grid; gap:18px; grid-template-columns:repeat(3,1fr);}
+    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+    .right-2{grid-column:4/5; display:grid; gap:18px;}
     .card{
-      position:relative; border-radius:14px; padding:14px;
-      background: rgba(18,24,46,var(--glass-alpha));
-      box-shadow: 0 10px 28px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.02);
-      overflow:hidden;
+      position:relative; background:rgba(255,255,255,var(--glass-alpha));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border-radius:16px; padding:14px 16px; color:var(--text); overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
     }
     .card::before{
-      content:""; position:absolute; inset:0; padding: var(--border-w); border-radius: inherit;
-      background: linear-gradient(135deg, var(--gb1), var(--gb2) 55%, var(--gb3));
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude;
-      pointer-events:none; opacity:.75;
+      content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
+      padding:1px; background:
+        linear-gradient(140deg, var(--gb1), var(--gb2) 40%, var(--gb3));
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; opacity:.75;
     }
-    .card::after{
-      content:""; position:absolute; inset:1px; border-radius: calc(14px - 1px);
-      backdrop-filter: blur(var(--glass-blur)) saturate(122%);
-      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(122%);
-      background:
-        radial-gradient(120% 100% at 50% 0, rgba(255,255,255,.14), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02) 40%, transparent);
-      pointer-events:none;
+    .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
+    .kpi{font-size:22px; font-weight:700;}
+    .sub{font-size:12px; opacity:.7}
+
+    /* lists in right column */
+    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
+    .list .row{display:grid; grid-template-columns:2.2em 4.4em 1fr; align-items:center; font-size:13.5px;}
+    .list .rank{text-align:right; opacity:.7; font-weight:700;}
+    .list .sym{font-weight:700; letter-spacing:.02em;}
+    .list .value{justify-self:end; font-weight:700; font-variant-numeric:tabular-nums;}
+    .up{color:var(--up)} .down{color:var(--down)}
+
+    /* Controls */
+    .controls{display:flex; gap:10px; align-items:center; margin:22px 0 10px;}
+    .controls .search{flex:1}
+    input[type="text"], select, button{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
+    button.sortdir{min-width:40px}
+
+    /* Table */
+    table{width:100%; border-collapse:separate; border-spacing:0 10px;}
+    thead th{font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:0 10px;}
+    tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
+    tbody tr td:first-child{border-radius:12px 0 0 12px}
+    tbody tr td:last-child{border-radius:0 12px 12px 0}
+    .row-index{width:46px; text-align:right; opacity:.7; font-weight:700}
+    .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px}
+    .coin-img{width:22px; height:22px; min-width:22px; min-height:22px; border-radius:50%; object-fit:contain}
+    .coin-name{font-weight:700}
+    .coin-sym{opacity:.7; margin-left:4px}
+
+    .text-right{text-align:right}
+    .spark{width:100px; height:24px}
+    .capcell{display:flex; align-items:center; gap:6px; justify-content:flex-end}
+    .cap-spark{width:72px; height:20px; display:inline-block}
+
+    /* responsive – keep 7d chart except on very narrow */
+    @media (max-width:900px){
+      .spark-col{display:none}
     }
-    .card > *{ position:relative; z-index:1; }
-    .card h3{
-      margin:0 0 8px;
-      font-family:"Orbitron",system-ui;
-         font-size:12.5px; letter-spacing:.06em; font-weight:700; color:var(--head-color);
-      text-transform:uppercase; opacity:.95;
-    }
-    .kpi{ font-size:22px; font-weight:700; color:var(--kpi-color);
-          letter-spacing:.02em; font-variant-numeric: tabular-nums; }
-    .sub{ opacity:.7; font-size:12px; }
 
-     .list{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
-    .list .row{
-      display:grid;
-      grid-template-columns: 2.2em 4.4em 1fr;
-      align-items:center;
-      font-size:13.5px;
-    }
-    .list .rank{ width:auto; text-align:right; opacity:.7; font-weight:700; }
-    .list .sym{ font-weight:700; letter-spacing:.02em; }
-    .list .sep{ display:none; }
-    .list .value{ justify-self:end; font-weight:700; font-variant-numeric: tabular-nums; }
-    .up{ color:#28e07a } .down{ color:#ff5b6e }
-
-    /* ===== 툴바 / 테이블 ===== */
-    .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0 6px; }
-    .toolbar input{
-      padding:8px 10px; border-radius:8px; border:1px solid var(--stroke);
-      background:#11172e; color:#e8ebf3; min-width:220px;
-    }
-
-    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .cosmos-table{ min-width:920px; width:100%; border-collapse:collapse; }
-    .cosmos-table th,.cosmos-table td{ padding:10px 12px; white-space:nowrap; border-bottom:1px solid rgba(255,255,255,.06); }
-    .cosmos-table th.text-right,.cosmos-table td.text-right{ text-align:right; }
-
-    /* 정렬 아이콘(▲/▼) */
-    th[data-sort]{ cursor:pointer; user-select:none; }
-    th[data-sort] .sort-ic{ display:inline-block; width:10px; margin-left:6px; opacity:.85; }
-    th[data-sort].asc  .sort-ic::before{ content:"▲"; font-size:10px; }
-    th[data-sort].desc .sort-ic::before{ content:"▼"; font-size:10px; }
-
-    .coin-link{ color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px; white-space:nowrap; }
-    .coin-ticker{ font-weight:900; letter-spacing:.03em; }
-    .coin-name{ opacity:.8; text-overflow:ellipsis; overflow:hidden; max-width:160px; }
-
-    /* 7d 스파크라인 열 */
-    .cosmos-table td:last-child svg{ display:block; margin:0 auto; }
-    .cosmos-table th:last-child, .cosmos-table td:last-child{ width:90px; }
-
-    /* 반응형: 좁으면 덜 중요한 칼럼 숨김 */
-    @media (max-width:1100px){ .cosmos-table th:nth-child(9), .cosmos-table td:nth-child(9){ display:none; } } /* 7d 차트 */
-    @media (max-width:980px){  .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4){ display:none; } }  /* 1시간 */
-    @media (max-width:840px){  .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6){ display:none; } }  /* 7일% */
-    @media (max-width:720px){  .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8){ display:none; } }  /* 거래량 */
-    @media (max-width:620px){  .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7){ display:none; } .cosmos-table{ min-width:0; } } /* 시총 */
-
-    .pager{ display:flex; gap:6px; justify-content:center; margin:12px 0; }
-    .pager button{
-      padding:6px 10px; border:1px solid var(--stroke);
-      background:#121a36; color:#fff; border-radius:8px; cursor:pointer;
-    }
-    .pager button.active{ background:var(--primary); }
-    footer{ margin:16px 0 18px; opacity:.68; font-size:12px; text-align:center; }
+    footer{margin:36px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- 헤더 -->
-    <header class="site-header">
-      <div class="brand">
-        <!-- 로고 경로: apps/web/menu/cosmos/index.html → ../../media/logo.png -->
-        <img src="../../media/logo.png" alt="TWO.4">
-        <h1>COSMOS</h1>
+<div class="wrap">
+  <div class="brand">
+    <img src="/media/logo.png" alt="TWO4">
+    <h1>COSMOS</h1>
+  </div>
+  <div class="after-title"></div>
+
+  <!-- KPI area -->
+  <div class="cards">
+    <div class="left-5">
+      <div class="card">
+        <h3>BTC 미결제약정(미) · 24H</h3>
+        <div class="kpi">연동 예정</div>
+        <div class="sub">※ 외부 파트너 API 연결 후 표시</div>
       </div>
-    </header>
-
-    <!-- 대시보드: 좌 5 / 우 2(오른쪽은 1행 2열: 좌=Top7, 우=Volume) -->
-    <section class="dash">
-      <!-- 왼쪽 5개 -->
-      <div class="dash-left">
-        <!-- 윗줄 3개 -->
-        <div class="grid-top">
-          <div id="card-oi" class="card">
-            <h3>BTC 미결제약정(OI) · 24H</h3>
-            <div id="k-oi" class="kpi">연동 예정</div>
-            <div class="sub">※ OI 제공 API 연결 후 표시</div>
-          </div>
-
-          <div id="card-fng" class="card">
-            <h3>공포/탐욕 지수</h3>
-            <div id="k-fng" class="kpi">연동 예정</div>
-            <div class="sub">Alternative.me API</div>
-          </div>
-
-          <div id="card-dominance" class="card">
-            <h3>도미넌스</h3>
-            <div id="k-dominance" class="kpi">-</div>
-            <div class="sub">BTC Dominance</div>
-          </div>
-        </div>
-
-        <!-- 아랫줄 2개 -->
-        <div class="grid-bottom">
-          <div id="card-btc-mcap" class="card">
-            <h3>BTC Market Cap</h3>
-            <div id="k-btc-mcap" class="kpi">-</div>
-            <div class="sub">시총(USD)</div>
-          </div>
-
-          <div id="card-total-mcap" class="card">
-            <h3>Global Market Cap</h3>
-            <div id="k-total-mcap" class="kpi">-</div>
-            <div class="sub">전체 암호화폐 시가총액(USD)</div>
-          </div>
-        </div>
+      <div class="card">
+        <h3>공포/탐욕 지수</h3>
+        <div class="kpi">연동 예정</div>
+        <div class="sub">Alternative.me API</div>
+      </div>
+      <div class="card">
+        <h3>도미넌스</h3>
+        <div class="kpi" id="kpi-dominance">-</div>
+        <div class="sub">BTC Dominance</div>
       </div>
 
-      <!-- 오른쪽 2개 (1행 2열) -->
-      <div class="dash-right">
-        <div id="card-gainers" class="card">
-          <h3>등락률 상위 TOP 7 [24h]</h3>
-          <div id="k-gainers" class="list"></div>
+      <div class="row-2">
+        <div class="card">
+          <h3>BTC Market Cap</h3>
+          <div class="kpi" id="kpi-btc-mcap">-</div>
+          <div class="sub">시총(USD)</div>
         </div>
-
-        <div id="card-volume" class="card">
-          <h3>코인 거래량 순위</h3>
-          <div id="k-volume" class="list"></div>
+        <div class="card">
+          <h3>Global Market Cap</h3>
+          <div class="kpi" id="kpi-global-mcap">-</div>
+          <div class="sub">전체 암호화폐 시가총액(USD)</div>
         </div>
       </div>
-    </section>
-
-    <!-- 툴바: 검색(이름/심볼). 정렬은 헤더 클릭(▲/▼) -->
-    <div class="toolbar">
-      <input id="cosmos-q" placeholder="코인 검색 (이름/심볼)">
     </div>
 
-    <!-- 표 -->
-    <div class="table-wrap">
-      <table class="cosmos-table">
-        <thead>
-          <tr>
-            <th>순위</th>
-            <th>코인</th>
-            <th class="text-right" data-sort="price">시세 <span class="sort-ic"></span></th>
-            <th class="text-right" data-sort="change1h">1시간 <span class="sort-ic"></span></th>
-            <th class="text-right" data-sort="change24h">24시간 <span class="sort-ic"></span></th>
-            <th class="text-right" data-sort="change7d">7일 <span class="sort-ic"></span></th>
-            <th class="text-right" data-sort="market_cap">시가총액 <span class="sort-ic"></span></th>
-            <th class="text-right" data-sort="volume">거래량 <span class="sort-ic"></span></th>
-            <th class="text-right">7일 차트</th>
-          </tr>
-        </thead>
-        <tbody id="cosmos-tbody"></tbody>
-      </table>
+    <div class="right-2">
+      <div class="card">
+        <h3>등락률 상위 TOP 7 (24H)</h3>
+        <div class="list" id="list-gainers"></div>
+      </div>
+      <div class="card">
+        <h3>코인 거래량 순위</h3>
+        <div class="list" id="list-volume"></div>
+      </div>
     </div>
-
-    <!-- 50개 단위 페이저 -->
-    <div id="cosmos-pager" class="pager"></div>
-
-    <!-- 하단 고정 문구(필수) -->
-    <footer>
-      🚀 Cosmos 암호화폐 대시보드 – CoinGecko API로 실시간 데이터 제공 | 안전한 백엔드 서버 통신 | 30초 자동 업데이트
-    </footer>
   </div>
 
-  <!-- 데이터/렌더 스크립트 -->
-  <script src="./cosmos.js"></script>
+  <!-- Controls -->
+  <div class="controls">
+    <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
+    <label>정렬:
+      <select id="sortkey">
+        <option value="market_cap">시가총액</option>
+        <option value="price">가격</option>
+        <option value="volume">거래량</option>
+        <option value="change1h">1시간</option>
+        <option value="change24h">24시간</option>
+        <option value="change7d">7일</option>
+        <option value="rank">순위</option>
+      </select>
+    </label>
+    <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
+    <label>페이지:
+      <select id="page"></select>
+    </label>
+  </div>
+
+  <!-- Table -->
+  <table class="cosmos-table">
+    <thead>
+      <tr>
+        <th class="text-right">순위</th>
+        <th>코인</th>
+        <th class="text-right">시세</th>
+        <th class="text-right">1시간</th>
+        <th class="text-right">24시간</th>
+        <th class="text-right">7일</th>
+        <th class="text-right">시가총액</th>
+        <th class="text-right">거래량</th>
+        <th class="text-right spark-col">7일 차트</th>
+      </tr>
+    </thead>
+    <tbody id="cosmos-tbody"></tbody>
+  </table>
+
+  <footer>
+    🚀 Cosmos 암호화폐 대시보드 – CoinGecko API로 실시간 데이터 제공 | 안전한 백엔드 서버 통신 | 30초 자동 업데이트
+  </footer>
+</div>
+<script src="./cosmos.js"></script>
 </body>
 </html>
