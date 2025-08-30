@@ -1,13 +1,13 @@
-/* ================= COSMOS JS (full) =================
-   - Safe number formatting (max/min fraction digits clamped)
+/* ================= COSMOS JS v5 (full) =================
+   - Global clamp: Number.toLocaleString + Intl.NumberFormat (모든 스크립트에 적용)
    - Robust <tbody> finder (id 없으면 자동 탐지/생성)
    - CoinGecko direct fetch → proxy(/api/...) 자동 재시도
-   - Window helpers exposed for debugging
-===================================================== */
+========================================================= */
 
-// ---------- Global safety patch ----------
+// ---- GLOBAL SAFETY CLAMPS ----
 (() => {
-  const orig = Number.prototype.toLocaleString;
+  // 1) clamp for Number.prototype.toLocaleString
+  const origToLS = Number.prototype.toLocaleString;
   Number.prototype.toLocaleString = function (locale, opts) {
     if (opts && typeof opts === "object") {
       let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
@@ -22,7 +22,26 @@
         ...(max !== undefined ? { maximumFractionDigits: max } : {}),
       };
     }
-    return orig.call(this, locale || "en-US", opts);
+    return origToLS.call(this, locale || "en-US", opts);
+  };
+
+  // 2) clamp for Intl.NumberFormat(...).format()
+  const OrigNF = Intl.NumberFormat;
+  Intl.NumberFormat = function (locale, opts) {
+    if (opts && typeof opts === "object") {
+      let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
+      if (!Number.isFinite(min)) min = undefined;
+      if (!Number.isFinite(max)) max = undefined;
+      if (min !== undefined) min = Math.min(20, Math.max(0, min));
+      if (max !== undefined) max = Math.min(20, Math.max(0, max));
+      if (min !== undefined && max !== undefined && max < min) max = min;
+      opts = {
+        ...opts,
+        ...(min !== undefined ? { minimumFractionDigits: min } : {}),
+        ...(max !== undefined ? { maximumFractionDigits: max } : {}),
+      };
+    }
+    return new OrigNF(locale || "en-US", opts);
   };
 })();
 
@@ -32,7 +51,7 @@ window.safeSetHTML = function (selectorOrEl, html) {
   if (el) el.innerHTML = html;
 };
 
-// ---------- Utils ----------
+// ---- UTILS ----
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
 function safeLocale(num, minFD = 0, maxFD = 2) {
   let min = Number.isFinite(minFD) ? clamp(minFD, 0, 20) : 0;
@@ -69,7 +88,7 @@ function fmtPct(v) {
   return `<span class="${cls}">${sign}${n}%</span>`;
 }
 
-// ---------- Target <tbody> ----------
+// ---- TARGET <tbody> ----
 function ensureTbody() {
   // 1) 명시적 id 우선
   let tb = document.getElementById("cosmos-tbody") || document.getElementById("market-table-body");
@@ -105,7 +124,7 @@ function ensureTbody() {
   return null;
 }
 
-// ---------- Data fetch (direct → proxy fallback) ----------
+// ---- FETCH (direct → proxy fallback) ----
 async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   const q = `vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h,7d`;
   const direct = `https://api.coingecko.com/api/v3/coins/markets?${q}`;
@@ -126,7 +145,7 @@ async function fetchByMarketCap({ vs = "usd", perPage = 200, page = 1 } = {}) {
   }
 }
 
-// ---------- Render ----------
+// ---- RENDER ----
 function renderTable(rows) {
   const tbody = ensureTbody();
   if (!tbody) return;
@@ -147,7 +166,7 @@ function renderTable(rows) {
   window.safeSetHTML(tbody, html);
 }
 
-// ---------- Init ----------
+// ---- INIT ----
 async function initCosmos() {
   const tbody = ensureTbody();
   if (!tbody) return;
@@ -161,7 +180,6 @@ async function initCosmos() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // DOM 안정화 후 실행
   setTimeout(() => {
     initCosmos();
     setInterval(initCosmos, 30_000);
@@ -171,5 +189,4 @@ document.addEventListener("DOMContentLoaded", () => {
 // 디버깅용 전역 노출
 window.fetchByMarketCap = fetchByMarketCap;
 window.initCosmos = initCosmos;
-
-console.log("COSMOS JS loaded");
+console.log("COSMOS JS v5 loaded");
