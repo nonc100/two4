@@ -6,243 +6,258 @@
   <title>TWO4 COSMOS</title>
   <style>
     :root{
-      --bg:#0d121a; --panel:#121826; --text:#e8eefc; --muted:#a8b0c2;
-      --up:#28e07a; --down:#ff5b6e; --warn:#e6d34a;
+      --bg:#0d121a;
+      --panel:#121826;
+      --text:#e8eefc;
+      --muted:#a8b0c2;
+      --up:#28e07a;
+      --down:#ff5b6e;
+      --glass-alpha:.34;
       --glass-blur:22px;
-      --gb1: rgba(255,255,255,.34); --gb2: rgba(255,255,255,.18); --gb3: rgba(255,255,255,.08);
+      --gb1: rgba(255,255,255,.30);
+      --gb2: rgba(255,255,255,.14);
+      --gb3: rgba(255,255,255,.06);
+      --brand-grad:linear-gradient(90deg,#74a6ff 0%,#7ad7ff 45%,#9b7dff 100%);
+      --star-alpha: .55;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #1a2235 0%, #0d121a 60%), var(--bg); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji");}
+    html,body{margin:0;padding:0;background:#0d121a;color:var(--text);font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial}
     a{color:inherit;text-decoration:none}
-    .wrap{max-width:1250px; margin:0 auto; padding:0 18px 80px;}
-    /* Title */
-    .brand{display:flex; align-items:center; gap:14px; margin-top:32px;}
-    .brand img{width:168px; height:auto; object-fit:contain;}
-    .brand h1{margin:0; font-size:42px; letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.25);}
-    .after-title{height:20px;}
+    .wrap{max-width:1260px;margin:0 auto;padding:0 18px 88px;position:relative}
 
-    /* Glass card */
-    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:18px;}
-    .left-5{grid-column:1/4; display:grid; gap:18px; grid-template-columns:repeat(3,1fr);}
-    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:18px;}
-    .right-2{grid-column:4/5; display:grid; gap:18px;}
+    /* starfield */
+    .sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+    .sky canvas{width:100%;height:100%;display:block;opacity:.9;filter:blur(.2px)}
+
+    /* controller (fixed, right-top) */
+    .ctrl{position:fixed;top:12px;right:12px;z-index:5;display:flex;align-items:center;gap:10px;background:rgba(11,16,24,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 12px}
+    .ctrl .back{appearance:none;border:0;outline:0;background:#1a2332;color:#cfe0ff;border:1px solid rgba(255,255,255,.15);width:36px;height:36px;border-radius:999px;display:grid;place-items:center;font-size:18px;cursor:pointer}
+    .ctrl input[type="range"]{width:180px}
+
+    /* brand */
+    .brand{position:relative;z-index:1;display:flex;align-items:center;gap:14px;margin:74px 0 10px}
+    .brand img{width:168px;height:auto;object-fit:contain}
+    .brand h1{margin:0; font-size:46px;letter-spacing:.14em;font-weight:800;background:var(--brand-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 10px 20px rgba(129,164,255,.28))}
+
+    /* cards */
+    .cards{position:relative;z-index:1;display:grid;grid-template-columns:repeat(5,1fr);gap:18px}
     .card{
-      position:relative; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border-radius:16px; padding:14px 16px; overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
-      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+      position:relative;background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025));
+      border-radius:18px;padding:16px 16px 14px;overflow:hidden;
+      box-shadow:0 12px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08);
+      backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+      border:1px solid rgba(255,255,255,.10);
     }
-    .card::before{
-      content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none; padding:1px;
-      background:linear-gradient(140deg, var(--gb1), var(--gb2) 40%, var(--gb3));
-      -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite:xor; mask-composite:exclude; opacity:.75;
-    }
-    .card h3{margin:0 0 10px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
-    .kpi{font-size:22px; font-weight:800;}
-    .sub{font-size:12px; opacity:.85}
-
-    /* gauges */
-    .gauge-2{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; display:flex}
-    .gauge-2 .bar{height:100%}
-    .gauge-2 .long{background:var(--up)}
-    .gauge-2 .short{background:var(--down)}
-    .gauge-1{height:10px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden}
-    .gauge-1 .fill{height:100%; background:var(--up); width:0%}
-
-    /* fear/greed coloring */
-    #card-fng.low .kpi{color:var(--down)}   #card-fng.low  .gauge-1 .fill{background:var(--down)}
-    #card-fng.mid .kpi{color:var(--warn)}   #card-fng.mid  .gauge-1 .fill{background:var(--warn)}
-    #card-fng.high .kpi{color:var(--up)}    #card-fng.high .gauge-1 .fill{background:var(--up)}
-
-    /* segmented (1H/4H/1D) */
-    .seg{position:absolute; top:12px; right:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:2px; display:flex; gap:2px}
-    .seg button{border:0; background:transparent; color:var(--text); font-weight:700; font-size:11.5px; padding:6px 10px; border-radius:999px; cursor:pointer}
-    .seg button.on{background:rgba(255,255,255,.18)}
-
-    /* Controls */
-    .controls{display:flex; gap:10px; align-items:center; margin:22px 0 10px;}
-    .controls .search{flex:1}
-    input[type="text"], select, button{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
-    button.sortdir{min-width:40px}
-
-    /* Table */
-    .table-wrap{overflow-x:auto}
-    table{min-width:900px; width:100%; border-collapse:separate; border-spacing:0 10px;}
-    thead th{font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:0 10px;}
-    tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:10px 8px; vertical-align:middle}
-    tbody tr td:first-child{border-radius:12px 0 0 12px}
-    tbody tr td:last-child{border-radius:0 12px 12px 0}
-    .row-index{width:42px; text-align:right; opacity:.7; font-weight:700}
-    .coin-cell{display:flex; align-items:center; gap:8px; min-width:88px}
-    .coin-img{width:18px; height:18px; min-width:18px; border-radius:50%; object-fit:contain; opacity:.9}
-    .coin-name{font-weight:800; letter-spacing:.02em} /* 티커만 */
-    .coin-sym{display:none}
-
-    .text-right{text-align:right}
-
-    /* right lists */
-    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-    .list .row{display:grid; grid-template-columns:1.8em 3.8em 1fr auto; align-items:center; font-size:13.5px; white-space:nowrap; column-gap:8px;}
-    #card-volume .row{grid-template-columns:1.8em 4.2em 1fr;}
-    .list .rank{text-align:right; opacity:.7; font-weight:700;}
-    .list .sym{font-weight:800; letter-spacing:.02em;}
-    .list .meta{justify-self:end; opacity:.85; margin-right:6px;} /* price 자리 */
-    .list .value{justify-self:end; font-weight:800;}
+    .card h3{margin:0 0 10px;font-size:12.5px;color:var(--muted);letter-spacing:.06em;font-weight:700}
+    .kpi{font-size:26px;font-weight:800}
+    .sub{font-size:12px;opacity:.75}
     .up{color:var(--up)} .down{color:var(--down)}
 
-    /* header mini charts container heights */
-    #mini-btc, #mini-usdt{height:92px; margin-top:8px}
+    /* right lists */
+    .list{display:flex;flex-direction:column;gap:7px}
+    .list .r{display:grid;grid-template-columns:1.6em 1fr auto;gap:8px;align-items:center}
+    .list .sym{font-weight:800;letter-spacing:.02em}
+    .list .price{opacity:.85}
+    .list .pct{font-weight:800}
 
-    /* star field */
-    #star-field{position:fixed; inset:0; z-index:0; pointer-events:none;}
-    .star{position:absolute; width:2px; height:2px; border-radius:50%; background:rgba(255,255,255,.9); filter:blur(.3px); animation:twinkle 2.4s infinite ease-in-out;}
-    @keyframes twinkle{0%,100%{opacity:.2; transform:scale(1)} 50%{opacity:1; transform:scale(1.4)}}
+    /* mini charts in cards */
+    .mini{height:128px;border-radius:12px;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;margin-top:10px}
+    .mini svg{width:100%;height:100%}
 
-    /* star control (top-right fixed) */
-    .stars-ctrl{position:fixed; top:14px; right:14px; z-index:25; display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:4px 8px; backdrop-filter:blur(10px)}
-    .stars-ctrl button{width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-weight:800;cursor:pointer}
-    .stars-ctrl input[type="range"]{width:120px;height:4px; accent-color:#9cc0ff}
+    /* long/short bar */
+    .lsbar{height:8px;border-radius:999px;background:#263246;position:relative;margin-top:8px;overflow:hidden}
+    .lsbar .long{position:absolute;left:0;top:0;bottom:0;background:var(--up)}
+    .lsbar .short{position:absolute;right:0;top:0;bottom:0;background:var(--down)}
 
-    /* Responsive – mobile 2/2/2/1 */
-    @media (max-width:820px){
-      .brand{margin-top:12px}
-      .brand img{width:140px}
-      .after-title{height:12px}
-      .cards{grid-template-columns:1fr 1fr}
-      .left-5{grid-column:1/-1; grid-template-columns:1fr 1fr}
-      .left-5 .row-2{grid-template-columns:1fr 1fr}
-      .right-2{grid-column:1/-1; grid-template-columns:1fr 1fr}
-      #card-volume{grid-column:1 / -1}  /* 2/2/2/1 */
+    /* fear/greed Gauge (SVG half-circle + needle) */
+    .gauge{position:relative;height:120px;margin-top:6px}
+    .gauge svg{width:100%;height:100%}
+    .needle{transform-origin:50% 84%;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+    .badge{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:6px 10px;border-radius:10px;font-weight:800;font-variant-numeric:tabular-nums}
+    .b-red{background:rgba(255,91,110,.15);color:#ff7f8d}
+    .b-yellow{background:rgba(255,211,94,.16);color:#ffd35e}
+    .b-green{background:rgba(40,224,122,.14);color:#6ef0a8}
 
-      .coin-img{width:16px;height:16px}
-      .row-index{width:36px}
-      tbody td{padding:8px 6px}
+    /* controls row & table */
+    .controls{margin:18px 0 12px;display:flex;gap:10px;align-items:center}
+    .controls .search{flex:1}
+    input[type="text"], select, button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+    button.sortdir{min-width:40px}
+
+    .table-wrap{overflow:auto;border-radius:14px}
+    table{width:100%;border-collapse:separate;border-spacing:0 10px;min-width:920px}
+    thead th{font-size:12px;color:var(--muted);font-weight:700;text-align:left;padding:0 10px;white-space:nowrap}
+    tbody td{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle;white-space:nowrap}
+    tbody tr td:first-child{border-radius:12px 0 0 12px;position:sticky;left:0;z-index:1;background:rgba(255,255,255,.06)}
+    tbody tr td:nth-child(2){position:sticky;left:64px;z-index:1;background:rgba(255,255,255,.06)}
+    tbody tr td:last-child{border-radius:0 12px 12px 0}
+
+    .row-index{width:46px;text-align:right;opacity:.7;font-weight:700}
+    .coin-cell{display:flex;align-items:center;gap:10px;min-width:120px}
+    .coin-img{width:22px;height:22px;border-radius:50%;object-fit:contain}
+    .coin-name{font-weight:800}
+    .coin-sym{display:none} /* 이름 숨김 – 티커만 */
+    .text-right{text-align:right}
+    .spark{width:100px;height:24px}
+    .capcell{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+    .cap-spark{width:72px;height:20px;display:inline-block}
+
+    /* layout mapping – desktop(>=1200): left(5) + right(2)  */
+    .left-5{grid-column:1/6;display:grid;gap:18px;grid-template-columns:repeat(3,1fr)}
+    .left-5 .row-2{grid-column:1/4;display:grid;gap:18px;grid-template-columns:repeat(2,1fr)}
+    .right-2{grid-column:6/8;display:grid;gap:18px}
+    /* but our grid has 5 columns container width – so we make right-2 flow under with full fix below */
+
+    /* responsive */
+    @media (max-width:1200px){
+      .cards{grid-template-columns:repeat(4,1fr)}
+    }
+    @media (max-width:1000px){
+      .cards{grid-template-columns:repeat(2,1fr)}
+      .span-2{grid-column:1/3}
+      .brand{margin-top:62px}
+      .ctrl{top:10px;right:8px}
+      thead th{position:sticky;top:0;background:#0f1522}
+      tbody tr td:first-child{left:0}
+      tbody tr td:nth-child(2){left:64px}
     }
 
-    footer{margin:24px auto 0; max-width:1250px; color:#9aa3b6; opacity:.75; font-size:12px; text-align:center}
+    footer{margin:40px auto 0;max-width:1260px;color:#9aa3b6;opacity:.75;font-size:12px;text-align:center}
   </style>
 </head>
 <body>
-<!-- star field -->
-<div id="star-field" aria-hidden="true"></div>
-<!-- star controller -->
-<div class="stars-ctrl" id="starsCtrl">
-  <button id="starsLess" aria-label="less">-</button>
-  <input id="starsRange" type="range" min="0" max="100" value="55" aria-label="stars" />
-  <button id="starsMore" aria-label="more">+</button>
-</div>
+  <!-- star field -->
+  <div class="sky"><canvas id="sky"></canvas></div>
 
-<div class="wrap">
-  <div class="brand">
-    <img src="/media/logo.png" alt="TWO4">
-    <h1>COSMOS</h1>
+  <!-- fixed controller (back + slider only) -->
+  <div class="ctrl">
+    <button id="backBtn" class="back" title="뒤로가기">←</button>
+    <input id="starDensity" type="range" min="0" max="100" value="55" aria-label="별 밀도">
   </div>
-  <div class="after-title"></div>
 
-  <!-- KPI area -->
-  <div class="cards">
-    <div class="left-5">
-      <!-- 롱/숏 -->
-      <div class="card" id="card-longshort">
-        <h3>BTC 롱/숏 비율</h3>
-        <div class="seg" id="lsSeg">
-          <button data-p="1h" class="on">1H</button>
-          <button data-p="4h">4H</button>
-          <button data-p="1d">1D</button>
+  <div class="wrap">
+    <!-- brand -->
+    <div class="brand">
+      <img src="/media/logo.png" alt="TWO4">
+      <h1>COSMOS</h1>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="cards">
+
+      <!-- 1) 롱/숏 비율 -->
+      <div class="card span-1">
+        <h3>BTC 롱/숏 비율 (1H)
+          <span style="float:right;display:inline-flex;gap:6px">
+            <button id="ls-1h" data-p="1h">1H</button>
+            <button id="ls-4h" data-p="4h">4H</button>
+            <button id="ls-1d" data-p="1d">1D</button>
+          </span>
+        </h3>
+        <div class="kpi"><span id="ls-long-t">-</span> / <span id="ls-short-t">-</span></div>
+        <div class="sub" id="ls-note">BTCUSDT · ratio -</div>
+        <div class="lsbar">
+          <div class="long" id="ls-long" style="width:50%"></div>
+          <div class="short" id="ls-short" style="width:50%"></div>
         </div>
-        <div class="kpi" id="kpi-longshort">-</div>
-        <div class="gauge-2" id="ls-gauge" aria-label="Long/Short gauge">
-          <div class="bar long" style="width:0%"></div>
-          <div class="bar short" style="width:100%"></div>
-        </div>
-        <div class="sub" id="kpi-longshort-sub">Binance 공개지표</div>
       </div>
-      <!-- 공포/탐욕 -->
-      <div class="card" id="card-fng">
+
+      <!-- 2) 공포/탐욕 지수 -->
+      <div class="card span-1">
         <h3>공포/탐욕 지수</h3>
-        <div class="kpi" id="kpi-fng">연동 예정</div>
-        <div class="gauge-1"><div class="fill" id="fng-fill" style="width:0%"></div></div>
-        <div class="sub" id="kpi-fng-sub">Alternative.me</div>
+        <div class="kpi"><span id="fgi-val">-</span> / <span id="fgi-label">-</span></div>
+        <div class="gauge">
+          <!-- 3색 아크 -->
+          <svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet">
+            <path d="M10,60 A40,40 0 0 1 42,26" stroke="#ff5b6e" stroke-width="10" fill="none" stroke-linecap="round"/>
+            <path d="M42,26 A40,40 0 0 1 58,26" stroke="#ffd35e" stroke-width="10" fill="none" stroke-linecap="round"/>
+            <path d="M58,26 A40,40 0 0 1 90,60" stroke="#28e07a" stroke-width="10" fill="none" stroke-linecap="round"/>
+            <line id="fgi-needle" class="needle" x1="50" y1="60" x2="50" y2="26" stroke="#e8eefc" stroke-width="2"/>
+            <circle cx="50" cy="60" r="3" fill="#e8eefc"/>
+          </svg>
+        </div>
+        <div id="fgi-badge" class="badge b-yellow">-</div>
+        <div class="sub" id="fgi-src">Alternative.me</div>
       </div>
-      <!-- 도미넌스 -->
-      <div class="card" id="card-dom">
+
+      <!-- 3) 도미넌스 -->
+      <div class="card span-1">
         <h3>도미넌스</h3>
         <div class="kpi" id="kpi-dominance">-</div>
         <div class="sub">BTC Dominance</div>
       </div>
 
-      <div class="row-2">
-        <!-- BTC mcap -->
-        <div class="card" id="card-btc">
-          <h3>BTC Market Cap</h3>
-          <div class="kpi" id="kpi-btc-mcap">-</div>
-          <div class="sub">시총(USD)</div>
-          <div id="mini-btc"></div>
-        </div>
-        <!-- USDT mcap -->
-        <div class="card" id="card-usdt">
-          <h3>USDT Market Cap</h3>
-          <div class="kpi" id="kpi-usdt-mcap">-</div>
-          <div class="sub">테더(USDT) 시가총액(USD)</div>
-          <div id="mini-usdt"></div>
-        </div>
+      <!-- 4) BTC mcap -->
+      <div class="card span-1">
+        <h3>BTC Market Cap</h3>
+        <div class="kpi" id="kpi-btc-mcap">-</div>
+        <div class="sub">시총(USD)</div>
+        <div class="mini" id="mini-btc"></div>
       </div>
-    </div>
 
-    <div class="right-2">
-      <div class="card" id="card-gainers">
+      <!-- 5) USDT mcap -->
+      <div class="card span-1">
+        <h3>USDT Market Cap</h3>
+        <div class="kpi" id="kpi-usdt-mcap">-</div>
+        <div class="sub">테더(USDT) 시가총액(USD)</div>
+        <div class="mini" id="mini-usdt"></div>
+      </div>
+
+      <!-- 6) 등락률 상위 TOP10 24H -->
+      <div class="card span-1" id="card-gainers">
         <h3>등락률 상위 TOP 10 (24H)</h3>
         <div class="list" id="list-gainers"></div>
       </div>
-      <div class="card" id="card-volume">
+
+      <!-- 7) 거래량 순위 TOP10 -->
+      <div class="card span-1 span-2" id="card-volume">
         <h3>코인 거래량 순위 TOP 10</h3>
         <div class="list" id="list-volume"></div>
       </div>
     </div>
+
+    <!-- Controls + Table -->
+    <div class="controls">
+      <input class="search" id="search" type="text" placeholder="코인 검색 (이름/심볼)">
+      <label>정렬:
+        <select id="sortkey">
+          <option value="market_cap">시가총액</option>
+          <option value="price">가격</option>
+          <option value="volume">거래량</option>
+          <option value="change1h">1시간</option>
+          <option value="change24h">24시간</option>
+          <option value="change7d">7일</option>
+          <option value="rank">순위</option>
+        </select>
+      </label>
+      <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
+      <label>페이지: <select id="page"></select></label>
+    </div>
+
+    <div class="table-wrap">
+      <table class="cosmos-table">
+        <thead>
+          <tr>
+            <th class="text-right">순위</th>
+            <th>코인</th>
+            <th class="text-right">시세</th>
+            <th class="text-right">1시간</th>
+            <th class="text-right">24시간</th>
+            <th class="text-right">7일</th>
+            <th class="text-right">시가총액</th>
+            <th class="text-right">거래량</th>
+            <th class="text-right">7일 차트</th>
+          </tr>
+        </thead>
+        <tbody id="cosmos-tbody"></tbody>
+      </table>
+    </div>
+
+    <footer>
+      🚀 Cosmos 암호화폐 대시보드 – CoinGecko / Alternative.me / Binance | 30초 자동 업데이트
+    </footer>
   </div>
 
-  <!-- Controls -->
-  <div class="controls">
-    <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
-    <label>정렬:
-      <select id="sortkey">
-        <option value="market_cap">시가총액</option><option value="price">가격</option>
-        <option value="volume">거래량</option><option value="change1h">1시간</option>
-        <option value="change24h">24시간</option><option value="change7d">7일</option>
-        <option value="rank">순위</option>
-      </select>
-    </label>
-    <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
-    <label>페이지:
-      <select id="page"></select>
-    </label>
-  </div>
-
-  <!-- Table -->
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th class="text-right">순위</th>
-          <th>코인</th>
-          <th class="text-right">시세</th>
-          <th class="text-right">1시간</th>
-          <th class="text-right">24시간</th>
-          <th class="text-right">7일</th>
-          <th class="text-right">시가총액</th>
-          <th class="text-right">거래량</th>
-          <th class="text-right">7일 차트</th>
-        </tr>
-      </thead>
-      <tbody id="cosmos-tbody"></tbody>
-    </table>
-  </div>
-
-  <footer>
-    🚀 Cosmos 암호화폐 대시보드 – CoinGecko / Alternative.me / Binance | 30초 자동 업데이트
-  </footer>
-</div>
-<script src="./cosmos.js?v=ls-timeframes-stars-compact"></script>
+  <script src="./cosmos.js"></script>
 </body>
 </html>
