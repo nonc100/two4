@@ -4,99 +4,253 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Cosmos · 전체 차트</title>
-    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+  <!-- 폰트 & 차트 라이브러리 -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
   <style>
-    :root{ color-scheme:dark; }
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans KR', Arial; background:#0e1220; color:#e8e8e8; }
-    .wrap{ max-width:1200px; margin:0 auto; padding:14px; }
-    .top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-    .btn{ padding:8px 10px; border:1px solid rgba(255,255,255,.12); background:#12162a; color:#fff; border-radius:8px; cursor:pointer; text-decoration:none; }
-    .btn.active{ background:#1f5cff; }
-    .muted{ opacity:.75; }
-       .grid{ display:grid; grid-template-columns:1fr; gap:10px; }
-    .panel{ background:#0f152b; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px; }
-    .stat{ display:flex; gap:10px; flex-wrap:wrap; }
-    .card{ background:#11162a; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:8px 10px; }
+    :root{
+      --bg: #0b0f1e;
+      --panel: rgba(16, 20, 40, 0.65);
+      --stroke: rgba(255,255,255, .08);
+      --primary: #6fdcff;   /* 네온 시안 */
+      --accent:  #a78bfa;   /* 네온 보라 */
+      --green:   #2ee59d;
+      --red:     #ff6b81;
+      --gold:    #ffcf5a;
+      color-scheme: dark;
+    }
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
+    body{
+      margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
+      background:
+        radial-gradient(900px 600px at 8% 10%, rgba(103,76,255,.18), transparent 60%),
+        radial-gradient(700px 500px at 85% 5%, rgba(0,200,255,.14), transparent 60%),
+        radial-gradient(700px 600px at 70% 90%, rgba(30,255,188,.12), transparent 65%),
+        linear-gradient(#0a0d1a, #0b0f1e 40%, #070a14);
+      color:#e6edf6;
+      overflow-y:auto;
+    }
+
+    /* 은은한 별빛 레이어 */
+    .stars, .twinkle{
+      position:fixed; inset:0; pointer-events:none; z-index:0;
+      background-repeat:repeat; opacity:.22;
+      filter:blur(.2px);
+    }
+    .stars{
+      background-image:
+        radial-gradient(1px 1px at  7% 11%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 13% 63%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 27% 21%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 33% 81%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 49% 27%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 62% 73%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 71% 39%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 83% 12%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 91% 58%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 96% 86%, #fff, transparent 60%);
+    }
+    .twinkle{
+      animation: twinkle 9s linear infinite;
+      background-image:
+        radial-gradient(1px 1px at 18% 35%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 44% 16%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 58% 61%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 72% 25%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 88% 70%, #fff, transparent 60%);
+    }
+    @keyframes twinkle{
+      0%,100%{ opacity:.12; transform:translateY(0) }
+      50%{ opacity:.28; transform:translateY(-2px) }
+    }
+
+    /* 레이아웃 */
+    .wrap{ max-width:1200px; margin:0 auto; padding:18px 16px 20px; position:relative; z-index:1; }
+    .top{
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;
+      background:linear-gradient(90deg, rgba(111,220,255,.08), rgba(167,139,250,.06));
+      border:1px solid var(--stroke);
+      border-radius:14px; padding:10px 12px; backdrop-filter: blur(6px);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 10px 24px rgba(0,0,0,.25);
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; margin-right:4px;
+    }
+    .brand .logo{
+      width:28px; height:28px; border-radius:8px;
+      background: radial-gradient(circle at 30% 30%, #79ffe1, #4976ff 60%, #261b65);
+      box-shadow: 0 0 12px rgba(111,220,255,.45), 0 0 30px rgba(167,139,250,.25) inset;
+    }
+    .brand .title{
+      font-family: "Orbitron", system-ui; font-weight:700; letter-spacing:.04em; font-size:18px;
+      text-shadow: 0 0 12px rgba(111,220,255,.25);
+    }
+
+    .btn{ padding:8px 10px; border:1px solid var(--stroke); background:rgba(15,20,40,.6); color:#fff;
+      border-radius:10px; cursor:pointer; backdrop-filter: blur(4px); }
+    .btn.active{ background:linear-gradient(120deg, rgba(111,220,255,.35), rgba(167,139,250,.35)); }
+    .select{ padding:8px 10px; border:1px solid var(--stroke); background:rgba(15,20,40,.6); color:#fff;
+      border-radius:10px; }
+
+    /* 카드/패널(유리 느낌) */
+    .grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+    .panel{
+      background: var(--panel); border:1px solid var(--stroke); border-radius:16px; padding:12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
+    }
     .chart{ height:58vh; min-height:340px; }
     .subchart{ height:18vh; min-height:120px; }
+
+    .stat{ display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 12px; }
+    .card{ background: var(--panel); border:1px solid var(--stroke); border-radius:12px; padding:8px 10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.25); backdrop-filter: blur(8px); }
+    .muted{ opacity:.75; }
+
+    a.back{ text-decoration:none; }
+
+    /* 수치 색 */
+    .up{ color: var(--green); }
+    .down{ color: var(--red); }
   </style>
 </head>
 <body>
-<div class="wrap">
- <div class="top">
-    <a href="./index.html" class="btn">← 목록으로</a>
-    <div id="title" style="font-weight:700;font-size:18px;">-</div>
-    <div id="rank" class="muted">Rank -</div>
-    <div style="flex:1"></div>
-    <div class="muted">기간:</div>
-    <button class="btn" data-days="1">1D</button>
-    <button class="btn" data-days="7">7D</button>
-    <button class="btn active" data-days="30">30D</button>
-    <button class="btn" data-days="90">90D</button>
-    <button class="btn" data-days="365">1Y</button>
-    <button class="btn" data-days="max">MAX</button>
-    <div class="muted" style="margin-left:6px;">통화:</div>
-    <select id="vs" class="btn" style="padding:8px 10px;">
-      <option value="usd" selected>USD</option>
-      <!-- <option value="krw">KRW</option> -->
-    </select>
-  </div>
+  <div class="stars"></div>
+  <div class="twinkle"></div>
 
-  <div class="stat">
+  <div class="wrap">
+    <!-- 헤더/툴바 -->
+    <div class="top">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">COSMOS · 전체 차트</div>
+      </div>
+
+      <a href="./index.html" class="btn">← 목록으로</a>
+
+      <div id="title" style="font-weight:700;margin-left:4px;">-</div>
+      <div id="rank" class="muted">Rank -</div>
+      <div style="flex:1"></div>
+
+      <div class="muted">기간</div>
+      <button class="btn" data-days="1">1D</button>
+      <button class="btn" data-days="7">7D</button>
+      <button class="btn active" data-days="30">30D</button>
+      <button class="btn" data-days="90">90D</button>
+      <button class="btn" data-days="365">1Y</button>
+      <button class="btn" data-days="max">MAX</button>
+
+      <div class="muted" style="margin-left:6px;">통화</div>
+      <select id="vs" class="select">
+        <option value="usd" selected>USD</option>
+        <!-- <option value="krw">KRW</option> -->
+      </select>
+    </div>
+
+    <!-- 메타 수치 -->
+    <div class="stat">
       <div class="card">가격: <b id="s-price">-</b></div>
-    <div class="card">24h: <b id="s-24h">-</b></div>
-    <div class="card">시총: <b id="s-mcap">-</b></div>
-    <div class="card">거래량: <b id="s-vol">-</b></div>
-  </div>
+      <div class="card">24h: <b id="s-24h">-</b></div>
+      <div class="card">시총: <b id="s-mcap">-</b></div>
+      <div class="card">거래량: <b id="s-vol">-</b></div>
+    </div>
 
- <div class="grid">
-    <div class="panel"><div id="chart" class="chart"></div></div>
-    <div class="panel"><div id="vol" class="subchart"></div></div>
+    <!-- 차트 -->
+    <div class="grid">
+      <div class="panel"><div id="chart" class="chart"></div></div>
+      <div class="panel"><div id="vol" class="subchart"></div></div>
+    </div>
   </div>
-</div>
 
 <script>
+/* ===== Helpers ===== */
 const params = new URLSearchParams(location.search);
 const COIN_ID = params.get('id') || 'bitcoin';
 const $ = s => document.querySelector(s);
 const fmtNum = (v,d=0)=> Number(v||0).toLocaleString('en-US',{minimumFractionDigits:d, maximumFractionDigits:d});
-const fmtPrice = (v)=>{ if(v==null) return "-"; let d=v>=100?2:v>=1?4:Math.ceil(Math.abs(Math.log10(v)))+2; d=Math.max(0,Math.min(8,d)); return Number(v).toLocaleString("en-US",{minimumFractionDigits:0, maximumFractionDigits:d}); };
-const pct = (v)=>{ if(v==null||!isFinite(v)) return "-"; const n=Number(v).toFixed(2); const cls=n>0?'color:#28e07a':n<0?'color:#ff5b6e':''; return `<span style="${cls}">${n>0?'+':''}${n}%</span>`; };
+const fmtPrice = (v)=>{
+  if(v==null) return "-";
+  let d = v>=100?2 : v>=1?4 : Math.ceil(Math.abs(Math.log10(v)))+2;
+  d = Math.max(0, Math.min(8, d));
+  return Number(v).toLocaleString("en-US",{minimumFractionDigits:0, maximumFractionDigits:d});
+};
+const pctHTML = (v)=>{
+  if(v==null || !isFinite(v)) return "-";
+  const n = Number(v).toFixed(2);
+  const cls = n>0 ? "up" : n<0 ? "down" : "";
+  return `<span class="${cls}">${n>0?'+':''}${n}%</span>`;
+};
 
-async function getJSON(url, proxyUrl){ try{ const r=await fetch(url); if(!r.ok) throw new Error(r.status); return await r.json(); } catch{ const r2=await fetch(proxyUrl); if(!r2.ok) throw new Error('proxy '+r2.status); return await r2.json(); } }
-async function fetchMeta(id){ const q='localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false'; return getJSON(`https://api.coingecko.com/api/v3/coins/${id}?${q}`, `/api/coins/${id}?${q}`); }
-async function fetchOHLC(id, vs, days){ return getJSON(`https://api.coingecko.com/api/v3/coins/${id}/ohlc?vs_currency=${vs}&days=${days}`, `/api/coins/${id}/ohlc?vs_currency=${vs}&days=${days}`); }
-async function fetchMarketChart(id, vs, days){ return getJSON(`https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=${vs}&days=${days}`, `/api/coins/${id}/market_chart?vs_currency=${vs}&days=${days}`); }
+async function getJSON(url, proxyUrl){
+  try{ const r=await fetch(url); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  catch{ const r2=await fetch(proxyUrl); if(!r2.ok) throw new Error('proxy '+r2.status); return await r2.json(); }
+}
+async function fetchMeta(id){
+  const q='localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false';
+  return getJSON(`https://api.coingecko.com/api/v3/coins/${id}?${q}`, `/api/coins/${id}?${q}`);
+}
+async function fetchOHLC(id, vs, days){
+  return getJSON(
+    `https://api.coingecko.com/api/v3/coins/${id}/ohlc?vs_currency=${vs}&days=${days}`,
+    `/api/coins/${id}/ohlc?vs_currency=${vs}&days=${days}`
+  );
+}
+async function fetchMarketChart(id, vs, days){
+  return getJSON(
+    `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=${vs}&days=${days}`,
+    `/api/coins/${id}/market_chart?vs_currency=${vs}&days=${days}`
+  );
+}
+function SMA(data, len){
+  const out=[]; let sum=0;
+  for (let i=0;i<data.length;i++){
+    sum+=data[i].close;
+    if (i>=len) sum-=data[i-len].close;
+    if (i>=len-1) out.push({ time:data[i].time, value: +(sum/len).toFixed(6) });
+  }
+  return out;
+}
 
-function SMA(bars,len){ const out=[]; let sum=0; for(let i=0;i<bars.length;i++){ sum+=bars[i].close; if(i>=len) sum-=bars[i-len].close; if(i>=len-1) out.push({ time:bars[i].time, value:+(sum/len).toFixed(6)}); } return out; }
-
+/* ===== Charts ===== */
 const chart = LightweightCharts.createChart($('#chart'), {
-  layout:{ background:{ color:'#0f152b' }, textColor:'#D8DEE9' },
-  grid:{ vertLines:{ color:'#1b2442' }, horzLines:{ color:'#1b2442' } },
-  rightPriceScale:{ borderColor:'#334' }, timeScale:{ borderColor:'#334' },
+  layout:{ background:{ color:'transparent' }, textColor:'#dce6f6' },
+  grid:{ vertLines:{ color:'rgba(255,255,255,.06)' }, horzLines:{ color:'rgba(255,255,255,.06)' } },
+  rightPriceScale:{ borderColor:'rgba(255,255,255,.08)' },
+  timeScale:{ borderColor:'rgba(255,255,255,.08)' },
   crosshair:{ mode: LightweightCharts.CrosshairMode.Normal },
 });
-const candleSeries = chart.addCandlestickSeries({ upColor:'#2ECC71', downColor:'#E74C3C', borderDownColor:'#E74C3C', borderUpColor:'#2ECC71', wickDownColor:'#E74C3C', wickUpColor:'#2ECC71' });
-const ma7  = chart.addLineSeries({ color:'#4aa3ff', lineWidth:2 });
+const candleSeries = chart.addCandlestickSeries({
+  upColor:'#2ee59d', downColor:'#ff6b81',
+  borderUpColor:'#2ee59d', borderDownColor:'#ff6b81',
+  wickUpColor:'#2ee59d', wickDownColor:'#ff6b81',
+});
+const ma7  = chart.addLineSeries({ color:'#6fdcff', lineWidth:2 });
 const ma25 = chart.addLineSeries({ color:'#ffcf5a', lineWidth:2 });
 
-  const volChart = LightweightCharts.createChart($('#vol'), {
-  layout:{ background:{ color:'#0f152b' }, textColor:'#D8DEE9' },
-  grid:{ vertLines:{ color:'#1b2442' }, horzLines:{ color:'#1b2442' } },
-  rightPriceScale:{ borderColor:'#334' }, timeScale:{ borderColor:'#334' },
+const volChart = LightweightCharts.createChart($('#vol'), {
+  layout:{ background:{ color:'transparent' }, textColor:'#dce6f6' },
+  grid:{ vertLines:{ color:'rgba(255,255,255,.06)' }, horzLines:{ color:'rgba(255,255,255,.06)' } },
+  rightPriceScale:{ borderColor:'rgba(255,255,255,.08)' }, timeScale:{ borderColor:'rgba(255,255,255,.08)' },
   crosshair:{ mode: LightweightCharts.CrosshairMode.Normal },
 });
-const volSeries = volChart.addHistogramSeries({ priceFormat:{ type:'volume' }, color:'#6f88ff' });
-  
+const volSeries = volChart.addHistogramSeries({
+  priceFormat:{ type:'volume' }, color:'rgba(111,220,255,.85)'
+});
+
+/* ===== Load ===== */
 async function load(days='30'){
   const vs = $('#vs').value || 'usd';
-try{
-        const meta = await fetchMeta(COIN_ID);
+
+  try{
+    const meta = await fetchMeta(COIN_ID);
     $('#title').textContent = `${(meta.symbol||'').toUpperCase()} · ${meta.name}`;
     $('#rank').textContent  = `Rank #${meta.market_cap_rank ?? '-'}`;
     const m = meta.market_data || {};
     $('#s-price').innerHTML = '$' + fmtPrice(m.current_price?.[vs]);
-    $('#s-24h').innerHTML   = pct(m.price_change_percentage_24h_in_currency?.[vs] ?? m.price_change_percentage_24h);
+    $('#s-24h').innerHTML   = pctHTML(m.price_change_percentage_24h_in_currency?.[vs] ?? m.price_change_percentage_24h);
     $('#s-mcap').innerHTML  = '$' + fmtNum(m.market_cap?.[vs], 0);
     $('#s-vol').innerHTML   = '$' + fmtNum(m.total_volume?.[vs], 0);
   }catch(e){ console.warn('meta fail', e); }
@@ -108,26 +262,33 @@ try{
     ma7.setData(SMA(bars, 7));
     ma25.setData(SMA(bars, 25));
     chart.timeScale().fitContent();
-  }catch(e){ candleSeries.setData([]); ma7.setData([]); ma25.setData([]); console.error('ohlc fail', e); }
+  }catch(e){
+    candleSeries.setData([]); ma7.setData([]); ma25.setData([]); console.error('ohlc fail', e);
+  }
 
   try{
-        const mc = await fetchMarketChart(COIN_ID, vs, days);
-    const vols = mc.total_volumes.map(([t, v]) => ({ time: Math.floor(t/1000), value: v, color: '#6f88ff' }));
+    const mc = await fetchMarketChart(COIN_ID, vs, days);
+    const vols = mc.total_volumes.map(([t, v]) => ({ time: Math.floor(t/1000), value: v, color: 'rgba(111,220,255,.85)' }));
     volSeries.setData(vols);
     volChart.timeScale().fitContent();
-  }catch(e){ volSeries.setData([]); console.error('volume fail', e); }
+  }catch(e){
+    volSeries.setData([]); console.error('volume fail', e);
+  }
 }
 
+/* ===== UI Events ===== */
 document.addEventListener('click', (e)=>{
   const b = e.target.closest('button[data-days]'); if(!b) return;
   document.querySelectorAll('button[data-days]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active'); load(b.getAttribute('data-days'));
+  b.classList.add('active');
+  load(b.getAttribute('data-days'));
 });
-$('#vs').addEventListener('change', ()=> {
+$('#vs').addEventListener('change', ()=>{
   const active = document.querySelector('button[data-days].active');
   load(active ? active.getAttribute('data-days') : '30');
 });
 
+/* start */
 load('30');
 </script>
 </body>
