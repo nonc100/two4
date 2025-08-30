@@ -1,6 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+      <script>
+    /* clamp for Number.toLocaleString / Intl.NumberFormat */
+    (() => {
+      const origToLS = Number.prototype.toLocaleString;
+      Number.prototype.toLocaleString = function (locale, opts) {
+        if (opts && typeof opts === "object") {
+          let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
+          if (!Number.isFinite(min)) min = undefined;
+          if (!Number.isFinite(max)) max = undefined;
+          if (min !== undefined) min = Math.min(20, Math.max(0, min));
+          if (max !== undefined) max = Math.min(20, Math.max(0, max));
+          if (min !== undefined && max !== undefined && max < min) max = min;
+          opts = { ...opts,
+            ...(min !== undefined ? { minimumFractionDigits: min } : {}),
+            ...(max !== undefined ? { maximumFractionDigits: max } : {}),
+          };
+        }
+        return origToLS.call(this, locale || "en-US", opts);
+      };
+
+      const OrigNF = Intl.NumberFormat;
+      Intl.NumberFormat = function (locale, opts) {
+        if (opts && typeof opts === "object") {
+          let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
+          if (!Number.isFinite(min)) min = undefined;
+          if (!Number.isFinite(max)) max = undefined;
+          if (min !== undefined) min = Math.min(20, Math.max(0, min));
+          if (max !== undefined) max = Math.min(20, Math.max(0, max));
+          if (min !== undefined && max !== undefined && max < min) max = min;
+          opts = { ...opts,
+            ...(min !== undefined ? { minimumFractionDigits: min } : {}),
+            ...(max !== undefined ? { maximumFractionDigits: max } : {}),
+          };
+        }
+        return new OrigNF(locale || "en-US", opts);
+      };
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🌌 Cosmos - 암호화폐 시세 대시보드</title>
