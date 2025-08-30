@@ -1,859 +1,130 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-              <script>
-      /* getElementById가 null이면 숨겨진 placeholder를 자동 생성해서
-         'Cannot set properties of null (setting "innerHTML")'를 막는다. */
-      (function () {
-        function ready(fn){ document.readyState!=="loading" ? fn() : document.addEventListener("DOMContentLoaded", fn); }
-        const orig = document.getElementById.bind(document);
-        document.getElementById = function(id){
-          const el = orig(id);
-          if (el) return el;
-          const stub = document.createElement("div");
-          stub.id = id;
-          stub.style.display = "none";
-          ready(() => (document.body || document.documentElement).appendChild(stub));
-          return stub;
-        };
-      })();
-        </script>
-        <script>
-    /* clamp for Number.toLocaleString / Intl.NumberFormat */
-    (() => {
-      const origToLS = Number.prototype.toLocaleString;
-      Number.prototype.toLocaleString = function (locale, opts) {
-        if (opts && typeof opts === "object") {
-          let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
-          if (!Number.isFinite(min)) min = undefined;
-          if (!Number.isFinite(max)) max = undefined;
-          if (min !== undefined) min = Math.min(20, Math.max(0, min));
-          if (max !== undefined) max = Math.min(20, Math.max(0, max));
-          if (min !== undefined && max !== undefined && max < min) max = min;
-          opts = { ...opts,
-            ...(min !== undefined ? { minimumFractionDigits: min } : {}),
-            ...(max !== undefined ? { maximumFractionDigits: max } : {}),
-          };
-        }
-        return origToLS.call(this, locale || "en-US", opts);
-      };
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>COSMOS</title>
 
-      const OrigNF = Intl.NumberFormat;
-      Intl.NumberFormat = function (locale, opts) {
-        if (opts && typeof opts === "object") {
-          let { minimumFractionDigits: min, maximumFractionDigits: max } = opts;
-          if (!Number.isFinite(min)) min = undefined;
-          if (!Number.isFinite(max)) max = undefined;
-          if (min !== undefined) min = Math.min(20, Math.max(0, min));
-          if (max !== undefined) max = Math.min(20, Math.max(0, max));
-          if (min !== undefined && max !== undefined && max < min) max = min;
-          opts = { ...opts,
-            ...(min !== undefined ? { minimumFractionDigits: min } : {}),
-            ...(max !== undefined ? { maximumFractionDigits: max } : {}),
-          };
-        }
-        return new OrigNF(locale || "en-US", opts);
-      };
-    })();
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌌 Cosmos - 암호화폐 시세 대시보드</title>
-      <link rel="icon" href="./favicon.ico">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <!-- 미래지향 타이틀 폰트 -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
 
-        body {
-            background: linear-gradient(135deg, #0c1426 0%, #1a1f3a 50%, #0f0f23 100%);
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-        }
+  <style>
+    :root{
+      --bg:#0e1220;
+      --panel:#0f152b;
+      --stroke:rgba(255,255,255,.10);
+      --primary:#1f5cff;
+      --up:#28e07a;
+      --down:#ff5b6e;
+    }
+    html,body{margin:0;background:var(--bg);color:#e8ebf3;}
+    .container{ max-width:1280px; margin:0 auto; padding:0 16px; }
 
-        .header {
-            background: rgba(26, 31, 58, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-bottom: 1px solid rgba(59, 130, 246, 0.3);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+    /* 상단 헤더: [로고] COSMOS + 은은한 배경 */
+    .site-header{ position:relative; padding:16px 0 22px; }
+    .brand{ display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
+    .brand img{ width:28px; height:28px; border-radius:8px; object-fit:cover; }
+    .brand h1{ margin:0; font-family:"Orbitron",system-ui; font-weight:700; letter-spacing:.04em; font-size:20px; }
+    .header-bg{ position:absolute; inset:auto 0 0 0; height:60px;
+      background:linear-gradient(90deg, rgba(31,92,255,.20), rgba(120,80,255,.14), rgba(31,92,255,.20));
+      filter:blur(22px); opacity:.35; }
 
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    /* 툴바 (검색만, 정렬은 헤더 클릭) */
+    .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0 6px; }
+    .toolbar input{
+      padding:8px 10px; border-radius:8px; border:1px solid var(--stroke);
+      background:#11172e; color:#e8ebf3; min-width:220px;
+    }
 
-        .live-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #22c55e;
-            margin-top: 5px;
-        }
+    /* 테이블 */
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .cosmos-table{ min-width:920px; width:100%; border-collapse:collapse; }
+    .cosmos-table th,.cosmos-table td{ padding:10px 12px; white-space:nowrap; border-bottom:1px solid rgba(255,255,255,.06); }
+    .cosmos-table th.text-right,.cosmos-table td.text-right{ text-align:right; }
 
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
+    /* 헤더 정렬(▲/▼) 토글용 */
+    th[data-sort]{ cursor:pointer; user-select:none; }
+    th[data-sort] .sort-ic{ display:inline-block; width:10px; margin-left:6px; opacity:.85; }
+    th[data-sort].asc  .sort-ic::before{ content:"▲"; font-size:10px; }
+    th[data-sort].desc .sort-ic::before{ content:"▼"; font-size:10px; }
 
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.1); }
-            100% { opacity: 1; transform: scale(1); }
-        }
+    /* 코인 링크: 흰색, 밑줄 없음, 한 줄 고정 */
+    .coin-link{ color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .coin-link:hover{ opacity:.9; }
+    .coin-name{ text-overflow:ellipsis; overflow:hidden; max-width:160px; }
 
-        .cosmos-info {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin: 20px;
-            color: #93c5fd;
-            text-align: center;
-        }
+    /* 7일 스파크라인 열 */
+    .cosmos-table td:last-child svg{ display:block; margin:0 auto; }
+    .cosmos-table th:last-child, .cosmos-table td:last-child{ width:90px; }
 
-        .market-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+    /* 반응형: 좁아질수록 덜 중요한 칼럼 숨김 */
+    @media (max-width:1100px){ .cosmos-table th:nth-child(9), .cosmos-table td:nth-child(9){ display:none; } } /* 7d 차트 */
+    @media (max-width:980px){  .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4){ display:none; } }  /* 1시간 */
+    @media (max-width:840px){  .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6){ display:none; } }  /* 7일% */
+    @media (max-width:720px){  .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8){ display:none; } }  /* 거래량 */
+    @media (max-width:620px){  .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7){ display:none; } .cosmos-table{ min-width:0; } } /* 시총 */
 
-        .stat-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 16px;
-            padding: 24px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
+    /* 페이지네이션 */
+    .pager{ display:flex; gap:6px; justify-content:center; margin:12px 0; }
+    .pager button{
+      padding:6px 10px; border:1px solid var(--stroke);
+      background:#121a36; color:#fff; border-radius:8px; cursor:pointer;
+    }
+    .pager button.active{ background:var(--primary); }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #f1f5f9;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-        }
-
-        .stat-change {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .positive {
-            color: #22c55e;
-        }
-
-        .negative {
-            color: #ef4444;
-        }
-
-        .trending-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 0 20px;
-            margin-bottom: 30px;
-        }
-
-        .trending-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 16px;
-            padding: 24px;
-        }
-
-        .trending-card h3 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            color: #f1f5f9;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .trending-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-        }
-
-        .trending-item:last-child {
-            border-bottom: none;
-        }
-
-        .coin-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .coin-rank {
-            background: rgba(59, 130, 246, 0.2);
-            color: #93c5fd;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
-            min-width: 28px;
-            text-align: center;
-        }
-
-        .main-table {
-            padding: 0 20px;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-        }
-
-        .refresh-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #2563eb, #1e40af);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        }
-
-        .refresh-btn:disabled {
-            background: rgba(100, 116, 139, 0.3);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .last-update {
-            color: #94a3b8;
-            font-size: 13px;
-        }
-
-        .table-container {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 16px 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-        }
-
-        th {
-            background: rgba(15, 23, 42, 0.8);
-            font-weight: 600;
-            color: #cbd5e1;
-            font-size: 14px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        tbody tr {
-            transition: all 0.2s ease;
-        }
-
-        tbody tr:hover {
-            background: rgba(59, 130, 246, 0.05);
-        }
-
-        .rank {
-            color: #64748b;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .coin-name {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .coin-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 12px;
-        }
-
-        .coin-symbol {
-            color: #94a3b8;
-            font-size: 12px;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-
-        .price {
-            font-weight: 600;
-            font-size: 16px;
-            color: #f1f5f9;
-        }
-
-        .chart-mini {
-            width: 80px;
-            height: 40px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: #94a3b8;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(59, 130, 246, 0.3);
-            border-top: 2px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: rgba(239, 68, 68, 0.1);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px;
-            text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .trending-section {
-                grid-template-columns: 1fr;
-            }
-            
-            .market-stats {
-                grid-template-columns: 1fr;
-            }
-            
-            table {
-                font-size: 14px;
-            }
-            
-            th, td {
-                padding: 12px 8px;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
-      <style>
-.table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-.cosmos-table{ min-width: 920px; width:100%; border-collapse: collapse; }
-.cosmos-table th, .cosmos-table td{ padding:10px 12px; white-space:nowrap; }
-.cosmos-table th.text-right, .cosmos-table td.text-right{ text-align:right; }
-.cosmos-table .coin-cell{ display:flex; align-items:center; gap:8px; }
-.cosmos-table .coin-name{ max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-@media (max-width: 480px){ .cosmos-table .coin-name{ max-width:100px; } }
-
-/* 화면 폭에 따라 덜 중요한 칼럼 숨김 */
-@media (max-width: 1100px){ .cosmos-table th:nth-child(9), .cosmos-table td:nth-child(9){ display:none; } }
-@media (max-width: 980px){  .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4){ display:none; } }
-@media (max-width: 840px){  .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6){ display:none; } }
-@media (max-width: 720px){  .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8){ display:none; } }
-@media (max-width: 620px){  .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7){ display:none; } .cosmos-table{ min-width:0; } }
-.cosmos-table td:last-child svg{ display:block; margin:0 auto; }
-.cosmos-table th:last-child, .cosmos-table td:last-child{ width:90px; }
-
-/* 링크/버튼 자잘한 UX */
-.coin-link{ color: inherit; text-decoration: none; display:flex; align-items:center; gap:6px; }
-.coin-link:hover{ color:#cfe3ff; }
-.coin-name{ text-decoration: none; }
-@media (max-width: 520px){ .coin-link .sep{ display:none; } }
-</style>
+    /* 푸터 크레딧 */
+    footer{ margin:16px 0 18px; opacity:.68; font-size:12px; text-align:center; }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🌌 Cosmos</h1>
-        <div class="live-indicator">
-            <div class="live-dot"></div>
-            <span>실시간 암호화폐 시세</span>
-        </div>
+  <div class="container">
+    <!-- 헤더 -->
+    <header class="site-header">
+      <div class="brand">
+        <!-- 로고 경로는 프로젝트 파일명에 맞게 변경 가능 -->
+        <img src="./logo.png" alt="TWO.4">
+        <h1>COSMOS</h1>
+      </div>
+      <div class="header-bg"></div>
+    </header>
+
+    <!-- (옵션) 상단 카드/섹션은 이후 단계에서 추가 가능 -->
+
+    <!-- 툴바: 검색(이름/심볼). 정렬은 헤더 클릭으로 처리 -->
+    <div class="toolbar">
+      <input id="cosmos-q" placeholder="코인 검색 (이름/심볼)">
     </div>
 
-    <div class="cosmos-info">
-        🚀 <strong>Cosmos 암호화폐 대시보드</strong> - CoinGecko API로 실시간 데이터 제공 | 
-        안전한 백엔드 서버 통신 | 30초 자동 업데이트
+    <!-- 표 -->
+    <div class="table-wrap">
+      <table class="cosmos-table">
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>코인</th>
+            <th class="text-right" data-sort="price">시세 <span class="sort-ic"></span></th>
+            <th class="text-right" data-sort="change1h">1시간 <span class="sort-ic"></span></th>
+            <th class="text-right" data-sort="change24h">24시간 <span class="sort-ic"></span></th>
+            <th class="text-right" data-sort="change7d">7일 <span class="sort-ic"></span></th>
+            <th class="text-right" data-sort="market_cap">시가총액 <span class="sort-ic"></span></th>
+            <th class="text-right" data-sort="volume">거래량 <span class="sort-ic"></span></th>
+            <th class="text-right">7일 차트</th>
+          </tr>
+        </thead>
+        <tbody id="cosmos-tbody"></tbody>
+      </table>
     </div>
 
-    <div class="market-stats" id="market-stats">
-        <div class="stat-card">
-            <div class="stat-value" id="market-cap">
-                <div class="loading-spinner"></div>
-                로딩중...
-            </div>
-            <div class="stat-label">전체 시가총액</div>
-            <div class="stat-change" id="market-cap-change"></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="total-volume">
-                <div class="loading-spinner"></div>
-                로딩중...
-            </div>
-            <div class="stat-label">24시간 거래량</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="active-cryptos">
-                <div class="loading-spinner"></div>
-                로딩중...
-            </div>
-            <div class="stat-label">활성 암호화폐</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="market-dominance">
-                <div class="loading-spinner"></div>
-                로딩중...
-            </div>
-            <div class="stat-label">BTC 도미넌스</div>
-        </div>
-    </div>
+    <!-- 50개 단위 페이저 -->
+    <div id="cosmos-pager" class="pager"></div>
 
-    <div class="trending-section">
-        <div class="trending-card">
-            <h3>🔥 트렌딩</h3>
-            <div id="trending-coins">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    데이터 로딩 중...
-                </div>
-            </div>
-        </div>
-        <div class="trending-card">
-            <h3>📈 최대 상승</h3>
-            <div id="top-gainers">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    데이터 로딩 중...
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- 하단 배너(필수) -->
+    <footer>
+      🚀 Cosmos 암호화폐 대시보드 – CoinGecko API로 실시간 데이터 제공 | 안전한 백엔드 서버 통신 | 30초 자동 업데이트
+    </footer>
+  </div>
 
-    <div class="main-table">
-        <div class="controls">
-            <button class="refresh-btn" onclick="loadAllData()" id="refresh-btn">새로고침</button>
-            <div class="last-update">
-                마지막 업데이트: <span id="last-update-time">-</span>
-            </div>
-        </div>
-
-        <!-- 필터/정렬 툴바 -->
-        <div class="cosmos-toolbar" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;">
-          <input id="cosmos-q" placeholder="코인 검색 (이름/심볼)" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#111;color:#ddd;min-width:200px;">
-          <label>정렬:
-            <select id="cosmos-sort-key" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#111;color:#ddd;">
-              <option value="market_cap">시가총액</option>
-              <option value="price">시세</option>
-              <option value="volume">거래량</option>
-              <option value="change24h">변동률(24h)</option>
-              <option value="change1h">변동률(1h)</option>
-              <option value="change7d">변동률(7d)</option>
-            </select>
-          </label>
-          <select id="cosmos-sort-order" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#111;color:#ddd;">
-            <option value="desc">내림차순</option>
-            <option value="asc">오름차순</option>
-          </select>
-
-          <button id="cosmos-btn-topchange" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#1f5cff;color:#fff;">
-            변동률(24h) 내림차순
-          </button>
-        </div>
-
-        <div class="table-wrap">
-        <table class="cosmos-table">
-              <thead>
-                <tr>
-                  <th>순위</th>
-                  <th>코인</th>
-                  <th class="text-right">시세</th>
-                  <th class="text-right">1시간</th>
-                  <th class="text-right">24시간</th>
-                  <th class="text-right">7일</th>
-                  <th class="text-right">시가총액</th>
-                  <th class="text-right">거래량</th>
-                  <th class="text-right">7일 차트</th>
-                </tr>
-              </thead>
-
-              <!-- 이 tbody로 JS가 채워 넣습니다 -->
-              <tbody id="cosmos-tbody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <script>
-        let chartInstances = {};
-        let isLoading = false;
- const API_BASE = window.location.origin.replace(/:\d+$/, ':3001');
-        
-        function formatNumber(num) {
-            if (!num && num !== 0) return '0';
-            const number = parseFloat(num);
-            if (number >= 1e12) return (number / 1e12).toFixed(2) + 'T';
-            if (number >= 1e9) return (number / 1e9).toFixed(2) + 'B';
-            if (number >= 1e6) return (number / 1e6).toFixed(2) + 'M';
-            if (number >= 1e3) return (number / 1e3).toFixed(2) + 'K';
-            return number.toFixed(2);
-        }
-
-        function formatPrice(price) {
-            const number = parseFloat(price);
-            if (number >= 1) return '$' + number.toLocaleString('en-US', {
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: number >= 100 ? 0 : 2
-            });
-            if (number >= 0.01) return '$' + number.toFixed(4);
-            return '$' + number.toFixed(8);
-        }
-
-        function renderChange(change) {
-            if (!change && change !== 0) return '<span style="color: #64748b;">-</span>';
-            const isPositive = parseFloat(change) >= 0;
-            const arrow = isPositive ? '▲' : '▼';
-            const className = isPositive ? 'positive' : 'negative';
-            return `<span class="${className}">${arrow} ${Math.abs(parseFloat(change)).toFixed(2)}%</span>`;
-        }
-
-        function createMiniChart(data, elementId, isPositive) {
-            const canvas = document.getElementById(elementId);
-            if (!canvas) return;
-
-            if (chartInstances[elementId]) {
-                chartInstances[elementId].destroy();
-            }
-
-            const ctx = canvas.getContext('2d');
-            
-            chartInstances[elementId] = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.map((_, i) => i),
-                    datasets: [{
-                        data: data,
-                        borderColor: isPositive ? '#22c55e' : '#ef4444',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.4,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        x: { display: false }, 
-                        y: { display: false }
-                    },
-                    elements: { point: { radius: 0 } },
-                    interaction: { intersect: false }
-                }
-            });
-        }
-
-        function setLoadingState(loading) {
-            isLoading = loading;
-            const refreshBtn = document.getElementById('refresh-btn');
-            refreshBtn.disabled = loading;
-            refreshBtn.innerHTML = loading ? 
-                '<div class="loading-spinner" style="margin-right: 8px;"></div>로딩중...' : 
-                '새로고침';
-        }
-
-        async function loadGlobalData() {
-            try {
-                const response = await fetch(`${API_BASE}/api/global`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                const global = data.data;
-
-                document.getElementById('market-cap').textContent = 
-                    `$${formatNumber(global.total_market_cap.usd)}`;
-                document.getElementById('total-volume').textContent = 
-                    `$${formatNumber(global.total_volume.usd)}`;
-                document.getElementById('active-cryptos').textContent = 
-                    formatNumber(global.active_cryptocurrencies);
-                document.getElementById('market-dominance').textContent = 
-                    `${global.market_cap_percentage.btc.toFixed(1)}%`;
-                
-                const changeElement = document.getElementById('market-cap-change');
-                const change = global.market_cap_change_percentage_24h_usd;
-                changeElement.innerHTML = renderChange(change);
-                
-            } catch (error) {
-                console.error('글로벌 데이터 로딩 실패:', error);
-                document.getElementById('market-cap').textContent = '로딩 실패';
-                document.getElementById('total-volume').textContent = '로딩 실패';
-            }
-        }
-
-        async function loadTrendingCoins() {
-            try {
-                const response = await fetch(`${API_BASE}/api/trending`);
-                const data = await response.json();
-                
-                const trendingHtml = data.coins.slice(0, 5).map((coin, index) => `
-                    <div class="trending-item">
-                        <div class="coin-info">
-                            <div class="coin-rank">${index + 1}</div>
-                            <div>
-                                <div style="font-weight: 600; font-size: 14px;">${coin.item.name}</div>
-                                <div style="color: #94a3b8; font-size: 12px;">${coin.item.symbol}</div>
-                            </div>
-                        </div>
-                        <div style="color: #3b82f6; font-size: 12px;">
-                            #${coin.item.market_cap_rank || 'N/A'}
-                        </div>
-                    </div>
-                `).join('');
-                
-                document.getElementById('trending-coins').innerHTML = trendingHtml;
-                
-            } catch (error) {
-                console.error('트렌딩 코인 로딩 실패:', error);
-                document.getElementById('trending-coins').innerHTML = 
-                    '<div class="error">트렌딩 데이터 로딩 실패</div>';
-            }
-        }
-
-        async function loadTopGainers() {
-            try {
-                const response = await fetch(`${API_BASE}/api/coins/markets?vs_currency=usd&order=percent_change_24h_desc&per_page=5&page=1&sparkline=false&price_change_percentage=24h`);
-                const data = await response.json();
-                
-                const gainersHtml = data.map(coin => `
-                    <div class="trending-item">
-                        <div class="coin-info">
-                            <div class="coin-rank">${coin.market_cap_rank}</div>
-                            <div>
-                                <div style="font-weight: 600; font-size: 14px;">${coin.name}</div>
-                                <div style="color: #94a3b8; font-size: 12px;">${coin.symbol.toUpperCase()}</div>
-                            </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 600; color: #f1f5f9;">${formatPrice(coin.current_price)}</div>
-                            <div class="positive">▲ ${coin.price_change_percentage_24h?.toFixed(2) || 0}%</div>
-                        </div>
-                    </div>
-                `).join('');
-                
-                document.getElementById('top-gainers').innerHTML = gainersHtml;
-                
-            } catch (error) {
-                console.error('상승 종목 로딩 실패:', error);
-                document.getElementById('top-gainers').innerHTML = 
-                    '<div class="error">상승 데이터 로딩 실패</div>';
-            }
-        }
-
-        async function loadMainTable() {
-            try {
-                const response = await fetch(`${API_BASE}/api/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=1&sparkline=true&price_change_percentage=1h%2C24h%2C7d`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const coins = await response.json();
-
-                const tableBody = document.getElementById('coins-table');
-                tableBody.innerHTML = coins.map(coin => {
-                    const chartId = `chart-${coin.id}`;
-                    
-                    return `
-                        <tr>
-                            <td class="rank">${coin.market_cap_rank}</td>
-                            <td>
-                                <div class="coin-name">
-                                    <div class="coin-icon">
-                                        ${coin.symbol.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: 600;">${coin.name}</div>
-                                        <div class="coin-symbol">${coin.symbol}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="price">${formatPrice(coin.current_price)}</td>
-                            <td>${renderChange(coin.price_change_percentage_1h_in_currency)}</td>
-                            <td>${renderChange(coin.price_change_percentage_24h)}</td>
-                            <td>${renderChange(coin.price_change_percentage_7d_in_currency)}</td>
-                            <td>$${formatNumber(coin.market_cap)}</td>
-                            <td>$${formatNumber(coin.total_volume)}</td>
-                            <td>
-                                <canvas id="${chartId}" class="chart-mini" width="80" height="40"></canvas>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                // 차트 생성
-                setTimeout(() => {
-                    coins.forEach(coin => {
-                        if (coin.sparkline_in_7d?.price) {
-                            const isPositive = coin.price_change_percentage_7d_in_currency >= 0;
-                            createMiniChart(
-                                coin.sparkline_in_7d.price, 
-                                `chart-${coin.id}`, 
-                                isPositive
-                            );
-                        }
-                    });
-                }, 100);
-
-            } catch (error) {
-                console.error('메인 테이블 로딩 실패:', error);
-                document.getElementById('coins-table').innerHTML = 
-                    `<tr><td colspan="9" class="error">데이터 로딩 실패: ${error.message}</td></tr>`;
-            }
-        }
-
-        async function loadAllData() {
-            if (isLoading) return;
-            
-            setLoadingState(true);
-            
-            try {
-                await Promise.all([
-                    loadGlobalData(),
-                    loadTrendingCoins(),
-                    loadTopGainers(),
-                    loadMainTable()
-                ]);
-
-                // 마지막 업데이트 시간
-                document.getElementById('last-update-time').textContent = 
-                    new Date().toLocaleTimeString('ko-KR');
-
-                console.log('✅ 모든 데이터 로딩 완료');
-
-            } catch (error) {
-                console.error('❌ 데이터 로딩 실패:', error);
-            } finally {
-                setLoadingState(false);
-            }
-        }
-
-        // 초기화
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🌌 Cosmos 암호화폐 대시보드 초기화');
-            loadAllData();
-        });
-
-        // 30초마다 자동 새로고침
-        setInterval(() => {
-            if (!isLoading) {
-                console.log('🔄 자동 새로고침');
-                loadAllData();
-            }
-        }, 30000);
-
-        // 온라인/오프라인 감지
-        window.addEventListener('online', () => {
-            console.log('🌐 인터넷 연결됨');
-            if (!isLoading) loadAllData();
-        });
-
-        window.addEventListener('offline', () => {
-            console.log('📡 인터넷 연결 끊김');
-        });
-
-        console.log('✅ Cosmos 암호화폐 대시보드 준비 완료!');
-    </script>
-    <script src="./cosmos.js"></script>
+  <!-- 페이지 맨 아래 스크립트 연결 -->
+  <script src="./cosmos.js"></script>
 </body>
 </html>
