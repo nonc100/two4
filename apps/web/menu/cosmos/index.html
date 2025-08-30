@@ -14,9 +14,14 @@
       --stroke:rgba(255,255,255,.10);
       --primary:#1f5cff;
 
+      /* 상단/폭/여백 */
+      --top-space: 110px;         /* 타이틀 위 여백 */
+      --container-max: 1440px;    /* 컨텐츠 최대폭(좌우 여백 줄이려면 ↑) */
+      --side-pad: 10px;           /* 화면 좌우 패딩 */
+
       /* 로고/배경 */
       --logo-h: clamp(24px, 3.0vw, 44px);
-      --hero-bg: url("../../media/your-galaxy.jpg"); /* 🔁 배경 이미지 경로만 바꿔줘 */
+      --hero-bg: url("../../media/your-galaxy.jpg"); /* 🔁 배경 이미지 경로 교체 */
 
       /* Glass card (회색 그라데이션 + 유리) */
       --glass-bg: rgba(18,24,46,.72);
@@ -37,10 +42,10 @@
       opacity:.25; filter:saturate(1.05) contrast(1.04);
     }
 
-    .container{ max-width:1280px; margin:0 auto; padding:0 16px; }
+    .container{ max-width:var(--container-max); margin:0 auto; padding:0 var(--side-pad); }
 
     /* ===== 헤더 ===== */
-    .site-header{ position:relative; padding: 72px 0 30px; } /* 상단 여백 넉넉히 */
+    .site-header{ position:relative; padding: var(--top-space) 0 30px; } /* 상단 여백 크게 */
     .brand{ display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
     .brand img{
       height:var(--logo-h); width:auto; object-fit:contain;
@@ -55,13 +60,43 @@
       background:linear-gradient(90deg, rgba(31,92,255,.20), rgba(120,80,255,.14), rgba(31,92,255,.20));
       filter:blur(22px); opacity:.35; }
 
-    /* ===== 대시보드: 왼쪽 5 / 오른쪽 2 ===== */
-    .dash-columns{
-      display:grid; grid-template-columns: 2fr 1fr; gap:16px;
-      margin-top: 26px;
+    /* ===== 대시보드: “왼쪽 5 / 오른쪽 2(세로 길게)” — 오른쪽 스샷 레이아웃 =====
+       3열 그리드: [왼쪽 2열] + [오른쪽 1열]
+       행배치
+       1행: a  b  r1   (왼쪽 작은 2, 오른쪽 긴 상단)
+       2행: c  c  r1   (왼쪽 가로 넓은 1, 오른쪽 긴 상단 계속)
+       3행: d  e  r2   (왼쪽 작은 2, 오른쪽 긴 하단)
+    */
+    .dash-areas{
+      display:grid;
+      grid-template-columns: 1.6fr 1.6fr 1fr;
+      grid-template-areas:
+        "a  b  r1"
+        "c  c  r1"
+        "d  e  r2";
+      gap:16px;
+      margin-top: 36px;
     }
-    .col{ display:flex; flex-direction:column; gap:16px; }
-    @media (max-width:1100px){ .dash-columns{ grid-template-columns:1fr; } }
+    @media (max-width:1100px){
+      /* 태블릿 이하: 2열로 단순화 */
+      .dash-areas{
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "a  b"
+          "c  c"
+          "d  e"
+          "r1 r1"
+          "r2 r2";
+      }
+    }
+    @media (max-width:640px){
+      /* 모바일: 1열 */
+      .dash-areas{
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "a" "b" "c" "d" "e" "r1" "r2";
+      }
+    }
 
     /* Glass + 회색 그라데이션 보더 */
     .card{
@@ -91,6 +126,15 @@
     .list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
     .list .row{ display:flex; justify-content:space-between; gap:8px; font-size:14px; }
     .up{ color:#28e07a } .down{ color:#ff5b6e }
+
+    /* 각 카드 위치 지정(그리드 영역) */
+    #card-oi        { grid-area: a; }
+    #card-fng       { grid-area: b; }
+    #card-gainers   { grid-area: c; }
+    #card-volume    { grid-area: d; }
+    #card-dominance { grid-area: e; }
+    #card-btc-mcap  { grid-area: r1; } /* 오른쪽 상단(세로로 2행) */
+    #card-total-mcap{ grid-area: r2; } /* 오른쪽 하단 */
 
     /* ===== 툴바 ===== */
     .toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:18px 0 6px; }
@@ -148,54 +192,48 @@
       <div class="header-bg"></div>
     </header>
 
-    <!-- 상단 대시보드: 왼쪽 5개 / 오른쪽 2개 -->
-    <div class="dash-columns">
-      <!-- LEFT (5) -->
-      <div class="col">
-        <div class="card">
-          <h3>BTC 미결제약정(OI) · 24H</h3>
-          <div id="k-oi" class="kpi">연동 예정</div>
-          <div class="sub">※ OI 제공 API 연결 후 표시</div>
-        </div>
-
-        <div class="card">
-          <h3>공포/탐욕 지수</h3>
-          <div id="k-fng" class="kpi">연동 예정</div>
-          <div class="sub">Alternative.me API</div>
-        </div>
-
-        <div class="card">
-          <h3>등락률 상위 7위 [24h]</h3>
-          <div id="k-gainers" class="list"></div>
-        </div>
-
-        <div class="card">
-          <h3>코인 거래량 순위</h3>
-          <div id="k-volume" class="list"></div>
-        </div>
-
-        <div class="card">
-          <h3>도미넌스</h3>
-          <div id="k-dominance" class="kpi">-</div>
-          <div class="sub">BTC Dominance</div>
-        </div>
+    <!-- 상단 대시보드: 오른쪽 스샷 레이아웃(왼쪽 5 / 오른쪽 2) -->
+    <section class="dash-areas">
+      <div id="card-oi" class="card">
+        <h3>BTC 미결제약정(OI) · 24H</h3>
+        <div id="k-oi" class="kpi">연동 예정</div>
+        <div class="sub">※ OI 제공 API 연결 후 표시</div>
       </div>
 
-      <!-- RIGHT (2) -->
-      <div class="col">
-        <div class="card">
-          <h3>BTC Market Cap</h3>
-          <div id="k-btc-mcap" class="kpi">-</div>
-          <div class="sub">시총(USD)</div>
-        </div>
-
-        <div class="card">
-          <h3>Global Market Cap</h3>
-          <div id="k-total-mcap" class="kpi">-</div>
-          <div class="sub">전체 암호화폐 시가총액(USD)</div>
-        </div>
+      <div id="card-fng" class="card">
+        <h3>공포/탐욕 지수</h3>
+        <div id="k-fng" class="kpi">연동 예정</div>
+        <div class="sub">Alternative.me API</div>
       </div>
-    </div>
+
+      <div id="card-gainers" class="card">
+        <h3>등락률 상위 7위 [24h]</h3>
+        <div id="k-gainers" class="list"></div>
+      </div>
+
+      <div id="card-volume" class="card">
+        <h3>코인 거래량 순위</h3>
+        <div id="k-volume" class="list"></div>
+      </div>
+
+      <div id="card-dominance" class="card">
+        <h3>도미넌스</h3>
+        <div id="k-dominance" class="kpi">-</div>
+        <div class="sub">BTC Dominance</div>
+      </div>
+
+      <div id="card-btc-mcap" class="card">
+        <h3>BTC Market Cap</h3>
+        <div id="k-btc-mcap" class="kpi">-</div>
+        <div class="sub">시총(USD)</div>
+      </div>
+
+      <div id="card-total-mcap" class="card">
+        <h3>Global Market Cap</h3>
+        <div id="k-total-mcap" class="kpi">-</div>
+        <div class="sub">전체 암호화폐 시가총액(USD)</div>
+      </div>
+    </section>
 
     <!-- 툴바: 검색(이름/심볼). 정렬은 헤더 클릭 -->
     <div class="toolbar">
