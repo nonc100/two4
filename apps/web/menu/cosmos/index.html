@@ -11,11 +11,9 @@
   <style>
     :root{
       --bg:#0e1220;
-      --panel:#0f152b;
       --stroke:rgba(255,255,255,.10);
       --primary:#1f5cff;
-      --up:#28e07a;
-      --down:#ff5b6e;
+      --logo-h: clamp(24px, 3.0vw, 44px); /* 로고 세로: 화면에 따라 자동 */
     }
     html,body{margin:0;background:var(--bg);color:#e8ebf3;}
     .container{ max-width:1280px; margin:0 auto; padding:0 16px; }
@@ -23,8 +21,18 @@
     /* 상단 헤더: [로고] COSMOS + 은은한 배경 */
     .site-header{ position:relative; padding:16px 0 22px; }
     .brand{ display:flex; align-items:center; gap:10px; position:relative; z-index:1; }
-    .brand img{ width:28px; height:28px; border-radius:8px; object-fit:cover; }
-    .brand h1{ margin:0; font-family:"Orbitron",system-ui; font-weight:700; letter-spacing:.04em; font-size:20px; }
+    .brand img{
+      height:var(--logo-h);      /* 세로만 고정 */
+      width:auto;                /* 가로 자동(비율 유지) */
+      object-fit:contain;        /* 자르지 않음 */
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+      max-width:320px;           /* 너무 길어지는 것 제한(원하면 수정) */
+    }
+    .brand h1{
+      margin:0;
+      font-family:"Orbitron",system-ui; font-weight:700; letter-spacing:.04em;
+      font-size:calc(var(--logo-h) * .9); line-height:1;
+    }
     .header-bg{ position:absolute; inset:auto 0 0 0; height:60px;
       background:linear-gradient(90deg, rgba(31,92,255,.20), rgba(120,80,255,.14), rgba(31,92,255,.20));
       filter:blur(22px); opacity:.35; }
@@ -81,14 +89,12 @@
     <!-- 헤더 -->
     <header class="site-header">
       <div class="brand">
-        <!-- 로고 경로는 프로젝트 파일명에 맞게 변경 가능 -->
-        <img src="./logo.png" alt="TWO.4">
+        <!-- 여기가 네 로고 경로 -->
+        <img src="../../media/logo.png" alt="TWO.4">
         <h1>COSMOS</h1>
       </div>
       <div class="header-bg"></div>
     </header>
-
-    <!-- (옵션) 상단 카드/섹션은 이후 단계에서 추가 가능 -->
 
     <!-- 툴바: 검색(이름/심볼). 정렬은 헤더 클릭으로 처리 -->
     <div class="toolbar">
