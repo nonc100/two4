@@ -11,8 +11,9 @@
   --text-main:    #e0e0e0;
   --text-sub:     #888888;
   --radius:       8px;
-  --ff-serif:     'Cinzel', serif;
+   --ff-serif:     'Cinzel', serif;
   --ff-sans:      'Segoe UI', sans-serif;
+  --coin-icon:    22px;              /* 원하는 크기 */
 }
 
 /*─────────────────────────────── 리셋 & 공통 ────────────────────────────────*/
@@ -177,15 +178,33 @@ footer {
 
 /*─────────────────────────────── 반응형 (간단) ────────────────────────────────*/
 @media (max-width: 768px) {
+  :root { --coin-icon: 18px; }
   nav ul { gap: 1rem; }
   .site-title { font-size: 1.6rem; }
   .tagline { font-size: 0.8rem; }
   section h2 { font-size: 1.3rem; }
 }
 
+.color-up { color:#28e07a; }
+.color-down { color:#ff5b6e; }
 
-.color-up{color:#28e07a}
-.color-down{color:#ff5b6e}
-.coin-img{width:20px;height:20px;border-radius:9999px;vertical-align:middle;margin-right:6px}
-.coin-sym{opacity:.6;font-size:.8em;margin-left:6px;text-transform:uppercase}
+.coin-cell {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.coin-img {
+  width:var(--coin-icon) !important;
+  height:var(--coin-icon) !important;
+  min-width:var(--coin-icon) !important;
+  min-height:var(--coin-icon) !important;
+  border-radius:50%;
+  object-fit:contain;
+}
+.coin-name { white-space:nowrap; }
+.coin-sym { opacity:.6; font-size:.8em; margin-left:6px; text-transform:uppercase; }
+
+/* 혹시 테이블 전역 img에 큰 크기 강제가 있으면 제압 */
+table img { max-width:var(--coin-icon) !important; height:auto; }
+
 
