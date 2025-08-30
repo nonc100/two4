@@ -499,7 +499,30 @@
                 마지막 업데이트: <span id="last-update-time">-</span>
             </div>
         </div>
-        
+
+        <!-- 필터/정렬 툴바 -->
+        <div class="cosmos-toolbar" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;">
+          <input id="cosmos-q" placeholder="코인 검색 (이름/심볼)" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#111;color:#ddd;min-width:200px;">
+          <label>정렬:
+            <select id="cosmos-sort-key" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#111;color:#ddd;">
+              <option value="market_cap">시가총액</option>
+              <option value="price">시세</option>
+              <option value="volume">거래량</option>
+              <option value="change24h">변동률(24h)</option>
+              <option value="change1h">변동률(1h)</option>
+              <option value="change7d">변동률(7d)</option>
+            </select>
+          </label>
+          <select id="cosmos-sort-order" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#111;color:#ddd;">
+            <option value="desc">내림차순</option>
+            <option value="asc">오름차순</option>
+          </select>
+
+          <button id="cosmos-btn-topchange" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#1f5cff;color:#fff;">
+            변동률(24h) 내림차순
+          </button>
+        </div>
+
         <div class="table-container">
         <table class="w-full">
               <thead>
