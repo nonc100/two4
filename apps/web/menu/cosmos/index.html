@@ -2,204 +2,195 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>TWO4 COSMOS</title>
-
   <style>
     :root{
-      --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
+      --bg:#0b1018;
+      --panel:#111827;
+      --text:#e8eefc;
+      --muted:#9aa3b6;
       --up:#22c55e; --down:#ef4444;
-      --ring1:#7c3aed; --ring2:#06b6d4;
-      --sticky-top: 12px;          /* 데스크톱 기본 sticky offset */
-      --starVis: .7;               /* 별 밝기 (0~1) */
-      --row-gap: 10px;             /* 행 사이 간격 */
+      --card-border: rgba(255,255,255,.08);
+      --sticky-top: 74px; /* 상단 슬라이더+여백 고려 */
+      --starVis: .75; /* 0~1 */
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:#0b1018;color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial}
+    html,body{margin:0;padding:0;background:#0b1018;color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"}
     a{color:inherit;text-decoration:none}
-    a:visited{color:inherit}
-    a:hover,a:focus{color:inherit;text-decoration:none}
+    img{max-width:100%;height:auto}
 
-    /* ==== Star background ==== */
-    #starCanvas{position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%)}
+    /* ⭐ starfield */
+    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1200px 700px at 50% -200px,#182036 0%,var(--bg) 55%)}
+    .star{position:absolute;inset:0;background-repeat:repeat;background-size:1600px 1600px;filter:blur(.2px)}
+    .star.s1{opacity:calc(.55*var(--starVis));animation:tw1 22s linear infinite;
+      background-image:
+        radial-gradient(1px 1px at 20px 30px #fff8 50%,transparent 51%),
+        radial-gradient(1px 1px at 300px 120px #fff8 50%,transparent 51%),
+        radial-gradient(1px 1px at 620px 420px #fff8 50%,transparent 51%)}
+    .star.s2{opacity:calc(.35*var(--starVis));animation:tw2 32s linear infinite;
+      background-image:
+        radial-gradient(1px 1px at 120px 80px #fff6 50%,transparent 51%),
+        radial-gradient(1px 1px at 460px 260px #fff6 50%,transparent 51%),
+        radial-gradient(1px 1px at 860px 640px #fff6 50%,transparent 51%)}
+    .star.s3{opacity:calc(.25*var(--starVis));animation:tw3 44s linear infinite;
+      background-image:
+        radial-gradient(1px 1px at 70px 20px #fff5 50%,transparent 51%),
+        radial-gradient(1px 1px at 260px 220px #fff5 50%,transparent 51%),
+        radial-gradient(1px 1px at 1120px 820px #fff5 50%,transparent 51%)}
+    @keyframes tw1{from{background-position:0 0}to{background-position:-1600px -1600px}}
+    @keyframes tw2{from{background-position:0 0}to{background-position:-1200px -800px}}
+    @keyframes tw3{from{background-position:0 0}to{background-position:-900px -600px}}
 
-    /* 작은 미니 슬라이더(상단 중앙) */
+    /* 상단 컨트롤러(중앙, 아주 작게) */
     .star-ctl{
-      position:fixed; top:6px; left:50%; transform:translateX(-50%); z-index:5;
-      padding:6px 10px; border-radius:999px; display:flex; align-items:center; gap:8px;
-      background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); backdrop-filter:blur(10px)
+      position:fixed; left:50%; top:10px; transform:translateX(-50%);
+      z-index:10; display:flex; align-items:center; gap:6px;
+      padding:6px 10px; border-radius:999px;
+      background:rgba(255,255,255,.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
+      font-size:12px; color:#cfe1ff;
     }
-    .star-ctl input[type=range]{width:120px; height:6px; background:transparent; -webkit-appearance:none; appearance:none}
+    .star-ctl input[type=range]{width:140px; height:6px; background:transparent}
     .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#22d3ee)}
-    .star-ctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0004;margin-top:-4px}
+    .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
 
-    /* ==== Layout ==== */
-    .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:40px 16px 80px}
-    .brand{display:flex;align-items:center;gap:14px;margin:2px 0 14px}
-    .brand img{height:42px}
-    /* h1 COSMOS 제거 요청 → 마크업 자체에서 삭제 */
+    .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:64px 16px 80px}
+    .brand{display:flex;align-items:center;gap:10px;margin:8px 0 12px}
+    .brand img{height:38px}
 
-    /* ==== Hub (Donut) ==== */
-    .hub-area{display:grid;grid-template-columns:minmax(320px,560px) 1fr; gap:18px; align-items:center}
-    .hub-wrap{position:relative; width:100%; max-width:560px; aspect-ratio:1/1; border-radius:50%;
-      box-shadow: inset 0 10px 26px rgba(180,200,255,.15), inset 0 -16px 46px rgba(0,0,0,.40), 0 18px 48px rgba(0,0,0,.35)}
-    .hub-wrap svg{position:absolute; inset:0}
-
-    .hub-center{
-      position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:36%; height:36%;
-      border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
-      background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.15), rgba(99,102,241,.10) 60%, rgba(0,0,0,0) 80%);
-      border:1px solid rgba(255,255,255,.12)
+    /* HUB */
+    .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center}
+    @media (max-width:900px){.hub-grid{grid-template-columns:1fr}}
+    .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
+      background:radial-gradient(100% 100% at 35% 30%, #1e2742 0%, #0c1220 60%, #0000 80%);
+      box-shadow:inset 0 8px 28px rgba(255,255,255,.06), 0 18px 48px rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.06);
     }
-    .hub-center .wline{font-weight:900; font-size:clamp(18px,3.2vw,30px); letter-spacing:.02em}
-    .hub-center .gline{margin-top:4px; color:#b9c3d6; font-size:12px; letter-spacing:.06em}
-
-    .hub-badge{
-      /* 요청: “빛나는 효과 삭제”, 글자 2배 */
-      font-weight:900; font-size:clamp(18px,2vw,22px); letter-spacing:.02em; fill:#dffff9; opacity:.92;
-      pointer-events:none;
+    .hub svg{position:absolute;inset:0}
+    .center-cap{position:absolute;inset:50% auto auto 50%; transform:translate(-50%,-50%);
+      width:36%; height:36%; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column;
+      background:radial-gradient(100% 100% at 40% 35%, rgba(46,204,250,.16), rgba(124,58,237,.10) 60%, transparent 80%);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:inset 0 10px 26px rgba(0,0,0,.35);
+      text-align:center;
     }
-    .hub-seg{cursor:pointer; stroke:rgba(255,255,255,.12); stroke-width:1.2; transition:transform .18s ease, opacity .18s ease}
-    .hub-seg:hover{transform:scale(1.02)}
-    .hub-seg.active{transform:scale(1.03)}
+    .center-big{font-weight:900;font-size:clamp(16px,3.2vw,28px);letter-spacing:.02em;margin:0 0 4px}
+    .center-sub{font-size:12px;color:var(--muted);margin:0}
 
-    .panel{
-      min-height:260px; border-radius:16px; padding:16px;
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      border:1px solid rgba(255,255,255,.10); box-shadow:0 10px 30px rgba(0,0,0,.30)
+    .seg{cursor:pointer;stroke:rgba(255,255,255,.14);stroke-width:1.2;transition:transform .18s ease, opacity .18s ease}
+    .seg:hover{transform:scale(1.02)}
+    .seg.active{transform:scale(1.03)}
+
+    /* 섹터 라벨(2배, 글로우 제거) */
+    .seg-label{
+      font-weight:900;
+      font-size:clamp(16px,1.8vw,22px); /* ⬅ 2배 키움 */
+      letter-spacing:.02em;
+      fill:#e8f6ff; /* 순백 계열 */
     }
-    .panel h4{margin:2px 0 10px; font-size:14px; color:#9aa3b6; letter-spacing:.08em}
-    .panel .content{font-size:14px}
 
-    /* F&G semicircle gauge */
-    .gauge{width:100%; height:120px; position:relative}
-    .gauge svg{width:100%; height:100%}
-    .gauge .needle{transform-origin:50% 100%; transition:transform .6s cubic-bezier(.25,.8,.25,1)}
+    /* 패널 */
+    .panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10); backdrop-filter:blur(12px)}
+    .panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
+    .list{display:flex;flex-direction:column;gap:6px}
+    .row{display:grid;grid-template-columns:1.6em 1fr auto auto;gap:8px;align-items:center;font-size:13.5px}
+    .row .rk{opacity:.7;text-align:right;font-weight:800}
+    .row .tk{font-weight:900}
+    .row .px{opacity:.9;text-align:right}
+    .row .pc{font-weight:900;text-align:right}
+    .row .pc.up{color:var(--up)} .row .pc.down{color:var(--down)}
 
-    /* ==== Controls + Table ==== */
-    .controls{display:flex;gap:10px;align-items:center;margin:22px 0 10px}
+    /* Gauge (F&G) */
+    .gauge{width:100%;height:140px}
+    .g-arc{stroke-linecap:round;stroke-width:16;fill:none}
+    .needle{stroke:#fff;stroke-width:8;stroke-linecap:round}
+
+    /* Controls + Table */
+    .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
     .controls .search{flex:1}
-    input[type="text"], select, button{
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none
-    }
-
-    .table-wrap{overflow-x:auto}
-    table{width:1200px; border-collapse:separate; border-spacing:0 var(--row-gap)}
+    input[type=text], select, button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+    .table-wrap{overflow-x:auto;margin-top:8px}
+    table{width:1200px;border-collapse:separate;border-spacing:0 10px}
     thead th{
       position:sticky; top:var(--sticky-top);
-      background:rgba(17,24,39,.92); backdrop-filter:blur(6px);
-      color:#c7d2fe; font-weight:800; text-align:left; padding:10px; font-size:13px; z-index:2
+      background:rgba(17,24,39,.86); backdrop-filter:blur(6px);
+      font-size:12px; color:#b9c3d6; font-weight:700; text-align:left; padding:8px 10px; z-index:5;
     }
-    tbody td{
-      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle
-    }
+    tbody td{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
     tbody tr td:first-child{border-radius:12px 0 0 12px}
     tbody tr td:last-child{border-radius:0 12px 12px 0}
+    .td-num{text-align:right;opacity:.8;font-weight:800;width:40px}
+    .td-name{display:flex;align-items:center;gap:10px;min-width:220px}
+    .td-name img{width:20px;height:20px;border-radius:50%}
+    .tk{font-weight:900}
+    .nm{opacity:.85}
+    .right{text-align:right}
+    .chg.up{color:var(--up)} .chg.down{color:var(--down)}
+    canvas.spark{display:block;width:100px;height:28px}
 
-    .rank{width:46px; text-align:center; opacity:.75; font-weight:800}
-    .coin-cell{display:flex;align-items:center;gap:10px;min-width:220px}
-    .coin-cell img{width:20px;height:20px;border-radius:50%;object-fit:contain}
-    .coin-sym{font-weight:900}
-    .coin-name{opacity:.9;margin-left:6px}
-    .right{text-align:right; font-variant-numeric:tabular-nums}
-
-    .up{color:var(--up)} .down{color:var(--down)}
-    .spark svg{display:block}
-
-    /* ===== Mobile rules ===== */
-    @media (max-width: 767px){
-      .wrap{padding-top:52px}
-      .hub-area{grid-template-columns:1fr}
-      .hub-wrap{max-width:360px;margin:0 auto}
-      table{width:1000px}  /* 가로 스크롤 허용 */
-
-      /* 모바일 표시는: 티커(=col-name), Price, 24h%, 7d Spark 4개만 */
-      .col-rank, .col-1h, .col-mcap, .col-vol {display:none}  /* ← .col-name은 보존! */
-
-      /* 상단 컨트롤러와 겹치지 않도록 헤더 offset 보정 */
-      .table-wrap thead th{ top:52px; }
-      .coin-cell{min-width:120px}
-      .coin-name{display:none} /* 모바일은 심볼만 노출 */
+    /* 모바일: 티커/가격/24h/스파크만 */
+    @media (max-width:800px){
+      table{width:1000px}
+      .hide-m{display:none!important}
+      .td-name{min-width:140px}
+      .wrap{padding-top:84px}
+      :root{--sticky-top: 84px;}
     }
 
-    footer{margin:24px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
+    /* 방문/밑줄 등 모두 제거 (링크 사용 안 함) */
+    .no-link, .no-link:visited, .no-link:hover, .no-link:active{color:inherit;text-decoration:none}
+
+    footer{margin:24px 0 0;text-align:center;color:#9aa3b6;opacity:.8;font-size:12px}
   </style>
 </head>
 <body>
-  <!-- ⭐ Star background canvas -->
-  <canvas id="starCanvas"></canvas>
+  <!-- ⭐ star background -->
+  <div class="sky"><div class="star s1"></div><div class="star s2"></div><div class="star s3"></div></div>
 
-  <!-- ⭐ Tiny centered controller -->
-  <div class="star-ctl" aria-label="Star background">
-    <input id="starRange" type="range" min="0" max="100" value="70" />
+  <!-- ⭐ tiny controller (center top) -->
+  <div class="star-ctl">
+    <span style="opacity:.8">Stars</span>
+    <input id="starRange" type="range" min="0" max="100" value="75">
   </div>
 
   <div class="wrap">
     <div class="brand">
       <img src="/media/logo.png" alt="TWO4" />
-      <!-- h1 COSMOS 제거 -->
     </div>
 
-    <!-- Donut + Panel -->
-    <section class="hub-area">
-      <div class="hub-wrap">
-        <svg id="hubSvg" viewBox="0 0 1000 1000" role="img" aria-label="Cosmos hub"></svg>
-        <div class="hub-center">
-          <div class="wline" id="centerW">—</div>
-          <div class="gline" id="centerG">COSMOS</div>
+    <!-- HUB -->
+    <section class="hub-grid">
+      <div class="hub">
+        <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
+        <div class="center-cap">
+          <div class="center-big" id="cBig">COSMOS</div>
+          <div class="center-sub" id="cSub">—</div>
         </div>
       </div>
-
-      <aside class="panel">
-        <h4 id="panelTitle">—</h4>
-        <div class="content" id="panelContent">Select a sector.</div>
+      <aside class="panel" id="panel">
+        <h4 id="pTitle">—</h4>
+        <div id="pBody">Select a sector.</div>
       </aside>
     </section>
 
-    <!-- Controls -->
+    <!-- Controls & Table -->
     <div class="controls">
-      <input class="search" id="search" type="text" placeholder="Search coin (name/symbol)" />
-      <div style="display:flex;gap:8px;align-items:center">
-        <label>Sort:
-          <select id="sortkey">
-            <option value="market_cap">Market Cap</option>
-            <option value="price">Price</option>
-            <option value="volume">Volume</option>
-            <option value="change24h">24h</option>
-            <option value="change1h">1h</option>
-            <option value="change7d">7d</option>
-            <option value="rank">Rank</option>
-          </select>
-        </label>
-        <button id="sortdir" title="Direction">▼</button>
-        <label>Page: <select id="pagerSel"></select></label>
-      </div>
+      <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
     </div>
 
-    <!-- Market Table -->
     <div class="table-wrap">
-      <table id="mkt">
-        <colgroup>
-          <col class="col-rank" />
-          <col class="col-name" />
-          <col class="col-price" />
-          <col class="col-1h" />
-          <col class="col-24h" />
-          <col class="col-7d" />
-          <col class="col-mcap" />
-          <col class="col-vol" />
-          <col class="col-spark" />
-        </colgroup>
+      <table id="mkt" class="cosmos-table">
         <thead>
           <tr>
-            <th data-key="rank">#</th>
-            <th data-key="symbol">Name</th>
-            <th class="right" data-key="price">Price</th>
-            <th class="right" data-key="change1h">1h</th>
-            <th class="right" data-key="change24h">24h</th>
-            <th class="right" data-key="change7d">7d</th>
-            <th class="right" data-key="market_cap">Market Cap</th>
-            <th class="right" data-key="volume">24h Volume</th>
+            <th data-key="rank"   class="th th-sort">#</th>
+            <th data-key="name"   class="th th-sort">Name</th>
+            <th data-key="price"  class="th th-sort">Price</th>
+            <th data-key="change1h"  class="th th-sort hide-m">1h</th>
+            <th data-key="change24h" class="th th-sort">24h</th>
+            <th data-key="change7d"  class="th th-sort hide-m">7d</th>
+            <th data-key="market_cap" class="th th-sort hide-m">Market Cap</th>
+            <th data-key="volume"     class="th th-sort hide-m">24h Volume</th>
             <th class="right">7d Spark</th>
           </tr>
         </thead>
@@ -207,9 +198,9 @@
       </table>
     </div>
 
-    <footer>
-      Cosmos Dashboard · CoinGecko · Binance · Alternative.me · 3D Neo hub · 30s auto refresh
-    </footer>
+    <div id="pager" class="controls" style="justify-content:center;gap:6px"></div>
+
+    <footer>Cosmos Dashboard · CoinGecko · Binance · Alternative.me · 30s auto refresh</footer>
   </div>
 
   <script src="./cosmos.js"></script>
