@@ -12,77 +12,96 @@
       --muted:#9aa3b6;
       --up:#22c55e;
       --down:#ef4444;
-      --glass-alpha:.30;
       --glass-blur:22px;
-      --card-border: rgba(255,255,255,.08);
-      --hdr-bg: rgba(18,24,39,.86);          /* 상단 헤더 sticky 배경 */
-      --left-sticky-bg: rgba(17,24,39,.30);  /* 세로축(좌측) 배경: 매우 투명 */
-      --star: 0;                              /* 우측상단 작은 별 강도(0~1) */
-      --bgstar: 0;                            /* 흰 점 별 밝기(0~1) */
+      --card-border: rgba(255,255,255,.06);
+      --star: 0;     /* 작은 별 */
+      --bgstar: 0;   /* 배경 흰 점 별(캔버스) */
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji";}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial,"Segoe UI Emoji";}
     body{overflow-x:hidden}
 
-    /* background twinkle stars (기존) */
+    /* 기존 배경 별 */
     .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
-    .stars, .stars2, .stars3{
-      position:absolute; inset:0;
-      background-repeat:repeat;
-      background-size: 1600px 1600px;
-      animation: twinkle 18s linear infinite;
-      opacity:.55; filter: blur(.2px);
-    }
-    .stars{background-image: radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%), radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%), radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%);}
-    .stars2{background-image: radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%), radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%), radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%); animation-duration:26s; opacity:.35;}
-    .stars3{background-image: radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%), radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%), radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%); animation-duration:34s; opacity:.25;}
+    .stars,.stars2,.stars3{position:absolute; inset:0; background-repeat:repeat; background-size:1600px 1600px; animation:twinkle 18s linear infinite; opacity:.55; filter:blur(.2px)}
+    .stars{background-image:radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%)}
+    .stars2{background-image:radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%); animation-duration:26s; opacity:.35}
+    .stars3{background-image:radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%); animation-duration:34s; opacity:.25}
     @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
 
-    /* 흰색 점 별(새로 추가) – 배경 위/콘텐츠 아래 */
-    .white-stars{
-      position:fixed; inset:0; z-index:0; pointer-events:none;
-      opacity:var(--bgstar, 0);
-    }
+    /* 흰 점 별(캔버스) */
+    .white-stars{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:var(--bgstar,0)}
 
     a{color:inherit;text-decoration:none}
     .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 16px 80px;}
 
-    /* Brand */
-    .brand{display:flex; align-items:center; gap:14px; margin:10px 0 8px;}
-    .brand img{width:168px; height:auto; object-fit:contain;}
-    .brand h1{margin:0; font-size:clamp(22px, 7vw, 40px); letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.22);}
-    .after-title{height:140px;}
-    @media (max-width:767px){ .brand{gap:10px; margin:8px 0 6px;} .brand img{width:128px} .brand h1{letter-spacing:.08em} .after-title{height:96px;} }
-
-    /* fixed back button */
-    .back-btn{ position:fixed; top:14px; right:14px; z-index:5; width:42px; height:42px; border-radius:999px;
-      display:flex; align-items:center; justify-content:center; cursor:pointer;
+    /* ===== 상단 고정 컨트롤 바(뒤로가기 + STAR 슬라이더 + 작은별) ===== */
+    .topbar{position:fixed; top:12px; right:12px; z-index:7; display:flex; align-items:center; gap:10px}
+    .back-btn{
+      width:42px; height:42px; border-radius:999px; display:flex; align-items:center; justify-content:center; cursor:pointer;
       backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
       background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
-      border:1px solid rgba(255,255,255,.18); color:#dbeafe; font-size:18px; }
+      border:1px solid rgba(255,255,255,.18); color:#dbeafe; font-size:18px;
+    }
+    .star-ctl{
+      display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:999px;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      opacity:.65; transition:opacity .2s;
+    }
+    .star-ctl:hover{opacity:1}
+    .star-ctl label{font-size:11px; color:#cbd5e1; opacity:.85}
+    .star-ctl input[type="range"]{width:96px; height:18px; accent-color:#8b5cf6; background:transparent}
+    .star-pulse{
+      width:26px; height:26px; pointer-events:none; opacity:calc(var(--star));
+      transform:scale(calc(.6 + .6*var(--star))) rotate(6deg);
+      filter: drop-shadow(0 0 10px rgba(167,139,250,.6)) drop-shadow(0 0 18px rgba(99,102,241,.45));
+      animation: starPulse 3.2s ease-in-out infinite;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.75) 60%, rgba(255,255,255,0) 70%);
+      clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+    }
+    @keyframes starPulse{
+      0%,25%{transform:scale(calc(.55 + .55*var(--star))) rotate(8deg)}
+      45%,65%{transform:scale(calc(1.0 + .1*var(--star))) rotate(0deg)}
+      85%,100%{transform:scale(calc(.55 + .55*var(--star))) rotate(-6deg)}
+    }
+    @media (max-width:767px){
+      .back-btn{width:38px; height:38px}
+      .star-ctl input[type="range"]{width:80px}
+      .star-pulse{width:22px; height:22px}
+    }
+
+    /* Brand */
+    .brand{display:flex; align-items:center; gap:14px; margin:10px 0 8px}
+    .brand img{width:168px; height:auto; object-fit:contain}
+    .brand h1{margin:0; font-size:clamp(22px,7vw,40px); letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.22)}
+    .after-title{height:140px}
+    @media (max-width:767px){.brand{gap:10px; margin:8px 0 6px}.brand img{width:128px}.brand h1{letter-spacing:.08em}.after-title{height:96px}}
 
     /* Cards grid */
-    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:16px;}
-    .left-5{grid-column:1/4; display:grid; gap:16px; grid-template-columns:repeat(3,1fr);}
-    .left-5 .row-sm-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px;} /* 작은 카드 2개 */
-    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-    .right-2{grid-column:4/5; display:grid; gap:16px; grid-auto-rows:1fr;}
+    .cards{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px}
+    .left-5{grid-column:1/4; display:grid; gap:16px; grid-template-columns:repeat(3,1fr)}
+    .left-5 .row-sm-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    .right-2{grid-column:4/5; display:grid; gap:16px; grid-auto-rows:1fr}
     .card{
-      position:relative; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      position:relative; 
+      /* 투명도 ↑ (별이 더 비치도록) */
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border:1px solid var(--card-border);
       border-radius:16px; padding:14px 14px 12px; color:var(--text); overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.30);
+      box-shadow:0 10px 30px rgba(0,0,0,.30);
       backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
     }
-    .card.sm{ padding:12px; }
-    .card.span-2{ grid-column: span 2; }
+    .card.sm{padding:12px}
+    .card.span-2{grid-column:span 2}
     .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
-    .kpi{font-size:22px; font-weight:800;}
+    .kpi{font-size:22px; font-weight:800}
     .sub{font-size:12px; opacity:.8}
     .muted{color:var(--muted)}
     .up{color:var(--up)} .down{color:var(--down)} .neutral{opacity:.85}
 
-    /* Long/Short mini gauge bar */
+    /* mini LS bar */
     .lsbar{height:8px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; margin-top:6px; border:1px solid rgba(255,255,255,.08)}
     .lsbar .long{height:100%; background:var(--up)}
     .lsbar .short{height:100%; background:var(--down)}
@@ -90,7 +109,7 @@
     .ls-ctl button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:8px; padding:6px 9px; font-weight:700}
     .ls-ctl button.active{background:rgba(114,153,255,.16); border-color:rgba(114,153,255,.32)}
 
-    /* FNG gauge area */
+    /* FNG */
     .gauge{height:160px; display:flex; align-items:center; justify-content:center}
     .fng-meta{display:flex; align-items:center; gap:8px; margin-top:6px}
     .badge{display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:8px; font-weight:800; font-size:12px; border:1px solid rgba(255,255,255,.14)}
@@ -99,84 +118,66 @@
     .badge.safe{background:rgba(34,197,94,.12); color:#bbf7d0; border-color:rgba(34,197,94,.32)}
 
     /* Right lists */
-    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-    .list .row{display:grid; grid-template-columns: 2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px;}
-    .list .rank{text-align:right; font-weight:800; color:#93c5fd;}
-    .list .sym{font-weight:900; letter-spacing:.02em; color:#c4b5fd;}
-    .list .price{justify-self:end; font-variant-numeric:tabular-nums; color:#e5e7eb; opacity:.95;}
-    .list .pct{justify-self:end; font-weight:900; font-variant-numeric:tabular-nums;}
-    .list .pct.up{color:var(--up);} .list .pct.down{color:var(--down);}
-    /* 요청: 우측 리스트 티커 흰색 */
-    .right-2 .list .sym{ color:#fff !important; }
+    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px}
+    .list .row{display:grid; grid-template-columns:2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px}
+    .list .rank{text-align:right; font-weight:800; color:#93c5fd}
+    .list .sym{font-weight:900; letter-spacing:.02em; color:#fff !important} /* 요청: 흰색 */
+    .list .price{justify-self:end; font-variant-numeric:tabular-nums; color:#e5e7eb; opacity:.95}
+    .list .pct{justify-self:end; font-weight:900; font-variant-numeric:tabular-nums}
+    .list .pct.up{color:var(--up)} .list .pct.down{color:var(--down)}
 
-    /* controls & table */
-    .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px; position:relative;}
+    /* Controls & Table */
+    .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px}
     .controls .search{flex:1}
-    input[type="text"], select, button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
+    input[type="text"],select,button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
     button.sortdir{min-width:40px}
 
-    .table-wrap{overflow:auto; max-height:70vh; border-radius:12px;
-      -ms-overflow-style:none; scrollbar-width:none;}
-    .table-wrap::-webkit-scrollbar{width:0; height:0; display:none;}
+    .table-wrap{overflow:auto; max-height:70vh; border-radius:12px; -ms-overflow-style:none; scrollbar-width:none}
+    .table-wrap::-webkit-scrollbar{width:0; height:0; display:none}
 
-    table{width:1100px; border-collapse:separate; border-spacing:0 10px; position:relative;}
-    thead th{
-      position:sticky; top:0; z-index:3;
-      font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px;
-      background:var(--hdr-bg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    }
-    thead th.sortable{ cursor:pointer; user-select:none; }
-    thead th.sortable.sorted.asc::after{ content:" ▲"; opacity:.9; }
-    thead th.sortable.sorted.desc::after{ content:" ▼"; opacity:.9; }
+    table{width:1100px; border-collapse:separate; border-spacing:0 10px; position:relative}
+    thead th{position:sticky; top:0; z-index:3; font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px; background:rgba(18,24,39,.86); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+    thead th.sortable{cursor:pointer; user-select:none}
+    thead th.sortable.sorted.asc::after{content:" ▲"; opacity:.9}
+    thead th.sortable.sorted.desc::after{content:" ▼"; opacity:.9}
 
     tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
     tbody tr td:first-child{border-radius:12px 0 0 12px}
     tbody tr td:last-child{border-radius:0 12px 12px 0}
 
-    /* 좌측 세로축 고정(숫자, 티커) */
-    .row-index{
-      width:46px; text-align:right; font-weight:700;
-      position:sticky; left:0; z-index:2;
-      background:var(--left-sticky-bg);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-    }
-    .coin-cell{
-      display:flex; align-items:center; gap:8px;
-      min-width:110px; /* 티커만 노출 */
-      position:sticky; left:46px; z-index:2;
-      background:var(--left-sticky-bg);
-      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-    }
+    /* 좌측 고정(순위+티커) */
+    .row-index{width:46px; text-align:right; font-weight:700; position:sticky; left:0; z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
+    .coin-cell{display:flex; align-items:center; gap:8px; min-width:110px; position:sticky; left:46px; z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
     .coin-img{width:18px; height:18px; min-width:18px; border-radius:50%; object-fit:contain}
-    .coin-name{font-weight:800; letter-spacing:.02em}
+    .coin-name{font-weight:800}
+
     .text-right{text-align:right}
 
     /* KPI 미니 스파크라인 */
-    .mini{ height:46px; margin-top:8px; opacity:.95 }
-    .mini svg{ width:100%; height:100%; display:block }
+    .mini{height:46px; margin-top:8px; opacity:.95}
+    .mini svg{width:100%; height:100%; display:block}
 
-    /* === Derivatives card (Funding / OI Δ24h) === */
-    .deriv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .deriv-asset .hd{ display:flex; align-items:center; gap:8px; font-weight:900; letter-spacing:.02em; margin-bottom:6px; }
-    .deriv-asset .hd img{ width:18px; height:18px; border-radius:50%; }
-    .metric{ display:grid; grid-template-columns:70px 1fr auto; align-items:center; gap:8px; margin:6px 0; }
-    .metric .label{ color:var(--muted); font-size:12px; font-weight:700; }
-    .bar{ position:relative; height:8px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); overflow:hidden; }
-    .bar > .fill{ position:absolute; left:0; top:0; height:100%; background:var(--up); }
-    .bar > .mid{ position:absolute; left:50%; top:0; width:1.5px; height:100%; background:rgba(255,255,255,.35); }
-    .bar-zero{ position:relative; }
-    .bar-zero .pos{ position:absolute; left:50%; top:0; height:100%; background:var(--up); }
-    .bar-zero .neg{ position:absolute; right:50%; top:0; height:100%; background:var(--down); }
-    .metric .val{ font-variant-numeric:tabular-nums; font-weight:800; }
+    /* Derivatives (Funding / OI Δ24h) */
+    .deriv-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    .deriv-asset .hd{display:flex; align-items:center; gap:8px; font-weight:900; letter-spacing:.02em; margin-bottom:6px}
+    .deriv-asset .hd img{width:18px; height:18px; border-radius:50%}
+    .metric{display:grid; grid-template-columns:70px 1fr auto; align-items:center; gap:8px; margin:6px 0}
+    .metric .label{color:var(--muted); font-size:12px; font-weight:700}
+    .bar{position:relative; height:8px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); overflow:hidden}
+    .bar > .fill{position:absolute; left:0; top:0; height:100%; background:var(--up)}
+    .bar > .mid{position:absolute; left:50%; top:0; width:1.5px; height:100%; background:rgba(255,255,255,.35)}
+    .bar-zero{position:relative}
+    .bar-zero .pos{position:absolute; left:50%; top:0; height:100%; background:var(--up)}
+    .bar-zero .neg{position:absolute; right:50%; top:0; height:100%; background:var(--down)}
+    .metric .val{font-variant-numeric:tabular-nums; font-weight:800}
 
-    /* 모바일 최적화 */
+    /* ===== 반응형: 태블릿/모바일 ===== */
     @media (max-width:1199px){
-      .cards{grid-template-columns: 1fr; gap:14px;}
-      .left-5{grid-column:auto; grid-template-columns:1fr; gap:14px;}
+      .cards{grid-template-columns:1fr; gap:14px}
+      .left-5{grid-column:auto; grid-template-columns:1fr; gap:14px}
       .right-2{grid-column:1/2; grid-template-columns:1fr; grid-auto-rows:auto}
-      .list .row{grid-template-columns:2.2em 1fr auto auto; font-size:13px}
-      table{width:960px}
-      .card.span-2{ grid-column:auto; }
+      table{width:auto; min-width:720px}
+      .card.span-2{grid-column:auto}
     }
     @media (max-width:767px){
       .card{padding:12px}
@@ -186,234 +187,169 @@
       .left-5 .row-2{grid-template-columns:1fr 1fr}
       .right-2{grid-template-columns:1fr}
 
-      /* 모바일에서 정보 밀도 ↑: 일부 컬럼 숨김 */
+      /* 모바일: 티커 칸 축소 */
+      .row-index{width:32px}
+      .coin-cell{left:32px; min-width:88px}
+      .coin-img{width:16px; height:16px; min-width:16px}
+      .coin-name{font-size:12.5px; letter-spacing:.01em}
+
+      /* 모바일: 컬럼 가시성 – 코인/시세/24시간/7D 스파크만 */
       .cosmos-table thead th:nth-child(4),
       .cosmos-table thead th:nth-child(6),
       .cosmos-table thead th:nth-child(7),
       .cosmos-table thead th:nth-child(8),
-      .cosmos-table thead th:nth-child(9),
       .cosmos-table tbody td:nth-child(4),
       .cosmos-table tbody td:nth-child(6),
       .cosmos-table tbody td:nth-child(7),
-      .cosmos-table tbody td:nth-child(8),
-      .cosmos-table tbody td:nth-child(9){ display:none; }
+      .cosmos-table tbody td:nth-child(8){display:none}
+      table{min-width:560px}
     }
 
     footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
-
-    /* === 우측상단 작은 별 · 컨트롤러 === */
-    .star-pulse{
-      position:fixed; top:12px; right:12px; z-index:6;
-      width:26px; height:26px; pointer-events:none;
-      opacity:calc(var(--star));
-      transform:scale(calc(.6 + .6*var(--star))) rotate(6deg);
-      filter: drop-shadow(0 0 10px rgba(167,139,250,.6)) drop-shadow(0 0 18px rgba(99,102,241,.45));
-      animation: starPulse 3.2s ease-in-out infinite;
-      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.75) 60%, rgba(255,255,255,0) 70%);
-      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    }
-    @keyframes starPulse{
-      0%,25%   { transform:scale(calc(.55 + .55*var(--star))) rotate(8deg); }
-      45%,65%  { transform:scale(calc(1.0 + .1*var(--star))) rotate(0deg); }
-      85%,100% { transform:scale(calc(.55 + .55*var(--star))) rotate(-6deg); }
-    }
-    .star-ctl{
-      position:fixed; top:12px; right:52px; z-index:7;
-      display:flex; align-items:center; gap:6px;
-      padding:6px 8px; border-radius:999px;
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      opacity:.55; transition:opacity .2s;
-    }
-    .star-ctl:hover{ opacity:1; }
-    .star-ctl label{ font-size:11px; color:#cbd5e1; opacity:.85; }
-    .star-ctl input[type="range"]{ width:96px; height:18px; accent-color:#8b5cf6; background:transparent; }
-    @media (max-width:767px){
-      .star-ctl{ right:56px; padding:5px 6px; }
-      .star-ctl input[type="range"]{ width:80px; }
-      .star-pulse{ top:10px; right:10px; width:22px; height:22px; }
-    }
   </style>
 </head>
 <body>
-<div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
-<canvas id="whiteStars" class="white-stars" aria-hidden="true"></canvas>
+  <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
+  <canvas id="whiteStars" class="white-stars" aria-hidden="true"></canvas>
 
-<!-- 우측상단 작은 별 + 컨트롤러 -->
-<div class="star-pulse" aria-hidden="true"></div>
-<div class="star-ctl" role="group" aria-label="Star glow control">
-  <label for="starRange">STAR</label>
-  <input id="starRange" type="range" min="0" max="100" value="0" step="1">
-</div>
-
-<button class="back-btn" id="backBtn" title="뒤로가기">⬅</button>
-
-<div class="wrap">
-  <div class="brand">
-    <img src="/media/logo.png" alt="TWO4">
-    <h1>COSMOS</h1>
+  <!-- 상단 고정 바: [뒤로가기] [STAR 슬라이더] [작은별] -->
+  <div class="topbar">
+    <button class="back-btn" id="backBtn" title="뒤로가기">⬅</button>
+    <div class="star-ctl" role="group" aria-label="Star glow control">
+      <label for="starRange">STAR</label>
+      <input id="starRange" type="range" min="0" max="100" value="0" step="1">
+    </div>
+    <div class="star-pulse" aria-hidden="true"></div>
   </div>
-  <div class="after-title"></div>
 
-  <!-- KPI / Cards -->
-  <div class="cards">
-    <div class="left-5">
+  <div class="wrap">
+    <div class="brand">
+      <img src="/media/logo.png" alt="TWO4">
+      <h1>COSMOS</h1>
+    </div>
+    <div class="after-title"></div>
 
-      <!-- 작은 카드 2개: 롱/숏 + 도미넌스 -->
-      <div class="row-sm-2">
-        <div class="card sm">
-          <h3>BTC 롱/숏 비율</h3>
-          <div class="ls-ctl">
-            <button class="active" data-period="1h">1H</button>
-            <button data-period="4h">4H</button>
-            <button data-period="1d">1D</button>
+    <!-- KPI / Cards -->
+    <div class="cards">
+      <div class="left-5">
+        <div class="row-sm-2">
+          <div class="card sm">
+            <h3>BTC 롱/숏 비율</h3>
+            <div class="ls-ctl">
+              <button class="active" data-period="1h">1H</button>
+              <button data-period="4h">4H</button>
+              <button data-period="1d">1D</button>
+            </div>
+            <div class="kpi"><span id="ls-long">-</span> / <span id="ls-short">-</span></div>
+            <div class="sub muted">BTCUSDT · ratio <span id="ls-ratio">-</span></div>
+            <div class="lsbar"><div id="ls-longbar" class="long" style="width:50%"></div></div>
           </div>
-          <div class="kpi"><span id="ls-long">-</span> / <span id="ls-short">-</span></div>
-          <div class="sub muted">BTCUSDT · ratio <span id="ls-ratio">-</span></div>
-          <div class="lsbar"><div id="ls-longbar" class="long" style="width:50%"></div></div>
+
+          <div class="card sm">
+            <h3>BTC 도미넌스</h3>
+            <div class="kpi" id="kpi-dominance">-</div>
+            <div class="sub">BTC Dominance</div>
+          </div>
         </div>
 
-        <div class="card sm">
-          <h3>BTC 도미넌스</h3>
-          <div class="kpi" id="kpi-dominance">-</div>
-          <div class="sub">BTC Dominance</div>
+        <div class="card" id="fng-card">
+          <h3>공포/탐욕 지수</h3>
+          <div class="kpi" id="fng-title">- / -</div>
+          <div class="gauge" id="fng-gauge"></div>
+          <div class="fng-meta">
+            <span id="fng-badge" class="badge neutral">-</span>
+            <span class="muted" id="fng-date">Alternative.me</span>
+          </div>
+        </div>
+
+        <div class="card span-2" id="deriv-card">
+          <h3>Derivatives (24h)</h3>
+          <div class="deriv-grid">
+            <div class="deriv-asset">
+              <div class="hd"><img src="/media/coins/btc.png" alt="BTC"> BTC</div>
+              <div class="metric"><div class="label">Funding</div><div class="bar bar-zero"><div class="pos" id="fund-btc-pos"></div><div class="neg" id="fund-btc-neg"></div><span class="mid"></span></div><div class="val" id="fund-btc-val">-</div></div>
+              <div class="metric"><div class="label">OI Δ24h</div><div class="bar"><div class="fill" id="oi-btc-bar"></div></div><div class="val" id="oi-btc-val">-</div></div>
+            </div>
+            <div class="deriv-asset">
+              <div class="hd"><img src="/media/coins/eth.png" alt="ETH"> ETH</div>
+              <div class="metric"><div class="label">Funding</div><div class="bar bar-zero"><div class="pos" id="fund-eth-pos"></div><div class="neg" id="fund-eth-neg"></div><span class="mid"></span></div><div class="val" id="fund-eth-val">-</div></div>
+              <div class="metric"><div class="label">OI Δ24h</div><div class="bar"><div class="fill" id="oi-eth-bar"></div></div><div class="val" id="oi-eth-val">-</div></div>
+            </div>
+          </div>
+          <div class="sub muted" id="deriv-meta">Binance Futures · -</div>
+        </div>
+
+        <div class="row-2">
+          <div class="card">
+            <h3>BTC Market Cap</h3>
+            <div class="kpi" id="kpi-btc-mcap">-</div>
+            <div class="mini" id="kpi-btc-spark"></div>
+            <div class="sub">시총(USD)</div>
+          </div>
+          <div class="card">
+            <h3>USDT Market Cap</h3>
+            <div class="kpi" id="kpi-usdt-mcap">-</div>
+            <div class="mini" id="kpi-usdt-spark"></div>
+            <div class="sub">테더(USDT) 시가총액(USD)</div>
+          </div>
         </div>
       </div>
 
-      <!-- FNG -->
-      <div class="card" id="fng-card">
-        <h3>공포/탐욕 지수</h3>
-        <div class="kpi" id="fng-title">- / -</div>
-        <div class="gauge" id="fng-gauge"></div>
-        <div class="fng-meta">
-          <span id="fng-badge" class="badge neutral">-</span>
-          <span class="muted" id="fng-date">Alternative.me</span>
-        </div>
-      </div>
-
-      <!-- 파생 지표 카드 (Funding / OI Δ24h) -->
-      <div class="card span-2" id="deriv-card">
-        <h3>Derivatives (24h)</h3>
-        <div class="deriv-grid">
-          <!-- BTC -->
-          <div class="deriv-asset">
-            <div class="hd"><img src="/media/coins/btc.png" alt="BTC"> BTC</div>
-            <div class="metric">
-              <div class="label">Funding</div>
-              <div class="bar bar-zero">
-                <div class="pos" id="fund-btc-pos" style="width:0%"></div>
-                <div class="neg" id="fund-btc-neg" style="width:0%"></div>
-                <span class="mid"></span>
-              </div>
-              <div class="val" id="fund-btc-val">-</div>
-            </div>
-            <div class="metric">
-              <div class="label">OI Δ24h</div>
-              <div class="bar">
-                <div class="fill" id="oi-btc-bar" style="width:0%"></div>
-              </div>
-              <div class="val" id="oi-btc-val">-</div>
-            </div>
-          </div>
-          <!-- ETH -->
-          <div class="deriv-asset">
-            <div class="hd"><img src="/media/coins/eth.png" alt="ETH"> ETH</div>
-            <div class="metric">
-              <div class="label">Funding</div>
-              <div class="bar bar-zero">
-                <div class="pos" id="fund-eth-pos" style="width:0%"></div>
-                <div class="neg" id="fund-eth-neg" style="width:0%"></div>
-                <span class="mid"></span>
-              </div>
-              <div class="val" id="fund-eth-val">-</div>
-            </div>
-            <div class="metric">
-              <div class="label">OI Δ24h</div>
-              <div class="bar">
-                <div class="fill" id="oi-eth-bar" style="width:0%"></div>
-              </div>
-              <div class="val" id="oi-eth-val">-</div>
-            </div>
-          </div>
-        </div>
-        <div class="sub muted" id="deriv-meta">Binance Futures · -</div>
-      </div>
-
-      <!-- BTC/USDT 시총 + 미니차트 -->
-      <div class="row-2">
+      <div class="right-2">
         <div class="card">
-          <h3>BTC Market Cap</h3>
-          <div class="kpi" id="kpi-btc-mcap">-</div>
-          <div class="mini" id="kpi-btc-spark"></div>
-          <div class="sub">시총(USD)</div>
+          <h3>24H % TOP10 [USDT]</h3>
+          <div class="list" id="list-gainers"></div>
         </div>
         <div class="card">
-          <h3>USDT Market Cap</h3>
-          <div class="kpi" id="kpi-usdt-mcap">-</div>
-          <div class="mini" id="kpi-usdt-spark"></div>
-          <div class="sub">테더(USDT) 시가총액(USD)</div>
+          <h3>코인 거래량 순위 TOP 10</h3>
+          <div class="list" id="list-volume"></div>
         </div>
       </div>
     </div>
 
-    <!-- 오른쪽 2개 -->
-    <div class="right-2">
-      <div class="card">
-        <h3>24H % TOP10 [USDT]</h3>
-        <div class="list" id="list-gainers"></div>
-      </div>
-      <div class="card">
-        <h3>코인 거래량 순위 TOP 10</h3>
-        <div class="list" id="list-volume"></div>
-      </div>
+    <!-- Controls -->
+    <div class="controls">
+      <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
+      <label>정렬:
+        <select id="sortkey">
+          <option value="market_cap">시가총액</option>
+          <option value="price">가격</option>
+          <option value="volume">거래량</option>
+          <option value="change1h">1시간</option>
+          <option value="change24h">24시간</option>
+          <option value="change7d">7일</option>
+          <option value="rank">순위</option>
+        </select>
+      </label>
+      <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
+      <label>페이지:
+        <select id="page"></select>
+      </label>
     </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table class="cosmos-table">
+        <thead>
+          <tr>
+            <th class="text-right sortable" data-key="rank">순위</th>
+            <th class="sortable" data-key="symbol">코인</th>
+            <th class="text-right sortable" data-key="price">시세</th>
+            <th class="text-right sortable" data-key="change1h">1시간</th>
+            <th class="text-right sortable" data-key="change24h">24시간</th>
+            <th class="text-right sortable" data-key="change7d">7일</th>
+            <th class="text-right sortable" data-key="market_cap">시가총액</th>
+            <th class="text-right sortable" data-key="volume">거래량</th>
+            <th class="text-right">7일 차트</th>
+          </tr>
+        </thead>
+        <tbody id="cosmos-tbody"></tbody>
+      </table>
+    </div>
+
+    <footer>🚀 Cosmos 암호화폐 대시보드 – CoinGecko API, Alternative.me, Binance 데이터 | 프록시 지원 | 모바일 최적화 · 60초 자동 업데이트</footer>
   </div>
 
-  <!-- Controls -->
-  <div class="controls">
-    <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
-    <label>정렬:
-      <select id="sortkey">
-        <option value="market_cap">시가총액</option>
-        <option value="price">가격</option>
-        <option value="volume">거래량</option>
-        <option value="change1h">1시간</option>
-        <option value="change24h">24시간</option>
-        <option value="change7d">7일</option>
-        <option value="rank">순위</option>
-      </select>
-    </label>
-    <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
-    <label>페이지:
-      <select id="page"></select>
-    </label>
-  </div>
-
-  <!-- Table -->
-  <div class="table-wrap">
-    <table class="cosmos-table">
-      <thead>
-        <tr>
-          <th class="text-right sortable" data-key="rank">순위</th>
-          <th class="sortable" data-key="symbol">코인</th>
-          <th class="text-right sortable" data-key="price">시세</th>
-          <th class="text-right sortable" data-key="change1h">1시간</th>
-          <th class="text-right sortable" data-key="change24h">24시간</th>
-          <th class="text-right sortable" data-key="change7d">7일</th>
-          <th class="text-right sortable" data-key="market_cap">시가총액</th>
-          <th class="text-right sortable" data-key="volume">거래량</th>
-          <th class="text-right">7일 차트</th>
-        </tr>
-      </thead>
-      <tbody id="cosmos-tbody"></tbody>
-    </table>
-  </div>
-
-  <footer>
-    🚀 Cosmos 암호화폐 대시보드 – CoinGecko API, Alternative.me, Binance 데이터 | 프록시 지원 | 모바일 최적화 · 60초 자동 업데이트
-  </footer>
-</div>
-
-<script src="./cosmos.js"></script>
+  <script src="./cosmos.js"></script>
 </body>
 </html>
