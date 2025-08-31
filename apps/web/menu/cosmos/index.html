@@ -5,298 +5,265 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>TWO4 COSMOS</title>
 <style>
-  :root{
-    --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
-    --up:#22c55e; --down:#ef4444;
-    --toolbar-h: 44px;            /* 상단 컨트롤러 높이(헤더 sticky 보정) */
-    --starVis: .7;                /* 별 밝기(0~1) */
-  }
-  *{box-sizing:border-box}
-  html,body{
-    margin:0;padding:0;color:var(--text);
-    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic";
-    background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%);
-    overflow-x:hidden;
-  }
-  a{color:inherit;text-decoration:none}       /* 밑줄/보라색 제거 */
-  a:visited{color:inherit}
+:root{
+  --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
+  --up:#22c55e; --down:#ef4444;
+  --toolbar-h:64px;               /* 스티키 헤더 오프셋(스크립트가 갱신) */
+  --starVis:.6;                   /* 별 밝기 0~1 */
+}
+/* reset + 링크 보라/밑줄 방지 */
+*{box-sizing:border-box} html,body{margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%);
+     color:var(--text); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial}
+a,a:visited,a:hover,a:active{color:inherit;text-decoration:none}
 
-  /* ⭐ 별 배경 */
-  .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
-  .stars,.stars2,.stars3{
-    position:absolute; inset:0; background-repeat:repeat; background-size:1600px 1600px;
-    animation:twinkle 18s linear infinite; filter:blur(.2px)
-  }
-  .stars{opacity:calc(.55 * var(--starVis));
-    background-image:
-      radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%),
-      radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%),
-      radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%)}
-  .stars2{opacity:calc(.35 * var(--starVis)); animation-duration:26s;
-    background-image:
-      radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%),
-      radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%),
-      radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%)}
-  .stars3{opacity:calc(.25 * var(--starVis)); animation-duration:34s;
-    background-image:
-      radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%),
-      radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%),
-      radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%)}
-  @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
+/* 별 배경 */
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.sky .layer{position:absolute;inset:0;background-repeat:repeat;background-size:1600px 1600px;animation:twinkle 24s linear infinite;filter:blur(.25px)}
+.sky .l1{opacity:calc(.55*var(--starVis));background-image:
+ radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%),
+ radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%),
+ radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%)}
+.sky .l2{opacity:calc(.35*var(--starVis));animation-duration:32s;background-image:
+ radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%),
+ radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%),
+ radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%)}
+.sky .l3{opacity:calc(.25*var(--starVis));animation-duration:38s;background-image:
+ radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%),
+ radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%),
+ radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%)}
+@keyframes twinkle{from{background-position:0 0}to{background-position:-1600px -1600px}}
 
-  .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 16px 80px;}
+.wrap{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:0 16px 80px}
 
-  /* 상단 로고/컨트롤러 */
-  .brand{display:flex; align-items:center; gap:14px; margin:14px 0 12px;}
-  .brand img{width:168px; height:auto; object-fit:contain;}
-  .brand h1{display:none} /* 요청: COSMOS 텍스트 삭제 */
+/* 로고(텍스트 제거) */
+.brand{display:flex;align-items:center;gap:12px;margin:16px 0 8px}
+.brand img{width:160px;height:auto}
 
-  .star-ctl{
-    position:fixed; top:8px; left:50%; transform:translateX(-50%);
-    z-index:10; height:var(--toolbar-h); display:flex; align-items:center;
-    padding:0 10px; border-radius:999px;
-    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
-    border:1px solid rgba(255,255,255,.2);
-    backdrop-filter: blur(10px);
-  }
-  .star-ctl input[type="range"]{width:120px; height:6px; background:transparent}
-  .star-ctl input[type="range"]::-webkit-slider-thumb{appearance:none; width:14px; height:14px; border-radius:50%; background:#a78bfa; border:1px solid #fff9}
-  .star-ctl input[type="range"]::-webkit-slider-runnable-track{height:6px; border-radius:999px; background:linear-gradient(90deg,#a78bfa,#22d3ee)}
+/* ⭐ 우측 상단 초미니 컨트롤러 */
+.star-ctl{position:fixed;top:10px;right:12px;z-index:9;display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.06));
+  border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:12px}
+.star-ctl input[type=range]{width:120px;height:6px;background:transparent}
+.star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#a78bfa;border:1px solid #fff9}
+.star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#22d3ee)}
 
-  /* 3D 허브 / 도넛 (기존 스타일 유지; 핵심만) */
-  .hub-wrap{display:grid;grid-template-columns:minmax(320px,520px) 1fr;gap:16px;align-items:center;margin:6px 0 16px}
-  .hub3d{position:relative;width:100%;max-width:520px;border-radius:50%;aspect-ratio:1/1;box-shadow:inset 0 10px 26px rgba(180,200,255,.20), inset 0 -16px 46px rgba(0,0,0,.50), 0 18px 48px rgba(0,0,0,.38), 0 0 40px rgba(56,189,248,.20), 0 0 80px rgba(124,58,237,.16); border:1px solid rgba(255,255,255,.10);}
-  .hub3d svg{position:absolute;inset:0}
-  .hub-center{position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:36%; height:36%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.18), rgba(99,102,241,.12) 60%, rgba(0,0,0,0) 80%); border:1px solid rgba(255,255,255,.14);}
-  .hub-center .val{font-size:clamp(20px,3.2vw,28px);font-weight:900;line-height:1.1;margin:0}
-  .hub-center .lbl{font-size:12px;color:#9aa3b6;margin:4px 0 0}
-  .hub-badge{font-weight:900;font-size:clamp(14px,1.6vw,18px);fill:url(#mintWhiteGrad);filter:url(#textGlow);pointer-events:none;}
-  .hub-seg{cursor:pointer;stroke:rgba(255,255,255,.12);stroke-width:1.2;transition:transform .18s ease,filter .18s ease}
-  .hub-seg:hover{transform:scale(1.025);filter:drop-shadow(0 0 14px rgba(124,58,237,.7))}
-  .hub-panel{position:relative; min-height:220px; border-radius:16px; padding:14px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.10);}
-  .hub-panel.hidden{display:none}
+/* 3D 허브 */
+.hub-wrap{display:grid;grid-template-columns:minmax(320px,520px) 1fr;gap:16px;align-items:center;margin:6px 0 18px}
+.hub3d{position:relative;width:100%;max-width:520px;aspect-ratio:1/1;border-radius:50%;
+  background:radial-gradient(120% 120% at 30% 30%, rgba(120,144,255,.28) 0%, rgba(80,42,150,.20) 35%, rgba(10,16,26,0) 62%),
+             radial-gradient(60% 60% at 70% 70%, rgba(0,0,0,.35), rgba(0,0,0,0));
+  box-shadow:inset 0 10px 26px rgba(180,200,255,.20),inset 0 -16px 46px rgba(0,0,0,.50),0 18px 48px rgba(0,0,0,.38),
+             0 0 40px rgba(56,189,248,.20),0 0 80px rgba(124,58,237,.16);
+  border:1px solid rgba(255,255,255,.10)}
+.hub3d svg{position:absolute;inset:0}
+.hub-center{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:36%;height:36%;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.18), rgba(99,102,241,.12) 60%, rgba(0,0,0,0) 80%);
+  border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 6px 26px rgba(255,255,255,.10),0 0 50px rgba(124,58,237,.22),0 0 80px rgba(56,189,248,.18)}
+.hub-center .val{font-size:clamp(18px,3.2vw,26px);font-weight:900;margin:0 0 2px}
+.hub-center .lbl{font-size:12px;color:#9aa3b6;margin:0}
+.hub-seg{cursor:pointer;filter:drop-shadow(0 0 0 rgba(124,58,237,0));transition:.18s transform,.18s filter,.18s opacity,.18s stroke;transform-origin:center;stroke:rgba(255,255,255,.12);stroke-width:1.2}
+.hub-seg:hover{transform:scale(1.025);filter:drop-shadow(0 0 12px rgba(124,58,237,.65)) drop-shadow(0 0 26px rgba(56,189,248,.45));stroke:rgba(255,255,255,.25)}
+.hub-seg.active{transform:scale(1.03);filter:drop-shadow(0 0 16px rgba(124,58,237,.85)) drop-shadow(0 0 36px rgba(56,189,248,.60));stroke:rgba(255,255,255,.35)}
+.hub-badge{font-weight:900;font-size:clamp(14px,1.6vw,18px);fill:url(#mintWhiteGrad)}
+.hub-panel{min-height:220px;border-radius:16px;padding:14px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 30px rgba(0,0,0,.30);backdrop-filter:blur(14px)}
+.hub-panel.hidden{display:none}
+.hub-panel h4{margin:2px 0 10px;font-size:14px;color:#9aa3b6;letter-spacing:.08em}
 
-  @media (max-width:767px){.hub-wrap{grid-template-columns:1fr}.hub3d{max-width:360px;margin:0 auto}}
+/* 컨트롤(검색만 남김) */
+.controls{display:flex;gap:10px;align-items:center;margin:10px 0 10px}
+.controls .search{flex:1}
+input[type="text"]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:10px 12px;outline:none}
 
-  /* 검색/정렬 컨트롤 (심플) */
-  .controls{display:flex; gap:10px; align-items:center; margin:10px 0}
-  .controls .search{flex:1}
-  input[type="text"], select, button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
-  button.sortdir{min-width:40px}
+/* 테이블 */
+.table-wrap{overflow-x:auto}
+table{width:1200px;border-collapse:separate;border-spacing:0 10px}
+thead th{position:sticky;top:calc(var(--toolbar-h) + 10px);z-index:2;background:rgba(17,24,39,.85);backdrop-filter:blur(6px);
+  font-size:12px;color:var(--muted);font-weight:700;text-align:left;padding:8px 10px}
+thead th .dir{opacity:.8;margin-left:6px}
+tbody td{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
+tbody tr td:first-child{border-radius:12px 0 0 12px}
+tbody tr td:last-child{border-radius:0 12px 12px 0}
+.text-right{text-align:right}
+.row-index{width:44px;text-align:right;opacity:.8;font-weight:700;position:sticky;left:0;background:rgba(17,24,39,.85);backdrop-filter:blur(6px);z-index:1}
+.coin-cell{display:flex;align-items:center;gap:10px;min-width:220px;position:sticky;left:44px;background:rgba(17,24,39,.85);backdrop-filter:blur(6px);z-index:1}
+.coin-img{width:20px;height:20px;border-radius:50%;object-fit:contain}
+.coin-name{font-weight:800}
+.coin-sym{opacity:.85;margin-left:4px}
+.spark{text-align:right}
 
-  /* 테이블 */
-  .table-wrap{overflow-x:auto}
-  table.cosmos-table{width:1200px; border-collapse:separate; border-spacing:0 10px;}
-  thead th{
-    position:sticky; top:calc(var(--toolbar-h) + 10px); z-index:2;
-    background:rgba(17,24,39,.88); backdrop-filter:blur(6px);
-    font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px;
-  }
-  thead th.sortable{cursor:pointer}
-  tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
-  tbody tr td:first-child{border-radius:12px 0 0 12px}
-  tbody tr td:last-child{border-radius:0 12px 12px 0}
-  .text-right{text-align:right}
+/* 페이저 */
+#pager{display:flex;gap:6px;align-items:center;justify-content:center;margin:14px 0 0}
+#pager button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:6px 10px;cursor:pointer}
+#pager button.on{background:rgba(255,255,255,.12)}
 
-  /* 코인 칼럼(티커) */
-  .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px; position:sticky; left:46px; background:rgba(17,24,39,.88); backdrop-filter:blur(6px); z-index:1; cursor:pointer;}
-  .coin-img{width:22px; height:22px; min-width:22px; border-radius:50%; object-fit:contain}
-  .row-index{width:46px; text-align:right; opacity:.7; font-weight:700; position:sticky; left:0; background:rgba(17,24,39,.88); backdrop-filter:blur(6px); z-index:1}
+/* 모바일: 티커만 표시 */
+@media (max-width:767px){
+  .hub-wrap{grid-template-columns:1fr}
+  .hub3d{max-width:360px;margin:0 auto}
+  .table-wrap{overflow-x:visible}
+  table{width:100%}
+  thead{display:none}                 /* 모바일은 헤더 숨김 */
+  tbody td{padding:14px}
+  .row-index{display:none}
+  .coin-cell{position:static;left:auto;min-width:0}
+  .cosmos-table td:not(:nth-child(2)){display:none}  /* 코인(티커)만 남김 */
+}
 
-  /* 모바일: 티커만 보이게 */
-  @media (max-width:767px){
-    thead th{ top:calc(var(--toolbar-h) + 6px); }   /* 겹침 보정 */
-
-    .cosmos-table thead th:nth-child(1),
-    .cosmos-table thead th:nth-child(3),
-    .cosmos-table thead th:nth-child(4),
-    .cosmos-table thead th:nth-child(5),
-    .cosmos-table thead th:nth-child(6),
-    .cosmos-table thead th:nth-child(7),
-    .cosmos-table thead th:nth-child(8),
-    .cosmos-table thead th:nth-child(9),
-    .cosmos-table tbody td:nth-child(1),
-    .cosmos-table tbody td:nth-child(3),
-    .cosmos-table tbody td:nth-child(4),
-    .cosmos-table tbody td:nth-child(5),
-    .cosmos-table tbody td:nth-child(6),
-    .cosmos-table tbody td:nth-child(7),
-    .cosmos-table tbody td:nth-child(8),
-    .cosmos-table tbody td:nth-child(9){
-      display:none !important;
-    }
-    .cosmos-table tbody td:nth-child(2){
-      display:block; width:100%; border-radius:12px;
-    }
-    .coin-cell{position:static; left:auto; min-width:0; gap:10px;}
-    .row-index{display:none}
-    table.cosmos-table{width:100%}
-  }
-
-  footer{margin:22px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
+/* 푸터 */
+footer{margin:28px auto 0;max-width:1220px;color:#9aa3b6;opacity:.8;font-size:12px;text-align:center}
 </style>
 </head>
 <body>
-  <!-- ⭐ 별 배경 -->
-  <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
 
-  <!-- ⭐ 상단(간결 컨트롤러) -->
-  <div class="star-ctl" aria-label="Star background controller">
-    <input id="starRange" type="range" min="0" max="100" value="70" />
-  </div>
+<!-- ⭐ 별 배경 -->
+<div class="sky"><div class="layer l1"></div><div class="layer l2"></div><div class="layer l3"></div></div>
 
-  <div class="wrap">
-    <!-- 로고 -->
-    <div class="brand">
-      <img src="/media/logo.png" alt="TWO4">
-      <h1>COSMOS</h1> <!-- 숨김 처리됨 -->
-    </div>
+<!-- ⭐ 초미니 컨트롤러 -->
+<div class="star-ctl" aria-label="Star background">
+  <span style="opacity:.8">STAR</span>
+  <input id="starRange" type="range" min="0" max="100" value="60" />
+</div>
 
-    <!-- 3D 허브 (요약) -->
-    <section class="hub-wrap">
-      <div class="hub3d">
-        <svg id="hubSvg" viewBox="0 0 1000 1000" role="img" aria-label="Cosmos overview hub">
-          <defs>
-            <linearGradient id="mintWhiteGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#dffff9"/>
-              <stop offset="100%" stop-color="#7efcf3"/>
-            </linearGradient>
-            <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-        </svg>
-        <div class="hub-center">
-          <div class="val" id="hubVal">—</div>
-          <div class="lbl" id="hubLbl">COSMOS</div>
-        </div>
+<div class="wrap">
+  <!-- 로고만 -->
+  <div class="brand"><img src="/media/logo.png" alt="TWO4"></div>
+
+  <!-- 3D 허브 -->
+  <section class="hub-wrap">
+    <div class="hub3d">
+      <svg id="hubSvg" viewBox="0 0 1000 1000" role="img" aria-label="Cosmos hub">
+        <defs>
+          <linearGradient id="mintWhiteGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#dffff9"/><stop offset="100%" stop-color="#7efcf3"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="hub-center">
+        <div class="val" id="hubVal">—</div>
+        <div class="lbl" id="hubLbl">COSMOS</div>
       </div>
-      <aside class="hub-panel hidden" id="hubPanel">
-        <h4 id="hubTitle" style="margin:2px 0 10px;color:#9aa3b6;letter-spacing:.06em;font-size:13px">—</h4>
-        <div id="hubContent"></div>
-      </aside>
-    </section>
-
-    <!-- 검색/정렬 -->
-    <div class="controls">
-      <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
-      <label>정렬:
-        <select id="sortkey">
-          <option value="market_cap">시가총액</option>
-          <option value="price">가격</option>
-          <option value="volume">거래량</option>
-          <option value="change1h">1시간</option>
-          <option value="change24h">24시간</option>
-          <option value="change7d">7일</option>
-          <option value="rank">순위</option>
-          <option value="symbol">티커</option>
-        </select>
-      </label>
-      <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
-      <label>페이지:
-        <select id="page"></select>
-      </label>
     </div>
+    <aside class="hub-panel hidden" id="hubPanel">
+      <h4 id="hubTitle">—</h4>
+      <div id="hubContent"></div>
+    </aside>
+  </section>
 
-    <!-- 마켓 테이블 -->
-    <div class="table-wrap">
-      <table class="cosmos-table" id="mkt">
-        <colgroup>
-          <col><col><col><col><col><col><col><col><col>
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="sortable" data-key="rank">순위</th>
-            <th class="sortable" data-key="symbol">코인</th>
-            <th class="text-right sortable" data-key="price">시세</th>
-            <th class="text-right sortable" data-key="change1h">1h</th>
-            <th class="text-right sortable" data-key="change24h">24h</th>
-            <th class="text-right sortable" data-key="change7d">7d</th>
-            <th class="text-right sortable" data-key="market_cap">시가총액</th>
-            <th class="text-right sortable" data-key="volume">거래량</th>
-            <th class="text-right">7일 차트</th>
-          </tr>
-        </thead>
-        <tbody id="cosmos-tbody"></tbody>
-      </table>
-    </div>
-
-    <footer>🚀 CoinGecko · Binance · Alternative.me | 네온 허브 + 마켓 테이블 · 30초 자동 업데이트</footer>
+  <!-- 검색(정렬/페이지 셀렉터는 제거했지만, pager 컨테이너는 하단에 둠) -->
+  <div class="controls">
+    <input class="search" id="search" type="text" placeholder="코인 검색 (이름/심볼)">
   </div>
 
-  <!-- 데이터/로직: 기존 cosmos.js 사용 -->
-  <script src="./cosmos.js"></script>
+  <!-- 마켓 테이블 -->
+  <div class="table-wrap">
+    <table class="cosmos-table" id="mkt">
+      <colgroup>
+        <col style="width:46px"><!-- rank -->
+        <col style="width:auto"><!-- coin -->
+        <col style="width:110px"><!-- price -->
+        <col style="width:80px"><!-- 1h -->
+        <col style="width:80px"><!-- 24h -->
+        <col style="width:80px"><!-- 7d -->
+        <col style="width:120px"><!-- mcap -->
+        <col style="width:120px"><!-- vol -->
+        <col style="width:110px"><!-- spark -->
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="text-right sortable" data-key="rank">순위 <span class="dir"></span></th>
+          <th class="sortable" data-key="symbol">코인 <span class="dir"></span></th>
+          <th class="text-right sortable" data-key="price">시세 <span class="dir"></span></th>
+          <th class="text-right sortable" data-key="change1h">1h <span class="dir"></span></th>
+          <th class="text-right sortable" data-key="change24h">24h <span class="dir"></span></th>
+          <th class="text-right sortable" data-key="change7d">7d <span class="dir"></span></th>
+          <th class="text-right sortable" data-key="market_cap">시가총액 <span class="dir"></span></th>
+          <th class="text-right sortable" data-key="volume">거래량 <span class="dir"></span></th>
+          <th class="text-right">7일 차트</th>
+        </tr>
+      </thead>
+      <tbody id="cosmos-tbody"></tbody>
+    </table>
+  </div>
 
-  <!-- 별 컨트롤러 -->
-  <script>
-    (function(){
-      const range=document.getElementById('starRange');
-      const apply=v=>document.documentElement.style.setProperty('--starVis', String(Math.max(0,Math.min(1,v/100))));
-      range.addEventListener('input',e=>apply(e.target.value)); apply(range.value);
-    })();
-  </script>
+  <!-- 페이저 컨테이너( cosmo.js 가 렌더링 ) -->
+  <div id="pager"></div>
 
-  <!-- 허브(도넛) 간단 빌드: 섹션/텍스트 등은 cosmos.js 데이터로 그려짐 -->
-  <script>
-    (function(){
-      const svg = document.getElementById('hubSvg');
-      const centerVal = document.getElementById('hubVal');
-      const centerLbl = document.getElementById('hubLbl');
-      const panel = document.getElementById('hubPanel');
-      const panelTitle = document.getElementById('hubTitle');
-      const panelContent = document.getElementById('hubContent');
+  <footer>Cosmos 대시보드 – CoinGecko · Binance · Alternative.me | 3D 네온 허브 | 30초 자동 업데이트</footer>
+</div>
 
-      function arcPath(cx, cy, r0, r1, a0, a1){
-        const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
-        const [x0,y0]=p(r1,a0),[x1,y1]=p(r1,a1),[x2,y2]=p(r0,a1),[x3,y3]=p(r0,a0);
-        const laf=(a1-a0)>Math.PI?1:0;
-        return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;
-      }
-      function setCenter(lbl,val){centerLbl.textContent=lbl;centerVal.textContent=val}
+<!-- 기존 데이터 로직 -->
+<script src="./cosmos.js"></script>
 
-      // 샘플(데이터는 cosmos.js initHub에서 주기적 갱신한다면 이 부분 생략 가능)
-      const TAU=Math.PI*2, cx=500,cy=500,rO=470,rI=260, n=7, seg=TAU/n, start=-Math.PI/2;
-      for(let i=0;i<n;i++){
-        const a0=start+seg*i+0.014, a1=start+seg*(i+1)-0.014;
-        const path=document.createElementNS(svg.namespaceURI,'path');
-        path.setAttribute('d',arcPath(cx,cy,rI,rO,a0,a1));
-        path.setAttribute('fill','url(#mintWhiteGrad)'); path.setAttribute('opacity','.18');
-        path.classList.add('hub-seg'); svg.appendChild(path);
+<!-- 스티키 오프셋 & 별 컨트롤 -->
+<script>
+(function(){
+  function setStickyOffset(){
+    const ctl=document.querySelector('.star-ctl');
+    const brand=document.querySelector('.brand');
+    const h=(ctl?.getBoundingClientRect().height||0)
+           +(brand?.getBoundingClientRect().height||0)+16; // 여유
+    document.documentElement.style.setProperty('--toolbar-h', h+'px');
+  }
+  setStickyOffset(); addEventListener('resize', setStickyOffset);
 
-        const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-30)*Math.cos(mid), ty=cy+(rx-30)*Math.sin(mid)+6;
-        const text=document.createElementNS(svg.namespaceURI,'text');
-        text.setAttribute('x',tx); text.setAttribute('y',ty);
-        text.setAttribute('text-anchor','middle'); text.textContent=['TOP10','VOL','69%','56%','48','2.17T','168.03B'][i]||'';
-        text.setAttribute('class','hub-badge'); svg.appendChild(text);
-        path.addEventListener('mouseenter',()=>setCenter('COSMOS','—'));
-      }
-      setCenter('COSMOS','—');
-    })();
-  </script>
+  const range=document.getElementById('starRange');
+  function apply(v){ document.documentElement.style.setProperty('--starVis', String(Math.max(0,Math.min(1,v/100)))); }
+  range.addEventListener('input', e=>apply(e.target.value)); apply(range.value);
+})();
+</script>
 
-  <!-- ✅ 추가 패치: ① 티커 클릭 → 차트 연동 ② 모바일은 티커만 보이게(스타일은 CSS에서) -->
-  <script>
-    // ① 티커(코인 칼럼) 클릭 → chart.html?id=... 이동
-    document.addEventListener("click", (e) => {
-      const coinCell = e.target.closest(".coin-cell");
-      const row = e.target.closest("tr.row");
-      if (!coinCell || !row) return;
-      const id = row.dataset.id || row.getAttribute("data-id");
-      if (!id) return;
-      location.href = `./chart.html?id=${encodeURIComponent(id)}`;
+<!-- 허브(도넛) 라벨 크고, 클릭시 패널 오픈 -->
+<script>
+(function(){
+  const TAU=Math.PI*2, svg=document.getElementById('hubSvg');
+  const centerVal=document.getElementById('hubVal'), centerLbl=document.getElementById('hubLbl');
+  const panel=document.getElementById('hubPanel'), title=document.getElementById('hubTitle'), cont=document.getElementById('hubContent');
+
+  function arc(cx,cy,r0,r1,a0,a1){
+    const P=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+    const [x0,y0]=P(r1,a0),[x1,y1]=P(r1,a1),[x2,y2]=P(r0,a1),[x3,y3]=P(r0,a0);
+    const laf=(a1-a0)>Math.PI?1:0;
+    return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;
+  }
+  function setCenter(lbl,val){centerLbl.textContent=lbl;centerVal.textContent=val}
+  function openPanel(lbl,html){panel.classList.remove('hidden');title.textContent=lbl;cont.innerHTML=html}
+
+  function build(secs){
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#7c3aed" stop-opacity=".58"/><stop offset="100%" stop-color="#06b6d4" stop-opacity=".46"/>
+        </linearGradient>
+      </defs>`;
+    const cx=500,cy=500,rO=470,rI=260,step=TAU/secs.length,start=-Math.PI/2;
+    secs.forEach((s,i)=>{
+      const a0=start+step*i+0.014,a1=start+step*(i+1)-0.014;
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d',arc(cx,cy,rI,rO,a0,a1)); p.setAttribute('fill','url(#g1)'); p.setAttribute('opacity','.92'); p.classList.add('hub-seg');
+      svg.appendChild(p);
+      const mid=(a0+a1)/2, rM=(rO+rI)/2, tx=cx+(rM-28)*Math.cos(mid), ty=cy+(rM-28)*Math.sin(mid)+6;
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',tx); t.setAttribute('y',ty); t.setAttribute('text-anchor','middle'); t.setAttribute('class','hub-badge'); t.textContent=s.badge; svg.appendChild(t);
+      const act=()=>{svg.querySelectorAll('.hub-seg').forEach(x=>x.classList.remove('active'));p.classList.add('active');setCenter(s.label,s.center);openPanel(s.label,s.html)};
+      p.addEventListener('mouseenter',()=>setCenter(s.label,s.center)); p.addEventListener('click',act); t.addEventListener('click',act);
     });
+  }
 
-    // ② 헤더 정렬 텍스트 클릭 (cosmos.js의 wireHeaderSort와 중복되지 않도록 selector 동일)
-    document.addEventListener("click",(e)=>{
-      const th=e.target.closest(".cosmos-table thead th.sortable[data-key]");
-      if(!th || !window._cosmos) return;
-      const st=window._cosmos.state;
-      const k=th.dataset.key;
-      if(st.sortKey===k){ st.sortDir = st.sortDir===-1 ? 1 : -1; }
-      else{ st.sortKey=k; st.sortDir=-1; }
-      if(typeof window.applySortFilter==="function") window.applySortFilter();
-      else if(window._cosmos && typeof window._cosmos.initData==="function") window._cosmos.initData();
-    });
-  </script>
+  // 초기 한 바퀴 기본 섹션(데이터 들어오면 교체해도 됨)
+  build([
+    {label:'TOP10',badge:'TOP10',center:'—',html:'<div>상위 10개 섹터 요약</div>'},
+    {label:'VOL',badge:'VOL',center:'—',html:'<div>거래량 섹터</div>'},
+    {label:'69%',badge:'69%',center:'—',html:'<div>샘플 레이어</div>'},
+    {label:'56%',badge:'56%',center:'—',html:'<div>샘플 레이어</div>'},
+    {label:'48',badge:'48',center:'—',html:'<div>샘플 레이어</div>'},
+    {label:'$2.17T',badge:'$2.17T',center:'—',html:'<div>시총</div>'},
+    {label:'$168.03B',badge:'$168.03B',center:'—',html:'<div>세부지표</div>'}
+  ]);
+  setCenter('COSMOS','—');
+})();
+</script>
 </body>
 </html>
