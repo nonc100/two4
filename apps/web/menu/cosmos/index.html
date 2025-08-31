@@ -103,6 +103,7 @@
     .table-wrap::-webkit-scrollbar{display:none}
 
     table.cosmos-table{width:100%; table-layout:fixed; border-collapse:separate; border-spacing:0 10px; position:relative}
+    .cosmos-table th:first-child{width:var(--left-rank); padding:6px 4px; text-align:center}
     thead th{position:sticky; top:8px; z-index:3; font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px; background:rgba(18,24,39,.86); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); white-space:nowrap}
     thead th.sortable{cursor:pointer; user-select:none}
     thead th.sortable.sorted.asc::after{content:" ▲"; opacity:.9}
@@ -113,7 +114,7 @@
     tbody tr td:last-child{border-radius:0 12px 12px 0}
     tbody tr.row{cursor:pointer}
 
-    .row-index{width:var(--left-rank); text-align:center; font-weight:700; position:sticky; left:0; z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); font-variant-numeric:tabular-nums; opacity:.8}
+    .row-index{width:var(--left-rank); padding:8px 4px; text-align:center; font-weight:700; position:sticky; left:0; z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); font-variant-numeric:tabular-nums; opacity:.8}
     .coin-cell{display:flex; align-items:center; gap:8px; min-width:120px; position:sticky; left:var(--left-rank); z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
     .coin-img{width:18px; height:18px; min-width:18px; border-radius:50%; object-fit:contain}
     .coin-name{font-weight:800}
@@ -299,6 +300,17 @@
     <!-- Table -->
     <div class="table-wrap">
       <table class="cosmos-table">
+         <colgroup>
+          <col style="width: var(--left-rank)">   <!-- 순위 -->
+          <col>                                   <!-- 코인 -->
+          <col>                                   <!-- 시세 -->
+          <col>                                   <!-- 1시간 -->
+          <col>                                   <!-- 24시간 -->
+          <col>                                   <!-- 7일 -->
+          <col>                                   <!-- 시가총액 -->
+          <col>                                   <!-- 거래량 -->
+          <col>                                   <!-- 7일 차트 -->
+        </colgroup>
         <thead>
           <tr>
             <th class="text-right sortable" data-key="rank">순위</th>
