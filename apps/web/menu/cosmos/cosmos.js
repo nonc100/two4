@@ -1,7 +1,47 @@
 /* ===== COSMOS JS (sticky toolbar + compact table + pager + 2 mini charts + allSettled) ===== */
 
-/* --- Locale clamps --- */
-(()=>{const o=Number.prototype.toLocaleString;Number.prototype.toLocaleString=function(l,e){if(e&&typeof e=="object"){let{minimumFractionDigits:n,maximumFractionDigits:a}=e;Number.isFinite(n)||(n=void 0);Number.isFinite(a)||(a=void 0);n!==void 0&&(n=Math.min(20,Math.max(0,n)));a!==void 0&&(a=Math.min(20,Math.max(0,a)));n!==void 0&&a!==void 0&&a<n&&(a=n);e={...e,...(n!==void 0?{minimumFractionDigits:n}:{}) , ...(a!==void 0?{maximumFractionDigits:a}:{})}}return o.call(this,l||"en-US",e)};const t=Intl.NumberFormat;Intl.NumberFormat=function(l,e){if(e&&typeof e=="object"){let{minimumFractionDigits:n,maximumFractionDigits:a}=e;Number.isFinite(n)||(n=void 0);Number.isFinite(a)||(a=void 0);n!==void 0&&(n=Math.min(20,Math.max(0,n)));a!==void 0&&(a=Math.min(20,Math.max(0,a)));n!==void 0&&a!==void 0&&a<n&&(a=n);e={...e,...(n!==void 0?{minimumFractionDigits:n}:{}) , ...(a!==void 0?{maximumFractionDigits:a}:{})}}return new t(l||"en-US",e)}})();
+/* --- Locale clamps (safe, no shorthand pitfalls) --- */
+(()=>{
+  const origToLS = Number.prototype.toLocaleString;
+  Number.prototype.toLocaleString = function(locale, opts){
+    let o = (opts && typeof opts==='object') ? {...opts} : undefined;
+    if (o){
+      let min = Number.isFinite(o.minimumFractionDigits) ? Math.min(20, Math.max(0, o.minimumFractionDigits)) : undefined;
+      let max = Number.isFinite(o.maximumFractionDigits) ? Math.min(20, Math.max(0, o.maximumFractionDigits)) : undefined;
+      if (min!==undefined && max!==undefined && max<min) max=min;
+      const rebuilt = {};
+      for (const k in o){
+        if (Object.prototype.hasOwnProperty.call(o,k) && k!=="minimumFractionDigits" && k!=="maximumFractionDigits"){
+          rebuilt[k]=o[k];
+        }
+      }
+      if (min!==undefined) rebuilt.minimumFractionDigits = min;
+      if (max!==undefined) rebuilt.maximumFractionDigits = max;
+      o = rebuilt;
+    }
+    return origToLS.call(this, locale||"en-US", o);
+  };
+
+  const OrigNF = Intl.NumberFormat;
+  Intl.NumberFormat = function(locale, opts){
+    let o = (opts && typeof opts==='object') ? {...opts} : undefined;
+    if (o){
+      let min = Number.isFinite(o.minimumFractionDigits) ? Math.min(20, Math.max(0, o.minimumFractionDigits)) : undefined;
+      let max = Number.isFinite(o.maximumFractionDigits) ? Math.min(20, Math.max(0, o.maximumFractionDigits)) : undefined;
+      if (min!==undefined && max!==undefined && max<min) max=min;
+      const rebuilt = {};
+      for (const k in o){
+        if (Object.prototype.hasOwnProperty.call(o,k) && k!=="minimumFractionDigits" && k!=="maximumFractionDigits"){
+          rebuilt[k]=o[k];
+        }
+      }
+      if (min!==undefined) rebuilt.minimumFractionDigits = min;
+      if (max!==undefined) rebuilt.maximumFractionDigits = max;
+      o = rebuilt;
+    }
+    return new OrigNF(locale||"en-US", o);
+  };
+})();
 
 /* --- Utils --- */
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
@@ -17,7 +57,7 @@ const fmtNumSuffix=v=>{if(v==null||Number.isNaN(v))return "-";const n=Number(v),
 const StarField=(()=>{let cv,ctx,stars=[],intensity=0,animId=null,W=0,H=0,dpr=1;
   const D=140,TW_MIN=.002,TW_MAX=.006,R_MIN=.3,R_MAX=1.1,rand=(a,b)=>a+Math.random()*(b-a);
   function resize(){if(!cv)return;dpr=window.devicePixelRatio||1;const vw=innerWidth,vh=innerHeight;W=Math.floor(vw*dpr);H=Math.floor(vh*dpr);cv.width=W;cv.height=H;cv.style.width=vw+"px";cv.style.height=vh+"px";build()}
-  function build(){const area=(W*H)/(dpr*dpr),target=Math.floor(area/100000*D*intensity),cur=stars.length; if(cur<target){for(let i=cur;i<target;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r=rand(R_MIN,R_MAX)*dpr,a:rand(.35,.9),tw=rand(TW_MIN,TW_MAX),ph:Math.random()*Math.PI*2})}else if(cur>target){stars.splice(target)}}
+  function build(){const area=(W*H)/(dpr*dpr),target=Math.floor(area/100000*D*intensity),cur=stars.length; if(cur<target){for(let i=cur;i<target;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:rand(R_MIN,R_MAX)*dpr,a:rand(.35,.9),tw:rand(TW_MIN,TW_MAX),ph:Math.random()*Math.PI*2})}else if(cur>target){stars.splice(target)}}
   function loop(){if(!ctx)return;ctx.clearRect(0,0,W,H);const base=intensity;for(const s of stars){s.ph+=s.tw;const a=base*(.85+.15*Math.sin(s.ph));ctx.globalAlpha=a*s.a;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill()}ctx.globalAlpha=1;animId=requestAnimationFrame(loop)}
   function setIntensity(v){intensity=Math.max(0,Math.min(1,v));document.documentElement.style.setProperty("--bgstar",String(intensity));build(); if(intensity>0&&!animId)animId=requestAnimationFrame(loop); if(intensity===0&&animId){cancelAnimationFrame(animId);animId=null;ctx.clearRect(0,0,W,H)}}
   function init(){cv=$("#whiteStars"); if(!cv) return; ctx=cv.getContext("2d"); resize(); addEventListener("resize",resize)}
@@ -203,10 +243,9 @@ function wireHeaderSort(){
 
 /* --- Init --- */
 async function initOnce(){
-  // 행 클릭 → chart.html?symbol=BINANCE (a 링크 우선)
   $("#cosmos-tbody")?.addEventListener("click",(e)=>{
     const tr=e.target.closest("tr.row"); if(!tr) return;
-    if(e.target.closest("a")) return; // 링크 클릭이면 기본 동작
+    if(e.target.closest("a")) return;
     const sym=tr.dataset.symbol;
     if(sym) location.href=`./chart.html?symbol=${encodeURIComponent(sym)}&interval=1h`;
   });
@@ -223,7 +262,6 @@ async function initOnce(){
 
   wireHeaderSort();
 
-  // ⭐ Star controller
   const r=$("#starRange");
   const setStarCSS=v=>document.documentElement.style.setProperty("--star", String(v/100));
   if(r){
@@ -239,20 +277,18 @@ async function initOnce(){
   }
 }
 
-/* --- initData: 부분 실패 허용 (allSettled) --- */
+/* --- initData: allow partial failure --- */
 async function initData(){
   const tasks = [
-    fetchMarkets(),                      // 0
-    fetchGlobal(),                       // 1
-    fetchFNG(),                          // 2
-    fetchBinanceLS(state.lsPeriod),      // 3
-    fetchMarketChart('bitcoin',7),       // 4  (자주 느림/429)
-    fetchMarketChart('tether',7)         // 5  (자주 느림/429)
+    fetchMarkets(),
+    fetchGlobal(),
+    fetchFNG(),
+    fetchBinanceLS(state.lsPeriod),
+    fetchMarketChart('bitcoin',7),
+    fetchMarketChart('tether',7)
   ];
-
   const rs = await Promise.allSettled(tasks);
   const ok   = (i) => rs[i].status === 'fulfilled' ? rs[i].value : null;
-  const fail = (i) => rs[i].status !== 'fulfilled';
 
   const markets   = ok(0) || [];
   const global    = ok(1);
@@ -260,13 +296,6 @@ async function initData(){
   const ls        = ok(3);
   const btcChart  = ok(4);
   const usdtChart = ok(5);
-
-  if (fail(0)) console.warn('[initData] markets 실패');
-  if (fail(1)) console.warn('[initData] global 실패');
-  if (fail(2)) console.warn('[initData] FNG 실패');
-  if (fail(3)) console.warn('[initData] Binance LS 실패');
-  if (fail(4)) console.warn('[initData] BTC market_chart 실패 (스킵)');
-  if (fail(5)) console.warn('[initData] USDT market_chart 실패 (스킵)');
 
   if (markets.length) {
     state.all = markets;
@@ -276,7 +305,6 @@ async function initData(){
   } else {
     setHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
   }
-
   if (fng) renderFNGCard(fng);
   if (ls)  renderLongShort(state.lsPeriod, ls);
   if (btcChart || usdtChart) renderMiniCaps(btcChart, usdtChart);
@@ -290,15 +318,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
   let vis=document.visibilityState==="visible";
   document.addEventListener("visibilitychange",()=>{vis=document.visibilityState==="visible";});
 
-  // 대시보드 주기 갱신 (부분 실패 허용)
   setInterval(async ()=>{ if(!vis) return; try{
     const [markets,global]=await Promise.all([fetchMarkets(),fetchGlobal()]);
     state.all=markets; renderKPIs(markets,global); renderRightLists(markets); applySortFilter();
   }catch(e){ console.warn('[auto refresh] 실패', e); } }, 60000);
 
-  // FNG 시간당 갱신
   setInterval(async ()=>{ if(!vis) return; try{renderFNGCard(await fetchFNG());}catch(e){ console.warn('[fng refresh] 실패', e); } }, 60*60*1000);
 });
 
-// expose
 window._cosmos={state,initData};
