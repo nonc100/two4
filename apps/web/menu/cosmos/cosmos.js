@@ -18,10 +18,27 @@ function fmtMoney(n){
   if(a>=1e6)  return "$"+(n/1e6).toFixed(2)+"M";
   return "$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
 }
-function fmtPct(n){
+function fmtPctRaw(n){
   if(n==null || isNaN(n)) return "-";
   const s = n>=0 ? "+" : "";
   return s + n.toFixed(2) + "%";
+}
+
+function fmtPrice(n){
+  return n==null || isNaN(n) ? '-' : '$' + Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
+}
+function fmtPct(n){
+  if(n==null || isNaN(n)) return '-';
+  const s=n>=0?'up':'down';
+  return `<span class="pct ${s}">${(n>=0?'+':'')+n.toFixed(2)}%</span>`;
+}
+function fmtCap(n){
+  if(n==null || isNaN(n)) return '-';
+  const a=Math.abs(n);
+  if(a>=1e12) return '$'+(n/1e12).toFixed(2)+'T';
+  if(a>=1e9) return '$'+(n/1e9).toFixed(2)+'B';
+  if(a>=1e6) return '$'+(n/1e6).toFixed(2)+'M';
+  return '$'+Number(n).toLocaleString('en-US');
 }
 
 /* ---- 상태 ---- */
@@ -159,7 +176,7 @@ async function initHub(){
       ${items.map((c,i)=>{
         const tk=(c.symbol||"").toUpperCase();
         const px=fmtMoney(c.current_price);
-        const pc=kind==='vol' ? fmtMoney(c.total_volume) : fmtPct(c.price_change_percentage_24h);
+        const pc=kind==='vol' ? fmtMoney(c.total_volume) : fmtPctRaw(c.price_change_percentage_24h);
         const cls=kind==='vol'?'':((c.price_change_percentage_24h||0)>=0?'up':'down');
         return `<div class="row"><div class="rk">${i+1}</div><div class="tk">${tk}</div><div class="px">${px}</div><div class="pc ${cls}">${pc}</div></div>`;
       }).join("")}
@@ -190,17 +207,28 @@ async function initHub(){
 
 /* ---- Table ---- */
 
-function sparkSVG(points){
-  if(!Array.isArray(points) || points.length<2) return "";
-  const w=100,h=28;
-  const min=Math.min(...points), max=Math.max(...points);
-  const dx=w/(points.length-1);
-  const norm=points.map(v=> max===min ? h/2 : h-( (v-min)/(max-min) )*h );
-  const d=norm.map((y,i)=> (i?`L ${i*dx} ${y}`:`M 0 ${y}`)).join(" ");
-  const cls = (points[points.length-1] - points[0]) >= 0 ? "up" : "down";
-  return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true">
-    <path d="${d}" fill="none" stroke="${cls==='up'?'#22c55e':'#ef4444'}" stroke-width="2"/>
-  </svg>`;
+function rowHTML(c, i){
+  const p1h = c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h;
+  const p24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
+  const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
+
+  return `<tr>
+    <td class="sticky-rank num">${c.market_cap_rank ?? (i+1)}</td>
+    <td class="sticky-name">
+      <div class="mkt-name">
+        <img src="${c.image}" alt="${c.symbol}">
+        <span class="sym">${(c.symbol||'').toUpperCase()}</span>
+        <span class="full">${c.name ?? ''}</span>
+      </div>
+    </td>
+    <td class="num">${fmtPrice(c.current_price)}</td>
+    <td class="num hide-m">${fmtPct(p1h)}</td>
+    <td class="num">${fmtPct(p24)}</td>
+    <td class="num hide-m">${fmtPct(p7d)}</td>
+    <td class="num hide-m">${fmtCap(c.market_cap)}</td>
+    <td class="num hide-m">${fmtCap(c.total_volume)}</td>
+    <td class="spark"><canvas width="120" height="28" data-id="${c.id}"></canvas></td>
+  </tr>`;
 }
 
 function applyFilterSort(){
@@ -235,37 +263,8 @@ function renderTable(){
   if(!tbody) return;
   const start = (state.page-1)*state.perPage;
   const items = state.filtered.slice(start, start+state.perPage);
-
-  tbody.innerHTML = items.map((c,idx)=>{
-    const rank = c.market_cap_rank ?? "-";
-    const sym  = (c.symbol||"").toUpperCase();
-    const name = c.name || "-";
-    const price = fmtMoney(c.current_price);
-    const c1h = c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? 0;
-    const c24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? 0;
-    const c7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d ?? 0;
-    const mcap = fmtMoney(c.market_cap);
-    const vol  = fmtMoney(c.total_volume);
-    const spark = c.sparkline_in_7d?.price ? sparkSVG(c.sparkline_in_7d.price) : "";
-
-    return `
-      <tr>
-        <td class="td-num">${rank}</td>
-        <td class="td-name">
-          <img src="${(c.image||"").replace("large","small")}" alt="" />
-          <span class="tk">${sym}</span>
-          <span class="nm hide-m">${name}</span>
-        </td>
-        <td class="right">${price}</td>
-        <td class="right hide-m"><span class="chg ${c1h>=0?"up":"down"}">${fmtPct(c1h)}</span></td>
-        <td class="right"><span class="chg ${c24>=0?"up":"down"}">${fmtPct(c24)}</span></td>
-        <td class="right hide-m"><span class="chg ${c7d>=0?"up":"down"}">${fmtPct(c7d)}</span></td>
-        <td class="right hide-m">${mcap}</td>
-        <td class="right hide-m">${vol}</td>
-        <td class="right">${spark}</td>
-      </tr>
-    `;
-  }).join("");
+  tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
+  // drawSparkForEachCanvas();
 }
 
 function renderPager(){
