@@ -114,26 +114,42 @@
     table{width:1200px;border-collapse:separate;border-spacing:0 10px}
     thead th{
       position:sticky; top:var(--sticky-top);
-      background:rgba(17,24,39,.86); backdrop-filter:blur(6px);
-      font-size:12px; color:#b9c3d6; font-weight:700; text-align:left; padding:8px 10px; z-index:5;
+      backdrop-filter:blur(6px);
+      font-size:12px; color:#b9c3d6; font-weight:700; padding:8px 10px; z-index:5;
     }
-    tbody td{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
-    tbody tr td:first-child{border-radius:12px 0 0 12px}
-    tbody tr td:last-child{border-radius:0 12px 12px 0}
-    .td-num{text-align:right;opacity:.8;font-weight:800;width:40px}
-    .td-name{display:flex;align-items:center;gap:10px;min-width:220px}
-    .td-name img{width:20px;height:20px;border-radius:50%}
-    .tk{font-weight:900}
-    .nm{opacity:.85}
-    .right{text-align:right}
-    .chg.up{color:var(--up)} .chg.down{color:var(--down)}
-    canvas.spark{display:block;width:100px;height:28px}
+    
+    /* widths */
+    .c-rank { width: 44px; }
+    .c-name { width: 280px; }
+    .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol { width: 120px; }
+    .c-spark { width: 120px; }
+
+    /* sticky (rank / name만) */
+    #mkt thead th, #mkt tbody td { background: rgba(17,24,39,.85); }
+    #mkt tbody td{border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
+    #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
+    #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
+    #mkt .sticky-rank { position: sticky; left: 0; z-index: 2; }
+    #mkt .sticky-name { position: sticky; left: 44px; z-index: 2; }
+
+    /* name cell content */
+    .mkt-name { display:flex; align-items:center; gap:10px; }
+    .mkt-name img { width:20px; height:20px; border-radius:50%; }
+    .mkt-name .sym { font-weight:800; margin-right:6px; }
+    .mkt-name .full { opacity:.85; }
+
+    /* numbers */
+    .num { text-align:right; font-variant-numeric: tabular-nums; }
+    .pct.up { color:#22c55e; } .pct.down { color:#ef4444; }
+    .text-right { text-align:right; }
+
+    td.spark canvas{display:block;width:120px;height:28px}
 
     /* 모바일: 티커/가격/24h/스파크만 */
     @media (max-width:800px){
       table{width:1000px}
       .hide-m{display:none!important}
-      .td-name{min-width:140px}
+      .c-name { width:140px; }
       .wrap{padding-top:84px}
       :root{--sticky-top: 84px;}
     }
@@ -181,17 +197,28 @@
 
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
+                <colgroup>
+          <col class="c-rank">
+          <col class="c-name">
+          <col class="c-price">
+          <col class="c-1h">
+          <col class="c-24h">
+          <col class="c-7d">
+          <col class="c-mcap">
+          <col class="c-vol">
+          <col class="c-spark">
+        </colgroup>
         <thead>
           <tr>
-            <th data-key="rank"   class="th th-sort">#</th>
-            <th data-key="name"   class="th th-sort">Name</th>
-            <th data-key="price"  class="th th-sort">Price</th>
-            <th data-key="change1h"  class="th th-sort hide-m">1h</th>
-            <th data-key="change24h" class="th th-sort">24h</th>
-            <th data-key="change7d"  class="th th-sort hide-m">7d</th>
-            <th data-key="market_cap" class="th th-sort hide-m">Market Cap</th>
-            <th data-key="volume"     class="th th-sort hide-m">24h Volume</th>
-            <th class="right">7d Spark</th>
+            <th data-key="rank"   class="sticky-rank th th-sort">#</th>
+            <th data-key="name"   class="sticky-name th th-sort">Name</th>
+            <th data-key="price"  class="text-right th th-sort">Price</th>
+            <th data-key="change1h"  class="text-right th th-sort hide-m">1h</th>
+            <th data-key="change24h" class="text-right th th-sort">24h</th>
+            <th data-key="change7d"  class="text-right th th-sort hide-m">7d</th>
+            <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
+            <th data-key="volume"     class="text-right th th-sort hide-m">24h Volume</th>
+            <th class="text-right">7d Spark</th>
           </tr>
         </thead>
         <tbody id="mktBody"></tbody>
