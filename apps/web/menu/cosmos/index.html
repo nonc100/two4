@@ -17,13 +17,14 @@
       --card-border: rgba(255,255,255,.08);
       --hdr-bg: rgba(18,24,39,.86);          /* 상단 헤더 sticky 배경 */
       --left-sticky-bg: rgba(17,24,39,.30);  /* 세로축(좌측) 배경: 매우 투명 */
-      --star: 0;                              /* 우측상단 별 강도(0~1) */
+      --star: 0;                              /* 우측상단 작은 별 강도(0~1) */
+      --bgstar: 0;                            /* 흰 점 별 밝기(0~1) */
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, "Segoe UI Emoji";}
     body{overflow-x:hidden}
 
-    /* twinkle stars */
+    /* background twinkle stars (기존) */
     .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
     .stars, .stars2, .stars3{
       position:absolute; inset:0;
@@ -36,6 +37,12 @@
     .stars2{background-image: radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%), radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%), radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%); animation-duration:26s; opacity:.35;}
     .stars3{background-image: radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%), radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%), radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%); animation-duration:34s; opacity:.25;}
     @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
+
+    /* 흰색 점 별(새로 추가) – 배경 위/콘텐츠 아래 */
+    .white-stars{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      opacity:var(--bgstar, 0);
+    }
 
     a{color:inherit;text-decoration:none}
     .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 16px 80px;}
@@ -54,14 +61,19 @@
       background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
       border:1px solid rgba(255,255,255,.18); color:#dbeafe; font-size:18px; }
 
-    /* Cards */
+    /* Cards grid */
     .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:16px;}
     .left-5{grid-column:1/4; display:grid; gap:16px; grid-template-columns:repeat(3,1fr);}
     .left-5 .row-sm-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px;} /* 작은 카드 2개 */
     .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-    .card{ position:relative; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      border:1px solid var(--card-border); border-radius:16px; padding:14px 14px 12px; color:var(--text); overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.30); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));}
+    .right-2{grid-column:4/5; display:grid; gap:16px; grid-auto-rows:1fr;}
+    .card{
+      position:relative; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border:1px solid var(--card-border);
+      border-radius:16px; padding:14px 14px 12px; color:var(--text); overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.30);
+      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
     .card.sm{ padding:12px; }
     .card.span-2{ grid-column: span 2; }
     .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
@@ -86,7 +98,7 @@
     .badge.neutral{background:rgba(250,204,21,.12); color:#fde68a; border-color:rgba(250,204,21,.32)}
     .badge.safe{background:rgba(34,197,94,.12); color:#bbf7d0; border-color:rgba(34,197,94,.32)}
 
-    /* 리스트 (열 구조/컬러) */
+    /* Right lists */
     .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
     .list .row{display:grid; grid-template-columns: 2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px;}
     .list .rank{text-align:right; font-weight:800; color:#93c5fd;}
@@ -94,6 +106,8 @@
     .list .price{justify-self:end; font-variant-numeric:tabular-nums; color:#e5e7eb; opacity:.95;}
     .list .pct{justify-self:end; font-weight:900; font-variant-numeric:tabular-nums;}
     .list .pct.up{color:var(--up);} .list .pct.down{color:var(--down);}
+    /* 요청: 우측 리스트 티커 흰색 */
+    .right-2 .list .sym{ color:#fff !important; }
 
     /* controls & table */
     .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px; position:relative;}
@@ -123,12 +137,12 @@
     .row-index{
       width:46px; text-align:right; font-weight:700;
       position:sticky; left:0; z-index:2;
-      background:var(--left-sticky-bg); /* 매우 투명 배경 */
+      background:var(--left-sticky-bg);
       backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
     }
     .coin-cell{
       display:flex; align-items:center; gap:8px;
-      min-width:110px; /* 티커만이므로 확 줄임 */
+      min-width:110px; /* 티커만 노출 */
       position:sticky; left:46px; z-index:2;
       background:var(--left-sticky-bg);
       backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
@@ -187,7 +201,7 @@
 
     footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
 
-    /* === 우측상단 별 · 컨트롤러 === */
+    /* === 우측상단 작은 별 · 컨트롤러 === */
     .star-pulse{
       position:fixed; top:12px; right:12px; z-index:6;
       width:26px; height:26px; pointer-events:none;
@@ -195,7 +209,7 @@
       transform:scale(calc(.6 + .6*var(--star))) rotate(6deg);
       filter: drop-shadow(0 0 10px rgba(167,139,250,.6)) drop-shadow(0 0 18px rgba(99,102,241,.45));
       animation: starPulse 3.2s ease-in-out infinite;
-      background: radial-gradient(circle at 50% 50%, rgba(167,139,250,.95) 0%, rgba(99,102,241,.75) 60%, rgba(255,255,255,0) 70%);
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.75) 60%, rgba(255,255,255,0) 70%);
       clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
     }
     @keyframes starPulse{
@@ -223,8 +237,9 @@
 </head>
 <body>
 <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
+<canvas id="whiteStars" class="white-stars" aria-hidden="true"></canvas>
 
-<!-- 우측상단 별 + 컨트롤러 -->
+<!-- 우측상단 작은 별 + 컨트롤러 -->
 <div class="star-pulse" aria-hidden="true"></div>
 <div class="star-ctl" role="group" aria-label="Star glow control">
   <label for="starRange">STAR</label>
@@ -276,7 +291,7 @@
         </div>
       </div>
 
-      <!-- 파생 지표 카드 (Funding / OI Δ24h) : 중앙 빈공간 채움 -->
+      <!-- 파생 지표 카드 (Funding / OI Δ24h) -->
       <div class="card span-2" id="deriv-card">
         <h3>Derivatives (24h)</h3>
         <div class="deriv-grid">
