@@ -247,8 +247,10 @@ function applyFilterSort(){
   arr.sort((a,b)=>{const va=get(a),vb=get(b); const r=(typeof va==="string"&&typeof vb==="string")?va.localeCompare(vb):(va>vb?1:va<vb?-1:0); return r*dir;});
   state.filtered=arr; if((state.page-1)*state.perPage >= arr.length) state.page=1;
   // 헤더 표시
-  $$("#mkt thead th").forEach(th=>{th.querySelector(".dir").textContent=(th.dataset.key===state.sortKey?(state.sortDir===-1?"▼":"▲"):"")});
-  renderTable(); renderPager();
+$$("#mkt thead th[data-key]").forEach(th=>{
+  const d = th.querySelector(".dir");
+  if (d) d.textContent = (th.dataset.key===state.sortKey ? (state.sortDir===-1?"▼":"▲") : "");
+});  renderTable(); renderPager();
 }
 
 /* header click sort */
