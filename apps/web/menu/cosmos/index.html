@@ -10,7 +10,7 @@
       --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
       --up:#22c55e; --down:#ef4444;
       --ring1:#7c3aed; --ring2:#06b6d4;
-      --sticky-top: 8px;           /* 테이블 헤더 sticky 오프셋 */
+      --sticky-top: 12px;          /* 데스크톱 기본 sticky offset */
       --starVis: .7;               /* 별 밝기 (0~1) */
       --row-gap: 10px;             /* 행 사이 간격 */
     }
@@ -37,7 +37,7 @@
     .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:40px 16px 80px}
     .brand{display:flex;align-items:center;gap:14px;margin:2px 0 14px}
     .brand img{height:42px}
-    .brand h1{display:none} /* 요청: 로고 옆 COSMOS 제거 */
+    /* h1 COSMOS 제거 요청 → 마크업 자체에서 삭제 */
 
     /* ==== Hub (Donut) ==== */
     .hub-area{display:grid;grid-template-columns:minmax(320px,560px) 1fr; gap:18px; align-items:center}
@@ -100,7 +100,7 @@
     .coin-cell{display:flex;align-items:center;gap:10px;min-width:220px}
     .coin-cell img{width:20px;height:20px;border-radius:50%;object-fit:contain}
     .coin-sym{font-weight:900}
-    .coin-name{opacity:.9}
+    .coin-name{opacity:.9;margin-left:6px}
     .right{text-align:right; font-variant-numeric:tabular-nums}
 
     .up{color:var(--up)} .down{color:var(--down)}
@@ -113,9 +113,13 @@
       .hub-wrap{max-width:360px;margin:0 auto}
       table{width:1000px}  /* 가로 스크롤 허용 */
 
-      /* 모바일 표시는: 티커, Price, 24h%, 7d Spark 4개만 */
-      .col-rank, .col-name, .col-1h, .col-mcap, .col-vol {display:none}
+      /* 모바일 표시는: 티커(=col-name), Price, 24h%, 7d Spark 4개만 */
+      .col-rank, .col-1h, .col-mcap, .col-vol {display:none}  /* ← .col-name은 보존! */
+
+      /* 상단 컨트롤러와 겹치지 않도록 헤더 offset 보정 */
+      .table-wrap thead th{ top:52px; }
       .coin-cell{min-width:120px}
+      .coin-name{display:none} /* 모바일은 심볼만 노출 */
     }
 
     footer{margin:24px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
@@ -133,7 +137,7 @@
   <div class="wrap">
     <div class="brand">
       <img src="/media/logo.png" alt="TWO4" />
-      <h1>COSMOS</h1>
+      <!-- h1 COSMOS 제거 -->
     </div>
 
     <!-- Donut + Panel -->
