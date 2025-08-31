@@ -1,4 +1,4 @@
-/* ===== COSMOS JS (모바일 보완 + 헤더 오프셋 + 행 클릭 복구) ===== */
+/* ===== COSMOS JS (sticky toolbar 호환) ===== */
 
 /* Locale clamps */
 (()=>{const o=Number.prototype.toLocaleString;Number.prototype.toLocaleString=function(l,e){if(e&&typeof e=="object"){let{minimumFractionDigits:n,maximumFractionDigits:a}=e;Number.isFinite(n)||(n=void 0);Number.isFinite(a)||(a=void 0);n!==void 0&&(n=Math.min(20,Math.max(0,n)));a!==void 0&&(a=Math.min(20,Math.max(0,a)));n!==void 0&&a!==void 0&&a<n&&(a=n);e={...e,...(n!==void 0?{minimumFractionDigits:n}:{}) , ...(a!==void 0?{maximumFractionDigits:a}:{})}}return o.call(this,l||"en-US",e)};const t=Intl.NumberFormat;Intl.NumberFormat=function(l,e){if(e&&typeof e=="object"){let{minimumFractionDigits:n,maximumFractionDigits:a}=e;Number.isFinite(n)||(n=void 0);Number.isFinite(a)||(a=void 0);n!==void 0&&(n=Math.min(20,Math.max(0,n)));a!==void 0&&(a=Math.min(20,Math.max(0,a)));n!==void 0&&a!==void 0&&a<n&&(a=n);e={...e,...(n!==void 0?{minimumFractionDigits:n}:{}) , ...(a!==void 0?{maximumFractionDigits:a}:{})}}return new t(l||"en-US",e)}})();
@@ -46,7 +46,7 @@ function buildRowHTML(c){
     <td class="text-right">${s7?sparklineSVG(s7):"-"}</td>
   </tr>`;
 }
-function ensureTbody(){return $("#cosmos-tbody")}
+const ensureTbody=()=>$("#cosmos-tbody");
 function renderTableSlice(rows){const tbody=ensureTbody(); if(!tbody) return; const s=(state.page-1)*state.perPage,e=s+state.perPage; const slice=rows.slice(s,e); setHTML(tbody, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);}
 function applySortFilter(){
   const q=($("#search").value||"").trim().toLowerCase();
@@ -100,16 +100,14 @@ function renderLongShort(period,arr){const last=Array.isArray(arr)?arr.at(-1):nu
   setHTML("#ls-long",`${longPct.toFixed(1)}%`); setHTML("#ls-short",`${shortPct.toFixed(1)}%`); setHTML("#ls-ratio", ratio?ratio.toFixed(2):`${(longPct/shortPct).toFixed(2)}`); $("#ls-longbar").style.width=`${Math.max(0,Math.min(100,longPct))}%`; $$('.ls-ctl button').forEach(b=>b.classList.toggle('active', b.dataset.period===period));
 }
 
-/* Topbar 높이 측정 → CSS 변수 적용 */
-function applyTopbarHeight(){const bar=$("#topbar"); if(!bar) return; const h=Math.ceil(bar.getBoundingClientRect().height); document.documentElement.style.setProperty('--topbar-h', h+'px');}
-
-/* Init */
+/* 헤더 클릭 정렬 */
 function wireHeaderSort(){$$(".cosmos-table thead th.sortable").forEach(th=>{th.addEventListener("click",()=>{const key=th.dataset.key; if(state.sortKey===key) state.sortDir=state.sortDir===-1?1:-1; else {state.sortKey=key; state.sortDir=-1;} applySortFilter();});});}
 
+/* Init */
 async function initOnce(){
   $("#backBtn")?.addEventListener("click",()=>history.back());
 
-  // ★ 행 전체 클릭 → chart.html
+  // 행 클릭 → chart.html
   $("#cosmos-tbody")?.addEventListener("click",(e)=>{const tr=e.target.closest("tr.row"); if(!tr) return; const id=tr.dataset.id; if(id) location.href=`./chart.html?id=${encodeURIComponent(id)}`;});
 
   $$('.ls-ctl button').forEach(btn=>btn.addEventListener('click', async e=>{
@@ -128,10 +126,6 @@ async function initOnce(){
   const r=$("#starRange"); const setStarCSS=v=>document.documentElement.style.setProperty("--star", String(v/100));
   if(r){const saved=Number(localStorage.getItem("two4_star")||0); r.value=String(clamp(saved,0,100)); setStarCSS(Number(r.value)); StarField.setIntensity(Number(r.value)/100);
     r.addEventListener("input",e=>{const v=clamp(Number(e.target.value||0),0,100); setStarCSS(v); StarField.setIntensity(v/100); localStorage.setItem("two4_star",String(v));});}
-
-  // Topbar 높이 적용
-  applyTopbarHeight();
-  window.addEventListener('resize', applyTopbarHeight, {passive:true});
 }
 
 async function initData(){
