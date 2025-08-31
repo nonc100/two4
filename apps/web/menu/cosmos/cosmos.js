@@ -1,6 +1,6 @@
-/* ===== COSMOS JS – full build (with Derivatives card, 2025-08-31) ===== */
+/* ===== COSMOS JS – full build (white starfield + lists ticker white + derivatives) ===== */
 
-/* --- Locale clamps to avoid maximumFractionDigits errors --- */
+/* --- Locale clamps --- */
 (() => {
   const origToLS = Number.prototype.toLocaleString;
   Number.prototype.toLocaleString = function (locale, opts) {
@@ -12,7 +12,7 @@
       if (max !== undefined) max = Math.min(20, Math.max(0, max));
       if (min !== undefined && max !== undefined && max < min) max = min;
       opts = { ...opts, ...(min !== undefined ? { minimumFractionDigits: min } : {}),
-                        ...(max !== undefined ? { maximumFractionDigits: max } : {}), };
+                        ...(max !== undefined ? { maximumFractionDigits: max } : {}) };
     }
     return origToLS.call(this, locale || "en-US", opts);
   };
@@ -26,7 +26,7 @@
       if (max !== undefined) max = Math.min(20, Math.max(0, max));
       if (min !== undefined && max !== undefined && max < min) max = min;
       opts = { ...opts, ...(min !== undefined ? { minimumFractionDigits: min } : {}),
-                        ...(max !== undefined ? { maximumFractionDigits: max } : {}), };
+                        ...(max !== undefined ? { maximumFractionDigits: max } : {}) };
     }
     return new OrigNF(locale || "en-US", opts);
   };
@@ -61,8 +61,7 @@ function fmtSmallPct(v, decimals=4){
 }
 function fmtNumSuffix(v){
   if(v==null||Number.isNaN(v)) return "-";
-  const n = Number(v);
-  const abs=Math.abs(n);
+  const n = Number(v), abs=Math.abs(n);
   if(abs>=1e12) return "$"+(n/1e12).toFixed(2)+"T";
   if(abs>=1e9)  return "$"+(n/1e9).toFixed(2)+"B";
   if(abs>=1e6)  return "$"+(n/1e6).toFixed(2)+"M";
@@ -72,6 +71,66 @@ function fmtNumSuffix(v){
 function $(s,sc=document){return sc.querySelector(s)}
 function $$(s,sc=document){return Array.from(sc.querySelectorAll(s))}
 const setHTML = (sel,html) => { const el = typeof sel==="string"?$(sel):sel; if(el) el.innerHTML = html; };
+
+/* --- White starfield engine (canvas) --- */
+const StarField = (()=> {
+  let canvas, ctx, stars=[], intensity=0, animId=null, W=0,H=0, dpr=1;
+  const BASE_DENSITY = 140; // 최대 강도에서 10만 css px 당 별 개수
+  const TW_MIN = 0.002, TW_MAX = 0.006; // 반짝 속도
+  const R_MIN = 0.3,  R_MAX = 1.1;       // 반지름(px)
+  const rand=(a,b)=>a+Math.random()*(b-a);
+
+  function resize(){
+    if(!canvas) return;
+    dpr = window.devicePixelRatio || 1;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    W = Math.floor(vw*dpr); H = Math.floor(vh*dpr);
+    canvas.width = W; canvas.height = H;
+    canvas.style.width = vw+"px"; canvas.style.height = vh+"px";
+    rebuild();
+  }
+  function rebuild(){
+    const areaCSS = (W*H)/(dpr*dpr);
+    const target = Math.floor(areaCSS/100000 * BASE_DENSITY * intensity);
+    const cur = stars.length;
+    if(cur < target){
+      for(let i=cur;i<target;i++){
+        stars.push({ x:Math.random()*W, y:Math.random()*H,
+          r: rand(R_MIN,R_MAX)*dpr, a: rand(0.35,0.9), tw: rand(TW_MIN,TW_MAX), ph: Math.random()*Math.PI*2 });
+      }
+    }else if(cur > target){
+      stars.splice(target);
+    }
+  }
+  function loop(){
+    if(!ctx) return;
+    ctx.clearRect(0,0,W,H);
+    const base = intensity;
+    for(const s of stars){
+      s.ph += s.tw;
+      const a = base * (0.85 + 0.15*Math.sin(s.ph));
+      ctx.globalAlpha = a * s.a;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    animId = requestAnimationFrame(loop);
+  }
+  function setIntensity(v){
+    intensity = Math.max(0, Math.min(1, v));
+    document.documentElement.style.setProperty("--bgstar", String(intensity));
+    rebuild();
+    if(intensity>0 && !animId) animId = requestAnimationFrame(loop);
+    if(intensity===0 && animId){ cancelAnimationFrame(animId); animId=null; ctx.clearRect(0,0,W,H); }
+  }
+  function init(){
+    canvas = document.getElementById("whiteStars");
+    if(!canvas) return;
+    ctx = canvas.getContext("2d");
+    resize();
+    window.addEventListener("resize", resize);
+  }
+  return { init, setIntensity };
+})();
 
 /* --- Fetchers (direct → proxy fallback) --- */
 async function fetchMarkets({vs="usd",perPage=200,page=1}={}){
@@ -230,9 +289,7 @@ function renderKPIs(markets, global){
   setHTML("#kpi-usdt-mcap", tether?.market_cap ? fmtNumSuffix(tether.market_cap) : "-");
   setHTML("#kpi-dominance", dom!=null ? Number(dom).toFixed(2)+"%" : "-");
 }
-
 function renderRightLists(markets){
-  // 24h 등락률 상위
   const gainers = markets.slice()
     .filter(x=>Number.isFinite(x.price_change_percentage_24h))
     .sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h)
@@ -248,8 +305,6 @@ function renderRightLists(markets){
       <div class="pct ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div>
     </div>`;
   }).join(""));
-
-  // 거래량 순위
   const vol = markets.slice().sort((a,b)=> (b.total_volume||0)-(a.total_volume||0)).slice(0,10);
   setHTML("#list-volume", vol.map((c,i)=>{
     const sym=(c.symbol||"").toUpperCase();
@@ -322,7 +377,7 @@ function renderMiniCaps(btcChart, usdtChart){
 /* --- Derivatives render --- */
 function renderDerivatives({btc, eth}){
   const setFunding = (coin, valPct)=>{
-    const maxAbs = 0.10; // 0.10% = 풀스케일(한쪽 50%)
+    const maxAbs = 0.10; // 0.10% = 풀스케일
     const w = clamp(Math.abs(valPct)/maxAbs, 0, 1)*50; // half width
     const pos = $(`#fund-${coin}-pos`), neg = $(`#fund-${coin}-neg`);
     if(!pos || !neg) return;
@@ -331,7 +386,7 @@ function renderDerivatives({btc, eth}){
     setHTML(`#fund-${coin}-val`, fmtSmallPct(valPct, 4));
   };
   const setOI = (coin, valPct)=>{
-    const max = 25; // 25%를 풀스케일로
+    const max = 25; // 25% 풀스케일
     const w = clamp(Math.abs(valPct)/max, 0, 1)*100;
     const bar = $(`#oi-${coin}-bar`);
     if(bar) bar.style.width = `${w}%`;
@@ -371,15 +426,14 @@ function renderLongShort(period, arr){
 
 /* --- Init --- */
 function wireHeaderSort(){
-  const mapKey = (k)=> k;
   $$(".cosmos-table thead th.sortable").forEach(th=>{
     th.addEventListener("click", ()=>{
-      const key = mapKey(th.dataset.key);
+      const key = th.dataset.key;
       if(state.sortKey === key){
         state.sortDir = state.sortDir===-1 ? 1 : -1;
       }else{
         state.sortKey = key;
-        state.sortDir = -1; // 기본 내림차순
+        state.sortDir = -1;
       }
       applySortFilter();
     });
@@ -409,16 +463,18 @@ async function initOnce(){
 
   wireHeaderSort();
 
-  // Star controller
+  // ★ Star controller: 작은 별 + 흰 점 별 연동
   const r = $("#starRange");
-  const setStar = (v)=> document.documentElement.style.setProperty("--star", String(v/100));
+  const setStarCSS = (v)=> document.documentElement.style.setProperty("--star", String(v/100));
   if(r){
     const saved = Number(localStorage.getItem("two4_star")||0);
     r.value = String(clamp(saved,0,100));
-    setStar(Number(r.value));
+    setStarCSS(Number(r.value));
+    StarField.setIntensity(Number(r.value)/100);
     r.addEventListener("input", (e)=>{
       const v = clamp(Number(e.target.value||0),0,100);
-      setStar(v);
+      setStarCSS(v);
+      StarField.setIntensity(v/100);
       localStorage.setItem("two4_star", String(v));
     });
   }
@@ -443,12 +499,11 @@ async function initData(){
       fetchFunding("BTCUSDT", 3), fetchFunding("ETHUSDT", 3),
       fetchOIHist("BTCUSDT", "5m", 288), fetchOIHist("ETHUSDT", "5m", 288)
     ]);
-
     const avgFunding = (arr)=> {
       if(!Array.isArray(arr)||arr.length===0) return 0;
       const rates = arr.map(x=>Number(x.fundingRate||x.rate||0));
       const m = rates.length || 1;
-      return rates.reduce((s,v)=>s+v,0)/m*100; // % 단위
+      return rates.reduce((s,v)=>s+v,0)/m*100;
     };
     const oiDeltaPct = (arr)=>{
       if(!Array.isArray(arr)||arr.length<2) return 0;
@@ -457,7 +512,6 @@ async function initData(){
       if(!first) return 0;
       return (last-first)/first*100;
     };
-
     renderDerivatives({
       btc: { funding: avgFunding(fund_btc), oiDelta: oiDeltaPct(oi_btc) },
       eth: { funding: avgFunding(fund_eth), oiDelta: oiDeltaPct(oi_eth) }
@@ -471,6 +525,7 @@ async function initData(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
   initOnce();
+  StarField.init(); // 흰 점 별 초기화
   initData();
 
   // 비가시 탭에서는 업데이트 중지
@@ -521,5 +576,5 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }, 5*60*1000);
 });
 
-// expose for console debug
+// expose
 window._cosmos = { state, initData };
