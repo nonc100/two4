@@ -20,7 +20,7 @@
       --gb3: rgba(255,255,255,.06);
       --card-border: rgba(255,255,255,.08);
 
-      /* mobile table tuner (optional) */
+      /* mobile table tuner */
       --w-rank: 2.2ch;
       --w-coin: 9.5ch;
       --w-price: 8.8ch;
@@ -81,45 +81,11 @@
       color:#dbeafe; font-size:18px;
     }
 
-    /* Cards */
-    .cards{display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:16px;}
-    .left-5{grid-column:1/4; display:grid; gap:16px; grid-template-columns:repeat(3,1fr);}
-    .left-5 .row-2{grid-column:1/4; display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-    .right-2{grid-column:4/5; display:grid; gap:16px; grid-auto-rows:1fr;}
-    .card{
-      position:relative; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border:1px solid var(--card-border);
-      border-radius:16px; padding:14px 14px 12px; color:var(--text); overflow:hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.30);
-      backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur));
-    }
-    .card h3{margin:0 0 8px; font-size:12.5px; color:var(--muted); letter-spacing:.06em; font-weight:700}
-    .kpi{font-size:22px; font-weight:800;}
-    .sub{font-size:12px; opacity:.8}
-    .muted{color:var(--muted)}
-    .up{color:var(--up)} .down{color:var(--down)} .neutral{opacity:.85}
-
-    /* Long/Short mini gauge bar */
-    .lsbar{height:8px; border-radius:999px; background:rgba(255,255,255,.06); overflow:hidden; margin-top:6px; border:1px solid rgba(255,255,255,.08)}
-    .lsbar .long{height:100%; background:var(--up)}
-    .lsbar .short{height:100%; background:var(--down)}
-    .ls-ctl{display:flex; gap:6px; margin:6px 0 8px}
-    .ls-ctl button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:8px; padding:6px 9px; font-weight:700}
-    .ls-ctl button.active{background:rgba(114,153,255,.16); border-color:rgba(114,153,255,.32)}
-
-    /* FNG gauge area */
-    .gauge{height:160px; display:flex; align-items:center; justify-content:center}
-    .fng-meta{display:flex; align-items:center; gap:8px; margin-top:6px}
-    .badge{display:inline-flex; gap:6px; align-items:center; padding:4px 8px; border-radius:8px; font-weight:800; font-size:12px; border:1px solid rgba(255,255,255,.14)}
-    .badge.risk{background:rgba(239,68,68,.12); color:#fecaca; border-color:rgba(239,68,68,.32)}
-    .badge.neutral{background:rgba(250,204,21,.12); color:#fde68a; border-color:rgba(250,204,21,.32)}
-    .badge.safe{background:rgba(34,197,94,.12); color:#bbf7d0; border-color:rgba(34,197,94,.32)}
-
-    /* lists */
+    /* lists (top10) */
     .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
     .list .row{display:grid; grid-template-columns:2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px;}
     .list .rank{text-align:right; opacity:.7; font-weight:700;}
-    .list .sym{font-weight:800; letter-spacing:.02em;}
+    .list .sym{font-weight:800; letter-spacing:.02em; color:#fff;} /* 티커 흰색 */
     .list .price{justify-self:end; opacity:.9; font-variant-numeric:tabular-nums;}
     .list .pct{justify-self:end; font-weight:800; font-variant-numeric:tabular-nums;}
 
@@ -144,26 +110,18 @@
 
     /* responsive grid for mobile */
     @media (max-width:1199px){
-      .cards{grid-template-columns: 1fr; gap:14px;}
-      .left-5{grid-template-columns:1fr 1fr; gap:14px;}
-      .left-5 .row-2{grid-template-columns:1fr 1fr}
-      .right-2{grid-template-columns:1fr; grid-auto-rows:auto}
       .list .row{grid-template-columns:2.2em 1fr auto auto; font-size:13px}
       table{width:1100px}
     }
     @media (max-width:767px){
-      .card{padding:12px}
-      .kpi{font-size:clamp(18px,6vw,22px)}
-      .left-5{grid-template-columns:1fr 1fr}
-      .left-5 .row-2{grid-template-columns:1fr 1fr}
-      .right-2{grid-template-columns:1fr}
-      /* mobile columns (rank/coin/price/24h/spark only) */
-      .cosmos-table{ table-layout: fixed !important; }
+      /* table column widths */
+      .cosmos-table{ table-layout: fixed !important; width:1100px }
       .cosmos-table col.col-rank  { width: var(--w-rank)  !important; }
       .cosmos-table col.col-coin  { width: var(--w-coin)  !important; }
       .cosmos-table col.col-price { width: var(--w-price) !important; }
       .cosmos-table col.col-ch24  { width: var(--w-pct)   !important; }
       .cosmos-table col.col-spark { width: var(--w-spark) !important; }
+      /* hide 1h/7d/mcap/vol on mobile */
       .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4),
       .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6),
       .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7),
@@ -171,15 +129,12 @@
       .row-index{ width: var(--w-rank); padding: 6px 3px; text-align: center; }
       .coin-cell{ left: var(--w-rank); min-width: var(--w-coin); gap: 6px; }
       .coin-img{ width:16px; height:16px; min-width:16px; }
-      .coin-sym{ display:none; }
+      .coin-sym{ display:none; } /* 모바일은 티커만 */
     }
 
     footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
-  </style>
 
-  <!-- ===== 3D HUB styles ===== -->
-  <style>
-    /* 3D Neon Hub */
+    /* ===== 3D Neon Hub styles ===== */
     .hub-wrap{display:grid;grid-template-columns:minmax(320px,460px) 1fr;gap:16px;align-items:center;margin:10px 0 18px}
     .hub3d{position:relative;aspect-ratio:1/1;max-width:460px;border-radius:50%;
       background: radial-gradient(120% 120% at 30% 30%, rgba(120,144,255,.25) 0%, rgba(80,42,150,.18) 35%, rgba(10,16,26,.0) 62%),
@@ -187,12 +142,20 @@
       box-shadow: inset 0 8px 24px rgba(180,200,255,.15), inset 0 -10px 40px rgba(0,0,0,.45), 0 12px 38px rgba(0,0,0,.35);
       backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border:1px solid rgba(255,255,255,.10)}
     .hub3d svg{position:absolute;inset:0}
-    .hub-center{position:absolute;inset:50% auto auto 50%; transform:translate(-50%,-50%); width:36%; height:36%; border-radius:50%;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
+
+    /* ✅ 중앙 텍스트 완전 센터 고정 & 가운데 정렬 */
+    .hub-center{
+      position:absolute; inset:50% auto auto 50%;
+      transform:translate(-50%,-50%);
+      width:36%; height:36%; border-radius:50%;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      text-align:center;
       background:radial-gradient(100% 100% at 35% 30%, rgba(94,234,212,.18), rgba(99,102,241,.10) 60%, rgba(0,0,0,.0) 80%);
-      border:1px solid rgba(255,255,255,.12); box-shadow: inset 0 4px 22px rgba(255,255,255,.08), 0 0 40px rgba(124,58,237,.18)}
-    .hub-center .val{font-size:26px;font-weight:900;letter-spacing:.02em}
-    .hub-center .lbl{font-size:12px;color:#9aa3b6;letter-spacing:.06em;margin-top:4px}
+      border:1px solid rgba(255,255,255,.12); box-shadow: inset 0 4px 22px rgba(255,255,255,.08), 0 0 40px rgba(124,58,237,.18)
+    }
+    .hub-center .val{font-size:26px;font-weight:900;letter-spacing:.02em;margin:0;line-height:1.1}
+    .hub-center .lbl{font-size:12px;color:#9aa3b6;letter-spacing:.06em;margin:4px 0 0;line-height:1.1}
 
     .hub-seg{cursor:pointer;filter: drop-shadow(0 0 0 rgba(124,58,237,0)); transition: transform .18s ease, filter .18s ease, opacity .18s}
     .hub-seg:hover{filter: drop-shadow(0 0 10px rgba(124,58,237,.55)) drop-shadow(0 0 22px rgba(56,189,248,.35))}
@@ -208,7 +171,7 @@
     .hub-list{display:flex; flex-direction:column; gap:6px}
     .hub-row{display:grid; grid-template-columns: 1.6em 1fr auto auto; gap:8px; align-items:center; font-size:13.5px}
     .hub-row .rk{opacity:.7; text-align:right; font-weight:800}
-    .hub-row .tk{font-weight:900}
+    .hub-row .tk{font-weight:900; color:#fff}
     .hub-row .px{opacity:.9; text-align:right}
     .hub-row .pc{font-weight:900; text-align:right}
     .hub-row .pc.up{color:#22c55e}.hub-row .pc.down{color:#ef4444}
@@ -217,6 +180,9 @@
       .hub-wrap{grid-template-columns:1fr}
       .hub3d{max-width:360px;margin:0 auto}
     }
+
+    /* ✅ 기존 네모 카드 섹션 전체 숨김 */
+    .cards { display:none !important; }
   </style>
 </head>
 <body>
@@ -245,63 +211,6 @@
     </aside>
   </section>
   <!-- /3D HUB -->
-
-  <!-- KPI & Lists (기존 카드: 투명도 조금 더 올려 별이 보이도록) -->
-  <div class="cards">
-    <div class="left-5">
-      <div class="card">
-        <h3>BTC 롱/숏 비율</h3>
-        <div class="ls-ctl">
-          <button class="active" data-period="1h">1H</button>
-          <button data-period="4h">4H</button>
-          <button data-period="1d">1D</button>
-        </div>
-        <div class="kpi"><span id="ls-long">-</span> / <span id="ls-short">-</span></div>
-        <div class="sub muted">BTCUSDT · ratio <span id="ls-ratio">-</span></div>
-        <div class="lsbar"><div id="ls-longbar" class="long" style="width:50%"></div></div>
-      </div>
-
-      <div class="card" id="fng-card">
-        <h3>공포/탐욕 지수</h3>
-        <div class="kpi" id="fng-title">- / -</div>
-        <div class="gauge" id="fng-gauge"></div>
-        <div class="fng-meta">
-          <span id="fng-badge" class="badge neutral">-</span>
-          <span class="muted" id="fng-date">Alternative.me</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>도미넌스</h3>
-        <div class="kpi" id="kpi-dominance">-</div>
-        <div class="sub">BTC Dominance</div>
-      </div>
-
-      <div class="row-2">
-        <div class="card">
-          <h3>BTC Market Cap</h3>
-          <div class="kpi" id="kpi-btc-mcap">-</div>
-          <div class="sub">시총(USD)</div>
-        </div>
-        <div class="card">
-          <h3>USDT Market Cap</h3>
-          <div class="kpi" id="kpi-usdt-mcap">-</div>
-          <div class="sub">테더(USDT) 시가총액(USD)</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="right-2">
-      <div class="card">
-        <h3>24H % TOP10 [USDT]</h3>
-        <div class="list" id="list-gainers"></div>
-      </div>
-      <div class="card">
-        <h3>코인 거래량 순위 TOP 10</h3>
-        <div class="list" id="list-volume"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- Controls -->
   <div class="controls">
@@ -397,7 +306,7 @@
       const cls = valueKind==='vol' ? '' : ((c.price_change_percentage_24h||0)>=0?'up':'down');
       return `<div class="hub-row">
         <div class="rk">${i+1}</div>
-        <div class="tk" style="color:#fff">${tk}</div>
+        <div class="tk">${tk}</div>
         <div class="px">${px}</div>
         <div class="pc ${cls}">${pc}</div>
       </div>`;
@@ -515,7 +424,6 @@
     }catch(e){ console.error(e); }
   }
 
-  // back button
   document.getElementById('backBtn')?.addEventListener('click', ()=>history.back());
 
   initHub();
