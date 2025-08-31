@@ -12,42 +12,55 @@
       --muted:#9aa3b6;
       --up:#22c55e; --down:#ef4444;
       --card-border: rgba(255,255,255,.08);
-      --sticky-top: 74px; /* 상단 슬라이더+여백 고려 */
-      --starVis: .75; /* 0~1 */
+      --sticky-top: 74px;            /* 상단 컨트롤/여백 고려한 thead 오프셋 */
+      --starVis: .75;                /* 0~1: 별 밝기/밀도 */
+      --rank-w: 50px;                /* 좌측 고정 열 기준 */
+      --name-w: 280px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:#0b1018;color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"}
+    html,body{
+      margin:0;padding:0;background:#0b1018;color:var(--text);
+      font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"
+    }
     a{color:inherit;text-decoration:none}
     img{max-width:100%;height:auto}
 
-    /* ⭐ starfield */
-    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1200px 700px at 50% -200px,#182036 0%,var(--bg) 55%)}
+    /* ⭐ starfield (문법 오류 콤마 보정) */
+    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:radial-gradient(1200px 700px at 50% -200px,#182036 0%,var(--bg) 55%)}
     .star{position:absolute;inset:0;background-repeat:repeat;background-size:1600px 1600px;filter:blur(.2px)}
-    .star.s1{opacity:calc(.55*var(--starVis));animation:tw1 22s linear infinite;
+    .star.s1{
+      opacity:calc(.55*var(--starVis)); animation:tw1 22s linear infinite;
       background-image:
-        radial-gradient(1px 1px at 20px 30px #fff8 50%,transparent 51%),
-        radial-gradient(1px 1px at 300px 120px #fff8 50%,transparent 51%),
-        radial-gradient(1px 1px at 620px 420px #fff8 50%,transparent 51%)}
-    .star.s2{opacity:calc(.35*var(--starVis));animation:tw2 32s linear infinite;
+        radial-gradient(1px 1px at 20px 30px, #fff8 50%, transparent 51%),
+        radial-gradient(1px 1px at 300px 120px, #fff8 50%, transparent 51%),
+        radial-gradient(1px 1px at 620px 420px, #fff8 50%, transparent 51%);
+    }
+    .star.s2{
+      opacity:calc(.35*var(--starVis)); animation:tw2 32s linear infinite;
       background-image:
-        radial-gradient(1px 1px at 120px 80px #fff6 50%,transparent 51%),
-        radial-gradient(1px 1px at 460px 260px #fff6 50%,transparent 51%),
-        radial-gradient(1px 1px at 860px 640px #fff6 50%,transparent 51%)}
-    .star.s3{opacity:calc(.25*var(--starVis));animation:tw3 44s linear infinite;
+        radial-gradient(1px 1px at 120px 80px, #fff6 50%, transparent 51%),
+        radial-gradient(1px 1px at 460px 260px, #fff6 50%, transparent 51%),
+        radial-gradient(1px 1px at 860px 640px, #fff6 50%, transparent 51%);
+    }
+    .star.s3{
+      opacity:calc(.25*var(--starVis)); animation:tw3 44s linear infinite;
       background-image:
-        radial-gradient(1px 1px at 70px 20px #fff5 50%,transparent 51%),
-        radial-gradient(1px 1px at 260px 220px #fff5 50%,transparent 51%),
-        radial-gradient(1px 1px at 1120px 820px #fff5 50%,transparent 51%)}
+        radial-gradient(1px 1px at 70px 20px, #fff5 50%, transparent 51%),
+        radial-gradient(1px 1px at 260px 220px, #fff5 50%, transparent 51%),
+        radial-gradient(1px 1px at 1120px 820px, #fff5 50%, transparent 51%);
+    }
     @keyframes tw1{from{background-position:0 0}to{background-position:-1600px -1600px}}
     @keyframes tw2{from{background-position:0 0}to{background-position:-1200px -800px}}
     @keyframes tw3{from{background-position:0 0}to{background-position:-900px -600px}}
 
-    /* 상단 컨트롤러(중앙, 아주 작게) */
+    /* ⭐ 상단 중앙 아주 작은 컨트롤러 */
     .star-ctl{
       position:fixed; left:50%; top:10px; transform:translateX(-50%);
       z-index:10; display:flex; align-items:center; gap:6px;
       padding:6px 10px; border-radius:999px;
-      background:rgba(255,255,255,.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.08); backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.2);
       font-size:12px; color:#cfe1ff;
     }
     .star-ctl input[type=range]{width:140px; height:6px; background:transparent}
@@ -58,7 +71,7 @@
     .brand{display:flex;align-items:center;gap:10px;margin:8px 0 12px}
     .brand img{height:38px}
 
-    /* HUB */
+    /* HUB (도넛) */
     .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center}
     @media (max-width:900px){.hub-grid{grid-template-columns:1fr}}
     .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
@@ -81,15 +94,14 @@
     .seg:hover{transform:scale(1.02)}
     .seg.active{transform:scale(1.03)}
 
-    /* 섹터 라벨(2배, 글로우 제거) */
+    /* 섹터 라벨(2배, 빛 효과 제거) */
     .seg-label{
       font-weight:900;
-      font-size:clamp(16px,1.8vw,22px); /* ⬅ 2배 키움 */
+      font-size:clamp(16px,1.8vw,22px);
       letter-spacing:.02em;
-      fill:#e8f6ff; /* 순백 계열 */
+      fill:#e8f6ff;
     }
 
-    /* 패널 */
     .panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10); backdrop-filter:blur(12px)}
     .panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
@@ -109,34 +121,33 @@
     /* Controls + Table */
     .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
     .controls .search{flex:1}
-    input[type=text], select, button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+    input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
     .table-wrap{overflow-x:auto;margin-top:8px}
     table{width:1200px;border-collapse:separate;border-spacing:0 10px}
     thead th{
       position:sticky; top:var(--sticky-top);
       backdrop-filter:blur(6px);
       font-size:12px; color:#b9c3d6; font-weight:700; padding:8px 10px; z-index:5;
+      background: rgba(17,24,39,.96);
     }
-    
-    /* widths */
-    .c-rank { width: 44px; }
-    .c-name { width: 280px; }
+    /* column widths */
+    .c-rank { width: var(--rank-w); }
+    .c-name { width: var(--name-w); }
     .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol { width: 120px; }
     .c-spark { width: 120px; }
 
-    /* sticky (rank / name만) */
-    #mkt thead th, #mkt tbody td { background: rgba(17,24,39,.85); }
-    #mkt tbody td{border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
+    /* tbody cells + sticky rank/name */
+    #mkt tbody td{background:rgba(17,24,39,.85);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
     #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
     #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
-    #mkt .sticky-rank { position: sticky; left: 0; z-index: 2; }
-    #mkt .sticky-name { position: sticky; left: 44px; z-index: 2; }
+    #mkt .sticky-rank { position: sticky; left: 0; z-index: 2; background:rgba(17,24,39,.96) }
+    #mkt .sticky-name { position: sticky; left: var(--rank-w); z-index: 2; background:rgba(17,24,39,.96) }
 
     /* name cell content */
-    .mkt-name { display:flex; align-items:center; gap:10px; }
-    .mkt-name img { width:20px; height:20px; border-radius:50%; }
-    .mkt-name .sym { font-weight:800; margin-right:6px; }
-    .mkt-name .full { opacity:.85; }
+    .mkt-name { display:flex; align-items:center; gap:10px; min-width:0; }
+    .mkt-name img { width:20px; height:20px; border-radius:50%; flex:0 0 auto; }
+    .mkt-name .sym { font-weight:800; margin-right:6px; white-space:nowrap; }
+    .mkt-name .full { opacity:.85; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
     /* numbers */
     .num { text-align:right; font-variant-numeric: tabular-nums; }
@@ -145,21 +156,21 @@
 
     td.spark canvas{display:block;width:120px;height:28px}
 
-    /* 모바일: 티커/가격/24h/스파크만 */
+    /* 모바일: Symbol만, Price / 24h / 7d Spark */
     @media (max-width:800px){
       table{width:1000px}
-      .hide-m{display:none!important}
-      .c-name { width:140px; }
       .wrap{padding-top:84px}
       :root{--sticky-top: 84px;}
-    }
 
-    :root{ --rank-w:50px; --name-w:280px; }          /* ← 너비 변수 */
-    .c-rank{ width:var(--rank-w) } .c-name{ width:var(--name-w) }
-    #mkt .sticky-rank{ position:sticky; left:0; z-index:2 }
-    #mkt .sticky-name{ position:sticky; left:var(--rank-w); z-index:2 }
-    /* 예전 보조칸 스타일이 남아있다면 끄기 */
-    .row-index,.coin-cell{ display:none!important }
+      /* 숨길 열: 1h(4), Market Cap(7), 24h Volume(8) */
+      #mkt thead th:nth-child(4), #mkt tbody td:nth-child(4),
+      #mkt thead th:nth-child(7), #mkt tbody td:nth-child(7),
+      #mkt thead th:nth-child(8), #mkt tbody td:nth-child(8){ display:none!important }
+
+      /* 이름은 숨기고 심볼만 */
+      .mkt-name .full{ display:none }
+      .c-name { width: 140px; }
+    }
 
     /* 방문/밑줄 등 모두 제거 (링크 사용 안 함) */
     .no-link, .no-link:visited, .no-link:hover, .no-link:active{color:inherit;text-decoration:none}
@@ -204,7 +215,7 @@
 
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
-                <colgroup>
+        <colgroup>
           <col class="c-rank">
           <col class="c-name">
           <col class="c-price">
@@ -220,11 +231,11 @@
             <th data-key="rank"   class="sticky-rank th th-sort">#</th>
             <th data-key="name"   class="sticky-name th th-sort">Name</th>
             <th data-key="price"  class="text-right th th-sort">Price</th>
-            <th data-key="change1h"  class="text-right th th-sort hide-m">1h</th>
+            <th data-key="change1h"  class="text-right th th-sort">1h</th>
             <th data-key="change24h" class="text-right th th-sort">24h</th>
-            <th data-key="change7d"  class="text-right th th-sort hide-m">7d</th>
-            <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
-            <th data-key="volume"     class="text-right th th-sort hide-m">24h Volume</th>
+            <th data-key="change7d"  class="text-right th th-sort">7d</th>
+            <th data-key="market_cap" class="text-right th th-sort">Market Cap</th>
+            <th data-key="volume"     class="text-right th th-sort">24h Volume</th>
             <th class="text-right">7d Spark</th>
           </tr>
         </thead>
