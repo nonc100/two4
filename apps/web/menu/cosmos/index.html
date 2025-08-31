@@ -100,16 +100,22 @@
     .badge.neutral{background:rgba(250,204,21,.12); color:#fde68a; border-color:rgba(250,204,21,.32)}
     .badge.safe{background:rgba(34,197,94,.12); color:#bbf7d0; border-color:rgba(34,197,94,.32)}
 
-    /* lists */
+    /* 리스트 공통 그리드 & 컬러 차별화 */
     .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-    .list .row{display:grid; grid-template-columns:2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px;}
-    .list .rank{text-align:right; opacity:.7; font-weight:700;}
-    .list .sym{font-weight:800; letter-spacing:.02em;}
-    .list .price{justify-self:end; opacity:.9; font-variant-numeric:tabular-nums;}
-    .list .pct{justify-self:end; font-weight:800; font-variant-numeric:tabular-nums;}
+    .list .row{
+      display:grid;
+      grid-template-columns: 2.2em 1fr auto auto; /* 숫자 | 티커 | 가격 | % */
+      align-items:center; gap:6px; font-size:13.5px;
+    }
+    .list .rank{text-align:right; font-weight:800; color:#93c5fd;}
+    .list .sym{font-weight:900; letter-spacing:.02em; color:#c4b5fd;}
+    .list .price{justify-self:end; font-variant-numeric:tabular-nums; color:#e5e7eb; opacity:.95;}
+    .list .pct{justify-self:end; font-weight:900; font-variant-numeric:tabular-nums;}
+    .list .pct.up{color:var(--up);}
+    .list .pct.down{color:var(--down);}
 
     /* controls & table */
-    .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px;}
+    .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px; position:relative;}
     .controls .search{flex:1}
     input[type="text"], select, button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
     button.sortdir{min-width:40px}
@@ -123,8 +129,11 @@
     .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px}
     .coin-img{width:22px; height:22px; min-width:22px; border-radius:50%; object-fit:contain}
     .coin-name{font-weight:800}
-    .coin-sym{opacity:.85; margin-left:4px}
     .text-right{text-align:right}
+
+    /* KPI 미니 스파크라인 */
+    .mini{ height:46px; margin-top:8px; opacity:.95 }
+    .mini svg{ width:100%; height:100%; display:block }
 
     /* responsive grid for mobile */
     @media (max-width:1199px){
@@ -144,6 +153,24 @@
     }
 
     footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
+
+    /* === Controls Star Pulse (우측 상단 별 반짝) === */
+    .controls::after{
+      content:"";
+      position:absolute; top:-8px; right:-8px;
+      width:28px; height:28px;
+      background: radial-gradient(circle at 50% 50%, rgba(167,139,250,.95) 0%, rgba(99,102,241,.75) 60%, rgba(255,255,255,0) 70%);
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      filter: drop-shadow(0 0 10px rgba(167,139,250,.7)) drop-shadow(0 0 20px rgba(99,102,241,.5));
+      opacity:0; transform:scale(.6) rotate(8deg);
+      animation: starPulse 3.6s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes starPulse{
+      0%,20%   { opacity:0; transform:scale(.5) rotate(8deg); }
+      35%,55%  { opacity:1; transform:scale(1) rotate(0deg); }
+      75%,100% { opacity:0; transform:scale(.5) rotate(-8deg); }
+    }
   </style>
 </head>
 <body>
@@ -194,11 +221,13 @@
         <div class="card">
           <h3>BTC Market Cap</h3>
           <div class="kpi" id="kpi-btc-mcap">-</div>
+          <div class="mini" id="kpi-btc-spark"></div>
           <div class="sub">시총(USD)</div>
         </div>
         <div class="card">
           <h3>USDT Market Cap</h3>
           <div class="kpi" id="kpi-usdt-mcap">-</div>
+          <div class="mini" id="kpi-usdt-spark"></div>
           <div class="sub">테더(USDT) 시가총액(USD)</div>
         </div>
       </div>
