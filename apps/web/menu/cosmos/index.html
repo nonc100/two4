@@ -1,33 +1,32 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TWO4 COSMOS</title>
   <style>
     :root{
       --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
       --up:#22c55e; --down:#ef4444;
-      --glass-alpha:.30; --glass-blur:22px;
-      --gb1: rgba(255,255,255,.32); --gb2: rgba(255,255,255,.14); --gb3: rgba(255,255,255,.06);
       --card-border: rgba(255,255,255,.08);
 
-      --w-rank: 2.2ch; --w-coin: 9.5ch; --w-price: 8.8ch; --w-pct: 6.6ch; --w-spark: 100px;
-      --toolbar-h: 58px;
+      /* 테이블 헤더 sticky 기준(상단 컨트롤 높이 + 여백) */
+      --toolbar-h: 30px;
 
-      /* ⭐ 별 밝기/밀도 (0~1) */
-      --starVis: .65;
+      /* ⭐ 별 밝기/밀도 (0~1) - 슬라이더가 바꿔줌 */
+      --starVis: .35;
     }
+
     *{box-sizing:border-box}
     html,body{
       margin:0;padding:0;
       background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%);
       color:var(--text);
       font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial,"Segoe UI Emoji";
-      overflow-x:hidden
+      overflow-x:hidden;
     }
 
-    /* star bg */
+    /* ===== 별 배경 (CSS 패럴럭스 3층) ===== */
     .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
     .stars,.stars2,.stars3{
       position:absolute; inset:0; background-repeat:repeat; background-size:1600px 1600px;
@@ -50,45 +49,57 @@
         radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%)}
     @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
 
-    a{color:inherit;text-decoration:none}
     .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 16px 80px;}
-
-    /* Brand */
-    .brand{display:flex; align-items:center; gap:14px; margin:10px 0 8px;}
+    .brand{display:flex; align-items:center; gap:14px; margin:8px 0 6px;}
     .brand img{width:168px; height:auto; object-fit:contain;}
     .brand h1{margin:0; font-size:clamp(22px, 7vw, 40px); letter-spacing:.12em; font-weight:800; color:#dfe8ff; text-shadow:0 4px 24px rgba(114,157,255,.22);}
-    .after-title{height:16px;}
-    @media (max-width:767px){.brand{gap:10px;margin:8px 0 6px}.brand img{width:128px}.brand h1{letter-spacing:.08em}}
+    @media (max-width:767px){.brand img{width:128px}.brand h1{letter-spacing:.08em}}
 
-    /* ⭐ 상단 중앙 컨트롤러 */
+    /* ===== 초소형 별 컨트롤러 (아이콘 삭제, 미니) ===== */
     .star-ctl{
-      position:fixed; top:6px; left:50%; transform:translateX(-50%);
-      z-index:10; height:28px; display:flex; align-items:center; gap:8px;
-      padding:4px 10px; border-radius:999px;
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.06));
-      border:1px solid rgba(255,255,255,.22); color:#dbeafe; font-weight:800; font-size:12px;
+      position:fixed; top:8px; left:50%; transform:translateX(-50%);
+      z-index:20; height:24px; display:flex; align-items:center;
+      padding:2px 6px; border-radius:999px;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.18);
     }
-    .star-ctl input[type="range"]{width:110px; height:6px; background:transparent}
-    .star-ctl input[type="range"]::-webkit-slider-thumb{appearance:none; width:14px; height:14px; border-radius:50%; background:#a78bfa; border:1px solid #fff9}
-    .star-ctl input[type="range"]::-webkit-slider-runnable-track{height:6px; border-radius:999px; background:linear-gradient(90deg,#a78bfa,#22d3ee)}
+    .star-ctl input[type="range"]{
+      -webkit-appearance:none; appearance:none;
+      width:140px; height:4px; background:transparent; outline:none;
+    }
+    .star-ctl input[type="range"]::-webkit-slider-runnable-track{
+      height:4px; border-radius:999px; background:linear-gradient(90deg,#7dd3fc,#c084fc)
+    }
+    .star-ctl input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; width:10px;height:10px;border-radius:50%;background:#fff;
+      box-shadow:0 0 10px rgba(160,220,255,.8)
+    }
+    .star-ctl input[type="range"]::-moz-range-track{height:4px;border-radius:999px;background:linear-gradient(90deg,#7dd3fc,#c084fc)}
+    .star-ctl input[type="range"]::-moz-range-thumb{width:10px;height:10px;border:none;border-radius:50%;background:#fff;box-shadow:0 0 10px rgba(160,220,255,.8)}
 
-    /* lists (우측 카드용) */
-    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
-    .list .row{display:grid; grid-template-columns:2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px;}
+    /* ===== 리스트/테이블 ===== */
+    .list{display:flex; flex-direction:column; gap:6px; margin-top:6px}
+    .list .row{display:grid; grid-template-columns:2.2em 1fr auto auto; align-items:center; gap:6px; font-size:13.5px}
     .list .rank{text-align:right; opacity:.7; font-weight:700}
     .list .sym{font-weight:800; letter-spacing:.02em; color:#fff}
     .list .price{justify-self:end; opacity:.9; font-variant-numeric:tabular-nums}
     .list .pct{justify-self:end; font-weight:800; font-variant-numeric:tabular-nums}
 
-    /* table */
     .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px;}
     .controls .search{flex:1}
     input[type="text"], select, button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
     button.sortdir{min-width:40px}
     .table-wrap{overflow-x:auto}
+
     table{width:1200px; border-collapse:separate; border-spacing:0 10px;}
-    thead th{position:sticky; top: calc(var(--toolbar-h) + 10px); background:rgba(17,24,39,.85); font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:0 10px; backdrop-filter:blur(6px)}
+    thead th{
+      position:sticky;
+      top: calc(env(safe-area-inset-top,0px) + var(--toolbar-h));  /* 🔧 상단 컨트롤 피해서 고정 */
+      z-index:15;
+      background:rgba(17,24,39,.88); font-size:12px; color:var(--muted); font-weight:700;
+      text-align:left; padding:0 10px; backdrop-filter:blur(6px)
+    }
     tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
     tbody tr td:first-child{border-radius:12px 0 0 12px}
     tbody tr td:last-child{border-radius:0 12px 12px 0}
@@ -102,25 +113,20 @@
     @media (max-width:1199px){table{width:1100px}}
     @media (max-width:767px){
       .cosmos-table{table-layout:fixed !important; width:1100px}
-      .cosmos-table col.col-rank{width:var(--w-rank)!important}
-      .cosmos-table col.col-coin{width:var(--w-coin)!important}
-      .cosmos-table col.col-price{width:var(--w-price)!important}
-      .cosmos-table col.col-ch24{width:var(--w-pct)!important}
-      .cosmos-table col.col-spark{width:var(--w-spark)!important}
-      /* hide columns on mobile */
+      .row-index{width:2.2ch; padding:6px 3px; text-align:center}
+      .coin-cell{left:2.2ch; min-width:9.5ch; gap:6px}
+      .coin-img{width:16px;height:16px;min-width:16px}
+      .coin-sym{display:none}
+      /* 컬럼 축소/숨김 */
       .cosmos-table th:nth-child(4),.cosmos-table td:nth-child(4),
       .cosmos-table th:nth-child(6),.cosmos-table td:nth-child(6),
       .cosmos-table th:nth-child(7),.cosmos-table td:nth-child(7),
       .cosmos-table th:nth-child(8),.cosmos-table td:nth-child(8){display:none!important}
-      .row-index{width:var(--w-rank); padding:6px 3px; text-align:center}
-      .coin-cell{left:var(--w-rank); min-width:var(--w-coin); gap:6px}
-      .coin-img{width:16px;height:16px;min-width:16px}
-      .coin-sym{display:none}
     }
 
     footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
 
-    /* 3D HUB */
+    /* ===== 3D HUB ===== */
     .hub-wrap{display:grid;grid-template-columns:minmax(320px,520px) 1fr;gap:16px;align-items:center;margin:10px 0 18px}
     .hub3d{
       position:relative;width:100%;max-width:520px;border-radius:50%;aspect-ratio:1/1;
@@ -146,7 +152,7 @@
       border:1px solid rgba(255,255,255,.14);
       box-shadow: inset 0 6px 26px rgba(255,255,255,.10), 0 0 50px rgba(124,58,237,.22), 0 0 80px rgba(56,189,248,.18)
     }
-    .hub-center .val{font-size:clamp(22px,3.4vw,30px);font-weight:900;letter-spacing:.02em;margin:0;line-height:1.1}
+    .hub-center .val{font-size:clamp(22px,3.6vw,32px);font-weight:900;letter-spacing:.02em;margin:0;line-height:1.1}
     .hub-center .lbl{font-size:12px;color:#9aa3b6;letter-spacing:.06em;margin:4px 0 0;line-height:1.1}
 
     .hub-seg{
@@ -158,10 +164,10 @@
     .hub-seg:hover{transform:scale(1.025); filter:drop-shadow(0 0 12px rgba(124,58,237,.65)) drop-shadow(0 0 26px rgba(56,189,248,.45)); stroke: rgba(255,255,255,.25)}
     .hub-seg.active{transform:scale(1.03); filter:drop-shadow(0 0 16px rgba(124,58,237,.85)) drop-shadow(0 0 36px rgba(56,189,248,.60)); stroke: rgba(255,255,255,.35)}
 
-    /* 섹터 레이블(크게 + 그라데이션 + 글로우) */
+    /* ⬆ 텍스트 더 큼 + 그라데이션 + 글로우 */
     .hub-badge{
       font-weight:900;
-      font-size:clamp(14px,1.6vw,18px); /* ⬅️ 크게 */
+      font-size:clamp(16px,2.2vw,22px);
       letter-spacing:.02em;
       fill:url(#mintWhiteGrad);
       filter:url(#textGlow);
@@ -183,7 +189,7 @@
 
     @media (max-width:767px){.hub-wrap{grid-template-columns:1fr}.hub3d{max-width:360px;margin:0 auto}}
 
-    /* 기존 카드 영역 숨김 */
+    /* 기존 카드 섹션 감춤(허브 UI만 사용) */
     .cards{display:none!important}
   </style>
 </head>
@@ -191,10 +197,9 @@
   <!-- ⭐ 별 배경 -->
   <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
 
-  <!-- ⭐ 상단 중앙 컨트롤러 -->
+  <!-- ⭐ 초소형 상단 컨트롤러 (아이콘 제거) -->
   <div class="star-ctl" aria-label="Star background controller">
-    <span>⭐</span>
-    <input id="starRange" type="range" min="0" max="100" value="65" />
+    <input id="starRange" type="range" min="0" max="100" />
   </div>
 
   <div class="wrap">
@@ -203,22 +208,19 @@
       <h1>COSMOS</h1>
     </div>
 
-    <!-- 3D Hub -->
+    <!-- ===== 3D Hub ===== -->
     <section class="hub-wrap">
       <div class="hub3d">
         <svg id="hubSvg" viewBox="0 0 1000 1000" role="img" aria-label="Cosmos overview hub">
-          <!-- 공용 텍스트 그라데이션/글로우 정의 -->
+          <!-- 텍스트 그라데이션/글로우 정의 -->
           <defs>
             <linearGradient id="mintWhiteGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#dffff9"/>
               <stop offset="100%" stop-color="#7efcf3"/>
             </linearGradient>
             <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
-              <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
+              <feGaussianBlur stdDeviation="2.2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
         </svg>
@@ -233,7 +235,7 @@
       </aside>
     </section>
 
-    <!-- Controls -->
+    <!-- ===== Controls ===== -->
     <div class="controls">
       <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
       <label>정렬:
@@ -253,7 +255,7 @@
       </label>
     </div>
 
-    <!-- Table -->
+    <!-- ===== Table ===== -->
     <div class="table-wrap">
       <table class="cosmos-table">
         <colgroup>
@@ -286,7 +288,7 @@
   <!-- 공용 스크립트 -->
   <script src="./cosmos.js"></script>
 
-  <!-- ✅ cosmos.js 핫픽스: 일부 API 실패해도 표 그리기 + market_chart 무력화 -->
+  <!-- ✅ cosmos.js 핫픽스(동일): 일부 API 실패해도 표/허브는 그릴 수 있게 -->
   <script>
   (function(){
     function patch(){
@@ -319,20 +321,28 @@
   })();
   </script>
 
-  <!-- ⭐ 컨트롤러 동작 -->
+  <!-- ⭐ 컨트롤러 동작(값 저장/복원 포함) -->
   <script>
     (function(){
       const range = document.getElementById('starRange');
+      const KEY = 'two4_star';
+      const saved = Math.max(0, Math.min(100, Number(localStorage.getItem(KEY) ?? 35)));
+      range.value = String(saved);
+      apply(saved);
+
+      range.addEventListener('input', e=>{
+        const v = Math.max(0, Math.min(100, Number(e.target.value||0)));
+        apply(v);
+        localStorage.setItem(KEY, String(v));
+      });
+
       function apply(v){
-        const n = Math.max(0, Math.min(1, v/100));
-        document.documentElement.style.setProperty('--starVis', String(n));
+        document.documentElement.style.setProperty('--starVis', String(v/100));
       }
-      range.addEventListener('input', e=>apply(e.target.value));
-      apply(range.value);
     })();
   </script>
 
-  <!-- 3D HUB 스크립트 -->
+  <!-- ===== 3D HUB 스크립트(라벨 정리/텍스트 확대 반영) ===== -->
   <script>
   (function(){
     const TAU = Math.PI*2;
@@ -352,28 +362,15 @@
     function fmtPct(n){if(n==null||isNaN(n))return'-';const s=n>=0?'+':'';return s+n.toFixed(2)+'%'}
     function fmtNum(n){if(n==null||isNaN(n))return'-';const a=Math.abs(n);if(a>=1e12)return'$'+(n/1e12).toFixed(2)+'T';if(a>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(a>=1e6)return'$'+(n/1e6).toFixed(2)+'M';return '$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:2})}
     function setCenter(lbl,val){centerLbl.textContent=lbl;centerVal.textContent=val}
-    function listHTML(items,kind){
-      return `<div class="hub-list">`+items.map((c,i)=>{
-        const tk=(c.symbol||'').toUpperCase(), px=fmtNum(c.current_price);
-        const pc=kind==='vol'?fmtNum(c.total_volume):fmtPct(c.price_change_percentage_24h);
-        const cls=kind==='vol'?'':((c.price_change_percentage_24h||0)>=0?'up':'down');
-        return `<div class="hub-row"><div class="rk">${i+1}</div><div class="tk">${tk}</div><div class="px">${px}</div><div class="pc ${cls}">${pc}</div></div>`;
-      }).join('')+`</div>`;
-    }
-    function openPanel(s){panel.classList.remove('hidden');panelTitle.textContent=s.label;panelContent.innerHTML=s.html}
+    function openPanel(s){panel.classList.remove('hidden');panelTitle.textContent=s.title;panelContent.innerHTML=s.html}
 
-    function ensureDefs(){
-      let defs = svg.querySelector('defs');
-      if(!defs){ defs = document.createElementNS(svg.namespaceURI,'defs'); svg.appendChild(defs); }
-      return defs;
-    }
+    function ensureDefs(){let defs = svg.querySelector('defs'); if(!defs){ defs = document.createElementNS(svg.namespaceURI,'defs'); svg.appendChild(defs); } return defs;}
 
     function buildHub(sections){
       svg.innerHTML = svg.innerHTML; // defs 유지
       const cx=500,cy=500,rO=470,rI=260,seg=TAU/sections.length, start=-Math.PI/2;
-      const defs = ensureDefs(); // (텍스트 그라디언트/글로우는 HTML 내에서 이미 존재)
+      const defs = ensureDefs();
       sections.forEach((s,i)=>{
-        // 각 섹터용 배경 그라디언트
         const gid=`g${i}`;
         const grad=document.createElementNS(svg.namespaceURI,'linearGradient');
         grad.id=gid; grad.setAttribute('x1','0');grad.setAttribute('y1','0');grad.setAttribute('x2','1');grad.setAttribute('y2','1');
@@ -389,7 +386,7 @@
         path.classList.add('hub-seg');
         svg.appendChild(path);
 
-        // 레이블(큰 텍스트)
+        /* ⬆ 큰 레이블 */
         const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-30)*Math.cos(mid), ty=cy+(rx-30)*Math.sin(mid)+6;
         const text=document.createElementNS(svg.namespaceURI,'text');
         text.setAttribute('x',tx); text.setAttribute('y',ty);
@@ -400,9 +397,9 @@
 
         function act(){
           svg.querySelectorAll('.hub-seg').forEach(el=>el.classList.remove('active'));
-          path.classList.add('active'); setCenter(s.label,s.center); openPanel(s);
+          path.classList.add('active'); setCenter(s.centerLbl,s.centerVal); openPanel(s);
         }
-        path.addEventListener('mouseenter',()=>setCenter(s.label,s.center));
+        path.addEventListener('mouseenter',()=>setCenter(s.centerLbl,s.centerVal));
         path.addEventListener('click',act);
         text.addEventListener('click',act);
       });
@@ -436,19 +433,73 @@
       try{
         const d=await gather(); const fngLbl=d.fng?`${d.fng.value} / ${d.fng.value_classification||'—'}`:'—';
         const secs=[
-          {label:'롱/숏 (1H)',badge:`${d.ls.h1.longPct.toFixed(0)}%`,center:`${d.ls.h1.longPct.toFixed(1)} / ${d.ls.h1.shortPct.toFixed(1)}%`,
-           html:`<div>BTCUSDT 롱/숏 (1H)</div><div style="margin-top:8px;height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden"><div style="width:${d.ls.h1.longPct.toFixed(1)}%;height:100%;background:#22c55e"></div></div><div style="margin-top:6px;display:flex;justify-content:space-between"><div>Long ${d.ls.h1.longPct.toFixed(1)}%</div><div>Short ${d.ls.h1.shortPct.toFixed(1)}% · ratio ${d.ls.h1.ratio.toFixed(2)}</div></div>`},
-          {label:'BTC 도미넌스',badge:`${(d.dominance||0).toFixed(0)}%`,center:`${(d.dominance||0).toFixed(2)}%`,html:`<div>BTC Dominance</div><div style="margin-top:6px">현재 ${(d.dominance||0).toFixed(2)}%</div>`},
-          {label:'공포/탐욕',badge:d.fng?`${d.fng.value}`:'—',center:fngLbl,html:`<div>Alternative.me FNG</div><div style="margin-top:6px">${fngLbl}</div>`},
-          {label:'BTC 시총',badge:d.btc?fmtNum(d.btc.market_cap):'—',center:d.btc?fmtNum(d.btc.market_cap):'—',html:`<div>BTC Market Cap</div><div style="margin-top:6px">${d.btc?fmtNum(d.btc.market_cap):'—'}</div>`},
-          {label:'USDT 시총',badge:d.usdt?fmtNum(d.usdt.market_cap):'—',center:d.usdt?fmtNum(d.usdt.market_cap):'—',html:`<div>USDT Market Cap</div><div style="margin-top:6px">${d.usdt?fmtNum(d.usdt.market_cap):'—'}</div>`},
-          {label:'24H % TOP10 [USDT]',badge:'TOP10',center:'+24H Gainers',html:`<div>24H % TOP10 [USDT]</div>${listHTML(d.gainers,'pct')}`},
-          {label:'거래량 TOP10',badge:'VOL',center:'Volume Top10',html:`<div>거래량 TOP10</div>${listHTML(d.byVol,'vol')}`}
+          {
+            badge:`${d.ls.h1.longPct.toFixed(0)}%`,
+            centerLbl:'롱/숏 (1H)',
+            centerVal:`${d.ls.h1.longPct.toFixed(1)} / ${d.ls.h1.shortPct.toFixed(1)}%`,
+            title:'Long / Short (1H)',
+            html:`<div>BTCUSDT 포지션 비율</div>
+                  <div style="margin-top:8px;height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden">
+                    <div style="width:${d.ls.h1.longPct.toFixed(1)}%;height:100%;background:#22c55e"></div>
+                  </div>
+                  <div style="margin-top:6px;display:flex;justify-content:space-between">
+                    <div>Long ${d.ls.h1.longPct.toFixed(1)}%</div>
+                    <div>Short ${d.ls.h1.shortPct.toFixed(1)}% · ratio ${d.ls.h1.ratio.toFixed(2)}</div>
+                  </div>`
+          },
+          {
+            badge:`${(d.dominance||0).toFixed(0)}%`,
+            centerLbl:'BTC 도미넌스',
+            centerVal:`${(d.dominance||0).toFixed(2)}%`,
+            title:'BTC Dominance',
+            html:`<div>현재 ${(d.dominance||0).toFixed(2)}%</div>`
+          },
+          {
+            badge:d.fng?`${d.fng.value}`:'—',
+            centerLbl:'공포/탐욕',
+            centerVal:fngLbl,
+            title:'Fear & Greed Index',
+            html:`<div>${fngLbl}</div>`
+          },
+          {
+            badge:d.btc?fmtNum(d.btc.market_cap):'—',
+            centerLbl:'BTC 시총',
+            centerVal:d.btc?fmtNum(d.btc.market_cap):'—',
+            title:'BTC Market Cap',
+            html:`<div>${d.btc?fmtNum(d.btc.market_cap):'—'}</div>`
+          },
+          {
+            badge:d.usdt?fmtNum(d.usdt.market_cap):'—',
+            centerLbl:'USDT 시총',
+            centerVal:d.usdt?fmtNum(d.usdt.market_cap):'—',
+            title:'USDT Market Cap',
+            html:`<div>${d.usdt?fmtNum(d.usdt.market_cap):'—'}</div>`
+          },
+          {
+            badge:'TOP10',
+            centerLbl:'24H Gainers',
+            centerVal:'(USDT)',
+            title:'24H Gainers (USDT)',
+            html: listHTML(d.gainers,'pct')
+          },
+          {
+            badge:'VOL',
+            centerLbl:'Volume Top 10',
+            centerVal:'',
+            title:'Volume Top 10',
+            html: listHTML(d.byVol,'vol')
+          }
         ];
         buildHub(secs); setCenter('COSMOS','—');
-      }catch(e){console.error(e); buildHub([{label:'COSMOS',badge:'—',center:'—',html:'<div>데이터를 불러오지 못했습니다.</div>'}]); setCenter('COSMOS','—')}
+      }catch(e){
+        console.error(e);
+        buildHub([{badge:'—',centerLbl:'COSMOS',centerVal:'—',title:'COSMOS',html:'<div>데이터를 불러오지 못했습니다.</div>'}]);
+        setCenter('COSMOS','—');
+      }
     }
-    initHub(); setInterval(initHub,60*1000);
+
+    initHub();
+    setInterval(initHub,60*1000);
   })();
   </script>
 </body>
