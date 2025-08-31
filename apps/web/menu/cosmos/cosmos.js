@@ -1,6 +1,6 @@
-/* ===== COSMOS JS – full build (2025-08-31) ===== */
+/* ===== COSMOS JS – full build (2025-08-31, mobile+sticky+sortable headers) ===== */
 
-/* --- Locale clamps to avoid maximumFractionDigits errors --- */
+/* --- Locale clamps --- */
 (() => {
   const origToLS = Number.prototype.toLocaleString;
   Number.prototype.toLocaleString = function (locale, opts) {
@@ -12,7 +12,7 @@
       if (max !== undefined) max = Math.min(20, Math.max(0, max));
       if (min !== undefined && max !== undefined && max < min) max = min;
       opts = { ...opts, ...(min !== undefined ? { minimumFractionDigits: min } : {}),
-                        ...(max !== undefined ? { maximumFractionDigits: max } : {}), };
+                        ...(max !== undefined ? { maximumFractionDigits: max } : {}) };
     }
     return origToLS.call(this, locale || "en-US", opts);
   };
@@ -26,7 +26,7 @@
       if (max !== undefined) max = Math.min(20, Math.max(0, max));
       if (min !== undefined && max !== undefined && max < min) max = min;
       opts = { ...opts, ...(min !== undefined ? { minimumFractionDigits: min } : {}),
-                        ...(max !== undefined ? { maximumFractionDigits: max } : {}), };
+                        ...(max !== undefined ? { maximumFractionDigits: max } : {}) };
     }
     return new OrigNF(locale || "en-US", opts);
   };
@@ -55,8 +55,7 @@ function fmtPctHTML(v){
 }
 function fmtNumSuffix(v){
   if(v==null||Number.isNaN(v)) return "-";
-  const n = Number(v);
-  const abs=Math.abs(n);
+  const n = Number(v), abs=Math.abs(n);
   if(abs>=1e12) return "$"+(n/1e12).toFixed(2)+"T";
   if(abs>=1e9)  return "$"+(n/1e9).toFixed(2)+"B";
   if(abs>=1e6)  return "$"+(n/1e6).toFixed(2)+"M";
@@ -67,7 +66,7 @@ function $(s,sc=document){return sc.querySelector(s)}
 function $$(s,sc=document){return Array.from(sc.querySelectorAll(s))}
 const setHTML = (sel,html) => { const el = typeof sel==="string"?$(sel):sel; if(el) el.innerHTML = html; };
 
-/* --- Fetchers (direct → proxy fallback) --- */
+/* --- Fetchers --- */
 async function fetchMarkets({vs="usd",perPage=200,page=1}={}){
   const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
   const direct=`https://api.coingecko.com/api/v3/coins/markets?${q}`;
@@ -95,7 +94,6 @@ async function fetchBinanceLS(period='1h'){
   try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
   catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("ls failed"); return await r2.json(); }
 }
-/* market chart for mini caps */
 async function fetchMarketChart(id, days=7){
   const q=`vs_currency=usd&days=${days}`;
   const direct=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`;
@@ -117,11 +115,9 @@ const state = {
 
 /* --- Rendering: table --- */
 function buildRowHTML(c){
-  const id = c.id;
   const price = fmtPrice(c.current_price);
   const s7 = (c.sparkline_in_7d && c.sparkline_in_7d.price) || null;
   const sym = (c.symbol||"").toUpperCase();
-  const href = `./chart.html?id=${encodeURIComponent(id)}`;
   return `<tr class="row">
     <td class="row-index">${c.market_cap_rank ?? "-"}</td>
     <td class="coin-cell">
@@ -178,12 +174,21 @@ function applySortFilter(){
       case "change24h": return c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? -1;
       case "change7d": return c.price_change_percentage_7d_in_currency ?? -1;
       case "rank": return c.market_cap_rank ?? 1e9;
+      case "symbol": return (c.symbol||"").localeCompare?.(c.symbol||"") || 0; // no-op fallback
       default: return 0;
     }
   };
   state.filtered.sort((a,b)=>{
     const va = get(a), vb = get(b);
     return (va>vb?1:va<vb?-1:0)*dir;
+  });
+
+  // header sort indicator
+  $$(".cosmos-table thead th.sortable").forEach(th=>{
+    const key=th.dataset.key;
+    th.classList.toggle("sorted", key===state.sortKey);
+    th.classList.toggle("asc", key===state.sortKey && state.sortDir===1);
+    th.classList.toggle("desc", key===state.sortKey && state.sortDir===-1);
   });
 
   const sel = $("#page");
@@ -227,7 +232,7 @@ function renderRightLists(markets){
     </div>`;
   }).join(""));
 
-  // 거래량 순위 (정렬 기준: volume) — 동일한 열 구조 적용
+  // 거래량 순위 (정렬 기준: volume)
   const vol = markets.slice().sort((a,b)=> (b.total_volume||0)-(a.total_volume||0)).slice(0,10);
   setHTML("#list-volume", vol.map((c,i)=>{
     const sym=(c.symbol||"").toUpperCase();
@@ -255,9 +260,8 @@ function renderFNGCard(data){
     setHTML("#fng-date", `Alternative.me · ${dt.getFullYear()}. ${String(dt.getMonth()+1).padStart(2,'0')}. ${String(dt.getDate()).padStart(2,'0')}`);
     const badge = $("#fng-badge"); badge.className = `badge ${cls}`; badge.textContent = label;
 
-    // Gauge SVG
     const pct = clamp((value/100),0,1);
-    const start=-Math.PI, end=0; // half circle
+    const start=-Math.PI, end=0;
     const ang = start + (end-start)*pct;
     const r=56, cx=80, cy=86;
     const arc=(a)=>`${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`;
@@ -315,9 +319,28 @@ function renderLongShort(period, arr){
 }
 
 /* --- Init --- */
+function wireHeaderSort(){
+  const mapKey = (k)=>{
+    // 헤더 data-key → 내부 sortKey
+    if(k==="symbol") return "symbol";
+    return k;
+  };
+  $$(".cosmos-table thead th.sortable").forEach(th=>{
+    th.addEventListener("click", ()=>{
+      const key = mapKey(th.dataset.key);
+      if(state.sortKey === key){
+        state.sortDir = state.sortDir===-1 ? 1 : -1;
+      }else{
+        state.sortKey = key;
+        state.sortDir = -1; // 기본 내림차순
+      }
+      applySortFilter();
+    });
+  });
+}
+
 async function initOnce(){
   $("#backBtn").addEventListener("click", ()=>history.back());
-
   $$('.ls-ctl button').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const p=e.currentTarget.dataset.period;
@@ -334,6 +357,8 @@ async function initOnce(){
     applySortFilter();
   });
   $("#page").addEventListener("change", (e)=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
+
+  wireHeaderSort();
 }
 
 async function initData(){
@@ -358,8 +383,13 @@ async function initData(){
 document.addEventListener("DOMContentLoaded", ()=>{
   initOnce();
   initData();
-  // auto refresh every 30s for markets/global
+  // 모바일 배려: 탭 비활성화 시 업데이트 일시정지
+  let vis = document.visibilityState === "visible";
+  document.addEventListener("visibilitychange", ()=>{ vis = document.visibilityState === "visible"; });
+
+  // auto refresh (모바일: 60s)
   setInterval(async ()=>{
+    if(!vis) return;
     try{
       const [markets, global] = await Promise.all([fetchMarkets(), fetchGlobal()]);
       state.all = markets;
@@ -367,10 +397,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
       renderRightLists(markets);
       applySortFilter();
     }catch{}
-  }, 30000);
+  }, 60000);
+
   // refresh FNG hourly
-  setInterval(async ()=>{ try{ renderFNGCard(await fetchFNG()); }catch{} }, 60*60*1000);
+  setInterval(async ()=>{ if(!vis) return; try{ renderFNGCard(await fetchFNG()); }catch{} }, 60*60*1000);
 });
 
-// expose for console debug
+// expose
 window._cosmos = { state, initData };
