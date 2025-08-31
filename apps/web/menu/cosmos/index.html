@@ -175,14 +175,14 @@
       .cosmos-table col:first-child{ width:var(--left-rank) !important; }
     }
 
-    /* 모바일 열 폭 고정(순위 < 코인 < 시세 < 24H < 스파크) */
-    @media (max-width:767px){
+    /* ===== 모바일(≤767px): 열 폭/숨김을 클래스 기준으로 고정 ===== */
+    @media (max-width: 767px){
       :root{
-        --w-rank:2.2ch;   /* 순위 */
-        --w-coin:9.5ch;   /* 코인(아이콘+티커) */
-        --w-price:8.8ch;  /* 시세 */
-        --w-pct:6.6ch;    /* 24H % */
-        --w-spark:100px;  /* 7D 스파크 */
+          --w-rank: 2.2ch;   /* 순위: 숫자 2~3자리 */
+        --w-coin: 9.5ch;   /* 코인(아이콘+티커) */
+        --w-price: 8.8ch;  /* 시세 */
+        --w-pct: 6.6ch;    /* 24H % */
+        --w-spark: 100px;  /* 7D 스파크 */ 
       }
       .card{padding:12px}
       .kpi{font-size:clamp(18px,6vw,22px)}
@@ -191,30 +191,37 @@
       .left-5 .row-2{grid-template-columns:1fr 1fr}
       .right-2{grid-template-columns:1fr}
 
-      table.cosmos-table{ table-layout:fixed !important; } /* 균등분배 방지 */
+    /* 폭: 순위 < 코인 < 시세 < 24H < 스파크 */
+      .cosmos-table{ table-layout: fixed !important; }
+      .cosmos-table col.col-rank  { width: var(--w-rank)  !important; }
+      .cosmos-table col.col-coin  { width: var(--w-coin)  !important; }
+      .cosmos-table col.col-price { width: var(--w-price) !important; }
+      .cosmos-table col.col-ch24  { width: var(--w-pct)   !important; }
+      .cosmos-table col.col-spark { width: var(--w-spark) !important; }
 
-      /* colgroup 기반 폭 지정 */
-      .cosmos-table col:nth-child(1){ width:var(--w-rank) !important; }   /* 순위 */
-      .cosmos-table col:nth-child(2){ width:var(--w-coin) !important; }   /* 코인 */
-      .cosmos-table col:nth-child(3){ width:var(--w-price) !important; }  /* 시세 */
-      .cosmos-table col:nth-child(5){ width:var(--w-pct) !important; }    /* 24H % */
-      .cosmos-table col:nth-child(9){ width:var(--w-spark) !important; }  /* 스파크 */
+      /* 표시: 1H/7D%/시총/거래량은 숨김 — 24H는 반드시 노출 */
+      .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4), /* 1H 숨김 */
+      .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6), /* 7D% 숨김 */
+      .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7), /* 시총 숨김 */
+      .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8)  /* 거래량 숨김 */
+      { display: none; }
 
-      /* sticky/아이콘 압축 */
-      .row-index{ width:var(--w-rank); padding:6px 3px; }
-      .coin-cell{ left:var(--w-rank); min-width:var(--w-coin); gap:6px }
-      .coin-img{ width:16px; height:16px; min-width:16px }
-      .coin-name{font-size:12.5px; letter-spacing:.01em}
-      .coin-sym{display:none} /* 모바일: 이름 숨김 */
+      .cosmos-table th:nth-child(5), .cosmos-table td:nth-child(5){ display: table-cell; } /* 24H 보장 */
 
-      /* 모바일: 코인/시세/24H/스파크만 표시 (1H/7D%/시총/거래량 숨김) */
-      .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4), /* 1H */
-      .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6), /* 7D % */
-      .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7), /* MCAP */
-      .cosmos-table th:nth-child(8), .cosmos-table td:nth-child(8)  /* VOLUME */
-      { display:none; }
+      /* sticky 좌표/압축 */
+      .row-index{ width: var(--w-rank); padding: 6px 3px; text-align: center; }
+      .coin-cell{ left: var(--w-rank); min-width: var(--w-coin); gap: 6px; }
+      .coin-img{ width:16px; height:16px; min-width:16px; }
+      .coin-sym{ display:none; } /* 모바일: 이름 숨김 */
 
       .table-wrap{max-height:64vh}
+    }
+
+     /* 모바일 sticky 헤더 오프셋(툴바 높이 반영) */
+    @media (max-width: 767px){
+      thead th{
+        top: calc(env(safe-area-inset-top) + 58px); /* 툴바 + 여유  */
+      }
     }
 
     /* 하단 페이지네이션 */
