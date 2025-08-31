@@ -1,304 +1,289 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>COSMOS • Chart</title>
-
-  <!-- Lightweight Charts -->
-  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-
-  <style>
-    :root{
-      --bg:#0b1018;
-      --panel:#111827;
-      --glass:rgba(255,255,255,.06);
-      --text:#e8eefc;
-      --muted:#9aa3b6;
-      --up:#22c55e;
-      --down:#ef4444;
-      --accent:#7c5cff;
-      --accent2:#2ec4b6;
-      --card-border: rgba(255,255,255,.14);
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial;}
-    a{color:inherit;text-decoration:none}
-
-    .wrap{height:100%;display:flex;flex-direction:column;gap:10px;padding:10px}
-
-    /* top toolbar */
-    .toolbar{
-      position:sticky; top:0; z-index:5;
-      display:flex; flex-wrap:wrap; align-items:center; gap:8px;
-      padding:8px 10px; border:1px solid var(--card-border); border-radius:14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      backdrop-filter: blur(12px);
-    }
-    .toolbar .title{font-weight:800; letter-spacing:.06em; margin-right:auto}
-    .toolbar .chip{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:10px; border:1px solid var(--card-border); background:var(--glass)}
-    .toolbar .btn{
-      padding:7px 10px; border-radius:10px; border:1px solid var(--card-border);
-      background:var(--glass); color:var(--text); font-weight:700; cursor:pointer
-    }
-    .toolbar .btn.on{outline:2px solid var(--accent); background:rgba(124,92,255,.2)}
-    .toolbar .btn.ghost{background:transparent}
-    .toolbar .sep{width:1px; height:26px; background:var(--card-border); margin:0 6px}
-
-    /* charts area */
-    .charts{flex:1; min-height:0; display:grid; grid-template-rows: 1fr 140px 120px; gap:8px}
-    .pane{
-      position:relative; border:1px solid var(--card-border); border-radius:14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      overflow:hidden;
-    }
-    .legend{
-      position:absolute; left:10px; top:8px; z-index:2; font-size:12px; color:var(--muted); font-weight:700;
-      padding:2px 8px; border-radius:999px; background:rgba(0,0,0,.25); backdrop-filter: blur(4px);
-    }
-    .note{font-size:12px; color:var(--muted)}
-    .hide{display:none;}
-
-    @media (max-width:767px){
-      .charts{grid-template-rows: 1fr 120px 110px}
-      .toolbar .title{font-size:13px}
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>COSMOS • Chart</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{
+  --bg:#0b1018;
+  --panel:#111827;
+  --text:#e8eefc;
+  --muted:#9aa3b6;
+  --glass:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  --card-border:rgba(255,255,255,.12);
+  --green:#22c55e; --red:#ef4444; --neon:#7c6cff;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:radial-gradient(1200px 600px at 50% -80px,#182036 0%,var(--bg) 60%);color:var(--text);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+.wrap{min-height:100svh;display:flex;flex-direction:column;gap:10px;padding:10px 10px 18px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{margin:0;font-size:20px;letter-spacing:.18em;opacity:.9}
+.toolbar{
+  position:sticky; top:0; z-index:5;
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;
+  padding:8px; border:1px solid var(--card-border); border-radius:12px; background:var(--glass); backdrop-filter:blur(14px)
+}
+.toolbar .chip{display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--card-border); border-radius:999px; background:rgba(255,255,255,.06)}
+.toolbar input,.toolbar select{background:rgba(255,255,255,.06); border:1px solid var(--card-border); color:var(--text); border-radius:8px; padding:6px 8px; outline:none}
+.btn{padding:6px 10px; border-radius:999px; border:1px solid var(--card-border); background:rgba(255,255,255,.06); color:var(--text); font-weight:700; cursor:pointer}
+.btn.on{background:rgba(124,108,255,.18); border-color:rgba(124,108,255,.36)}
+.chart-card{
+  position:relative; flex:1 1 auto; min-height:calc(100svh - 180px);
+  border:1px solid var(--card-border); border-radius:16px; background:var(--glass); box-shadow:0 10px 30px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+#chart{position:absolute; inset:0}
+.legend{
+  position:absolute; left:10px; top:10px; z-index:4; display:flex; gap:10px; flex-wrap:wrap
+}
+.legend .tag{padding:4px 8px; border-radius:999px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.18); font-size:12px}
+.footer{opacity:.7; text-align:center; margin-top:8px; font-size:12px}
+@media (max-width:768px){
+  .toolbar{justify-content:center}
+  .chart-card{min-height:calc(100svh - 200px)}
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <div class="title" id="title">—</div>
+<div class="wrap">
+  <div class="brand"><h1>TWO4 • COSMOS</h1></div>
 
-      <div class="chip">
-        간격:
-        <button class="btn tf on" data-i="1m">1m</button>
-        <button class="btn tf" data-i="5m">5m</button>
-        <button class="btn tf" data-i="15m">15m</button>
-        <button class="btn tf" data-i="1h">1h</button>
-        <button class="btn tf" data-i="4h">4h</button>
-        <button class="btn tf" data-i="1d">1d</button>
-      </div>
-
-      <div class="chip">
-        지표:
-        <button class="btn ind on" data-k="rsi">RSI</button>
-        <button class="btn ind on" data-k="oi">OI</button>
-      </div>
-
-      <div class="sep"></div>
-
-      <button class="btn" id="btnReset">범위 리셋</button>
-      <a href="./index.html" class="btn ghost" id="btnHome">← 대시보드</a>
+  <!-- 툴바 -->
+  <div class="toolbar" id="toolbar">
+    <div class="chip">
+      심볼:
+      <input id="sym" placeholder="BTCUSDT" style="width:110px" />
+      <button class="btn" id="goBtn">열기</button>
     </div>
 
-    <!-- Charts -->
-    <div class="charts">
-      <div class="pane"><div class="legend">Candle + Volume</div><div id="pane-main" style="width:100%;height:100%"></div></div>
-      <div class="pane" id="pane-rsi-box"><div class="legend">RSI(14)</div><div id="pane-rsi" style="width:100%;height:100%"></div></div>
-      <div class="pane" id="pane-oi-box"><div class="legend">Open Interest</div><div id="pane-oi" style="width:100%;height:100%"></div></div>
+    <div class="chip">
+      TF:
+      <button class="btn tf on" data-i="15m">15m</button>
+      <button class="btn tf" data-i="1h">1h</button>
+      <button class="btn tf" data-i="4h">4h</button>
+      <button class="btn tf" data-i="1d">1d</button>
     </div>
 
-    <div class="note">
-      • 드래그로 이동, 마우스휠/핀치로 확대/축소 · 축 더블클릭=오토 스케일 ·
-      데이터: Binance (직접 호출 → 프록시 폴백)
+    <div class="chip">
+      설정:
+      <label>RSI <input id="rsiLen" type="number" min="2" max="100" step="1" style="width:64px" /></label>
+      <label>OI
+        <select id="oiPeriod">
+          <option>5m</option><option>15m</option><option>30m</option>
+          <option>1h</option><option>2h</option><option>4h</option>
+          <option>6h</option><option>12h</option><option>1d</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="chip">
+      보기:
+      <button class="btn" id="fitBtn">Fit</button>
+      <button class="btn" id="resetBtn">Reset</button>
     </div>
   </div>
 
+  <!-- 차트 -->
+  <div class="chart-card">
+    <div class="legend" id="legend"></div>
+    <div id="chart"></div>
+  </div>
+
+  <div class="footer">📈 Binance Klines / OI · RSI & OI 사용자 설정 · 모바일 핀치/스크롤 확대이동</div>
+</div>
+
 <script>
-/* ---------- helpers ---------- */
+/* ========= helpers ========= */
 const qs = new URLSearchParams(location.search);
-const SYMBOL = (qs.get("symbol") || "BTCUSDT").toUpperCase();
-const INTERVAL = (qs.get("interval") || "1h").toLowerCase();
-
-const B_KLINE = (sym,intv,lim=1000)=>[
-  `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${intv}&limit=${lim}`,
-  `/api/binance/klines?symbol=${sym}&interval=${intv}&limit=${lim}`
-];
-const B_OI_PERIOD = intv=>{
-  // Binance OI period: 5m,15m,30m,1h,2h,4h,6h,12h,1d
-  const map = { "1m":"5m","5m":"5m","15m":"15m","30m":"30m","1h":"1h","2h":"2h","4h":"4h","6h":"6h","12h":"12h","1d":"1d" };
-  return map[intv] || "1h";
+const COIN_ID_TO_SYM = {
+  bitcoin:'BTCUSDT', ethereum:'ETHUSDT', tether:'USDTUSD',
+  bnb:'BNBUSDT', solana:'SOLUSDT', ripple:'XRPUSDT',
+  cardano:'ADAUSDT', dogecoin:'DOGEUSDT', 'usd-coin':'USDCUSDT'
 };
-const B_OI = (sym,intv,lim=500)=>[
-  `https://fapi.binance.com/futures/data/openInterestHist?symbol=${sym}&period=${B_OI_PERIOD(intv)}&limit=${lim}`,
-  `/api/binance/openInterestHist?symbol=${sym}&period=${B_OI_PERIOD(intv)}&limit=${lim}`
-];
-
+function guessSymbol(){ // ?sym 우선, ?id 일부 매핑, 실패 시 BTCUSDT
+  const sym = (qs.get('sym')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(sym) return sym;
+  const id = (qs.get('id')||'').toLowerCase();
+  if(COIN_ID_TO_SYM[id]) return COIN_ID_TO_SYM[id];
+  // id가 심볼로 들어온 경우(예: btc) 처리
+  if(id && id.length<=6) return id.toUpperCase()+'USDT';
+  return 'BTCUSDT';
+}
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 async function fetchJSON(primary, fallback){
   try{
-    const r = await fetch(primary); if(!r.ok) throw new Error("primary fail");
+    const r = await fetch(primary);
+    if(!r.ok) throw 0;
     return await r.json();
   }catch{
-    if(!fallback) throw new Error("no fallback");
-    const r2 = await fetch(fallback); if(!r2.ok) throw new Error("fallback fail");
+    const r2 = await fetch(fallback);
+    if(!r2.ok) throw new Error('fetch failed');
     return await r2.json();
   }
 }
-const toSec=t=>Math.floor(t/1000);
+function toSec(ms){ return Math.floor(ms/1000); }
 
-/* ---------- compute RSI(14) ---------- */
-function calcRSI(candles, period=14){
-  // candles: array of {time, close}
-  const r = [];
-  let gains=0, losses=0;
-  for(let i=1;i<=period;i++){
-    const ch = candles[i].close - candles[i-1].close;
-    gains += ch>0?ch:0;
-    losses += ch<0?(-ch):0;
+/* ========= indicator: RSI ========= */
+function calcRSI(points, length=14){
+  if(!Array.isArray(points)||points.length<length+1) return [];
+  const out=[]; let gains=0, losses=0;
+  for(let i=1;i<=length;i++){
+    const ch = points[i].close - points[i-1].close;
+    gains += Math.max(0,ch);
+    losses+= Math.max(0,-ch);
   }
-  gains/=period; losses/=period;
-  let rs = losses===0?100:(gains/losses);
-  r.push({time:candles[period].time, value: 100 - (100/(1+rs))});
+  let avgG = gains/length, avgL = losses/length;
+  out.push({ time: points[length].time, value: avgL===0?100:100-(100/(1+(avgG/avgL))) });
 
-  for(let i=period+1;i<candles.length;i++){
-    const ch = candles[i].close - candles[i-1].close;
-    const up = ch>0?ch:0, down = ch<0?(-ch):0;
-    gains = (gains*(period-1)+up)/period;
-    losses = (losses*(period-1)+down)/period;
-    rs = losses===0?100:(gains/losses);
-    r.push({time:candles[i].time, value: 100 - (100/(1+rs))});
+  for(let i=length+1;i<points.length;i++){
+    const ch = points[i].close - points[i-1].close;
+    const g = Math.max(0,ch), l = Math.max(0,-ch);
+    avgG = (avgG*(length-1)+g)/length;
+    avgL = (avgL*(length-1)+l)/length;
+    const rs = avgL===0?Infinity:avgG/avgL;
+    const rsi = 100-(100/(1+rs));
+    out.push({ time: points[i].time, value: rsi });
   }
-  return r;
+  return out;
 }
 
-/* ---------- build charts ---------- */
-const darkGrid = 'rgba(255,255,255,0.06)';
-const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#e8eefc';
-const up = getComputedStyle(document.documentElement).getPropertyValue('--up').trim() || '#22c55e';
-const down = getComputedStyle(document.documentElement).getPropertyValue('--down').trim() || '#ef4444';
-const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7c5cff';
+/* ========= Binance endpoints ========= */
+const B_KLINES = (sym, intv, lim=500)=>[
+  `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${intv}&limit=${lim}`,
+  `/api/binance/klines?symbol=${sym}&interval=${intv}&limit=${lim}`
+];
+const B_OI_PERIOD = (intv)=>({ '15m':'5m','30m':'15m','1h':'1h','2h':'1h','4h':'4h','6h':'4h','12h':'4h','1d':'1d' }[intv]||'1h');
+const B_OI = (sym, intv, lim=500, custom=null)=>[
+  `https://fapi.binance.com/futures/data/openInterestHist?symbol=${sym}&period=${encodeURIComponent(custom||B_OI_PERIOD(intv))}&limit=${lim}`,
+  `/api/binance/openInterestHist?symbol=${sym}&period=${encodeURIComponent(custom||B_OI_PERIOD(intv))}&limit=${lim}`
+];
 
-const main = LightweightCharts.createChart(document.getElementById('pane-main'),{
-  layout:{ background:{ type: LightweightCharts.ColorType.Solid, color:'transparent' }, textColor },
-  grid:{ vertLines:{color:darkGrid}, horzLines:{color:darkGrid} },
-  rightPriceScale:{ borderColor:darkGrid, autoScale:true },
-  timeScale:{ borderColor:darkGrid, timeVisible:true, secondsVisible:false },
-  crosshair:{ mode:LightweightCharts.CrosshairMode.Normal },
-  handleScroll:{ mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false },
-  handleScale:{ axisPressedMouseMove:true, mouseWheel:true, pinch:true }
+/* ========= State ========= */
+let SYMBOL = guessSymbol();
+let INTERVAL = (qs.get('tf')||'1h');
+let RSI_LEN = Number(localStorage.getItem('rsiLen') || 14);
+let OI_PERIOD = localStorage.getItem('oiPeriod') || null;
+let LAST_CANDLES = [];
+
+/* ========= UI wires ========= */
+const symEl = document.getElementById('sym');
+const goBtn = document.getElementById('goBtn');
+const rsiEl = document.getElementById('rsiLen');
+const oiEl  = document.getElementById('oiPeriod');
+symEl.value = SYMBOL; rsiEl.value = RSI_LEN; oiEl.value = OI_PERIOD || B_OI_PERIOD(INTERVAL);
+document.querySelectorAll('.btn.tf').forEach(b=>{
+  b.classList.toggle('on', b.dataset.i===INTERVAL);
+  b.onclick = ()=>{
+    document.querySelectorAll('.btn.tf').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    INTERVAL = b.dataset.i;
+    if(!OI_PERIOD){ oiEl.value = B_OI_PERIOD(INTERVAL); }
+    loadAll(SYMBOL, INTERVAL);
+  };
 });
-const rsiChart = LightweightCharts.createChart(document.getElementById('pane-rsi'),{
-  layout:{ background:{type:0,color:'transparent'}, textColor },
-  grid:{ vertLines:{color:darkGrid}, horzLines:{color:darkGrid} },
-  rightPriceScale:{ borderColor:darkGrid, autoScale:true, scaleMargins:{top:0.2,bottom:0.1} },
-  timeScale:{ borderColor:darkGrid, timeVisible:true, secondsVisible:false, visible:false }, // main과 동기화용
+goBtn.onclick = ()=>{
+  SYMBOL = (symEl.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'') || 'BTCUSDT';
+  loadAll(SYMBOL, INTERVAL);
+};
+rsiEl.addEventListener('change', ()=>{
+  RSI_LEN = clamp(Number(rsiEl.value||14),2,100);
+  localStorage.setItem('rsiLen', String(RSI_LEN));
+  if(LAST_CANDLES.length) rsiSeries.setData(calcRSI(LAST_CANDLES, RSI_LEN));
 });
-const oiChart = LightweightCharts.createChart(document.getElementById('pane-oi'),{
-  layout:{ background:{type:0,color:'transparent'}, textColor },
-  grid:{ vertLines:{color:darkGrid}, horzLines:{color:darkGrid} },
-  rightPriceScale:{ borderColor:darkGrid, autoScale:true, scaleMargins:{top:0.2,bottom:0.1} },
-  timeScale:{ borderColor:darkGrid, timeVisible:true, secondsVisible:false, visible:false },
+oiEl.addEventListener('change', async ()=>{
+  OI_PERIOD = oiEl.value || null;
+  localStorage.setItem('oiPeriod', OI_PERIOD||'');
+  try{
+    const oi = await loadOI(SYMBOL, INTERVAL);
+    oiSeries.setData(oi);
+  }catch{ oiSeries.setData([]); }
 });
-
-const candleSeries = main.addCandlestickSeries({ upColor:up, downColor:down, borderUpColor:up, borderDownColor:down, wickUpColor:up, wickDownColor:down });
-const volSeries = main.addHistogramSeries({ priceFormat:{type:'volume'}, color:'rgba(180,200,255,.35)', priceScaleId:'', scaleMargins:{top:0.8,bottom:0} });
-
-const rsiSeries = rsiChart.addLineSeries({ color:accent, lineWidth:2 });
-const rsi50 = rsiChart.addLineSeries({ color:'rgba(255,255,255,.35)', lineWidth:1 });
-rsi50.setData([{time:0,value:50},{time:2147483647,value:50}]); // baseline helper
-
-const oiSeries = oiChart.addAreaSeries({ lineColor:'#2ec4b6', topColor:'rgba(46,196,182,.35)', bottomColor:'rgba(46,196,182,.08)', lineWidth:2 });
-
-/* --- sync time scales --- */
-const linkTime = (src, dsts) => src.timeScale().subscribeVisibleLogicalRangeChange(() => {
-  const r = src.timeScale().getVisibleLogicalRange();
-  if(!r) return; dsts.forEach(d=>d.timeScale().setVisibleLogicalRange(r));
-});
-linkTime(main,[rsiChart,oiChart]);
-linkTime(rsiChart,[main,oiChart]);
-linkTime(oiChart,[main,rsiChart]);
-
-/* --- UI wiring --- */
-const tfBtns = Array.from(document.querySelectorAll(".btn.tf"));
-const indBtns = Array.from(document.querySelectorAll(".btn.ind"));
-const paneRSIBox = document.getElementById('pane-rsi-box');
-const paneOIBox = document.getElementById('pane-oi-box');
-const titleEl = document.getElementById('title');
-
-function setTFActive(i){
-  tfBtns.forEach(b=>b.classList.toggle('on', b.dataset.i===i));
-}
-function setIndicatorsUI(){
-  paneRSIBox.classList.toggle('hide', !document.querySelector('.btn.ind[data-k="rsi"]').classList.contains('on'));
-  paneOIBox.classList.toggle('hide', !document.querySelector('.btn.ind[data-k="oi"]').classList.contains('on'));
-}
-
-tfBtns.forEach(b=>b.addEventListener('click', ()=>{
-  const i = b.dataset.i;
-  if(!b.classList.contains('on')){
-    setTFActive(i);
-    loadAll(SYMBOL, i);
-    const url = new URL(location.href); url.searchParams.set('interval', i); history.replaceState(null,'',url.toString());
-  }
-}));
-indBtns.forEach(b=>b.addEventListener('click', ()=>{
-  b.classList.toggle('on');
-  setIndicatorsUI();
-}));
-
-document.getElementById('btnReset').addEventListener('click', ()=>{
+document.getElementById('fitBtn').onclick = () => main.timeScale().fitContent();
+document.getElementById('resetBtn').onclick = () => {
+  main.applyOptions({ timeScale:{ barSpacing:7 }});
   main.timeScale().fitContent();
-});
+};
 
-/* --- data loading --- */
+/* ========= Chart ========= */
+const main = LightweightCharts.createChart(document.getElementById('chart'),{
+  layout:{ background:{type:LightweightCharts.ColorType.Solid, color:'rgba(0,0,0,0)'}, textColor:'#cfe3ff' },
+  rightPriceScale:{ borderColor:'rgba(255,255,255,.10)' },
+  grid:{ horzLines:{ color:'rgba(255,255,255,.04)' }, vertLines:{ color:'rgba(255,255,255,.04)' } },
+  crosshair:{ mode:LightweightCharts.CrosshairMode.Normal },
+  handleScroll:{ mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:true },
+  handleScale: { mouseWheel:true, pinch:true, axisPressedMouseMove:true },
+  timeScale:{ borderColor:'rgba(255,255,255,.08)', barSpacing:7 }
+});
+const candleSeries = main.addCandlestickSeries({ priceScaleId:'main', upColor:'#22c55e', downColor:'#ef4444', borderVisible:false, wickUpColor:'#22c55e', wickDownColor:'#ef4444' });
+main.priceScale('main').applyOptions({ scaleMargins:{ top:0.05, bottom:0.45 } });
+
+const volSeries = main.addHistogramSeries({
+  priceScaleId:'volume',
+  priceFormat:{ type:'volume' },
+  base:0, priceLineVisible:false, lastValueVisible:false
+});
+main.priceScale('volume').applyOptions({ scaleMargins:{ top:0.85, bottom:0.02 } });
+
+const rsiSeries = main.addLineSeries({
+  priceScaleId:'rsi', color:'#7ee7ff', lineWidth:2, priceLineVisible:false, lastValueVisible:false
+});
+main.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.60, bottom:0.33 } });
+
+// RSI 가이드라인(30/70)
+rsiSeries.createPriceLine({ price:70, color:'rgba(255,255,255,.25)', lineStyle:LightweightCharts.LineStyle.Dotted, axisLabelVisible:false });
+rsiSeries.createPriceLine({ price:30, color:'rgba(255,255,255,.25)', lineStyle:LightweightCharts.LineStyle.Dotted, axisLabelVisible:false });
+
+const oiSeries = main.addAreaSeries({
+  priceScaleId:'oi', topColor:'rgba(124,108,255,.25)', bottomColor:'rgba(124,108,255,.05)', lineColor:'rgba(124,108,255,.9)', lineWidth:2,
+  priceLineVisible:false, lastValueVisible:false
+});
+main.priceScale('oi').applyOptions({ scaleMargins:{ top:0.70, bottom:0.18 } });
+
+const legend = document.getElementById('legend');
+function setLegend(texts){ legend.innerHTML = texts.map(t=>`<span class="tag">${t}</span>`).join(''); }
+
+/* ========= Loaders ========= */
 async function loadKlines(sym, interval){
-  const [p,f]=B_KLINE(sym, interval);
+  const [p,f] = B_KLINES(sym, interval, 800);
   const raw = await fetchJSON(p,f);
-  // kline: [openTime, open, high, low, close, volume, closeTime, ...]
-  const candles = raw.map(x=>({
-    time: toSec(x[6]), // close time for alignment (or x[0] open time)
-    open: +x[1], high:+x[2], low:+x[3], close:+x[4],
+  const candles = raw.map(k=>({
+    time: toSec(k[0]),
+    open: Number(k[1]), high: Number(k[2]),
+    low: Number(k[3]),  close: Number(k[4]),
   }));
-  const vols = raw.map(x=>({ time: toSec(x[6]), value:+x[5], color:(+x[4] >= +x[1]) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' }));
-  return {candles, vols};
+  const vols = raw.map(k=>{
+    const time = toSec(k[0]), open=Number(k[1]), close=Number(k[4]);
+    return { time, value:Number(k[5]), color: close>=open ? 'rgba(34,197,94,.40)' : 'rgba(239,68,68,.40)' };
+  });
+  return { candles, vols };
 }
 async function loadOI(sym, interval){
-  const [p,f]=B_OI(sym, interval);
+  const [p,f] = B_OI(sym, interval, 500, OI_PERIOD);
   const raw = await fetchJSON(p,f);
-  // [{sumOpenInterest:'...', timestamp: 1718006400000}, ...]
-  return raw.map(o=>({ time: toSec(Number(o.timestamp)), value: Number(o.sumOpenInterest) }));
+  return raw.map(o=>({ time: toSec(Number(o.timestamp)), value:Number(o.sumOpenInterest) }));
 }
-
-function calcRSIData(candles){
-  const closes = candles.map(c=>({time:c.time, close:c.close}));
-  return calcRSI(closes, 14);
-}
-
 async function loadAll(sym, interval){
-  titleEl.textContent = `${sym} • ${interval.toUpperCase()} · Candles/RSI/OI`;
-  // clear first (prevents overlaps when switching TF)
+  setLegend([`${sym}`, `${interval.toUpperCase()}`, `RSI:${RSI_LEN}`, `OI:${OI_PERIOD||B_OI_PERIOD(interval)}`]);
   candleSeries.setData([]); volSeries.setData([]); rsiSeries.setData([]); oiSeries.setData([]);
-
   try{
-    const [kl, oi] = await Promise.all([
-      loadKlines(sym, interval),
-      loadOI(sym, interval).catch(()=>[]) // OI는 간헐적으로 없을 수 있어요
-    ]);
-    candleSeries.setData(kl.candles);
+    const [kl, oi] = await Promise.all([ loadKlines(sym, interval), loadOI(sym, interval).catch(()=>[]) ]);
+    LAST_CANDLES = kl.candles;
+    candleSeries.setData(LAST_CANDLES);
     volSeries.setData(kl.vols);
-
-    const rsiData = calcRSIData(kl.candles);
-    rsiSeries.setData(rsiData);
-
+    rsiSeries.setData(calcRSI(LAST_CANDLES, RSI_LEN));
     if(oi && oi.length) oiSeries.setData(oi);
-
-    // view
     main.timeScale().fitContent();
   }catch(e){
-    alert("차트 데이터를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.");
     console.error(e);
+    alert('차트 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   }
 }
 
-/* --- boot --- */
-setTFActive(INTERVAL);
-setIndicatorsUI();
+/* ========= boot ========= */
 loadAll(SYMBOL, INTERVAL);
-
-// resize
-new ResizeObserver(()=>{ main.applyOptions({}); rsiChart.applyOptions({}); oiChart.applyOptions({}); }).observe(document.body);
+window.addEventListener('resize', ()=> main.timeScale().fitContent());
 </script>
 </body>
 </html>
