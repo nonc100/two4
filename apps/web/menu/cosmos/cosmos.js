@@ -2,7 +2,7 @@
    COSMOS CORE (safe build)
    ========================= */
 
-/* ---- 전역 DOM 캐시(ReferenceError 방지) ---- */
+/* ---- 전역 DOM 캐시 ---- */
 var table = null, tbody = null, pager = null;
 
 /* ---- 유틸 ---- */
@@ -23,7 +23,6 @@ function fmtPctRaw(n){
   const s = n>=0 ? "+" : "";
   return s + n.toFixed(2) + "%";
 }
-
 function fmtPrice(n){
   return n==null || isNaN(n) ? '-' : '$' + Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
 }
@@ -60,13 +59,9 @@ const state = {
   apply(r.value);
 })();
 
-/* ---- 데이터 페치 (환경 의존: 실패해도 UI 유지) ---- */
+/* ---- 데이터 페치 ---- */
 async function fetchMarkets(){
-  // 환경에 맞게 교체 가능. 실패 시 [].
   try{
-    // 백엔드 프록시가 있다면 여기로 교체하세요.
-    // return fetch("/api/markets").then(r=>r.json());
-    // 코인게코 퍼블릭은 CORS/Rate limit 이슈가 있으므로 가드
     const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&sparkline=true&price_change_percentage=1h,24h,7d&per_page=250&page=1";
     const rs = await fetch(url);
     if(!rs.ok) throw new Error("coingecko blocked");
@@ -89,10 +84,7 @@ async function fetchFNG(){
 }
 // 롱/숏(데모: 값 없으면 50/50)
 async function fetchBinanceLS(period){
-  try{
-    // 예: 프록시 사용 시 /api/binance/ls?period=1h
-    return null;
-  }catch(e){ return null; }
+  try{ return null; }catch(e){ return null; }
 }
 
 /* ---- HUB(도넛) ---- */
@@ -118,7 +110,7 @@ function buildHub(sections){
     path.classList.add("seg");
     svg.appendChild(path);
 
-    // label (크게, 글로우 제거)
+    // label (크게)
     const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-28)*Math.cos(mid), ty=cy+(rx-28)*Math.sin(mid)+6;
     const text=document.createElementNS(svg.namespaceURI,'text');
     text.setAttribute("x", tx); text.setAttribute("y", ty);
@@ -154,9 +146,7 @@ function gaugeHTML(val){
         <stop offset="100%" stop-color="#22c55e"/>
       </linearGradient>
     </defs>
-    <!-- arcs -->
     <path d="M30,140 A120,120 0 0 1 270,140" class="g-arc" stroke="url(#g1)"/>
-    <!-- needle -->
     <g transform="translate(150,140)">
       <line x1="0" y1="0" x2="0" y2="-90" stroke="#000" stroke-opacity=".2" stroke-width="10" />
       <g transform="rotate(${deg})">
@@ -167,7 +157,7 @@ function gaugeHTML(val){
   </svg>`;
 }
 
-/* HUB 데이터 구성 */
+/* HUB 데이터 */
 async function initHub(){
   const [mkts, global, fng] = await Promise.all([fetchMarkets(), fetchGlobal(), fetchFNG()]);
   const listTop = (arr, by, n=10)=>arr.slice().sort((a,b)=> (b[by]??0) - (a[by]??0)).slice(0,n);
@@ -205,14 +195,48 @@ async function initHub(){
   $("#cBig").textContent="COSMOS"; $("#cSub").textContent="—";
 }
 
-/* ---- Table ---- */
+/* ---- Sparkline ---- */
+function drawSpark(ctx, arr){
+  if(!ctx || !arr || arr.length<2) return;
+  const W = ctx.canvas.width, H = ctx.canvas.height;
+  // HiDPI
+  const dpr = window.devicePixelRatio||1;
+  ctx.canvas.style.width = ctx.canvas.width + "px";
+  ctx.canvas.style.height = ctx.canvas.height + "px";
+  ctx.canvas.width = Math.floor(W*dpr);
+  ctx.canvas.height = Math.floor(H*dpr);
 
+  const min = Math.min(...arr), max = Math.max(...arr), span = (max-min)||1;
+  const toX = i => (i/(arr.length-1))*ctx.canvas.width;
+  const toY = v => ctx.canvas.height - ((v-min)/span)*ctx.canvas.height;
+
+  ctx.lineWidth = 2*dpr;
+  const up = arr[arr.length-1] >= arr[0];
+  ctx.strokeStyle = up ? "#22c55e" : "#ef4444";
+  ctx.beginPath();
+  ctx.moveTo(0, toY(arr[0]));
+  for(let i=1;i<arr.length;i++){
+    ctx.lineTo(toX(i), toY(arr[i]));
+  }
+  ctx.stroke();
+}
+function drawSparkForEachCanvas(items){
+  const map = new Map(items.map(c=>[c.id, c.sparkline_in_7d?.price]));
+  $$('#mkt canvas[data-id]').forEach(cv=>{
+    const id = cv.getAttribute('data-id');
+    const arr = map.get(id);
+    const ctx = cv.getContext('2d');
+    drawSpark(ctx, arr);
+  });
+}
+
+/* ---- Table ---- */
 function rowHTML(c, i){
   const p1h = c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h;
   const p24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
   const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
 
-  return `<tr>
+  return `<tr data-id="${c.id}">
     <td class="sticky-rank num">${c.market_cap_rank ?? (i+1)}</td>
     <td class="sticky-name">
       <div class="mkt-name">
@@ -222,11 +246,11 @@ function rowHTML(c, i){
       </div>
     </td>
     <td class="num">${fmtPrice(c.current_price)}</td>
-    <td class="num hide-m">${fmtPct(p1h)}</td>
+    <td class="num">${fmtPct(p1h)}</td>
     <td class="num">${fmtPct(p24)}</td>
-    <td class="num hide-m">${fmtPct(p7d)}</td>
-    <td class="num hide-m">${fmtCap(c.market_cap)}</td>
-    <td class="num hide-m">${fmtCap(c.total_volume)}</td>
+    <td class="num">${fmtPct(p7d)}</td>
+    <td class="num">${fmtCap(c.market_cap)}</td>
+    <td class="num">${fmtCap(c.total_volume)}</td>
     <td class="spark"><canvas width="120" height="28" data-id="${c.id}"></canvas></td>
   </tr>`;
 }
@@ -264,7 +288,16 @@ function renderTable(){
   const start = (state.page-1)*state.perPage;
   const items = state.filtered.slice(start, start+state.perPage);
   tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
-  // drawSparkForEachCanvas();
+
+  // 행/심볼 클릭 → 차트 연동 (menu/cosmos/chart.html)
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      const id = tr.getAttribute('data-id');
+      if(id) location.href = `/menu/cosmos/chart.html?id=${encodeURIComponent(id)}`;
+    });
+  });
+
+  drawSparkForEachCanvas(items);
 }
 
 function renderPager(){
@@ -273,7 +306,10 @@ function renderPager(){
   const cur = state.page;
   const btn = (i,lab=String(i),dis=false,sel=false)=>`<button ${dis?"disabled":""} data-pg="${i}" style="padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:${sel?"rgba(255,255,255,.16)":"rgba(255,255,255,.06)"};color:#e8eefc">${lab}</button>`;
   let html = "";
-  for(let i=1;i<=n;i++){ if(i<=8 || i>n-2 || Math.abs(i-cur)<=2){ html+=btn(i,String(i),false,i===cur);} else if(!html.endsWith("…")){ html+="<span style='opacity:.6;padding:0 6px'>…</span>"; } }
+  for(let i=1;i<=n;i++){
+    if(i<=8 || i>n-2 || Math.abs(i-cur)<=2){ html+=btn(i,String(i),false,i===cur);}
+    else if(!html.endsWith("…")){ html+="<span style='opacity:.6;padding:0 6px'>…</span>"; }
+  }
   pager.innerHTML = html;
   pager.querySelectorAll("button[data-pg]").forEach(b=>{
     b.addEventListener("click", ()=>{ state.page = Number(b.dataset.pg)||1; renderTable(); renderPager(); });
@@ -308,7 +344,7 @@ async function init(){
   // 허브
   initHub();
 
-  // 30초마다 갱신(안전)
+  // 30초마다 갱신
   setInterval(async ()=>{
     const mkts2 = await fetchMarkets();
     if(Array.isArray(mkts2) && mkts2.length) { state.all = mkts2; applyFilterSort(); }
@@ -319,23 +355,3 @@ async function init(){
 /* DOM ready */
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
 else init();
-
-function normalizeMarketTable(){
-  const thCount = document.querySelectorAll('#mkt thead th').length; // 9
-  document.querySelectorAll('#mkt tbody tr').forEach(tr=>{
-    const tds = tr.children;
-    if (tds.length > thCount) {
-      // [가정] 불필요한 추가 칸이 Name 앞에 끼어든 상태
-      const extra = tds[1];           // 잘못 들어간 보조칸
-      const nameTd = tds[2];          // 실제 Name 칸
-      // 아이콘/텍스트 합치기
-      nameTd.innerHTML = `<div class="mkt-name">${extra.innerHTML}${nameTd.innerHTML}</div>`;
-      extra.remove();                 // 보조칸 제거 → 총 9칸 맞춤
-    }
-    // rank/name sticky용 클래스 보정(혹시 렌더 쪽에서 안 붙었을 때 대비)
-    tds[0].classList.add('sticky-rank','num');
-    tds[1].classList.add('sticky-name');
-  });
-}
-// ★ 테이블 렌더 직후나 DOMContentLoaded 후에 한 번 호출
-normalizeMarketTable();
