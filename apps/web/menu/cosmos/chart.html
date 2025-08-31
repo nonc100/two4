@@ -1,215 +1,304 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>COSMOS Chart</title>
-<style>
-  :root{
-    --bg:#0b1018; --panel:#0f172a; --grid:#223047; --text:#e8eefc; --muted:#9aa3b6;
-    --up:#22c55e; --down:#ef4444; --accent:#7efcf3;
-  }
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto}
-  .wrap{position:fixed; inset:0; display:flex; flex-direction:column}
-  .topbar{
-    height:48px; display:flex; gap:10px; align-items:center; padding:8px 10px;
-    background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-    border-bottom:1px solid rgba(255,255,255,.08);
-  }
-  .title{font-weight:800; letter-spacing:.04em; margin-right:auto}
-  select,button,input{
-    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
-    color:var(--text); border-radius:8px; padding:6px 8px; outline:none
-  }
-  .chk{display:flex;align-items:center;gap:6px}
-  #chart{flex:1; display:block; width:100%; height:calc(100% - 48px); background:var(--panel)}
-  .legend{position:fixed; right:8px; top:52px; font-size:12px; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.12); padding:6px 8px; border-radius:8px}
-  .legend b{font-weight:900}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>COSMOS • Chart</title>
+
+  <!-- Lightweight Charts -->
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1018;
+      --panel:#111827;
+      --glass:rgba(255,255,255,.06);
+      --text:#e8eefc;
+      --muted:#9aa3b6;
+      --up:#22c55e;
+      --down:#ef4444;
+      --accent:#7c5cff;
+      --accent2:#2ec4b6;
+      --card-border: rgba(255,255,255,.14);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial;}
+    a{color:inherit;text-decoration:none}
+
+    .wrap{height:100%;display:flex;flex-direction:column;gap:10px;padding:10px}
+
+    /* top toolbar */
+    .toolbar{
+      position:sticky; top:0; z-index:5;
+      display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+      padding:8px 10px; border:1px solid var(--card-border); border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      backdrop-filter: blur(12px);
+    }
+    .toolbar .title{font-weight:800; letter-spacing:.06em; margin-right:auto}
+    .toolbar .chip{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:10px; border:1px solid var(--card-border); background:var(--glass)}
+    .toolbar .btn{
+      padding:7px 10px; border-radius:10px; border:1px solid var(--card-border);
+      background:var(--glass); color:var(--text); font-weight:700; cursor:pointer
+    }
+    .toolbar .btn.on{outline:2px solid var(--accent); background:rgba(124,92,255,.2)}
+    .toolbar .btn.ghost{background:transparent}
+    .toolbar .sep{width:1px; height:26px; background:var(--card-border); margin:0 6px}
+
+    /* charts area */
+    .charts{flex:1; min-height:0; display:grid; grid-template-rows: 1fr 140px 120px; gap:8px}
+    .pane{
+      position:relative; border:1px solid var(--card-border); border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      overflow:hidden;
+    }
+    .legend{
+      position:absolute; left:10px; top:8px; z-index:2; font-size:12px; color:var(--muted); font-weight:700;
+      padding:2px 8px; border-radius:999px; background:rgba(0,0,0,.25); backdrop-filter: blur(4px);
+    }
+    .note{font-size:12px; color:var(--muted)}
+    .hide{display:none;}
+
+    @media (max-width:767px){
+      .charts{grid-template-rows: 1fr 120px 110px}
+      .toolbar .title{font-size:13px}
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="topbar">
-    <div class="title" id="ttl">—</div>
-    <label>간격
-      <select id="interval">
-        <option>1m</option><option>5m</option><option>15m</option>
-        <option selected>1h</option><option>4h</option><option>1d</option>
-      </select>
-    </label>
-    <label class="chk"><input type="checkbox" id="vwma20" checked>VWMA20</label>
-    <label class="chk"><input type="checkbox" id="vwma50">VWMA50</label>
-    <button id="refresh">새로고침</button>
+  <div class="wrap">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="title" id="title">—</div>
+
+      <div class="chip">
+        간격:
+        <button class="btn tf on" data-i="1m">1m</button>
+        <button class="btn tf" data-i="5m">5m</button>
+        <button class="btn tf" data-i="15m">15m</button>
+        <button class="btn tf" data-i="1h">1h</button>
+        <button class="btn tf" data-i="4h">4h</button>
+        <button class="btn tf" data-i="1d">1d</button>
+      </div>
+
+      <div class="chip">
+        지표:
+        <button class="btn ind on" data-k="rsi">RSI</button>
+        <button class="btn ind on" data-k="oi">OI</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <button class="btn" id="btnReset">범위 리셋</button>
+      <a href="./index.html" class="btn ghost" id="btnHome">← 대시보드</a>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts">
+      <div class="pane"><div class="legend">Candle + Volume</div><div id="pane-main" style="width:100%;height:100%"></div></div>
+      <div class="pane" id="pane-rsi-box"><div class="legend">RSI(14)</div><div id="pane-rsi" style="width:100%;height:100%"></div></div>
+      <div class="pane" id="pane-oi-box"><div class="legend">Open Interest</div><div id="pane-oi" style="width:100%;height:100%"></div></div>
+    </div>
+
+    <div class="note">
+      • 드래그로 이동, 마우스휠/핀치로 확대/축소 · 축 더블클릭=오토 스케일 ·
+      데이터: Binance (직접 호출 → 프록시 폴백)
+    </div>
   </div>
-  <canvas id="chart"></canvas>
-  <div class="legend" id="legend">—</div>
-</div>
 
 <script>
-(function(){
-  // ====== Helpers ======
-  const $ = sel => document.querySelector(sel);
-  const params = new URLSearchParams(location.search);
-  const SYMBOL = (params.get('symbol') || 'BTCUSDT').toUpperCase();
-  const DEF_INTERVAL = params.get('interval') || '1h';
-  $('#interval').value = DEF_INTERVAL;
-  $('#ttl').textContent = `${SYMBOL} · Binance`;
+/* ---------- helpers ---------- */
+const qs = new URLSearchParams(location.search);
+const SYMBOL = (qs.get("symbol") || "BTCUSDT").toUpperCase();
+const INTERVAL = (qs.get("interval") || "1h").toLowerCase();
 
-  function toNum(x){ return typeof x==='number' ? x : Number(x); }
-  function vwma(closes, vols, n){
-    const out = Array(closes.length).fill(null);
-    let pv=0, v=0;
-    for(let i=0;i<closes.length;i++){
-      const p=closes[i], vol=vols[i];
-      pv += p*vol; v += vol;
-      if(i>=n){ // 윈도우 제외
-        const p0 = closes[i-n], v0 = vols[i-n];
-        pv -= p0*v0; v -= v0;
-      }
-      if(i>=n-1) out[i] = pv / (v||1);
-    }
-    return out;
+const B_KLINE = (sym,intv,lim=1000)=>[
+  `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${intv}&limit=${lim}`,
+  `/api/binance/klines?symbol=${sym}&interval=${intv}&limit=${lim}`
+];
+const B_OI_PERIOD = intv=>{
+  // Binance OI period: 5m,15m,30m,1h,2h,4h,6h,12h,1d
+  const map = { "1m":"5m","5m":"5m","15m":"15m","30m":"30m","1h":"1h","2h":"2h","4h":"4h","6h":"6h","12h":"12h","1d":"1d" };
+  return map[intv] || "1h";
+};
+const B_OI = (sym,intv,lim=500)=>[
+  `https://fapi.binance.com/futures/data/openInterestHist?symbol=${sym}&period=${B_OI_PERIOD(intv)}&limit=${lim}`,
+  `/api/binance/openInterestHist?symbol=${sym}&period=${B_OI_PERIOD(intv)}&limit=${lim}`
+];
+
+async function fetchJSON(primary, fallback){
+  try{
+    const r = await fetch(primary); if(!r.ok) throw new Error("primary fail");
+    return await r.json();
+  }catch{
+    if(!fallback) throw new Error("no fallback");
+    const r2 = await fetch(fallback); if(!r2.ok) throw new Error("fallback fail");
+    return await r2.json();
   }
+}
+const toSec=t=>Math.floor(t/1000);
 
-  async function fetchKlines(symbol, interval='1h', limit=500){
-    const q = `symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${limit}`;
-    const directF = `https://fapi.binance.com/fapi/v1/klines?${q}`;
-    const directS = `https://api.binance.com/api/v3/klines?${q}`;
-    const proxF = `/api/binance/klines?${q}`;
-    try{
-      let r = await fetch(directF); if(!r.ok) throw 0; return await r.json();
-    }catch{
-      try{ let r2 = await fetch(directS); if(!r2.ok) throw 0; return await r2.json(); }
-      catch{ let r3 = await fetch(proxF); if(!r3.ok) throw new Error('klines failed'); return await r3.json(); }
-    }
+/* ---------- compute RSI(14) ---------- */
+function calcRSI(candles, period=14){
+  // candles: array of {time, close}
+  const r = [];
+  let gains=0, losses=0;
+  for(let i=1;i<=period;i++){
+    const ch = candles[i].close - candles[i-1].close;
+    gains += ch>0?ch:0;
+    losses += ch<0?(-ch):0;
   }
+  gains/=period; losses/=period;
+  let rs = losses===0?100:(gains/losses);
+  r.push({time:candles[period].time, value: 100 - (100/(1+rs))});
 
-  // ====== Drawing ======
-  const cvs = $('#chart'), ctx = cvs.getContext('2d');
-  let W=0, H=0, DPR=1;
-  function resize(){
-    const r = window.devicePixelRatio || 1;
-    DPR = r;
-    W = cvs.clientWidth;
-    H = cvs.clientHeight;
-    cvs.width = Math.floor(W * DPR);
-    cvs.height = Math.floor(H * DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+  for(let i=period+1;i<candles.length;i++){
+    const ch = candles[i].close - candles[i-1].close;
+    const up = ch>0?ch:0, down = ch<0?(-ch):0;
+    gains = (gains*(period-1)+up)/period;
+    losses = (losses*(period-1)+down)/period;
+    rs = losses===0?100:(gains/losses);
+    r.push({time:candles[i].time, value: 100 - (100/(1+rs))});
   }
-  window.addEventListener('resize', ()=>{ resize(); if(current) draw(current); });
+  return r;
+}
 
-  function yScale(min,max,pad=0.08){
-    const span = max-min; const p = span*pad;
-    const lo = min - p, hi = max + p;
-    const k = (H-30) / (hi-lo);
-    return v => H-20 - (v-lo)*k;
+/* ---------- build charts ---------- */
+const darkGrid = 'rgba(255,255,255,0.06)';
+const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#e8eefc';
+const up = getComputedStyle(document.documentElement).getPropertyValue('--up').trim() || '#22c55e';
+const down = getComputedStyle(document.documentElement).getPropertyValue('--down').trim() || '#ef4444';
+const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7c5cff';
+
+const main = LightweightCharts.createChart(document.getElementById('pane-main'),{
+  layout:{ background:{ type: LightweightCharts.ColorType.Solid, color:'transparent' }, textColor },
+  grid:{ vertLines:{color:darkGrid}, horzLines:{color:darkGrid} },
+  rightPriceScale:{ borderColor:darkGrid, autoScale:true },
+  timeScale:{ borderColor:darkGrid, timeVisible:true, secondsVisible:false },
+  crosshair:{ mode:LightweightCharts.CrosshairMode.Normal },
+  handleScroll:{ mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false },
+  handleScale:{ axisPressedMouseMove:true, mouseWheel:true, pinch:true }
+});
+const rsiChart = LightweightCharts.createChart(document.getElementById('pane-rsi'),{
+  layout:{ background:{type:0,color:'transparent'}, textColor },
+  grid:{ vertLines:{color:darkGrid}, horzLines:{color:darkGrid} },
+  rightPriceScale:{ borderColor:darkGrid, autoScale:true, scaleMargins:{top:0.2,bottom:0.1} },
+  timeScale:{ borderColor:darkGrid, timeVisible:true, secondsVisible:false, visible:false }, // main과 동기화용
+});
+const oiChart = LightweightCharts.createChart(document.getElementById('pane-oi'),{
+  layout:{ background:{type:0,color:'transparent'}, textColor },
+  grid:{ vertLines:{color:darkGrid}, horzLines:{color:darkGrid} },
+  rightPriceScale:{ borderColor:darkGrid, autoScale:true, scaleMargins:{top:0.2,bottom:0.1} },
+  timeScale:{ borderColor:darkGrid, timeVisible:true, secondsVisible:false, visible:false },
+});
+
+const candleSeries = main.addCandlestickSeries({ upColor:up, downColor:down, borderUpColor:up, borderDownColor:down, wickUpColor:up, wickDownColor:down });
+const volSeries = main.addHistogramSeries({ priceFormat:{type:'volume'}, color:'rgba(180,200,255,.35)', priceScaleId:'', scaleMargins:{top:0.8,bottom:0} });
+
+const rsiSeries = rsiChart.addLineSeries({ color:accent, lineWidth:2 });
+const rsi50 = rsiChart.addLineSeries({ color:'rgba(255,255,255,.35)', lineWidth:1 });
+rsi50.setData([{time:0,value:50},{time:2147483647,value:50}]); // baseline helper
+
+const oiSeries = oiChart.addAreaSeries({ lineColor:'#2ec4b6', topColor:'rgba(46,196,182,.35)', bottomColor:'rgba(46,196,182,.08)', lineWidth:2 });
+
+/* --- sync time scales --- */
+const linkTime = (src, dsts) => src.timeScale().subscribeVisibleLogicalRangeChange(() => {
+  const r = src.timeScale().getVisibleLogicalRange();
+  if(!r) return; dsts.forEach(d=>d.timeScale().setVisibleLogicalRange(r));
+});
+linkTime(main,[rsiChart,oiChart]);
+linkTime(rsiChart,[main,oiChart]);
+linkTime(oiChart,[main,rsiChart]);
+
+/* --- UI wiring --- */
+const tfBtns = Array.from(document.querySelectorAll(".btn.tf"));
+const indBtns = Array.from(document.querySelectorAll(".btn.ind"));
+const paneRSIBox = document.getElementById('pane-rsi-box');
+const paneOIBox = document.getElementById('pane-oi-box');
+const titleEl = document.getElementById('title');
+
+function setTFActive(i){
+  tfBtns.forEach(b=>b.classList.toggle('on', b.dataset.i===i));
+}
+function setIndicatorsUI(){
+  paneRSIBox.classList.toggle('hide', !document.querySelector('.btn.ind[data-k="rsi"]').classList.contains('on'));
+  paneOIBox.classList.toggle('hide', !document.querySelector('.btn.ind[data-k="oi"]').classList.contains('on'));
+}
+
+tfBtns.forEach(b=>b.addEventListener('click', ()=>{
+  const i = b.dataset.i;
+  if(!b.classList.contains('on')){
+    setTFActive(i);
+    loadAll(SYMBOL, i);
+    const url = new URL(location.href); url.searchParams.set('interval', i); history.replaceState(null,'',url.toString());
   }
-  function xScale(n){ const step = (W-16) / Math.max(1, n-1); return i => 8 + i*step; }
+}));
+indBtns.forEach(b=>b.addEventListener('click', ()=>{
+  b.classList.toggle('on');
+  setIndicatorsUI();
+}));
 
-  function linePath(points){
-    ctx.beginPath();
-    for(let i=0;i<points.length;i++){
-      const [x,y] = points[i];
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  main.timeScale().fitContent();
+});
+
+/* --- data loading --- */
+async function loadKlines(sym, interval){
+  const [p,f]=B_KLINE(sym, interval);
+  const raw = await fetchJSON(p,f);
+  // kline: [openTime, open, high, low, close, volume, closeTime, ...]
+  const candles = raw.map(x=>({
+    time: toSec(x[6]), // close time for alignment (or x[0] open time)
+    open: +x[1], high:+x[2], low:+x[3], close:+x[4],
+  }));
+  const vols = raw.map(x=>({ time: toSec(x[6]), value:+x[5], color:(+x[4] >= +x[1]) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' }));
+  return {candles, vols};
+}
+async function loadOI(sym, interval){
+  const [p,f]=B_OI(sym, interval);
+  const raw = await fetchJSON(p,f);
+  // [{sumOpenInterest:'...', timestamp: 1718006400000}, ...]
+  return raw.map(o=>({ time: toSec(Number(o.timestamp)), value: Number(o.sumOpenInterest) }));
+}
+
+function calcRSIData(candles){
+  const closes = candles.map(c=>({time:c.time, close:c.close}));
+  return calcRSI(closes, 14);
+}
+
+async function loadAll(sym, interval){
+  titleEl.textContent = `${sym} • ${interval.toUpperCase()} · Candles/RSI/OI`;
+  // clear first (prevents overlaps when switching TF)
+  candleSeries.setData([]); volSeries.setData([]); rsiSeries.setData([]); oiSeries.setData([]);
+
+  try{
+    const [kl, oi] = await Promise.all([
+      loadKlines(sym, interval),
+      loadOI(sym, interval).catch(()=>[]) // OI는 간헐적으로 없을 수 있어요
+    ]);
+    candleSeries.setData(kl.candles);
+    volSeries.setData(kl.vols);
+
+    const rsiData = calcRSIData(kl.candles);
+    rsiSeries.setData(rsiData);
+
+    if(oi && oi.length) oiSeries.setData(oi);
+
+    // view
+    main.timeScale().fitContent();
+  }catch(e){
+    alert("차트 데이터를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.");
+    console.error(e);
   }
-  function drawGrid(){
-    ctx.strokeStyle='rgba(255,255,255,.08)';
-    ctx.lineWidth=1;
-    const rows=5;
-    for(let i=0;i<=rows;i++){
-      const y = 10 + (H-40)*i/rows;
-      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-    }
-  }
+}
 
-  function drawLegend(price, tStr){
-    $('#legend').innerHTML = `<b>${SYMBOL}</b> · ${tStr} · ${price}`;
-  }
+/* --- boot --- */
+setTFActive(INTERVAL);
+setIndicatorsUI();
+loadAll(SYMBOL, INTERVAL);
 
-  let current=null;
-  function draw(data){
-    const {t, close, vol, vw20, vw50} = data;
-    ctx.clearRect(0,0,W,H);
-    drawGrid();
-
-    const min = Math.min(...close.filter(Boolean), ...(vw20.filter(Boolean)||[Infinity]), ...(vw50.filter(Boolean)||[Infinity]));
-    const max = Math.max(...close.filter(Boolean), ...(vw20.filter(Boolean)||[-Infinity]), ...(vw50.filter(Boolean)||[-Infinity]));
-    const Y = yScale(min,max), X = xScale(close.length);
-
-    // 가격 라인
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#cfe9ff';
-    linePath(close.map((p,i)=>[X(i), Y(p)]));
-    ctx.stroke();
-
-    // VWMA20
-    if($('#vwma20').checked){
-      ctx.lineWidth = 1.8;
-      ctx.strokeStyle = '#7efcf3';
-      ctx.shadowColor = '#7efcf3';
-      ctx.shadowBlur = 6;
-      linePath(vw20.map((p,i)=> p ? [X(i), Y(p)] : [X(i), Y(close[i])]));
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-    // VWMA50
-    if($('#vwma50').checked){
-      ctx.lineWidth = 1.8;
-      ctx.strokeStyle = '#a78bfa';
-      ctx.shadowColor = '#a78bfa';
-      ctx.shadowBlur = 6;
-      linePath(vw50.map((p,i)=> p ? [X(i), Y(p)] : [X(i), Y(close[i])]));
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-
-    // 볼륨(하단 1/5 높이)
-    const vMax = Math.max(...vol);
-    const vh = Math.max(40, H*0.18);
-    const y0 = H - 10;
-    ctx.fillStyle = 'rgba(255,255,255,.10)';
-    const barW = Math.max(1, (W-16)/vol.length - 1);
-    for(let i=0;i<vol.length;i++){
-      const x = X(i) - barW/2;
-      const h = (vol[i]/(vMax||1))*vh;
-      ctx.fillRect(x, y0-h, barW, h);
-    }
-
-    // 마지막값 레전드
-    const last = close.length-1;
-    const lastPrice = close[last]?.toLocaleString('en-US',{maximumFractionDigits:8});
-    const tStr = new Date(t[last]).toLocaleString();
-    drawLegend(lastPrice||'-', tStr);
-  }
-
-  async function load(){
-    $('#ttl').textContent = `${SYMBOL} · Binance`;
-    const interval = $('#interval').value;
-    const raw = await fetchKlines(SYMBOL, interval, 500);
-    const t=[], close=[], vol=[];
-    for(const k of raw){
-      t.push(k[0]);
-      close.push(toNum(k[4]));
-      vol.push(toNum(k[5]));
-    }
-    const vw20 = vwma(close, vol, 20);
-    const vw50 = vwma(close, vol, 50);
-    current = {t, close, vol, vw20, vw50};
-    resize(); draw(current);
-  }
-
-  // 이벤트
-  $('#interval').addEventListener('change', load);
-  $('#refresh').addEventListener('click', load);
-  $('#vwma20').addEventListener('change', ()=>{ if(current){ draw(current); }});
-  $('#vwma50').addEventListener('change', ()=>{ if(current){ draw(current); }});
-
-  // 초기화
-  load();
-  // 60초마다 갱신 (무료/무인증 API 안전선)
-  setInterval(()=>{ if(document.visibilityState==='visible') load(); }, 60000);
-})();
+// resize
+new ResizeObserver(()=>{ main.applyOptions({}); rsiChart.applyOptions({}); oiChart.applyOptions({}); }).observe(document.body);
 </script>
 </body>
 </html>
