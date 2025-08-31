@@ -1,4 +1,4 @@
-/* ===== COSMOS JS – full build (white starfield + lists ticker white + derivatives) ===== */
+/* ===== COSMOS JS – mobile table fix + topbar + white stars + reflow ===== */
 
 /* --- Locale clamps --- */
 (() => {
@@ -53,12 +53,6 @@ function fmtPctHTML(v){
   const sign=n>0?'+':'';
   return `<span class="${cls}">${sign}${n.toFixed(2)}%</span>`;
 }
-function fmtSmallPct(v, decimals=4){
-  if(v==null||Number.isNaN(v)) return "−";
-  const n = Number(v);
-  const sign = n>0?'+':'';
-  return `${sign}${n.toFixed(decimals)}%`;
-}
 function fmtNumSuffix(v){
   if(v==null||Number.isNaN(v)) return "-";
   const n = Number(v), abs=Math.abs(n);
@@ -72,64 +66,55 @@ function $(s,sc=document){return sc.querySelector(s)}
 function $$(s,sc=document){return Array.from(sc.querySelectorAll(s))}
 const setHTML = (sel,html) => { const el = typeof sel==="string"?$(sel):sel; if(el) el.innerHTML = html; };
 
-/* --- White starfield engine (canvas) --- */
+/* 강제 리플로우(초기 표시 누락 방지) */
+function forceReflow(el){ if(!el) return; void el.offsetHeight; }
+
+/* --- White starfield (canvas) --- */
 const StarField = (()=> {
   let canvas, ctx, stars=[], intensity=0, animId=null, W=0,H=0, dpr=1;
-  const BASE_DENSITY = 140; // 최대 강도에서 10만 css px 당 별 개수
-  const TW_MIN = 0.002, TW_MAX = 0.006; // 반짝 속도
-  const R_MIN = 0.3,  R_MAX = 1.1;       // 반지름(px)
+  const BASE_DENSITY = 140; // 최대 강도에서 10만 css px 당 개수
+  const TW_MIN=0.002, TW_MAX=0.006, R_MIN=0.3, R_MAX=1.1;
   const rand=(a,b)=>a+Math.random()*(b-a);
-
   function resize(){
     if(!canvas) return;
     dpr = window.devicePixelRatio || 1;
-    const vw = window.innerWidth, vh = window.innerHeight;
-    W = Math.floor(vw*dpr); H = Math.floor(vh*dpr);
-    canvas.width = W; canvas.height = H;
-    canvas.style.width = vw+"px"; canvas.style.height = vh+"px";
+    const vw=innerWidth, vh=innerHeight;
+    W=Math.floor(vw*dpr); H=Math.floor(vh*dpr);
+    canvas.width=W; canvas.height=H; canvas.style.width=vw+"px"; canvas.style.height=vh+"px";
     rebuild();
   }
   function rebuild(){
-    const areaCSS = (W*H)/(dpr*dpr);
-    const target = Math.floor(areaCSS/100000 * BASE_DENSITY * intensity);
-    const cur = stars.length;
-    if(cur < target){
+    const areaCSS=(W*H)/(dpr*dpr);
+    const target=Math.floor(areaCSS/100000*BASE_DENSITY*intensity);
+    const cur=stars.length;
+    if(cur<target){
       for(let i=cur;i<target;i++){
-        stars.push({ x:Math.random()*W, y:Math.random()*H,
-          r: rand(R_MIN,R_MAX)*dpr, a: rand(0.35,0.9), tw: rand(TW_MIN,TW_MAX), ph: Math.random()*Math.PI*2 });
+        stars.push({x:Math.random()*W,y:Math.random()*H,r:rand(R_MIN,R_MAX)*dpr,a:rand(0.35,0.9),tw:rand(TW_MIN,TW_MAX),ph:Math.random()*Math.PI*2});
       }
-    }else if(cur > target){
-      stars.splice(target);
-    }
+    }else if(cur>target){ stars.splice(target); }
   }
   function loop(){
     if(!ctx) return;
     ctx.clearRect(0,0,W,H);
-    const base = intensity;
+    const base=intensity;
     for(const s of stars){
-      s.ph += s.tw;
-      const a = base * (0.85 + 0.15*Math.sin(s.ph));
-      ctx.globalAlpha = a * s.a;
+      s.ph+=s.tw;
+      const a=base*(0.85+0.15*Math.sin(s.ph));
+      ctx.globalAlpha=a*s.a;
       ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
     }
-    ctx.globalAlpha = 1;
-    animId = requestAnimationFrame(loop);
+    ctx.globalAlpha=1;
+    animId=requestAnimationFrame(loop);
   }
   function setIntensity(v){
-    intensity = Math.max(0, Math.min(1, v));
+    intensity=Math.max(0,Math.min(1,v));
     document.documentElement.style.setProperty("--bgstar", String(intensity));
     rebuild();
-    if(intensity>0 && !animId) animId = requestAnimationFrame(loop);
+    if(intensity>0 && !animId) animId=requestAnimationFrame(loop);
     if(intensity===0 && animId){ cancelAnimationFrame(animId); animId=null; ctx.clearRect(0,0,W,H); }
   }
-  function init(){
-    canvas = document.getElementById("whiteStars");
-    if(!canvas) return;
-    ctx = canvas.getContext("2d");
-    resize();
-    window.addEventListener("resize", resize);
-  }
-  return { init, setIntensity };
+  function init(){ canvas=$("#whiteStars"); if(!canvas) return; ctx=canvas.getContext("2d"); resize(); addEventListener("resize",resize); }
+  return {init,setIntensity};
 })();
 
 /* --- Fetchers (direct → proxy fallback) --- */
@@ -161,7 +146,7 @@ async function fetchBinanceLS(period='1h'){
   catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("ls failed"); return await r2.json(); }
 }
 
-/* --- Derivatives: Funding / OI --- */
+/* --- Derivatives (Funding / OI) --- */
 async function fetchFunding(symbol="BTCUSDT", limit=3){
   const q=`symbol=${symbol}&limit=${limit}`;
   const direct=`https://fapi.binance.com/futures/data/fundingRate?${q}`;
@@ -188,7 +173,7 @@ const state = {
   lsPeriod: "1h",
 };
 
-/* --- Rendering: table --- */
+/* --- Table rendering --- */
 function buildRowHTML(c){
   const price = fmtPrice(c.current_price);
   const s7 = (c.sparkline_in_7d && c.sparkline_in_7d.price) || null;
@@ -227,6 +212,7 @@ function renderTableSlice(rows){
   const start = (state.page-1)*state.perPage, end = start + state.perPage;
   const slice = rows.slice(start,end);
   setHTML(tbody, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
+  forceReflow(tbody); // 초기 표시 누락 방지
 }
 
 function applySortFilter(){
@@ -254,8 +240,8 @@ function applySortFilter(){
     }
   };
   state.filtered.sort((a,b)=>{
-    const va = get(a), vb = get(b);
-    const res = (typeof va === "string" && typeof vb === "string") ? va.localeCompare(vb) : (va>vb?1:va<vb?-1:0);
+    const va=get(a), vb=get(b);
+    const res=(typeof va==="string" && typeof vb==="string") ? va.localeCompare(vb) : (va>vb?1:va<vb?-1:0);
     return res*dir;
   });
 
@@ -269,16 +255,20 @@ function applySortFilter(){
 
   const sel = $("#page");
   const totalPages = Math.max(1, Math.ceil(state.filtered.length / state.perPage));
-  sel.innerHTML = Array.from({length: totalPages}, (_,i)=>{
-    const s=i*state.perPage+1, e=Math.min(state.filtered.length,(i+1)*state.perPage);
-    return `<option value="${i+1}">${s}~${e}</option>`;
-  }).join("");
-  if(state.page>totalPages) state.page = totalPages;
-
+  if (sel) {
+    sel.innerHTML = Array.from({length: totalPages}, (_,i)=>{
+      const s=i*state.perPage+1, e=Math.min(state.filtered.length,(i+1)*state.perPage);
+      return `<option value="${i+1}">${s}~${e}</option>`;
+    }).join("");
+    if(state.page>totalPages) state.page = totalPages;
+    sel.value = String(state.page);
+  }else{
+    if(state.page>totalPages) state.page = totalPages;
+  }
   renderTableSlice(state.filtered);
 }
 
-/* --- KPIs/Gainers/Volume --- */
+/* --- KPIs / Lists --- */
 function renderKPIs(markets, global){
   const btc = markets.find(x=>x.id==="bitcoin");
   const tether = markets.find(x=>x.id==="tether");
@@ -290,36 +280,19 @@ function renderKPIs(markets, global){
   setHTML("#kpi-dominance", dom!=null ? Number(dom).toFixed(2)+"%" : "-");
 }
 function renderRightLists(markets){
-  const gainers = markets.slice()
-    .filter(x=>Number.isFinite(x.price_change_percentage_24h))
-    .sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h)
-    .slice(0,10);
+  const gainers = markets.slice().filter(x=>Number.isFinite(x.price_change_percentage_24h)).sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h).slice(0,10);
   setHTML("#list-gainers", gainers.map((c,i)=>{
-    const sym=(c.symbol||"").toUpperCase();
-    const val=c.price_change_percentage_24h ?? 0;
-    const cls=val>=0?"up":"down";
-    return `<div class="row">
-      <div class="rank">${i+1}.</div>
-      <div class="sym">${sym}</div>
-      <div class="price">${fmtPrice(c.current_price)}</div>
-      <div class="pct ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div>
-    </div>`;
+    const sym=(c.symbol||"").toUpperCase(); const val=c.price_change_percentage_24h ?? 0; const cls=val>=0?"up":"down";
+    return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="price">${fmtPrice(c.current_price)}</div><div class="pct ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div>`;
   }).join(""));
   const vol = markets.slice().sort((a,b)=> (b.total_volume||0)-(a.total_volume||0)).slice(0,10);
   setHTML("#list-volume", vol.map((c,i)=>{
-    const sym=(c.symbol||"").toUpperCase();
-    const pct=c.price_change_percentage_24h ?? 0;
-    const cls=pct>=0?"up":"down";
-    return `<div class="row">
-      <div class="rank">${i+1}.</div>
-      <div class="sym">${sym}</div>
-      <div class="price">${fmtPrice(c.current_price)}</div>
-      <div class="pct ${cls}">${pct>=0?'+':''}${pct.toFixed(2)}%</div>
-    </div>`;
+    const sym=(c.symbol||"").toUpperCase(); const pct=c.price_change_percentage_24h ?? 0; const cls=pct>=0?"up":"down";
+    return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="price">${fmtPrice(c.current_price)}</div><div class="pct ${cls}">${pct>=0?'+':''}${pct.toFixed(2)}%</div></div>`;
   }).join(""));
 }
 
-/* --- FNG gauge --- */
+/* --- FNG --- */
 function renderFNGCard(data){
   try{
     const item = Array.isArray(data?.data) ? data.data[0] : null;
@@ -332,31 +305,13 @@ function renderFNGCard(data){
     setHTML("#fng-date", `Alternative.me · ${dt.getFullYear()}. ${String(dt.getMonth()+1).padStart(2,'0')}. ${String(dt.getDate()).padStart(2,'0')}`);
     const badge = $("#fng-badge"); badge.className = `badge ${cls}`; badge.textContent = label;
 
-    const pct = clamp((value/100),0,1);
-    const start=-Math.PI, end=0;
-    const ang = start + (end-start)*pct;
+    const pct = clamp((value/100),0,1), start=-Math.PI, end=0, ang=start+(end-start)*pct;
     const r=56, cx=80, cy=86;
     const arc=(a)=>`${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`;
-    const needleX=cx+ (r-8)*Math.cos(ang), needleY=cy+ (r-8)*Math.sin(ang);
-    const svg = `
-    <svg width="160" height="100" viewBox="0 0 160 100">
-      <defs>
-        <linearGradient id="seg1" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#f59e0b"/>
-        </linearGradient>
-        <linearGradient id="seg2" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/>
-        </linearGradient>
-      </defs>
-      <path d="M ${arc(start)} A ${r} ${r} 0 0 1 ${arc(-Math.PI/2)}" stroke="url(#seg1)" stroke-width="12" fill="none" opacity=".9"/>
-      <path d="M ${arc(-Math.PI/2)} A ${r} ${r} 0 0 1 ${arc(end)}" stroke="url(#seg2)" stroke-width="12" fill="none" opacity=".9"/>
-      <circle cx="${cx}" cy="${cy}" r="2.8" fill="#fff" opacity=".9"/>
-      <line x1="${cx}" y1="${cy}" x2="${needleX}" y2="${needleY}" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    </svg>`;
+    const needleX=cx+(r-8)*Math.cos(ang), needleY=cy+(r-8)*Math.sin(ang);
+    const svg=`<svg width="160" height="100" viewBox="0 0 160 100"><defs><linearGradient id="seg1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient><linearGradient id="seg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/></linearGradient></defs><path d="M ${arc(start)} A ${r} ${r} 0 0 1 ${arc(-Math.PI/2)}" stroke="url(#seg1)" stroke-width="12" fill="none" opacity=".9"/><path d="M ${arc(-Math.PI/2)} A ${r} ${r} 0 0 1 ${arc(end)}" stroke="url(#seg2)" stroke-width="12" fill="none" opacity=".9"/><circle cx="${cx}" cy="${cy}" r="2.8" fill="#fff" opacity=".9"/><line x1="${cx}" y1="${cy}" x2="${needleX}" y2="${needleY}" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
     setHTML("#fng-gauge", svg);
-  }catch{
-    setHTML("#fng-title","- / -"); setHTML("#fng-gauge","");
-  }
+  }catch{ setHTML("#fng-title","- / -"); setHTML("#fng-gauge",""); }
 }
 
 /* --- Mini caps (BTC/USDT) --- */
@@ -376,29 +331,20 @@ function renderMiniCaps(btcChart, usdtChart){
 
 /* --- Derivatives render --- */
 function renderDerivatives({btc, eth}){
-  const setFunding = (coin, valPct)=>{
-    const maxAbs = 0.10; // 0.10% = 풀스케일
-    const w = clamp(Math.abs(valPct)/maxAbs, 0, 1)*50; // half width
-    const pos = $(`#fund-${coin}-pos`), neg = $(`#fund-${coin}-neg`);
-    if(!pos || !neg) return;
-    pos.style.width = "0%"; neg.style.width = "0%";
-    if(valPct>=0) pos.style.width = `${w}%`; else neg.style.width = `${w}%`;
-    setHTML(`#fund-${coin}-val`, fmtSmallPct(valPct, 4));
+  const setFunding=(coin,valPct)=>{
+    const maxAbs=0.10, w=clamp(Math.abs(valPct)/maxAbs,0,1)*50;
+    const pos=$(`#fund-${coin}-pos`), neg=$(`#fund-${coin}-neg`);
+    if(!pos||!neg) return; pos.style.width="0%"; neg.style.width="0%"; if(valPct>=0) pos.style.width=`${w}%`; else neg.style.width=`${w}%`;
+    setHTML(`#fund-${coin}-val`, (valPct>=0?'+':'')+valPct.toFixed(4)+'%');
   };
-  const setOI = (coin, valPct)=>{
-    const max = 25; // 25% 풀스케일
-    const w = clamp(Math.abs(valPct)/max, 0, 1)*100;
-    const bar = $(`#oi-${coin}-bar`);
-    if(bar) bar.style.width = `${w}%`;
-    const el = $(`#oi-${coin}-val`);
-    if(el){ el.textContent = (valPct>=0?'+':'') + valPct.toFixed(2) + '%'; el.className = 'val ' + (valPct>=0?'up':'down'); }
+  const setOI=(coin,valPct)=>{
+    const max=25, w=clamp(Math.abs(valPct)/max,0,1)*100, bar=$(`#oi-${coin}-bar`);
+    if(bar) bar.style.width=`${w}%`;
+    const el=$(`#oi-${coin}-val`); if(el){ el.textContent=(valPct>=0?'+':'')+valPct.toFixed(2)+'%'; el.className='val '+(valPct>=0?'up':'down'); }
   };
-  setFunding("btc", btc.funding);
-  setFunding("eth", eth.funding);
-  setOI("btc", btc.oiDelta);
-  setOI("eth", eth.oiDelta);
-  const dt = new Date();
-  setHTML("#deriv-meta", `Binance Futures · ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`);
+  setFunding("btc", btc.funding); setFunding("eth", eth.funding);
+  setOI("btc", btc.oiDelta); setOI("eth", eth.oiDelta);
+  const dt=new Date(); setHTML("#deriv-meta", `Binance Futures · ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`);
 }
 
 /* --- Long/Short --- */
@@ -408,17 +354,11 @@ function renderLongShort(period, arr){
   const ratio = Number(last.longShortRatio || last.longShortRatio?.toString() || 0);
   let longPct, shortPct;
   if(last.longAccount && last.shortAccount){
-    const la=Number(last.longAccount), sa=Number(last.shortAccount);
-    const sum=la+sa || 1;
+    const la=Number(last.longAccount), sa=Number(last.shortAccount); const sum=la+sa || 1;
     longPct = la/sum*100; shortPct = sa/sum*100;
-  }else if(ratio){
-    shortPct = 100/(1+ratio);
-    longPct = 100-shortPct;
-  }else{
-    longPct = shortPct = 50;
-  }
-  setHTML("#ls-long", `${longPct.toFixed(1)}%`);
-  setHTML("#ls-short", `${shortPct.toFixed(1)}%`);
+  }else if(ratio){ shortPct = 100/(1+ratio); longPct = 100-shortPct; }
+  else{ longPct = shortPct = 50; }
+  setHTML("#ls-long", `${longPct.toFixed(1)}%`); setHTML("#ls-short", `${shortPct.toFixed(1)}%`);
   setHTML("#ls-ratio", ratio ? ratio.toFixed(2) : `${(longPct/shortPct).toFixed(2)}`);
   $("#ls-longbar").style.width = `${clamp(longPct,0,100)}%`;
   $$('.ls-ctl button').forEach(b=>b.classList.toggle('active', b.dataset.period===period));
@@ -429,12 +369,8 @@ function wireHeaderSort(){
   $$(".cosmos-table thead th.sortable").forEach(th=>{
     th.addEventListener("click", ()=>{
       const key = th.dataset.key;
-      if(state.sortKey === key){
-        state.sortDir = state.sortDir===-1 ? 1 : -1;
-      }else{
-        state.sortKey = key;
-        state.sortDir = -1;
-      }
+      if(state.sortKey === key){ state.sortDir = state.sortDir===-1 ? 1 : -1; }
+      else{ state.sortKey = key; state.sortDir = -1; }
       applySortFilter();
     });
   });
@@ -443,11 +379,9 @@ function wireHeaderSort(){
 async function initOnce(){
   $("#backBtn").addEventListener("click", ()=>history.back());
 
-  // Long/Short buttons
   $$('.ls-ctl button').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
-      const p=e.currentTarget.dataset.period;
-      state.lsPeriod=p;
+      const p=e.currentTarget.dataset.period; state.lsPeriod=p;
       try{ const d=await fetchBinanceLS(p); renderLongShort(p,d); }catch{}
     });
   });
@@ -455,28 +389,18 @@ async function initOnce(){
   $("#search").addEventListener("input", ()=>{ state.page=1; applySortFilter(); });
   $("#sortkey").addEventListener("change", (e)=>{ state.sortKey=e.target.value; applySortFilter(); });
   $("#sortdir").addEventListener("click", (e)=>{
-    state.sortDir = state.sortDir===-1 ? 1 : -1;
-    e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲";
-    applySortFilter();
+    state.sortDir = state.sortDir===-1 ? 1 : -1; e.currentTarget.textContent = state.sortDir===-1 ? "▼" : "▲"; applySortFilter();
   });
   $("#page").addEventListener("change", (e)=>{ state.page = Number(e.target.value)||1; renderTableSlice(state.filtered); });
 
   wireHeaderSort();
 
-  // ★ Star controller: 작은 별 + 흰 점 별 연동
-  const r = $("#starRange");
-  const setStarCSS = (v)=> document.documentElement.style.setProperty("--star", String(v/100));
+  // STAR 컨트롤 연동
+  const r=$("#starRange"); const setStarCSS=v=>document.documentElement.style.setProperty("--star", String(v/100));
   if(r){
-    const saved = Number(localStorage.getItem("two4_star")||0);
-    r.value = String(clamp(saved,0,100));
-    setStarCSS(Number(r.value));
-    StarField.setIntensity(Number(r.value)/100);
-    r.addEventListener("input", (e)=>{
-      const v = clamp(Number(e.target.value||0),0,100);
-      setStarCSS(v);
-      StarField.setIntensity(v/100);
-      localStorage.setItem("two4_star", String(v));
-    });
+    const saved=Number(localStorage.getItem("two4_star")||0);
+    r.value=String(clamp(saved,0,100)); setStarCSS(Number(r.value)); StarField.setIntensity(Number(r.value)/100);
+    r.addEventListener("input",(e)=>{ const v=clamp(Number(e.target.value||0),0,100); setStarCSS(v); StarField.setIntensity(v/100); localStorage.setItem("two4_star", String(v)); });
   }
 }
 
@@ -487,36 +411,27 @@ async function initData(){
       fetchMarketChart('bitcoin', 7), fetchMarketChart('tether', 7)
     ]);
     state.all = markets;
+
     renderKPIs(markets, global);
     renderRightLists(markets);
-    applySortFilter();
+
+    applySortFilter();                        // 즉시 1회
+    requestAnimationFrame(applySortFilter);   // 다음 프레임 1회 더
+
     renderFNGCard(fng);
     renderLongShort(state.lsPeriod, ls);
     renderMiniCaps(btcChart, usdtChart);
 
-    // Derivatives data
-    const [fund_btc, fund_eth, oi_btc, oi_eth] = await Promise.all([
-      fetchFunding("BTCUSDT", 3), fetchFunding("ETHUSDT", 3),
-      fetchOIHist("BTCUSDT", "5m", 288), fetchOIHist("ETHUSDT", "5m", 288)
-    ]);
-    const avgFunding = (arr)=> {
-      if(!Array.isArray(arr)||arr.length===0) return 0;
-      const rates = arr.map(x=>Number(x.fundingRate||x.rate||0));
-      const m = rates.length || 1;
-      return rates.reduce((s,v)=>s+v,0)/m*100;
-    };
-    const oiDeltaPct = (arr)=>{
-      if(!Array.isArray(arr)||arr.length<2) return 0;
-      const first = Number(arr[0].sumOpenInterest || arr[0].openInterest || 0);
-      const last  = Number(arr[arr.length-1].sumOpenInterest || arr[arr.length-1].openInterest || 0);
-      if(!first) return 0;
-      return (last-first)/first*100;
-    };
-    renderDerivatives({
-      btc: { funding: avgFunding(fund_btc), oiDelta: oiDeltaPct(oi_btc) },
-      eth: { funding: avgFunding(fund_eth), oiDelta: oiDeltaPct(oi_eth) }
-    });
-
+    // 파생(옵션) – 실패해도 다른 카드에 영향 X
+    try{
+      const [fund_btc, fund_eth, oi_btc, oi_eth] = await Promise.all([
+        fetchFunding("BTCUSDT", 3), fetchFunding("ETHUSDT", 3),
+        fetchOIHist("BTCUSDT", "5m", 288), fetchOIHist("ETHUSDT", "5m", 288)
+      ]);
+      const avgFunding = (arr)=> Array.isArray(arr)&&arr.length ? (arr.map(x=>Number(x.fundingRate||x.rate||0)).reduce((s,v)=>s+v,0)/arr.length*100) : 0;
+      const oiDeltaPct = (arr)=> Array.isArray(arr)&&arr.length>1 ? ((Number(arr.at(-1).sumOpenInterest||arr.at(-1).openInterest||0)-Number(arr[0].sumOpenInterest||arr[0].openInterest||0))/(Number(arr[0].sumOpenInterest||arr[0].openInterest||1))*100) : 0;
+      renderDerivatives({ btc:{funding:avgFunding(fund_btc), oiDelta:oiDeltaPct(oi_btc)}, eth:{funding:avgFunding(fund_eth), oiDelta:oiDeltaPct(oi_eth)} });
+    }catch{}
   }catch(e){
     console.error(e);
     setHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
@@ -525,14 +440,12 @@ async function initData(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
   initOnce();
-  StarField.init(); // 흰 점 별 초기화
+  StarField.init();
   initData();
 
-  // 비가시 탭에서는 업데이트 중지
-  let vis = document.visibilityState === "visible";
-  document.addEventListener("visibilitychange", ()=>{ vis = document.visibilityState === "visible"; });
+  let vis=document.visibilityState==="visible";
+  document.addEventListener("visibilitychange", ()=>{ vis=document.visibilityState==="visible"; });
 
-  // auto refresh (모바일: 60s)
   setInterval(async ()=>{
     if(!vis) return;
     try{
@@ -544,36 +457,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch{}
   }, 60000);
 
-  // FNG hourly
   setInterval(async ()=>{ if(!vis) return; try{ renderFNGCard(await fetchFNG()); }catch{} }, 60*60*1000);
-
-  // Derivatives 5분마다
-  setInterval(async ()=>{
-    if(!vis) return;
-    try{
-      const [fund_btc, fund_eth, oi_btc, oi_eth] = await Promise.all([
-        fetchFunding("BTCUSDT", 3), fetchFunding("ETHUSDT", 3),
-        fetchOIHist("BTCUSDT", "5m", 288), fetchOIHist("ETHUSDT", "5m", 288)
-      ]);
-      const avgFunding = (arr)=> {
-        if(!Array.isArray(arr)||arr.length===0) return 0;
-        const rates = arr.map(x=>Number(x.fundingRate||x.rate||0));
-        const m = rates.length || 1;
-        return rates.reduce((s,v)=>s+v,0)/m*100;
-      };
-      const oiDeltaPct = (arr)=>{
-        if(!Array.isArray(arr)||arr.length<2) return 0;
-        const first = Number(arr[0].sumOpenInterest || arr[0].openInterest || 0);
-        const last  = Number(arr[arr.length-1].sumOpenInterest || arr[arr.length-1].openInterest || 0);
-        if(!first) return 0;
-        return (last-first)/first*100;
-      };
-      renderDerivatives({
-        btc: { funding: avgFunding(fund_btc), oiDelta: oiDeltaPct(oi_btc) },
-        eth: { funding: avgFunding(fund_eth), oiDelta: oiDeltaPct(oi_eth) }
-      });
-    }catch{}
-  }, 5*60*1000);
 });
 
 // expose
