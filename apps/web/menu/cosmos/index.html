@@ -6,72 +6,59 @@
   <title>TWO4 COSMOS</title>
   <style>
     :root{
-      --bg:#0b1018;
-      --panel:#111827;
-      --text:#e8eefc;
-      --muted:#9aa3b6;
+      --bg:#0b1018; --text:#e8eefc; --muted:#9aa3b6;
       --up:#22c55e; --down:#ef4444;
-      --card-border: rgba(255,255,255,.08);
-      --sticky-top: 74px;            /* 상단 컨트롤/여백 고려한 thead 오프셋 */
-      --starVis: .75;                /* 0~1: 별 밝기/밀도 */
-      --rank-w: 50px;                /* 좌측 고정 열 기준 */
-      --name-w: 280px;
+      --sticky-top: 78px;          /* sticky thead 오프셋(데스크탑) */
+      --rank-w:56px; --name-w:280px;
+      --starVis:.8;                /* 0~1: 별 밝기/밀도 */
     }
     *{box-sizing:border-box}
-    html,body{
-      margin:0;padding:0;background:#0b1018;color:var(--text);
-      font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"
-    }
+    html,body{margin:0;padding:0;background:#0b1018;color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"}
     a{color:inherit;text-decoration:none}
     img{max-width:100%;height:auto}
 
-    /* ⭐ starfield (문법 오류 콤마 보정) */
-    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;
-      background:radial-gradient(1200px 700px at 50% -200px,#182036 0%,var(--bg) 55%)}
+    /* ⭐ 배경(수정: 문법 오류 콤마 추가 + 레이어 3장) */
+    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(1200px 700px at 50% -220px,#182036 0%,var(--bg) 55%)}
     .star{position:absolute;inset:0;background-repeat:repeat;background-size:1600px 1600px;filter:blur(.2px)}
-    .star.s1{
-      opacity:calc(.55*var(--starVis)); animation:tw1 22s linear infinite;
+    .star.s1{opacity:calc(.55*var(--starVis));animation:tw1 22s linear infinite;
       background-image:
         radial-gradient(1px 1px at 20px 30px, #fff8 50%, transparent 51%),
         radial-gradient(1px 1px at 300px 120px, #fff8 50%, transparent 51%),
-        radial-gradient(1px 1px at 620px 420px, #fff8 50%, transparent 51%);
-    }
-    .star.s2{
-      opacity:calc(.35*var(--starVis)); animation:tw2 32s linear infinite;
+        radial-gradient(1px 1px at 620px 420px, #fff8 50%, transparent 51%);}
+    .star.s2{opacity:calc(.35*var(--starVis));animation:tw2 32s linear infinite;
       background-image:
         radial-gradient(1px 1px at 120px 80px, #fff6 50%, transparent 51%),
         radial-gradient(1px 1px at 460px 260px, #fff6 50%, transparent 51%),
-        radial-gradient(1px 1px at 860px 640px, #fff6 50%, transparent 51%);
-    }
-    .star.s3{
-      opacity:calc(.25*var(--starVis)); animation:tw3 44s linear infinite;
+        radial-gradient(1px 1px at 860px 640px, #fff6 50%, transparent 51%);}
+    .star.s3{opacity:calc(.25*var(--starVis));animation:tw3 44s linear infinite;
       background-image:
         radial-gradient(1px 1px at 70px 20px, #fff5 50%, transparent 51%),
         radial-gradient(1px 1px at 260px 220px, #fff5 50%, transparent 51%),
-        radial-gradient(1px 1px at 1120px 820px, #fff5 50%, transparent 51%);
-    }
+        radial-gradient(1px 1px at 1120px 820px, #fff5 50%, transparent 51%);}
     @keyframes tw1{from{background-position:0 0}to{background-position:-1600px -1600px}}
-    @keyframes tw2{from{background-position:0 0}to{background-position:-1200px -800px}}
+    @keyframes tw2{from{background-position:0 0}to{background-position:-1200px -900px}}
     @keyframes tw3{from{background-position:0 0}to{background-position:-900px -600px}}
 
-    /* ⭐ 상단 중앙 아주 작은 컨트롤러 */
+    /* ⭐ 상단 중앙 별 컨트롤러(아주 작게, 심볼 제거) */
     .star-ctl{
       position:fixed; left:50%; top:10px; transform:translateX(-50%);
-      z-index:10; display:flex; align-items:center; gap:6px;
+      z-index:10; display:flex; align-items:center; gap:8px;
       padding:6px 10px; border-radius:999px;
-      background:rgba(255,255,255,.08); backdrop-filter:blur(10px);
-      border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
       font-size:12px; color:#cfe1ff;
     }
+    .star-ctl span{opacity:.85}
     .star-ctl input[type=range]{width:140px; height:6px; background:transparent}
     .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#22d3ee)}
     .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
 
     .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:64px 16px 80px}
+
+    /* 상단 로고 (COSMOS 텍스트 제거) */
     .brand{display:flex;align-items:center;gap:10px;margin:8px 0 12px}
     .brand img{height:38px}
 
-    /* HUB (도넛) */
+    /* ===== 3D 허브 + 패널 ===== */
     .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center}
     @media (max-width:900px){.hub-grid{grid-template-columns:1fr}}
     .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
@@ -89,111 +76,94 @@
     }
     .center-big{font-weight:900;font-size:clamp(16px,3.2vw,28px);letter-spacing:.02em;margin:0 0 4px}
     .center-sub{font-size:12px;color:var(--muted);margin:0}
-
     .seg{cursor:pointer;stroke:rgba(255,255,255,.14);stroke-width:1.2;transition:transform .18s ease, opacity .18s ease}
-    .seg:hover{transform:scale(1.02)}
-    .seg.active{transform:scale(1.03)}
+    .seg:hover{transform:scale(1.02)} .seg.active{transform:scale(1.03)}
 
-    /* 섹터 라벨(2배, 빛 효과 제거) */
-    .seg-label{
-      font-weight:900;
-      font-size:clamp(16px,1.8vw,22px);
-      letter-spacing:.02em;
-      fill:#e8f6ff;
-    }
+    /* 섹터 라벨(2배, 광택 제거) */
+    .seg-label{font-weight:900;font-size:clamp(16px,1.8vw,22px);letter-spacing:.02em;fill:#e8f6ff}
 
-    .panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
+    .panel{min-height:260px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
       border:1px solid rgba(255,255,255,.10); backdrop-filter:blur(12px)}
     .panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
     .list{display:flex;flex-direction:column;gap:6px}
     .row{display:grid;grid-template-columns:1.6em 1fr auto auto;gap:8px;align-items:center;font-size:13.5px}
     .row .rk{opacity:.7;text-align:right;font-weight:800}
-    .row .tk{font-weight:900}
+    .row .tk{font-weight:900;color:#fff}
     .row .px{opacity:.9;text-align:right}
     .row .pc{font-weight:900;text-align:right}
     .row .pc.up{color:var(--up)} .row .pc.down{color:var(--down)}
-
-    /* Gauge (F&G) */
     .gauge{width:100%;height:140px}
     .g-arc{stroke-linecap:round;stroke-width:16;fill:none}
     .needle{stroke:#fff;stroke-width:8;stroke-linecap:round}
 
-    /* Controls + Table */
+    /* ===== Controls + Table ===== */
     .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
     .controls .search{flex:1}
     input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+
     .table-wrap{overflow-x:auto;margin-top:8px}
     table{width:1200px;border-collapse:separate;border-spacing:0 10px}
     thead th{
       position:sticky; top:var(--sticky-top);
-      backdrop-filter:blur(6px);
-      font-size:12px; color:#b9c3d6; font-weight:700; padding:8px 10px; z-index:5;
-      background: rgba(17,24,39,.96);
+      background:rgba(17,24,39,.85); backdrop-filter:blur(6px);
+      font-size:12px; color:#b9c3d6; font-weight:700; padding:8px 10px; z-index:5; cursor:pointer;
     }
-    /* column widths */
-    .c-rank { width: var(--rank-w); }
-    .c-name { width: var(--name-w); }
-    .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol { width: 120px; }
-    .c-spark { width: 120px; }
+    tbody td{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
+    tbody tr td:first-child{border-radius:12px 0 0 12px}
+    tbody tr td:last-child{border-radius:0 12px 12px 0}
 
-    /* tbody cells + sticky rank/name */
-    #mkt tbody td{background:rgba(17,24,39,.85);border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle}
-    #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
-    #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
-    #mkt .sticky-rank { position: sticky; left: 0; z-index: 2; background:rgba(17,24,39,.96) }
-    #mkt .sticky-name { position: sticky; left: var(--rank-w); z-index: 2; background:rgba(17,24,39,.96) }
+    /* sticky 좌측(랭크/네임) */
+    .c-rank{width:var(--rank-w)} .c-name{width:var(--name-w)}
+    #mkt .sticky-rank{position:sticky; left:0; z-index:2; text-align:right; font-weight:800}
+    #mkt .sticky-name{position:sticky; left:var(--rank-w); z-index:2}
 
-    /* name cell content */
-    .mkt-name { display:flex; align-items:center; gap:10px; min-width:0; }
-    .mkt-name img { width:20px; height:20px; border-radius:50%; flex:0 0 auto; }
-    .mkt-name .sym { font-weight:800; margin-right:6px; white-space:nowrap; }
-    .mkt-name .full { opacity:.85; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    /* name cell */
+    .mkt-name{display:flex;align-items:center;gap:10px}
+    .mkt-name img{width:20px;height:20px;border-radius:50%}
+    .mkt-name .sym{font-weight:900;margin-right:6px}
+    .mkt-name .full{opacity:.85}
 
-    /* numbers */
-    .num { text-align:right; font-variant-numeric: tabular-nums; }
-    .pct.up { color:#22c55e; } .pct.down { color:#ef4444; }
-    .text-right { text-align:right; }
-
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+    .pct.up{color:var(--up)} .pct.down{color:var(--down)}
     td.spark canvas{display:block;width:120px;height:28px}
 
-    /* 모바일: Symbol만, Price / 24h / 7d Spark */
+    /* 모바일: 심볼/Price/24h/Spark만 + sticky 보정 + 더 큰 sticky-top */
     @media (max-width:800px){
+      :root{ --sticky-top: 100px; }
       table{width:1000px}
-      .wrap{padding-top:84px}
-      :root{--sticky-top: 84px;}
-
-      /* 숨길 열: 1h(4), Market Cap(7), 24h Volume(8) */
+      /* 숨김: Rank(1), 1h(4), 7d%(6), Mcap(7), Volume(8) */
+      #mkt thead th:nth-child(1), #mkt tbody td:nth-child(1),
       #mkt thead th:nth-child(4), #mkt tbody td:nth-child(4),
+      #mkt thead th:nth-child(6), #mkt tbody td:nth-child(6),
       #mkt thead th:nth-child(7), #mkt tbody td:nth-child(7),
-      #mkt thead th:nth-child(8), #mkt tbody td:nth-child(8){ display:none!important }
-
-      /* 이름은 숨기고 심볼만 */
-      .mkt-name .full{ display:none }
-      .c-name { width: 140px; }
+      #mkt thead th:nth-child(8), #mkt tbody td:nth-child(8){display:none!important}
+      /* 이름은 심볼만 */
+      .mkt-name .full{display:none}
+      /* rank 숨김이므로 name sticky left=0으로 재정의 */
+      #mkt .sticky-name{left:0}
     }
 
-    /* 방문/밑줄 등 모두 제거 (링크 사용 안 함) */
+    /* 밑줄/링크색 모두 제거(혹시 남은 <a>가 있어도 무효화) */
     .no-link, .no-link:visited, .no-link:hover, .no-link:active{color:inherit;text-decoration:none}
 
     footer{margin:24px 0 0;text-align:center;color:#9aa3b6;opacity:.8;font-size:12px}
   </style>
 </head>
 <body>
-  <!-- ⭐ star background -->
+  <!-- ⭐ 별 배경 -->
   <div class="sky"><div class="star s1"></div><div class="star s2"></div><div class="star s3"></div></div>
 
-  <!-- ⭐ tiny controller (center top) -->
+  <!-- ⭐ 상단 중앙 별 컨트롤러 -->
   <div class="star-ctl">
-    <span style="opacity:.8">Stars</span>
-    <input id="starRange" type="range" min="0" max="100" value="75">
+    <span>Stars</span>
+    <input id="starRange" type="range" min="0" max="100" value="80" />
   </div>
 
   <div class="wrap">
-    <div class="brand">
-      <img src="/media/logo.png" alt="TWO4" />
-    </div>
+    <!-- 로고(COSMOS 글자 제거) -->
+    <div class="brand"><img src="/media/logo.png" alt="TWO4" /></div>
 
-    <!-- HUB -->
+    <!-- ===== 3D 허브 ===== -->
     <section class="hub-grid">
       <div class="hub">
         <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
@@ -208,11 +178,12 @@
       </aside>
     </section>
 
-    <!-- Controls & Table -->
+    <!-- ===== Controls ===== -->
     <div class="controls">
       <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
     </div>
 
+    <!-- ===== Market Table ===== -->
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
         <colgroup>
@@ -228,14 +199,14 @@
         </colgroup>
         <thead>
           <tr>
-            <th data-key="rank"   class="sticky-rank th th-sort">#</th>
-            <th data-key="name"   class="sticky-name th th-sort">Name</th>
-            <th data-key="price"  class="text-right th th-sort">Price</th>
-            <th data-key="change1h"  class="text-right th th-sort">1h</th>
-            <th data-key="change24h" class="text-right th th-sort">24h</th>
-            <th data-key="change7d"  class="text-right th th-sort">7d</th>
-            <th data-key="market_cap" class="text-right th th-sort">Market Cap</th>
-            <th data-key="volume"     class="text-right th th-sort">24h Volume</th>
+            <th data-key="rank">#</th>
+            <th data-key="name">Name</th>
+            <th data-key="price" class="text-right">Price</th>
+            <th data-key="change1h" class="text-right">1h</th>
+            <th data-key="change24h" class="text-right">24h</th>
+            <th data-key="change7d" class="text-right">7d</th>
+            <th data-key="market_cap" class="text-right">Market Cap</th>
+            <th data-key="volume" class="text-right">24h Volume</th>
             <th class="text-right">7d Spark</th>
           </tr>
         </thead>
