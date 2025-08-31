@@ -51,6 +51,7 @@ const StarField=(()=>{
     init(){
       cv=$("#starCanvas"); if(!cv) return; ctx=cv.getContext("2d"); resize(); addEventListener("resize",resize);
       if(!anim) anim=requestAnimationFrame(draw);
+      const sr=$("#starRange"); if(sr){ const v=(Number(sr.value)||70)/100; density=clamp(v,0,1); }
     },
     set(v){ density=clamp(v,0,1); build(); }
   };
@@ -130,7 +131,7 @@ const ST={ all:[], filtered:[], page:1, perPage:50, sortKey:"market_cap", sortDi
       const st2=document.createElementNS(svg.namespaceURI,'stop'); st2.setAttribute('offset','100%'); st2.setAttribute('stop-color','#06b6d4'); st2.setAttribute('stop-opacity','.46');
       grad.appendChild(st1); grad.appendChild(st2); defs.appendChild(grad);
 
-      // big label (no glow)
+      // big label (no glow, 2x size)
       const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-28)*Math.cos(mid), ty=cy+(rx-28)*Math.sin(mid)+6;
       const text=document.createElementNS(svg.namespaceURI,'text');
       text.setAttribute('x',tx); text.setAttribute('y',ty); text.setAttribute('text-anchor','middle');
@@ -145,7 +146,6 @@ const ST={ all:[], filtered:[], page:1, perPage:50, sortKey:"market_cap", sortDi
   function listHTML(items, kind){
     return `<div style="display:flex;flex-direction:column;gap:6px">` + items.map((c,i)=>{
       const sym=(c.symbol||"").toUpperCase();
-      const px=fmtK(c.current_price);
       const pc = kind==="vol" ? fmtCap(c.total_volume) : fmtPct(c.price_change_percentage_24h);
       const cls= kind==="vol" ? "" : pctClass(c.price_change_percentage_24h);
       return `<div style="display:grid;grid-template-columns:1.6em 1fr auto;gap:8px;align-items:center">
@@ -356,7 +356,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   await Table.initData();
   await Hub.init();
 
-  // periodic refresh (markets + hub light)
+  // periodic refresh (markets)
   let vis=document.visibilityState==="visible";
   document.addEventListener("visibilitychange",()=>vis=document.visibilityState==="visible");
   setInterval(async ()=>{ if(!vis) return; try{
