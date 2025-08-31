@@ -1,295 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cosmos · 전체 차트</title>
-
-  <!-- 폰트 & 차트 라이브러리 -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>COSMOS Chart</title>
   <style>
-    :root{
-      --bg: #0b0f1e;
-      --panel: rgba(16, 20, 40, 0.65);
-      --stroke: rgba(255,255,255, .08);
-      --primary: #6fdcff;   /* 네온 시안 */
-      --accent:  #a78bfa;   /* 네온 보라 */
-      --green:   #2ee59d;
-      --red:     #ff6b81;
-      --gold:    #ffcf5a;
-      color-scheme: dark;
-    }
-    *{ box-sizing:border-box }
-    html,body{ height:100% }
-    body{
-      margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
-      background:
-        radial-gradient(900px 600px at 8% 10%, rgba(103,76,255,.18), transparent 60%),
-        radial-gradient(700px 500px at 85% 5%, rgba(0,200,255,.14), transparent 60%),
-        radial-gradient(700px 600px at 70% 90%, rgba(30,255,188,.12), transparent 65%),
-        linear-gradient(#0a0d1a, #0b0f1e 40%, #070a14);
-      color:#e6edf6;
-      overflow-y:auto;
-    }
+    :root{ --bg:#0b1018; --text:#e8eefc; --muted:#9aa3b6; --up:#22c55e; --down:#ef4444; --star:0; --bgstar:0; --topbar-h:56px; }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial; height:100%}
+    body{overflow:hidden}
 
-    /* 은은한 별빛 레이어 */
-    .stars, .twinkle{
-      position:fixed; inset:0; pointer-events:none; z-index:0;
-      background-repeat:repeat; opacity:.22;
-      filter:blur(.2px);
-    }
-    .stars{
-      background-image:
-        radial-gradient(1px 1px at  7% 11%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 13% 63%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 27% 21%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 33% 81%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 49% 27%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 62% 73%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 71% 39%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 83% 12%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 91% 58%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 96% 86%, #fff, transparent 60%);
-    }
-    .twinkle{
-      animation: twinkle 9s linear infinite;
-      background-image:
-        radial-gradient(1px 1px at 18% 35%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 44% 16%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 58% 61%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 72% 25%, #fff, transparent 60%),
-        radial-gradient(1px 1px at 88% 70%, #fff, transparent 60%);
-    }
-    @keyframes twinkle{
-      0%,100%{ opacity:.12; transform:translateY(0) }
-      50%{ opacity:.28; transform:translateY(-2px) }
-    }
+    .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
+    .stars,.stars2,.stars3{position:absolute; inset:0; background-repeat:repeat; background-size:1600px 1600px; animation:twinkle 18s linear infinite; opacity:.55; filter:blur(.2px)}
+    .stars{background-image:radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%)}
+    .stars2{background-image:radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%); animation-duration:26s; opacity:.35}
+    .stars3{background-image:radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%); animation-duration:34s; opacity:.25}
+    @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
+    .white-stars{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:var(--bgstar,0)}
 
-    /* 레이아웃 */
-    .wrap{ max-width:1200px; margin:0 auto; padding:18px 16px 20px; position:relative; z-index:1; }
-    .top{
-      display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;
-      background:linear-gradient(90deg, rgba(111,220,255,.08), rgba(167,139,250,.06));
-      border:1px solid var(--stroke);
-      border-radius:14px; padding:10px 12px; backdrop-filter: blur(6px);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 10px 24px rgba(0,0,0,.25);
-    }
-    .brand{
-      display:flex; align-items:center; gap:10px; margin-right:4px;
-    }
-    .brand .logo{
-      width:28px; height:28px; border-radius:8px;
-      background: radial-gradient(circle at 30% 30%, #79ffe1, #4976ff 60%, #261b65);
-      box-shadow: 0 0 12px rgba(111,220,255,.45), 0 0 30px rgba(167,139,250,.25) inset;
-    }
-    .brand .title{
-      font-family: "Orbitron", system-ui; font-weight:700; letter-spacing:.04em; font-size:18px;
-      text-shadow: 0 0 12px rgba(111,220,255,.25);
-    }
+    .topbar{position:fixed; top:calc(env(safe-area-inset-top) + 8px); left:12px; right:12px; z-index:7; display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .back-btn{width:42px; height:42px; border-radius:999px; display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.18); color:#dbeafe; font-size:18px}
+    .meta{display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+    .meta img{width:18px; height:18px; border-radius:50%}
+    .meta .nm{font-weight:900; letter-spacing:.02em}
+    .periods{display:flex; gap:6px}
+    .periods button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#e8eefc; padding:6px 9px; border-radius:8px; font-weight:700}
+    .periods button.on{background:rgba(114,153,255,.16); border-color:rgba(114,153,255,.32)}
 
-    .btn{ padding:8px 10px; border:1px solid var(--stroke); background:rgba(15,20,40,.6); color:#fff;
-      border-radius:10px; cursor:pointer; backdrop-filter: blur(4px); }
-    .btn.active{ background:linear-gradient(120deg, rgba(111,220,255,.35), rgba(167,139,250,.35)); }
-    .select{ padding:8px 10px; border:1px solid var(--stroke); background:rgba(15,20,40,.6); color:#fff;
-      border-radius:10px; }
+    .stage{position:fixed; inset:0; padding-top:calc(var(--topbar-h) + env(safe-area-inset-top) + 16px); padding-bottom:8px}
+    .chart{position:absolute; left:0; right:0; top:calc(var(--topbar-h) + env(safe-area-inset-top) + 16px); bottom:8px}
+    canvas{position:absolute; inset:0; width:100%; height:100%}
 
-    /* 카드/패널(유리 느낌) */
-    .grid{ display:grid; grid-template-columns:1fr; gap:12px; }
-    .panel{
-      background: var(--panel); border:1px solid var(--stroke); border-radius:16px; padding:12px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
-    }
-    .chart{ height:58vh; min-height:340px; }
-    .subchart{ height:18vh; min-height:120px; }
-
-    .stat{ display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 12px; }
-    .card{ background: var(--panel); border:1px solid var(--stroke); border-radius:12px; padding:8px 10px;
-      box-shadow: 0 6px 16px rgba(0,0,0,.25); backdrop-filter: blur(8px); }
-    .muted{ opacity:.75; }
-
-    a.back{ text-decoration:none; }
-
-    /* 수치 색 */
-    .up{ color: var(--green); }
-    .down{ color: var(--red); }
+    @media (max-width:767px){.back-btn{width:38px;height:38px}}
   </style>
 </head>
 <body>
-  <div class="stars"></div>
-  <div class="twinkle"></div>
+  <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
+  <canvas id="whiteStars" class="white-stars" aria-hidden="true"></canvas>
 
-  <div class="wrap">
-    <!-- 헤더/툴바 -->
-    <div class="top">
-      <div class="brand">
-        <div class="logo"></div>
-        <div class="title">COSMOS · 전체 차트</div>
-      </div>
-
-      <a href="./index.html" class="btn">← 목록으로</a>
-
-      <div id="title" style="font-weight:700;margin-left:4px;">-</div>
-      <div id="rank" class="muted">Rank -</div>
-      <div style="flex:1"></div>
-
-      <div class="muted">기간</div>
-      <button class="btn" data-days="1">1D</button>
-      <button class="btn" data-days="7">7D</button>
-      <button class="btn active" data-days="30">30D</button>
-      <button class="btn" data-days="90">90D</button>
-      <button class="btn" data-days="365">1Y</button>
-      <button class="btn" data-days="max">MAX</button>
-
-      <div class="muted" style="margin-left:6px;">통화</div>
-      <select id="vs" class="select">
-        <option value="usd" selected>USD</option>
-        <!-- <option value="krw">KRW</option> -->
-      </select>
-    </div>
-
-    <!-- 메타 수치 -->
-    <div class="stat">
-      <div class="card">가격: <b id="s-price">-</b></div>
-      <div class="card">24h: <b id="s-24h">-</b></div>
-      <div class="card">시총: <b id="s-mcap">-</b></div>
-      <div class="card">거래량: <b id="s-vol">-</b></div>
-    </div>
-
-    <!-- 차트 -->
-    <div class="grid">
-      <div class="panel"><div id="chart" class="chart"></div></div>
-      <div class="panel"><div id="vol" class="subchart"></div></div>
+  <div class="topbar" id="topbar">
+    <button class="back-btn" id="backBtn" title="뒤로가기">⬅</button>
+    <div class="meta"><img id="coinImg" alt=""><span class="nm" id="coinNm">-</span> <span id="coinPrice" style="font-variant-numeric:tabular-nums;font-weight:900"></span></div>
+    <div class="periods">
+      <button data-days="1">1D</button>
+      <button data-days="7" class="on">7D</button>
+      <button data-days="30">30D</button>
+      <button data-days="90">90D</button>
+      <button data-days="365">1Y</button>
+      <button data-days="max">MAX</button>
     </div>
   </div>
 
-<script>
-/* ===== Helpers ===== */
-const params = new URLSearchParams(location.search);
-const COIN_ID = params.get('id') || 'bitcoin';
-const $ = s => document.querySelector(s);
-const fmtNum = (v,d=0)=> Number(v||0).toLocaleString('en-US',{minimumFractionDigits:d, maximumFractionDigits:d});
-const fmtPrice = (v)=>{
-  if(v==null) return "-";
-  let d = v>=100?2 : v>=1?4 : Math.ceil(Math.abs(Math.log10(v)))+2;
-  d = Math.max(0, Math.min(8, d));
-  return Number(v).toLocaleString("en-US",{minimumFractionDigits:0, maximumFractionDigits:d});
-};
-const pctHTML = (v)=>{
-  if(v==null || !isFinite(v)) return "-";
-  const n = Number(v).toFixed(2);
-  const cls = n>0 ? "up" : n<0 ? "down" : "";
-  return `<span class="${cls}">${n>0?'+':''}${n}%</span>`;
-};
+  <div class="stage">
+    <div class="chart"><canvas id="chart"></canvas></div>
+  </div>
 
-async function getJSON(url, proxyUrl){
-  try{ const r=await fetch(url); if(!r.ok) throw new Error(r.status); return await r.json(); }
-  catch{ const r2=await fetch(proxyUrl); if(!r2.ok) throw new Error('proxy '+r2.status); return await r2.json(); }
-}
-async function fetchMeta(id){
-  const q='localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false';
-  return getJSON(`https://api.coingecko.com/api/v3/coins/${id}?${q}`, `/api/coins/${id}?${q}`);
-}
-async function fetchOHLC(id, vs, days){
-  return getJSON(
-    `https://api.coingecko.com/api/v3/coins/${id}/ohlc?vs_currency=${vs}&days=${days}`,
-    `/api/coins/${id}/ohlc?vs_currency=${vs}&days=${days}`
-  );
-}
-async function fetchMarketChart(id, vs, days){
-  return getJSON(
-    `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=${vs}&days=${days}`,
-    `/api/coins/${id}/market_chart?vs_currency=${vs}&days=${days}`
-  );
-}
-function SMA(data, len){
-  const out=[]; let sum=0;
-  for (let i=0;i<data.length;i++){
-    sum+=data[i].close;
-    if (i>=len) sum-=data[i-len].close;
-    if (i>=len-1) out.push({ time:data[i].time, value: +(sum/len).toFixed(6) });
-  }
-  return out;
-}
+  <script>
+    const StarField=(()=>{let cv,ctx,stars=[],intensity=0,animId=null,W=0,H=0,dpr=1;const D=140,TW_MIN=.002,TW_MAX=.006,R_MIN=.3,R_MAX=1.1,rand=(a,b)=>a+Math.random()*(b-a);function resize(){if(!cv)return;dpr=window.devicePixelRatio||1;const vw=innerWidth,vh=innerHeight;W=Math.floor(vw*dpr);H=Math.floor(vh*dpr);cv.width=W;cv.height=H;cv.style.width=vw+"px";cv.style.height=vh+"px";build()}function build(){const area=(W*H)/(dpr*dpr),target=Math.floor(area/100000*D*intensity),cur=stars.length; if(cur<target){for(let i=cur;i<target;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:(R_MIN+(R_MAX-R_MIN)*Math.random())*dpr,a:.35+.55*Math.random(),tw:TW_MIN+(TW_MAX-TW_MIN)*Math.random(),ph:Math.random()*Math.PI*2})}else if(cur>target){stars.splice(target)}}
+    function loop(){if(!ctx)return;ctx.clearRect(0,0,W,H);const base=intensity;for(const s of stars){s.ph+=s.tw;const a=base*(.85+.15*Math.sin(s.ph));ctx.globalAlpha=a*s.a;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill()}ctx.globalAlpha=1;animId=requestAnimationFrame(loop)}
+    function setIntensity(v){intensity=Math.max(0,Math.min(1,v));document.documentElement.style.setProperty("--bgstar",String(intensity));build(); if(intensity>0&&!animId)animId=requestAnimationFrame(loop); if(intensity===0&&animId){cancelAnimationFrame(animId);animId=null;ctx.clearRect(0,0,W,H)}}
+    function init(){cv=document.getElementById("whiteStars"); if(!cv) return; ctx=cv.getContext("2d"); resize(); addEventListener("resize",resize)}
+    return{init,setIntensity};})();
+    StarField.init(); StarField.setIntensity((Number(localStorage.getItem("two4_star")||0))/100);
 
-/* ===== Charts ===== */
-const chart = LightweightCharts.createChart($('#chart'), {
-  layout:{ background:{ color:'transparent' }, textColor:'#dce6f6' },
-  grid:{ vertLines:{ color:'rgba(255,255,255,.06)' }, horzLines:{ color:'rgba(255,255,255,.06)' } },
-  rightPriceScale:{ borderColor:'rgba(255,255,255,.08)' },
-  timeScale:{ borderColor:'rgba(255,255,255,.08)' },
-  crosshair:{ mode: LightweightCharts.CrosshairMode.Normal },
-});
-const candleSeries = chart.addCandlestickSeries({
-  upColor:'#2ee59d', downColor:'#ff6b81',
-  borderUpColor:'#2ee59d', borderDownColor:'#ff6b81',
-  wickUpColor:'#2ee59d', wickDownColor:'#ff6b81',
-});
-const ma7  = chart.addLineSeries({ color:'#6fdcff', lineWidth:2 });
-const ma25 = chart.addLineSeries({ color:'#ffcf5a', lineWidth:2 });
+    const $=s=>document.querySelector(s), setHTML=(el,html)=>{const n=typeof el==="string"?$(el):el; if(n) n.innerHTML=html;};
+    const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+    const safeLocale=(num,min=0,max=2)=>{if(max<min)max=min; try{return Number(num??0).toLocaleString('en-US',{minimumFractionDigits:min,maximumFractionDigits:max});}catch{return String(Number(num??0).toFixed(max));}};
+    const fmtPrice=v=>v==null||Number.isNaN(v)?"-":"$"+safeLocale(v,0,2);
 
-const volChart = LightweightCharts.createChart($('#vol'), {
-  layout:{ background:{ color:'transparent' }, textColor:'#dce6f6' },
-  grid:{ vertLines:{ color:'rgba(255,255,255,.06)' }, horzLines:{ color:'rgba(255,255,255,.06)' } },
-  rightPriceScale:{ borderColor:'rgba(255,255,255,.08)' }, timeScale:{ borderColor:'rgba(255,255,255,.08)' },
-  crosshair:{ mode: LightweightCharts.CrosshairMode.Normal },
-});
-const volSeries = volChart.addHistogramSeries({
-  priceFormat:{ type:'volume' }, color:'rgba(111,220,255,.85)'
-});
+    const params=new URLSearchParams(location.search); const id=params.get("id")||"bitcoin";
+    $("#backBtn").addEventListener("click",()=>history.back());
 
-/* ===== Load ===== */
-async function load(days='30'){
-  const vs = $('#vs').value || 'usd';
+    function applyTopbarHeight(){const bar=$("#topbar"); if(!bar)return; const h=Math.ceil(bar.getBoundingClientRect().height); document.documentElement.style.setProperty('--topbar-h', h+'px');}
+    addEventListener('resize', applyTopbarHeight, {passive:true});
+    applyTopbarHeight();
 
-  try{
-    const meta = await fetchMeta(COIN_ID);
-    $('#title').textContent = `${(meta.symbol||'').toUpperCase()} · ${meta.name}`;
-    $('#rank').textContent  = `Rank #${meta.market_cap_rank ?? '-'}`;
-    const m = meta.market_data || {};
-    $('#s-price').innerHTML = '$' + fmtPrice(m.current_price?.[vs]);
-    $('#s-24h').innerHTML   = pctHTML(m.price_change_percentage_24h_in_currency?.[vs] ?? m.price_change_percentage_24h);
-    $('#s-mcap').innerHTML  = '$' + fmtNum(m.market_cap?.[vs], 0);
-    $('#s-vol').innerHTML   = '$' + fmtNum(m.total_volume?.[vs], 0);
-  }catch(e){ console.warn('meta fail', e); }
+    const cv=document.getElementById("chart"); const ctx=cv.getContext("2d");
+    function resizeCanvas(){const dpr=window.devicePixelRatio||1, w=innerWidth, h=innerHeight - (parseInt(getComputedStyle(document.querySelector(".stage")).paddingTop)||60) - 8; cv.width=w*dpr; cv.height=h*dpr; cv.style.width=w+"px"; cv.style.height=h+"px"; ctx.setTransform(dpr,0,0,dpr,0,0);}
+    addEventListener("resize", resizeCanvas);
 
-  try{
-    const raw = await fetchOHLC(COIN_ID, vs, days);
-    const bars = raw.map(([t,o,h,l,c]) => ({ time: Math.floor(t/1000), open:o, high:h, low:l, close:c }));
-    candleSeries.setData(bars);
-    ma7.setData(SMA(bars, 7));
-    ma25.setData(SMA(bars, 25));
-    chart.timeScale().fitContent();
-  }catch(e){
-    candleSeries.setData([]); ma7.setData([]); ma25.setData([]); console.error('ohlc fail', e);
-  }
+    async function fetchMarketsById(id){
+      const q=`vs_currency=usd&ids=${encodeURIComponent(id)}&sparkline=false&price_change_percentage=24h`;
+      const d=`https://api.coingecko.com/api/v3/coins/markets?${q}`, p=`/api/coins/markets?${q}`;
+      try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("mk failed"); return await r2.json();}
+    }
+    async function fetchChart(id, days){
+      const q=`vs_currency=usd&days=${days}`, d=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`, p=`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`;
+      try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("chart failed"); return await r2.json();}
+    }
 
-  try{
-    const mc = await fetchMarketChart(COIN_ID, vs, days);
-    const vols = mc.total_volumes.map(([t, v]) => ({ time: Math.floor(t/1000), value: v, color: 'rgba(111,220,255,.85)' }));
-    volSeries.setData(vols);
-    volChart.timeScale().fitContent();
-  }catch(e){
-    volSeries.setData([]); console.error('volume fail', e);
-  }
-}
+    function drawLine(prices){
+      resizeCanvas();
+      const w=cv.width/(window.devicePixelRatio||1), h=cv.height/(window.devicePixelRatio||1);
+      ctx.clearRect(0,0,w,h);
+      if(!prices || prices.length<2) return;
+      const arr=prices.map(p=>p[1]);
+      const min=Math.min(...arr), max=Math.max(...arr), span=(max-min)||1;
+      const m=18, x0=m, x1=w-m, y0=h-m, y1=m, ww=x1-x0, hh=y0-y1;
 
-/* ===== UI Events ===== */
-document.addEventListener('click', (e)=>{
-  const b = e.target.closest('button[data-days]'); if(!b) return;
-  document.querySelectorAll('button[data-days]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  load(b.getAttribute('data-days'));
-});
-$('#vs').addEventListener('change', ()=>{
-  const active = document.querySelector('button[data-days].active');
-  load(active ? active.getAttribute('data-days') : '30');
-});
+      ctx.globalAlpha=0.25; ctx.strokeStyle="rgba(255,255,255,.25)"; ctx.lineWidth=1;
+      for(let i=0;i<=4;i++){const y=y0 - hh*(i/4); ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke();}
+      ctx.globalAlpha=1;
 
-/* start */
-load('30');
-</script>
+      const up=arr.at(-1)>=arr[0]; ctx.strokeStyle=up?"#22c55e":"#ef4444"; ctx.lineWidth=2.2; ctx.beginPath();
+      prices.forEach((p,i)=>{const x=x0 + ww*(i/(prices.length-1)); const y=y0 - hh*((p[1]-min)/span); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);});
+      ctx.stroke();
+
+      const g=ctx.createLinearGradient(0,y1,0,y0); g.addColorStop(0, (up?"rgba(34,197,94,.28)":"rgba(239,68,68,.28)")); g.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=g; ctx.lineTo(x1,y0); ctx.lineTo(x0,y0); ctx.closePath(); ctx.fill();
+    }
+
+    async function loadMeta(){
+      try{
+        const [info]=await fetchMarketsById(id);
+        if(info){ $("#coinImg").src=info.image; $("#coinImg").alt=info.symbol?.toUpperCase()||""; $("#coinNm").textContent=(info.symbol||"").toUpperCase(); $("#coinPrice").textContent=" · "+fmtPrice(info.current_price); }
+      }catch{}
+    }
+    async function loadChart(days="7"){ try{ const data=await fetchChart(id, days); drawLine(data?.prices||[]);}catch{drawLine([]);} }
+
+    document.querySelectorAll(".periods button").forEach(b=>{
+      b.addEventListener("click", async ()=>{
+        document.querySelectorAll(".periods button").forEach(x=>x.classList.remove("on"));
+        b.classList.add("on");
+        await loadChart(b.dataset.days);
+      });
+    });
+
+    (async function init(){ await loadMeta(); await loadChart("7"); })();
+  </script>
 </body>
 </html>
