@@ -11,7 +11,7 @@
       --up:#22c55e; --down:#ef4444;
       --glass-blur:22px; --card-border:rgba(255,255,255,.06);
       --star:0; --bgstar:0;
-      --left-rank:46px;
+      --left-rank:2.8ch; /* 순위 폭: 숫자 2~3글자 */
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",Arial}
@@ -94,8 +94,8 @@
     .list .pct.up{color:var(--up)} .list .pct.down{color:var(--down)}
 
     /* Controls & Table */
-    .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px}
-    .controls .search{flex:1}
+    .controls{display:flex; gap:10px; align-items:center; margin:18px 0 10px; flex-wrap:wrap}
+    .controls .search{width:7ch} /* 약 5글자 */
     input[type="text"],select,button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
     button.sortdir{min-width:40px}
 
@@ -113,10 +113,11 @@
     tbody tr td:last-child{border-radius:0 12px 12px 0}
     tbody tr.row{cursor:pointer}
 
-    .row-index{width:var(--left-rank); text-align:right; font-weight:700; position:sticky; left:0; z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
-    .coin-cell{display:flex; align-items:center; gap:8px; min-width:110px; position:sticky; left:var(--left-rank); z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
+    .row-index{width:var(--left-rank); text-align:center; font-weight:700; position:sticky; left:0; z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); font-variant-numeric:tabular-nums; opacity:.8}
+    .coin-cell{display:flex; align-items:center; gap:8px; min-width:120px; position:sticky; left:var(--left-rank); z-index:2; background:rgba(17,24,39,.30); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px)}
     .coin-img{width:18px; height:18px; min-width:18px; border-radius:50%; object-fit:contain}
     .coin-name{font-weight:800}
+    .coin-sym{opacity:.85; margin-left:4px}
     .text-right{text-align:right; font-variant-numeric:tabular-nums}
 
     .mini{height:46px; margin-top:8px; opacity:.95}
@@ -128,18 +129,19 @@
       .right-2{grid-column:1/2; grid-template-columns:1fr; grid-auto-rows:auto}
     }
     @media (max-width:767px){
-      :root{ --left-rank:32px; }
+      :root{ --left-rank:2.2ch; }
       .card{padding:12px}
       .kpi{font-size:clamp(18px,6vw,22px)}
       .left-5{grid-template-columns:1fr}
       .left-5 .row-sm-2{grid-template-columns:1fr 1fr}
       .left-5 .row-2{grid-template-columns:1fr 1fr}
       .right-2{grid-template-columns:1fr}
-      .coin-cell{min-width:88px}
+      .coin-cell{min-width:88px; gap:6px}
       .coin-img{width:16px;height:16px;min-width:16px}
       .coin-name{font-size:12.5px; letter-spacing:.01em}
+      .coin-sym{display:none} /* 모바일: 이름 숨김 */
 
-      /* 모바일: 코인/시세/24H/스파크만 노출 */
+      /* 모바일: 코인/시세/24H/스파크만 */
       .cosmos-table th:nth-child(4), .cosmos-table td:nth-child(4), /* 1H */
       .cosmos-table th:nth-child(6), .cosmos-table td:nth-child(6), /* 7D % */
       .cosmos-table th:nth-child(7), .cosmos-table td:nth-child(7), /* MCAP */
@@ -148,6 +150,12 @@
 
       .table-wrap{max-height:64vh}
     }
+
+    /* 하단 페이지네이션 */
+    .pager{display:flex; gap:6px; justify-content:center; align-items:center; margin:10px 0 0; flex-wrap:wrap}
+    .pager button{min-width:34px; height:36px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#e8eefc; font-weight:700}
+    .pager button.on{background:rgba(114,153,255,.16); border-color:rgba(114,153,255,.32)}
+    .pager span{opacity:.8}
 
     footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
   </style>
@@ -266,7 +274,13 @@
 
     <!-- Controls -->
     <div class="controls">
-      <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
+      <input class="search" type="text" id="search" placeholder="심볼">
+      <select id="filter" title="필터">
+        <option value="all">전체</option>
+        <option value="nostable">스테이블 제외</option>
+        <option value="top100">Top 100</option>
+        <option value="byvolume">거래량 상위</option>
+      </select>
       <label>정렬:
         <select id="sortkey">
           <option value="market_cap">시가총액</option>
@@ -280,7 +294,6 @@
         </select>
       </label>
       <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
-      <label>페이지: <select id="page"></select></label>
     </div>
 
     <!-- Table -->
@@ -302,6 +315,7 @@
         <tbody id="cosmos-tbody"></tbody>
       </table>
     </div>
+    <div id="pager" class="pager"></div>
 
     <footer>🚀 Cosmos 암호화폐 대시보드 – CoinGecko API, Alternative.me, Binance 데이터 | 프록시 지원 | 모바일 최적화 · 60초 자동 업데이트</footer>
   </div>
