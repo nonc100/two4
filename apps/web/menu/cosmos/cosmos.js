@@ -95,6 +95,14 @@ async function fetchBinanceLS(period='1h'){
   try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
   catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("ls failed"); return await r2.json(); }
 }
+/* market chart for mini caps */
+async function fetchMarketChart(id, days=7){
+  const q=`vs_currency=usd&days=${days}`;
+  const direct=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`;
+  const proxy=`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`;
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error("chart failed"); return await r2.json(); }
+}
 
 /* --- State --- */
 const state = {
@@ -119,7 +127,6 @@ function buildRowHTML(c){
     <td class="coin-cell">
       <img class="coin-img" src="${c.image}" alt="${sym}">
       <span class="coin-name">${sym}</span>
-      <span class="coin-sym">${c.name}</span>
     </td>
     <td class="text-right">${price}</td>
     <td class="text-right">${fmtPctHTML(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
@@ -203,11 +210,14 @@ function renderKPIs(markets, global){
 }
 
 function renderRightLists(markets){
-  // gainers by 24h %
-  const gainers = markets.slice().filter(x=>Number.isFinite(x.price_change_percentage_24h)).sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h).slice(0,10);
+  // 24h 등락률 상위
+  const gainers = markets.slice()
+    .filter(x=>Number.isFinite(x.price_change_percentage_24h))
+    .sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h)
+    .slice(0,10);
   setHTML("#list-gainers", gainers.map((c,i)=>{
     const sym=(c.symbol||"").toUpperCase();
-    const val=c.price_change_percentage_24h;
+    const val=c.price_change_percentage_24h ?? 0;
     const cls=val>=0?"up":"down";
     return `<div class="row">
       <div class="rank">${i+1}.</div>
@@ -216,15 +226,18 @@ function renderRightLists(markets){
       <div class="pct ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div>
     </div>`;
   }).join(""));
-  // volume ranking
-  const vol = markets.slice().sort((a,b)=>b.total_volume-a.total_volume).slice(0,10);
+
+  // 거래량 순위 (정렬 기준: volume) — 동일한 열 구조 적용
+  const vol = markets.slice().sort((a,b)=> (b.total_volume||0)-(a.total_volume||0)).slice(0,10);
   setHTML("#list-volume", vol.map((c,i)=>{
     const sym=(c.symbol||"").toUpperCase();
+    const pct=c.price_change_percentage_24h ?? 0;
+    const cls=pct>=0?"up":"down";
     return `<div class="row">
       <div class="rank">${i+1}.</div>
       <div class="sym">${sym}</div>
       <div class="price">${fmtPrice(c.current_price)}</div>
-      <div class="pct">${fmtNumSuffix(c.total_volume)}</div>
+      <div class="pct ${cls}">${pct>=0?'+':''}${pct.toFixed(2)}%</div>
     </div>`;
   }).join(""));
 }
@@ -270,21 +283,25 @@ function renderFNGCard(data){
   }
 }
 
+/* --- Mini caps (BTC/USDT) --- */
+function renderMiniCaps(btcChart, usdtChart){
+  const toCapArr = d => Array.isArray(d?.market_caps) ? d.market_caps.map(x=>x[1]) : null;
+  const a = toCapArr(btcChart), b = toCapArr(usdtChart);
+  setHTML("#kpi-btc-spark", a ? sparklineSVG(a, 180, 44) : "");
+  setHTML("#kpi-usdt-spark", b ? sparklineSVG(b, 180, 44) : "");
+}
+
 /* --- Long/Short --- */
 function renderLongShort(period, arr){
-  // Binance returns array; use last item
   const last = Array.isArray(arr) ? arr[arr.length-1] : null;
   if(!last){ setHTML("#ls-long","-"); setHTML("#ls-short","-"); setHTML("#ls-ratio","-"); return; }
-  // fields can be string numbers
   const ratio = Number(last.longShortRatio || last.longShortRatio?.toString() || 0);
-  // Try to compute long/short %
   let longPct, shortPct;
   if(last.longAccount && last.shortAccount){
     const la=Number(last.longAccount), sa=Number(last.shortAccount);
     const sum=la+sa || 1;
     longPct = la/sum*100; shortPct = sa/sum*100;
   }else if(ratio){
-    // ratio = long/short
     shortPct = 100/(1+ratio);
     longPct = 100-shortPct;
   }else{
@@ -294,16 +311,13 @@ function renderLongShort(period, arr){
   setHTML("#ls-short", `${shortPct.toFixed(1)}%`);
   setHTML("#ls-ratio", ratio ? ratio.toFixed(2) : `${(longPct/shortPct).toFixed(2)}`);
   $("#ls-longbar").style.width = `${clamp(longPct,0,100)}%`;
-  // activate button
   $$('.ls-ctl button').forEach(b=>b.classList.toggle('active', b.dataset.period===period));
 }
 
 /* --- Init --- */
 async function initOnce(){
-  // back button
   $("#backBtn").addEventListener("click", ()=>history.back());
 
-  // LS controls
   $$('.ls-ctl button').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const p=e.currentTarget.dataset.period;
@@ -324,8 +338,9 @@ async function initOnce(){
 
 async function initData(){
   try{
-    const [markets, global, fng, ls] = await Promise.all([
-      fetchMarkets(), fetchGlobal(), fetchFNG(), fetchBinanceLS(state.lsPeriod)
+    const [markets, global, fng, ls, btcChart, usdtChart] = await Promise.all([
+      fetchMarkets(), fetchGlobal(), fetchFNG(), fetchBinanceLS(state.lsPeriod),
+      fetchMarketChart('bitcoin', 7), fetchMarketChart('tether', 7)
     ]);
     state.all = markets;
     renderKPIs(markets, global);
@@ -333,6 +348,7 @@ async function initData(){
     applySortFilter();
     renderFNGCard(fng);
     renderLongShort(state.lsPeriod, ls);
+    renderMiniCaps(btcChart, usdtChart);
   }catch(e){
     console.error(e);
     setHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`);
