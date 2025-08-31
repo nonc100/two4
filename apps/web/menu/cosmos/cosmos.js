@@ -22,6 +22,10 @@ const sparklineSVG=(arr,w=120,h=28)=>{
   </svg>`;
 };
 
+/* ===== DOM Cache ===== */
+const table=document.getElementById('mkt');
+const tbody=document.getElementById('mktBody');
+
 /* ===== Star field (canvas) ===== */
 const StarField=(()=>{
   let cv,ctx,stars=[],W=0,H=0,dpr=1, density=0.8, anim=null;
@@ -267,7 +271,7 @@ const ST={ all:[], filtered:[], page:1, perPage:50, sortKey:"market_cap", sortDi
 
 /* ===== Market Table ===== */
 (function Table(){
-  const tbody=$("#tbody"), pagerSel=$("#pagerSel");
+  const pagerSel=document.getElementById('pagerSel');
   const getVal=(c,k)=>{
     switch(k){
       case "market_cap": return c.market_cap??-1;
@@ -325,14 +329,14 @@ const ST={ all:[], filtered:[], page:1, perPage:50, sortKey:"market_cap", sortDi
   $("#sortdir").addEventListener("click", (e)=>{ ST.sortDir=ST.sortDir===-1?1:-1; e.currentTarget.textContent=ST.sortDir===-1?"▼":"▲"; refilter(); });
   pagerSel.addEventListener("change",(e)=>{ ST.page=Number(e.target.value)||1; render(); });
 
-  $("#mkt thead").addEventListener("click",(e)=>{
+  table.querySelector("thead").addEventListener("click",(e)=>{
     const th=e.target.closest("th[data-key]"); if(!th) return;
     const key=th.dataset.key; if(!key) return; if(ST.sortKey===key) ST.sortDir=ST.sortDir===-1?1:-1; else {ST.sortKey=key; ST.sortDir=-1;}
     refilter();
   });
 
   // row click -> chart page
-  $("#tbody").addEventListener("click",(e)=>{
+tbody.addEventListener("click",(e)=>{
     const tr=e.target.closest("tr[data-id]"); if(!tr) return;
     const id=tr.dataset.id; location.href=`./chart.html?id=${encodeURIComponent(id)}`;
   });
@@ -341,16 +345,17 @@ const ST={ all:[], filtered:[], page:1, perPage:50, sortKey:"market_cap", sortDi
     try{
       const [markets] = await Promise.all([fetchMarkets()]);
       ST.all = markets; refilter();
-    }catch(e){ console.error(e); setHTML("#tbody", `<tr><td colspan="9">Load failed</td></tr>`); }
+  }catch(e){ console.error(e); setHTML(tbody, `<tr><td colspan="9">Load failed</td></tr>`); }
   };
 })();
 
 /* ===== Boot ===== */
-document.addEventListener("DOMContentLoaded", async ()=>{
+async function init(){
   // star field
   StarField.init();
-  const sr=$("#starRange"); StarField.set((Number(sr.value)||70)/100);
-  sr.addEventListener("input", e=> StarField.set((Number(e.target.value)||0)/100) );
+    const sr=$("#starRange");
+  StarField.set((Number(sr.value)||70)/100);
+  sr.addEventListener("input", e=> StarField.set((Number(e.target.value)||0)/100));
 
   // data
   await Table.initData();
@@ -363,4 +368,10 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     const mkts=await fetchMarkets(); ST.all=mkts; // refresh table only
     const ev=new Event("input"); $("#search").dispatchEvent(ev); // re-filter
   }catch{} }, 30000);
-});
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded", init);
+}else{
+  init();
+}
