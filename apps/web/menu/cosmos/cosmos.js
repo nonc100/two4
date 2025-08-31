@@ -319,3 +319,23 @@ async function init(){
 /* DOM ready */
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
 else init();
+
+function normalizeMarketTable(){
+  const thCount = document.querySelectorAll('#mkt thead th').length; // 9
+  document.querySelectorAll('#mkt tbody tr').forEach(tr=>{
+    const tds = tr.children;
+    if (tds.length > thCount) {
+      // [가정] 불필요한 추가 칸이 Name 앞에 끼어든 상태
+      const extra = tds[1];           // 잘못 들어간 보조칸
+      const nameTd = tds[2];          // 실제 Name 칸
+      // 아이콘/텍스트 합치기
+      nameTd.innerHTML = `<div class="mkt-name">${extra.innerHTML}${nameTd.innerHTML}</div>`;
+      extra.remove();                 // 보조칸 제거 → 총 9칸 맞춤
+    }
+    // rank/name sticky용 클래스 보정(혹시 렌더 쪽에서 안 붙었을 때 대비)
+    tds[0].classList.add('sticky-rank','num');
+    tds[1].classList.add('sticky-name');
+  });
+}
+// ★ 테이블 렌더 직후나 DOMContentLoaded 후에 한 번 호출
+normalizeMarketTable();
