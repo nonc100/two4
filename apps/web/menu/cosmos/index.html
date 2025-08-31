@@ -154,6 +154,13 @@
       :root{--sticky-top: 84px;}
     }
 
+    :root{ --rank-w:50px; --name-w:280px; }          /* ← 너비 변수 */
+    .c-rank{ width:var(--rank-w) } .c-name{ width:var(--name-w) }
+    #mkt .sticky-rank{ position:sticky; left:0; z-index:2 }
+    #mkt .sticky-name{ position:sticky; left:var(--rank-w); z-index:2 }
+    /* 예전 보조칸 스타일이 남아있다면 끄기 */
+    .row-index,.coin-cell{ display:none!important }
+
     /* 방문/밑줄 등 모두 제거 (링크 사용 안 함) */
     .no-link, .no-link:visited, .no-link:hover, .no-link:active{color:inherit;text-decoration:none}
 
