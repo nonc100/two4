@@ -1,329 +1,302 @@
-/* ===== COSMOS JS (sticky toolbar + compact table + pager + 2 mini charts + allSettled) ===== */
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TWO4 COSMOS</title>
+<style>
+  :root{
+    --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
+    --up:#22c55e; --down:#ef4444;
+    --toolbar-h: 44px;            /* 상단 컨트롤러 높이(헤더 sticky 보정) */
+    --starVis: .7;                /* 별 밝기(0~1) */
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;padding:0;color:var(--text);
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic";
+    background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%);
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}       /* 밑줄/보라색 제거 */
+  a:visited{color:inherit}
 
-/* --- Locale clamps (safe, no shorthand pitfalls) --- */
-(()=>{
-  const origToLS = Number.prototype.toLocaleString;
-  Number.prototype.toLocaleString = function(locale, opts){
-    let o = (opts && typeof opts==='object') ? {...opts} : undefined;
-    if (o){
-      let min = Number.isFinite(o.minimumFractionDigits) ? Math.min(20, Math.max(0, o.minimumFractionDigits)) : undefined;
-      let max = Number.isFinite(o.maximumFractionDigits) ? Math.min(20, Math.max(0, o.maximumFractionDigits)) : undefined;
-      if (min!==undefined && max!==undefined && max<min) max=min;
-      const rebuilt = {};
-      for (const k in o){
-        if (Object.prototype.hasOwnProperty.call(o,k) && k!=="minimumFractionDigits" && k!=="maximumFractionDigits"){
-          rebuilt[k]=o[k];
-        }
-      }
-      if (min!==undefined) rebuilt.minimumFractionDigits = min;
-      if (max!==undefined) rebuilt.maximumFractionDigits = max;
-      o = rebuilt;
+  /* ⭐ 별 배경 */
+  .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
+  .stars,.stars2,.stars3{
+    position:absolute; inset:0; background-repeat:repeat; background-size:1600px 1600px;
+    animation:twinkle 18s linear infinite; filter:blur(.2px)
+  }
+  .stars{opacity:calc(.55 * var(--starVis));
+    background-image:
+      radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%),
+      radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%),
+      radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%)}
+  .stars2{opacity:calc(.35 * var(--starVis)); animation-duration:26s;
+    background-image:
+      radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%),
+      radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%),
+      radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%)}
+  .stars3{opacity:calc(.25 * var(--starVis)); animation-duration:34s;
+    background-image:
+      radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%),
+      radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%),
+      radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%)}
+  @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
+
+  .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 16px 80px;}
+
+  /* 상단 로고/컨트롤러 */
+  .brand{display:flex; align-items:center; gap:14px; margin:14px 0 12px;}
+  .brand img{width:168px; height:auto; object-fit:contain;}
+  .brand h1{display:none} /* 요청: COSMOS 텍스트 삭제 */
+
+  .star-ctl{
+    position:fixed; top:8px; left:50%; transform:translateX(-50%);
+    z-index:10; height:var(--toolbar-h); display:flex; align-items:center;
+    padding:0 10px; border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+    border:1px solid rgba(255,255,255,.2);
+    backdrop-filter: blur(10px);
+  }
+  .star-ctl input[type="range"]{width:120px; height:6px; background:transparent}
+  .star-ctl input[type="range"]::-webkit-slider-thumb{appearance:none; width:14px; height:14px; border-radius:50%; background:#a78bfa; border:1px solid #fff9}
+  .star-ctl input[type="range"]::-webkit-slider-runnable-track{height:6px; border-radius:999px; background:linear-gradient(90deg,#a78bfa,#22d3ee)}
+
+  /* 3D 허브 / 도넛 (기존 스타일 유지; 핵심만) */
+  .hub-wrap{display:grid;grid-template-columns:minmax(320px,520px) 1fr;gap:16px;align-items:center;margin:6px 0 16px}
+  .hub3d{position:relative;width:100%;max-width:520px;border-radius:50%;aspect-ratio:1/1;box-shadow:inset 0 10px 26px rgba(180,200,255,.20), inset 0 -16px 46px rgba(0,0,0,.50), 0 18px 48px rgba(0,0,0,.38), 0 0 40px rgba(56,189,248,.20), 0 0 80px rgba(124,58,237,.16); border:1px solid rgba(255,255,255,.10);}
+  .hub3d svg{position:absolute;inset:0}
+  .hub-center{position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:36%; height:36%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.18), rgba(99,102,241,.12) 60%, rgba(0,0,0,0) 80%); border:1px solid rgba(255,255,255,.14);}
+  .hub-center .val{font-size:clamp(20px,3.2vw,28px);font-weight:900;line-height:1.1;margin:0}
+  .hub-center .lbl{font-size:12px;color:#9aa3b6;margin:4px 0 0}
+  .hub-badge{font-weight:900;font-size:clamp(14px,1.6vw,18px);fill:url(#mintWhiteGrad);filter:url(#textGlow);pointer-events:none;}
+  .hub-seg{cursor:pointer;stroke:rgba(255,255,255,.12);stroke-width:1.2;transition:transform .18s ease,filter .18s ease}
+  .hub-seg:hover{transform:scale(1.025);filter:drop-shadow(0 0 14px rgba(124,58,237,.7))}
+  .hub-panel{position:relative; min-height:220px; border-radius:16px; padding:14px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.10);}
+  .hub-panel.hidden{display:none}
+
+  @media (max-width:767px){.hub-wrap{grid-template-columns:1fr}.hub3d{max-width:360px;margin:0 auto}}
+
+  /* 검색/정렬 컨트롤 (심플) */
+  .controls{display:flex; gap:10px; align-items:center; margin:10px 0}
+  .controls .search{flex:1}
+  input[type="text"], select, button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
+  button.sortdir{min-width:40px}
+
+  /* 테이블 */
+  .table-wrap{overflow-x:auto}
+  table.cosmos-table{width:1200px; border-collapse:separate; border-spacing:0 10px;}
+  thead th{
+    position:sticky; top:calc(var(--toolbar-h) + 10px); z-index:2;
+    background:rgba(17,24,39,.88); backdrop-filter:blur(6px);
+    font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px;
+  }
+  thead th.sortable{cursor:pointer}
+  tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
+  tbody tr td:first-child{border-radius:12px 0 0 12px}
+  tbody tr td:last-child{border-radius:0 12px 12px 0}
+  .text-right{text-align:right}
+
+  /* 코인 칼럼(티커) */
+  .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px; position:sticky; left:46px; background:rgba(17,24,39,.88); backdrop-filter:blur(6px); z-index:1; cursor:pointer;}
+  .coin-img{width:22px; height:22px; min-width:22px; border-radius:50%; object-fit:contain}
+  .row-index{width:46px; text-align:right; opacity:.7; font-weight:700; position:sticky; left:0; background:rgba(17,24,39,.88); backdrop-filter:blur(6px); z-index:1}
+
+  /* 모바일: 티커만 보이게 */
+  @media (max-width:767px){
+    thead th{ top:calc(var(--toolbar-h) + 6px); }   /* 겹침 보정 */
+
+    .cosmos-table thead th:nth-child(1),
+    .cosmos-table thead th:nth-child(3),
+    .cosmos-table thead th:nth-child(4),
+    .cosmos-table thead th:nth-child(5),
+    .cosmos-table thead th:nth-child(6),
+    .cosmos-table thead th:nth-child(7),
+    .cosmos-table thead th:nth-child(8),
+    .cosmos-table thead th:nth-child(9),
+    .cosmos-table tbody td:nth-child(1),
+    .cosmos-table tbody td:nth-child(3),
+    .cosmos-table tbody td:nth-child(4),
+    .cosmos-table tbody td:nth-child(5),
+    .cosmos-table tbody td:nth-child(6),
+    .cosmos-table tbody td:nth-child(7),
+    .cosmos-table tbody td:nth-child(8),
+    .cosmos-table tbody td:nth-child(9){
+      display:none !important;
     }
-    return origToLS.call(this, locale||"en-US", o);
-  };
-
-  const OrigNF = Intl.NumberFormat;
-  Intl.NumberFormat = function(locale, opts){
-    let o = (opts && typeof opts==='object') ? {...opts} : undefined;
-    if (o){
-      let min = Number.isFinite(o.minimumFractionDigits) ? Math.min(20, Math.max(0, o.minimumFractionDigits)) : undefined;
-      let max = Number.isFinite(o.maximumFractionDigits) ? Math.min(20, Math.max(0, o.maximumFractionDigits)) : undefined;
-      if (min!==undefined && max!==undefined && max<min) max=min;
-      const rebuilt = {};
-      for (const k in o){
-        if (Object.prototype.hasOwnProperty.call(o,k) && k!=="minimumFractionDigits" && k!=="maximumFractionDigits"){
-          rebuilt[k]=o[k];
-        }
-      }
-      if (min!==undefined) rebuilt.minimumFractionDigits = min;
-      if (max!==undefined) rebuilt.maximumFractionDigits = max;
-      o = rebuilt;
+    .cosmos-table tbody td:nth-child(2){
+      display:block; width:100%; border-radius:12px;
     }
-    return new OrigNF(locale||"en-US", o);
-  };
-})();
-
-/* --- Utils --- */
-const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
-const $=(s,sc=document)=>sc.querySelector(s);
-const $$=(s,sc=document)=>Array.from(sc.querySelectorAll(s));
-const setHTML=(sel,html)=>{const el=typeof sel==="string"?$(sel):sel; if(el) el.innerHTML=html;};
-const safeLocale=(num,minFD=0,maxFD=2)=>{let m=Number.isFinite(minFD)?clamp(minFD,0,20):0,x=Number.isFinite(maxFD)?clamp(maxFD,0,20):2; if(x<m)x=m; try{return Number(num??0).toLocaleString('en-US',{minimumFractionDigits:m,maximumFractionDigits:x});}catch{return String(Number(num??0).toFixed(x));}};
-const fmtPrice=v=>v==null||Number.isNaN(v)?"-":"$"+safeLocale(v,0,clamp(v>=100?2:v>=1?4:v>0?Math.ceil(Math.abs(Math.log10(v)))+2:2,0,8));
-const fmtPctHTML=v=>{if(v==null||Number.isNaN(v))return'<span class="neutral">-</span>'; const n=Number(v),cls=n>0?'up':n<0?'down':'neutral',sign=n>0?'+':''; return `<span class="${cls}">${sign}${n.toFixed(2)}%</span>`};
-const fmtNumSuffix=v=>{if(v==null||Number.isNaN(v))return "-";const n=Number(v),a=Math.abs(n);if(a>=1e12)return"$"+(n/1e12).toFixed(2)+"T";if(a>=1e9)return"$"+(n/1e9).toFixed(2)+"B";if(a>=1e6)return"$"+(n/1e6).toFixed(2)+"M";if(a>=1e3)return"$"+(n/1e3).toFixed(2)+"K";return"$"+safeLocale(n,0,2)};
-
-/* --- Canvas StarField (white dots only) --- */
-const StarField=(()=>{let cv,ctx,stars=[],intensity=0,animId=null,W=0,H=0,dpr=1;
-  const D=140,TW_MIN=.002,TW_MAX=.006,R_MIN=.3,R_MAX=1.1,rand=(a,b)=>a+Math.random()*(b-a);
-  function resize(){if(!cv)return;dpr=window.devicePixelRatio||1;const vw=innerWidth,vh=innerHeight;W=Math.floor(vw*dpr);H=Math.floor(vh*dpr);cv.width=W;cv.height=H;cv.style.width=vw+"px";cv.style.height=vh+"px";build()}
-  function build(){const area=(W*H)/(dpr*dpr),target=Math.floor(area/100000*D*intensity),cur=stars.length; if(cur<target){for(let i=cur;i<target;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:rand(R_MIN,R_MAX)*dpr,a:rand(.35,.9),tw:rand(TW_MIN,TW_MAX),ph:Math.random()*Math.PI*2})}else if(cur>target){stars.splice(target)}}
-  function loop(){if(!ctx)return;ctx.clearRect(0,0,W,H);const base=intensity;for(const s of stars){s.ph+=s.tw;const a=base*(.85+.15*Math.sin(s.ph));ctx.globalAlpha=a*s.a;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill()}ctx.globalAlpha=1;animId=requestAnimationFrame(loop)}
-  function setIntensity(v){intensity=Math.max(0,Math.min(1,v));document.documentElement.style.setProperty("--bgstar",String(intensity));build(); if(intensity>0&&!animId)animId=requestAnimationFrame(loop); if(intensity===0&&animId){cancelAnimationFrame(animId);animId=null;ctx.clearRect(0,0,W,H)}}
-  function init(){cv=$("#whiteStars"); if(!cv) return; ctx=cv.getContext("2d"); resize(); addEventListener("resize",resize)}
-  return{init,setIntensity};
-})();
-
-/* --- Fetchers --- */
-async function fetchMarkets({vs="usd",perPage=200,page=1}={}){const q=`vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`; const d=`https://api.coingecko.com/api/v3/coins/markets?${q}`, p=`/api/coins/markets?${q}`; try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("markets failed"); return await r2.json();}}
-async function fetchGlobal(){const d=`https://api.coingecko.com/api/v3/global`, p=`/api/global`; try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("global failed"); return await r2.json();}}
-async function fetchFNG(){const d=`https://api.alternative.me/fng/?limit=2`, p=`/api/fng`; try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("fng failed"); return await r2.json();}}
-async function fetchBinanceLS(period='1h'){const sym='BTCUSDT',q=`symbol=${sym}&period=${period}&limit=1`,d=`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?${q}`,p=`/api/binance/globalLongShortAccountRatio?${q}`; try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("ls failed"); return await r2.json();}}
-async function fetchMarketChart(id,days=7){const q=`vs_currency=usd&days=${days}`, d=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`, p=`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`; try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("chart failed"); return await r2.json();}}
-
-/* --- State --- */
-const state={all:[],filtered:[],page:1,perPage:50,sortKey:"market_cap",sortDir:-1,lsPeriod:"1h",filter:"all"};
-const STABLE_IDS=new Set(["tether","usd-coin","dai","first-digital-usd","true-usd","frax","usdd","paypal-usd","lusd","usde","usdx"]);
-
-/* --- Binance symbol mapping (for chart links) --- */
-function toBinanceSymbolFromCoin(c){
-  let s=(c.symbol||"").toUpperCase();
-  const FIX={MIOTA:"IOTA",BCC:"BCH",WBTC:"BTC"};
-  s = FIX[s] || s;
-  return s + "USDT";
-}
-
-/* --- Table / sparkline --- */
-function sparklineSVG(arr,w=100,h=24){
-  if(!arr||arr.length<2)return"-";
-  const min=Math.min(...arr),max=Math.max(...arr),span=(max-min)||1;
-  const pts=arr.map((p,i)=>{const x=(i/(arr.length-1))*w,y=h-((p-min)/span)*h; return `${x.toFixed(1)},${y.toFixed(1)}`}).join(" ");
-  const up=arr.at(-1)>=arr[0], color=up?"#22c55e":"#ef4444";
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/></svg>`;
-}
-
-function buildRowHTML(c){
-  const s7=(c.sparkline_in_7d&&c.sparkline_in_7d.price)||null;
-  const sym=(c.symbol||"").toUpperCase();
-  const bsym=toBinanceSymbolFromCoin(c);
-  const href = `./chart.html?symbol=${encodeURIComponent(bsym)}&interval=1h`;
-  return `<tr class="row" data-symbol="${bsym}">
-    <td class="row-index">${c.market_cap_rank ?? "-"}</td>
-    <td class="coin-cell">
-      <a class="coin-link" href="${href}" title="차트 열기">
-        <img class="coin-img" src="${c.image}" alt="${sym}">
-        <span class="coin-name">${sym}</span>
-        <span class="coin-sym">${c.name ?? ""}</span>
-      </a>
-    </td>
-    <td class="text-right"><a href="${href}" title="차트 열기">${fmtPrice(c.current_price)}</a></td>
-    <td class="text-right">${fmtPctHTML(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
-    <td class="text-right">${fmtPctHTML(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null)}</td>
-    <td class="text-right">${fmtPctHTML(c.price_change_percentage_7d_in_currency ?? null)}</td>
-    <td class="text-right">${fmtNumSuffix(c.market_cap)}</td>
-    <td class="text-right">${fmtNumSuffix(c.total_volume)}</td>
-    <td class="text-right">${s7?sparklineSVG(s7):"-"}</td>
-  </tr>`;
-}
-const ensureTbody=()=>$("#cosmos-tbody");
-function renderTableSlice(rows){
-  const tbody=ensureTbody(); if(!tbody) return;
-  const s=(state.page-1)*state.perPage,e=s+state.perPage;
-  const slice=rows.slice(s,e);
-  setHTML(tbody, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
-}
-
-/* --- Pager --- */
-function pageRange(total, current, max=(innerWidth<=767?5:9)){
-  const half=Math.floor(max/2);
-  let start=Math.max(1,current-half), end=start+max-1;
-  if(end>total){ end=total; start=Math.max(1,end-max+1); }
-  return {start,end};
-}
-function renderPager(total){
-  const el=$("#pager"); if(!el) return;
-  const cur=state.page, {start,end}=pageRange(total,cur);
-  const btn=(label,pg,cls="")=>`<button data-p="${pg}" class="${cls}">${label}</button>`;
-  let html="";
-  html+=btn("«",1);
-  html+=btn("‹",Math.max(1,cur-1));
-  if(start>1) html+=`<span>…</span>`;
-  for(let p=start;p<=end;p++) html+=btn(p,p, p===cur?"on":"");
-  if(end<total) html+=`<span>…</span>`;
-  html+=btn("›",Math.min(total,cur+1));
-  html+=btn("»",total);
-  el.innerHTML=html;
-  el.querySelectorAll("button[data-p]").forEach(b=>b.onclick=()=>{const p=Number(b.dataset.p)||1; if(p!==state.page){ state.page=p; renderTableSlice(state.filtered); renderPager(total); }});
-}
-
-/* --- Filter + sort --- */
-function applySortFilter(){
-  const q=($("#search").value||"").trim().toLowerCase();
-  let arr=state.all.filter(c=>!q || (c.symbol||"").toLowerCase().includes(q) || (c.name||"").toLowerCase().includes(q));
-
-  switch(state.filter){
-    case "nostable": arr=arr.filter(c=>!STABLE_IDS.has(c.id)); break;
-    case "top100":   arr=arr.filter(c=>(c.market_cap_rank||9999)<=100); break;
-    case "byvolume": arr=arr.slice().sort((a,b)=>(b.total_volume||0)-(a.total_volume||0)).slice(0,100); break;
+    .coin-cell{position:static; left:auto; min-width:0; gap:10px;}
+    .row-index{display:none}
+    table.cosmos-table{width:100%}
   }
 
-  const dir=state.sortDir,k=state.sortKey,get=c=>{switch(k){
-    case"market_cap":return c.market_cap??-1;
-    case"price":return c.current_price??-1;
-    case"volume":return c.total_volume??-1;
-    case"change1h":return c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? -1;
-    case"change24h":return c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? -1;
-    case"change7d":return c.price_change_percentage_7d_in_currency ?? -1;
-    case"rank":return c.market_cap_rank ?? 1e9;
-    case"symbol":return (c.symbol||"").toUpperCase();
-    default:return 0;
-  }};
-  arr.sort((a,b)=>{const va=get(a),vb=get(b); const r=(typeof va==="string"&&typeof vb==="string")?va.localeCompare(vb):(va>vb?1:va<vb?-1:0); return r*dir;});
-  state.filtered=arr;
+  footer{margin:22px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
+</style>
+</head>
+<body>
+  <!-- ⭐ 별 배경 -->
+  <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
 
-  $$(".cosmos-table thead th.sortable").forEach(th=>{const key=th.dataset.key; th.classList.toggle("sorted",key===state.sortKey); th.classList.toggle("asc",key===state.sortKey&&state.sortDir===1); th.classList.toggle("desc",key===state.sortKey&&state.sortDir===-1);});
+  <!-- ⭐ 상단(간결 컨트롤러) -->
+  <div class="star-ctl" aria-label="Star background controller">
+    <input id="starRange" type="range" min="0" max="100" value="70" />
+  </div>
 
-  const totalPages=Math.max(1,Math.ceil(state.filtered.length/state.perPage));
-  if(state.page>totalPages) state.page=totalPages;
+  <div class="wrap">
+    <!-- 로고 -->
+    <div class="brand">
+      <img src="/media/logo.png" alt="TWO4">
+      <h1>COSMOS</h1> <!-- 숨김 처리됨 -->
+    </div>
 
-  renderTableSlice(state.filtered);
-  renderPager(totalPages);
-}
+    <!-- 3D 허브 (요약) -->
+    <section class="hub-wrap">
+      <div class="hub3d">
+        <svg id="hubSvg" viewBox="0 0 1000 1000" role="img" aria-label="Cosmos overview hub">
+          <defs>
+            <linearGradient id="mintWhiteGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#dffff9"/>
+              <stop offset="100%" stop-color="#7efcf3"/>
+            </linearGradient>
+            <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+        </svg>
+        <div class="hub-center">
+          <div class="val" id="hubVal">—</div>
+          <div class="lbl" id="hubLbl">COSMOS</div>
+        </div>
+      </div>
+      <aside class="hub-panel hidden" id="hubPanel">
+        <h4 id="hubTitle" style="margin:2px 0 10px;color:#9aa3b6;letter-spacing:.06em;font-size:13px">—</h4>
+        <div id="hubContent"></div>
+      </aside>
+    </section>
 
-/* --- KPIs & Right lists --- */
-function renderKPIs(markets,global){
-  const btc=markets.find(x=>x.id==="bitcoin"), tether=markets.find(x=>x.id==="tether");
-  const total=global?.data?.total_market_cap?.usd ?? null, btcCap=btc?.market_cap ?? null;
-  const dom=(btcCap&&total)?(btcCap/total*100):(global?.data?.market_cap_percentage?.btc ?? null);
-  setHTML("#kpi-btc-mcap", btcCap?fmtNumSuffix(btcCap):"-");
-  setHTML("#kpi-usdt-mcap", tether?.market_cap?fmtNumSuffix(tether.market_cap):"-");
-  setHTML("#kpi-dominance", dom!=null?Number(dom).toFixed(2)+"%":"-");
-}
-function renderRightLists(markets){
-  const gainers=markets.slice().filter(x=>Number.isFinite(x.price_change_percentage_24h)).sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h).slice(0,10);
-  setHTML("#list-gainers", gainers.map((c,i)=>{const sym=(c.symbol||"").toUpperCase(),val=c.price_change_percentage_24h??0,cls=val>=0?"up":"down"; return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="price">${fmtPrice(c.current_price)}</div><div class="pct ${cls}">${val>=0?'+':''}${val.toFixed(2)}%</div></div>`}).join(""));
-  const vol=markets.slice().sort((a,b)=>(b.total_volume||0)-(a.total_volume||0)).slice(0,10);
-  setHTML("#list-volume", vol.map((c,i)=>{const sym=(c.symbol||"").toUpperCase(),pct=c.price_change_percentage_24h ?? 0,cls=pct>=0?"up":"down"; return `<div class="row"><div class="rank">${i+1}.</div><div class="sym">${sym}</div><div class="price">${fmtPrice(c.current_price)}</div><div class="pct ${cls}">${pct>=0?'+':''}${pct.toFixed(2)}%</div></div>`}).join(""));
-}
+    <!-- 검색/정렬 -->
+    <div class="controls">
+      <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
+      <label>정렬:
+        <select id="sortkey">
+          <option value="market_cap">시가총액</option>
+          <option value="price">가격</option>
+          <option value="volume">거래량</option>
+          <option value="change1h">1시간</option>
+          <option value="change24h">24시간</option>
+          <option value="change7d">7일</option>
+          <option value="rank">순위</option>
+          <option value="symbol">티커</option>
+        </select>
+      </label>
+      <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
+      <label>페이지:
+        <select id="page"></select>
+      </label>
+    </div>
 
-/* --- FNG --- */
-function renderFNGCard(data){
-  try{
-    const item=Array.isArray(data?.data)?data.data[0]:null; if(!item){setHTML("#fng-title","- / -"); setHTML("#fng-gauge",""); return;}
-    const value=Number(item.value), cls=value<=40?'risk':value<=60?'neutral':'safe', label=item.value_classification || (value<=40?'Fear':value<=60?'Neutral':'Greed');
-    setHTML("#fng-title",`${value} / ${label}`);
-    const dt=item.timestamp?new Date(Number(item.timestamp)*1000):new Date(); setHTML("#fng-date",`Alternative.me · ${dt.getFullYear()}. ${String(dt.getMonth()+1).padStart(2,'0')}. ${String(dt.getDate()).padStart(2,'0')}`);
-    const badge=$("#fng-badge"); if(badge){badge.className=`badge ${cls}`; badge.textContent=label;}
-    const pct=Math.max(0,Math.min(1,value/100)), start=-Math.PI, end=0, ang=start+(end-start)*pct, r=56, cx=80, cy=86;
-    const arc=a=>`${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`, nx=cx+(r-8)*Math.cos(ang), ny=cy+(r-8)*Math.sin(ang);
-    const svg=`<svg width="160" height="100" viewBox="0 0 160 100"><defs><linearGradient id="seg1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient><linearGradient id="seg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/></linearGradient></defs><path d="M ${arc(start)} A ${r} ${r} 0 0 1 ${arc(-Math.PI/2)}" stroke="url(#seg1)" stroke-width="12" fill="none" opacity=".9"/><path d="M ${arc(-Math.PI/2)} A ${r} ${r} 0 0 1 ${arc(end)}" stroke="url(#seg2)" stroke-width="12" fill="none" opacity=".9"/><circle cx="${cx}" cy="${cy}" r="2.8" fill="#fff" opacity=".9"/><line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
-    setHTML("#fng-gauge",svg);
-  }catch{setHTML("#fng-title","- / -"); setHTML("#fng-gauge","");}
-}
+    <!-- 마켓 테이블 -->
+    <div class="table-wrap">
+      <table class="cosmos-table" id="mkt">
+        <colgroup>
+          <col><col><col><col><col><col><col><col><col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="sortable" data-key="rank">순위</th>
+            <th class="sortable" data-key="symbol">코인</th>
+            <th class="text-right sortable" data-key="price">시세</th>
+            <th class="text-right sortable" data-key="change1h">1h</th>
+            <th class="text-right sortable" data-key="change24h">24h</th>
+            <th class="text-right sortable" data-key="change7d">7d</th>
+            <th class="text-right sortable" data-key="market_cap">시가총액</th>
+            <th class="text-right sortable" data-key="volume">거래량</th>
+            <th class="text-right">7일 차트</th>
+          </tr>
+        </thead>
+        <tbody id="cosmos-tbody"></tbody>
+      </table>
+    </div>
 
-/* --- Mini market cap sparklines (BTC, USDT) --- */
-function renderMiniCaps(btc,usdt){
-  const arr=d=>Array.isArray(d?.market_caps)?d.market_caps.map(x=>x[1]):null;
-  setHTML("#kpi-btc-spark",arr(btc)?sparklineSVG(arr(btc),180,44):"");
-  setHTML("#kpi-usdt-spark",arr(usdt)?sparklineSVG(arr(usdt),180,44):"");
-}
+    <footer>🚀 CoinGecko · Binance · Alternative.me | 네온 허브 + 마켓 테이블 · 30초 자동 업데이트</footer>
+  </div>
 
-/* --- Long/Short --- */
-function renderLongShort(period,arr){
-  const last=Array.isArray(arr)?arr.at(-1):null; if(!last){setHTML("#ls-long","-"); setHTML("#ls-short","-"); setHTML("#ls-ratio","-"); return;}
-  const ratio=Number(last.longShortRatio||last.longShortRatio?.toString()||0); let longPct,shortPct;
-  if(last.longAccount&&last.shortAccount){const la=Number(last.longAccount),sa=Number(last.shortAccount),sum=la+sa||1; longPct=la/sum*100; shortPct=sa/sum*100;}
-  else if(ratio){shortPct=100/(1+ratio); longPct=100-shortPct;} else{longPct=shortPct=50;}
-  setHTML("#ls-long",`${longPct.toFixed(1)}%`); setHTML("#ls-short",`${shortPct.toFixed(1)}%`); setHTML("#ls-ratio", ratio?ratio.toFixed(2):`${(longPct/shortPct).toFixed(2)}`);
-  const bar=$("#ls-longbar"); if(bar) bar.style.width=`${Math.max(0,Math.min(100,longPct))}%`;
-  $$('.ls-ctl button').forEach(b=>b.classList.toggle('active', b.dataset.period===period));
-}
+  <!-- 데이터/로직: 기존 cosmos.js 사용 -->
+  <script src="./cosmos.js"></script>
 
-/* --- Header sort wiring --- */
-function wireHeaderSort(){
-  $$(".cosmos-table thead th.sortable").forEach(th=>{
-    th.addEventListener("click",()=>{
-      const key=th.dataset.key;
-      if(state.sortKey===key) state.sortDir=state.sortDir===-1?1:-1;
-      else {state.sortKey=key; state.sortDir=-1;}
-      applySortFilter();
+  <!-- 별 컨트롤러 -->
+  <script>
+    (function(){
+      const range=document.getElementById('starRange');
+      const apply=v=>document.documentElement.style.setProperty('--starVis', String(Math.max(0,Math.min(1,v/100))));
+      range.addEventListener('input',e=>apply(e.target.value)); apply(range.value);
+    })();
+  </script>
+
+  <!-- 허브(도넛) 간단 빌드: 섹션/텍스트 등은 cosmos.js 데이터로 그려짐 -->
+  <script>
+    (function(){
+      const svg = document.getElementById('hubSvg');
+      const centerVal = document.getElementById('hubVal');
+      const centerLbl = document.getElementById('hubLbl');
+      const panel = document.getElementById('hubPanel');
+      const panelTitle = document.getElementById('hubTitle');
+      const panelContent = document.getElementById('hubContent');
+
+      function arcPath(cx, cy, r0, r1, a0, a1){
+        const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+        const [x0,y0]=p(r1,a0),[x1,y1]=p(r1,a1),[x2,y2]=p(r0,a1),[x3,y3]=p(r0,a0);
+        const laf=(a1-a0)>Math.PI?1:0;
+        return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;
+      }
+      function setCenter(lbl,val){centerLbl.textContent=lbl;centerVal.textContent=val}
+
+      // 샘플(데이터는 cosmos.js initHub에서 주기적 갱신한다면 이 부분 생략 가능)
+      const TAU=Math.PI*2, cx=500,cy=500,rO=470,rI=260, n=7, seg=TAU/n, start=-Math.PI/2;
+      for(let i=0;i<n;i++){
+        const a0=start+seg*i+0.014, a1=start+seg*(i+1)-0.014;
+        const path=document.createElementNS(svg.namespaceURI,'path');
+        path.setAttribute('d',arcPath(cx,cy,rI,rO,a0,a1));
+        path.setAttribute('fill','url(#mintWhiteGrad)'); path.setAttribute('opacity','.18');
+        path.classList.add('hub-seg'); svg.appendChild(path);
+
+        const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-30)*Math.cos(mid), ty=cy+(rx-30)*Math.sin(mid)+6;
+        const text=document.createElementNS(svg.namespaceURI,'text');
+        text.setAttribute('x',tx); text.setAttribute('y',ty);
+        text.setAttribute('text-anchor','middle'); text.textContent=['TOP10','VOL','69%','56%','48','2.17T','168.03B'][i]||'';
+        text.setAttribute('class','hub-badge'); svg.appendChild(text);
+        path.addEventListener('mouseenter',()=>setCenter('COSMOS','—'));
+      }
+      setCenter('COSMOS','—');
+    })();
+  </script>
+
+  <!-- ✅ 추가 패치: ① 티커 클릭 → 차트 연동 ② 모바일은 티커만 보이게(스타일은 CSS에서) -->
+  <script>
+    // ① 티커(코인 칼럼) 클릭 → chart.html?id=... 이동
+    document.addEventListener("click", (e) => {
+      const coinCell = e.target.closest(".coin-cell");
+      const row = e.target.closest("tr.row");
+      if (!coinCell || !row) return;
+      const id = row.dataset.id || row.getAttribute("data-id");
+      if (!id) return;
+      location.href = `./chart.html?id=${encodeURIComponent(id)}`;
     });
-  });
-}
 
-/* --- Init --- */
-async function initOnce(){
-  $("#cosmos-tbody")?.addEventListener("click",(e)=>{
-    const tr=e.target.closest("tr.row"); if(!tr) return;
-    if(e.target.closest("a")) return;
-    const sym=tr.dataset.symbol;
-    if(sym) location.href=`./chart.html?symbol=${encodeURIComponent(sym)}&interval=1h`;
-  });
-
-  $$('.ls-ctl button').forEach(btn=>btn.addEventListener('click', async e=>{
-    const p=e.currentTarget.dataset.period; state.lsPeriod=p;
-    try{const d=await fetchBinanceLS(p); renderLongShort(p,d);}catch{}
-  }));
-
-  $("#search")?.addEventListener("input", ()=>{state.page=1; applySortFilter();});
-  $("#filter")?.addEventListener("change", e=>{state.filter=e.target.value; state.page=1; applySortFilter();});
-  $("#sortkey")?.addEventListener("change", e=>{state.sortKey=e.target.value; applySortFilter();});
-  $("#sortdir")?.addEventListener("click", e=>{state.sortDir=state.sortDir===-1?1:-1; e.currentTarget.textContent=state.sortDir===-1?"▼":"▲"; applySortFilter();});
-
-  wireHeaderSort();
-
-  const r=$("#starRange");
-  const setStarCSS=v=>document.documentElement.style.setProperty("--star", String(v/100));
-  if(r){
-    const saved=Number(localStorage.getItem("two4_star")||65);
-    r.value=String(clamp(saved,0,100));
-    setStarCSS(Number(r.value));
-    StarField.setIntensity(Number(r.value)/100);
-    r.addEventListener("input",e=>{
-      const v=clamp(Number(e.target.value||0),0,100);
-      setStarCSS(v); StarField.setIntensity(v/100);
-      localStorage.setItem("two4_star",String(v));
+    // ② 헤더 정렬 텍스트 클릭 (cosmos.js의 wireHeaderSort와 중복되지 않도록 selector 동일)
+    document.addEventListener("click",(e)=>{
+      const th=e.target.closest(".cosmos-table thead th.sortable[data-key]");
+      if(!th || !window._cosmos) return;
+      const st=window._cosmos.state;
+      const k=th.dataset.key;
+      if(st.sortKey===k){ st.sortDir = st.sortDir===-1 ? 1 : -1; }
+      else{ st.sortKey=k; st.sortDir=-1; }
+      if(typeof window.applySortFilter==="function") window.applySortFilter();
+      else if(window._cosmos && typeof window._cosmos.initData==="function") window._cosmos.initData();
     });
-  }
-}
-
-/* --- initData: allow partial failure --- */
-async function initData(){
-  const tasks = [
-    fetchMarkets(),
-    fetchGlobal(),
-    fetchFNG(),
-    fetchBinanceLS(state.lsPeriod),
-    fetchMarketChart('bitcoin',7),
-    fetchMarketChart('tether',7)
-  ];
-  const rs = await Promise.allSettled(tasks);
-  const ok   = (i) => rs[i].status === 'fulfilled' ? rs[i].value : null;
-
-  const markets   = ok(0) || [];
-  const global    = ok(1);
-  const fng       = ok(2);
-  const ls        = ok(3);
-  const btcChart  = ok(4);
-  const usdtChart = ok(5);
-
-  if (markets.length) {
-    state.all = markets;
-    renderKPIs(markets, global);
-    renderRightLists(markets);
-    applySortFilter();
-  } else {
-    setHTML("#cosmos-tbody", `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);
-  }
-  if (fng) renderFNGCard(fng);
-  if (ls)  renderLongShort(state.lsPeriod, ls);
-  if (btcChart || usdtChart) renderMiniCaps(btcChart, usdtChart);
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  StarField.init();
-  initOnce();
-  initData();
-
-  let vis=document.visibilityState==="visible";
-  document.addEventListener("visibilitychange",()=>{vis=document.visibilityState==="visible";});
-
-  setInterval(async ()=>{ if(!vis) return; try{
-    const [markets,global]=await Promise.all([fetchMarkets(),fetchGlobal()]);
-    state.all=markets; renderKPIs(markets,global); renderRightLists(markets); applySortFilter();
-  }catch(e){ console.warn('[auto refresh] 실패', e); } }, 60000);
-
-  setInterval(async ()=>{ if(!vis) return; try{renderFNGCard(await fetchFNG());}catch(e){ console.warn('[fng refresh] 실패', e); } }, 60*60*1000);
-});
-
-window._cosmos={state,initData};
+  </script>
+</body>
+</html>
