@@ -1,302 +1,646 @@
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>TWO4 COSMOS</title>
-<style>
-  :root{
-    --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
-    --up:#22c55e; --down:#ef4444;
-    --toolbar-h: 44px;            /* 상단 컨트롤러 높이(헤더 sticky 보정) */
-    --starVis: .7;                /* 별 밝기(0~1) */
-  }
-  *{box-sizing:border-box}
-  html,body{
-    margin:0;padding:0;color:var(--text);
-    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic";
-    background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%);
-    overflow-x:hidden;
-  }
-  a{color:inherit;text-decoration:none}       /* 밑줄/보라색 제거 */
-  a:visited{color:inherit}
+/* ===== COSMOS.JS (robust build) ===== */
 
-  /* ⭐ 별 배경 */
-  .sky{position:fixed; inset:0; pointer-events:none; z-index:0;}
-  .stars,.stars2,.stars3{
-    position:absolute; inset:0; background-repeat:repeat; background-size:1600px 1600px;
-    animation:twinkle 18s linear infinite; filter:blur(.2px)
-  }
-  .stars{opacity:calc(.55 * var(--starVis));
-    background-image:
-      radial-gradient(1px 1px at 20px 30px,#fff8 50%,transparent 51%),
-      radial-gradient(1px 1px at 120px 80px,#fff8 50%,transparent 51%),
-      radial-gradient(1px 1px at 300px 120px,#fff8 50%,transparent 51%)}
-  .stars2{opacity:calc(.35 * var(--starVis)); animation-duration:26s;
-    background-image:
-      radial-gradient(1px 1px at 40px 60px,#fff6 50%,transparent 51%),
-      radial-gradient(1px 1px at 220px 140px,#fff6 50%,transparent 51%),
-      radial-gradient(1px 1px at 460px 240px,#fff6 50%,transparent 51%)}
-  .stars3{opacity:calc(.25 * var(--starVis)); animation-duration:34s;
-    background-image:
-      radial-gradient(1px 1px at 70px 20px,#fff5 50%,transparent 51%),
-      radial-gradient(1px 1px at 260px 220px,#fff5 50%,transparent 51%),
-      radial-gradient(1px 1px at 520px 420px,#fff5 50%,transparent 51%)}
-  @keyframes twinkle{from{background-position:0 0} to{background-position:-1600px -1600px}}
-
-  .wrap{position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 16px 80px;}
-
-  /* 상단 로고/컨트롤러 */
-  .brand{display:flex; align-items:center; gap:14px; margin:14px 0 12px;}
-  .brand img{width:168px; height:auto; object-fit:contain;}
-  .brand h1{display:none} /* 요청: COSMOS 텍스트 삭제 */
-
-  .star-ctl{
-    position:fixed; top:8px; left:50%; transform:translateX(-50%);
-    z-index:10; height:var(--toolbar-h); display:flex; align-items:center;
-    padding:0 10px; border-radius:999px;
-    background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
-    border:1px solid rgba(255,255,255,.2);
-    backdrop-filter: blur(10px);
-  }
-  .star-ctl input[type="range"]{width:120px; height:6px; background:transparent}
-  .star-ctl input[type="range"]::-webkit-slider-thumb{appearance:none; width:14px; height:14px; border-radius:50%; background:#a78bfa; border:1px solid #fff9}
-  .star-ctl input[type="range"]::-webkit-slider-runnable-track{height:6px; border-radius:999px; background:linear-gradient(90deg,#a78bfa,#22d3ee)}
-
-  /* 3D 허브 / 도넛 (기존 스타일 유지; 핵심만) */
-  .hub-wrap{display:grid;grid-template-columns:minmax(320px,520px) 1fr;gap:16px;align-items:center;margin:6px 0 16px}
-  .hub3d{position:relative;width:100%;max-width:520px;border-radius:50%;aspect-ratio:1/1;box-shadow:inset 0 10px 26px rgba(180,200,255,.20), inset 0 -16px 46px rgba(0,0,0,.50), 0 18px 48px rgba(0,0,0,.38), 0 0 40px rgba(56,189,248,.20), 0 0 80px rgba(124,58,237,.16); border:1px solid rgba(255,255,255,.10);}
-  .hub3d svg{position:absolute;inset:0}
-  .hub-center{position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%); width:36%; height:36%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.18), rgba(99,102,241,.12) 60%, rgba(0,0,0,0) 80%); border:1px solid rgba(255,255,255,.14);}
-  .hub-center .val{font-size:clamp(20px,3.2vw,28px);font-weight:900;line-height:1.1;margin:0}
-  .hub-center .lbl{font-size:12px;color:#9aa3b6;margin:4px 0 0}
-  .hub-badge{font-weight:900;font-size:clamp(14px,1.6vw,18px);fill:url(#mintWhiteGrad);filter:url(#textGlow);pointer-events:none;}
-  .hub-seg{cursor:pointer;stroke:rgba(255,255,255,.12);stroke-width:1.2;transition:transform .18s ease,filter .18s ease}
-  .hub-seg:hover{transform:scale(1.025);filter:drop-shadow(0 0 14px rgba(124,58,237,.7))}
-  .hub-panel{position:relative; min-height:220px; border-radius:16px; padding:14px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.10);}
-  .hub-panel.hidden{display:none}
-
-  @media (max-width:767px){.hub-wrap{grid-template-columns:1fr}.hub3d{max-width:360px;margin:0 auto}}
-
-  /* 검색/정렬 컨트롤 (심플) */
-  .controls{display:flex; gap:10px; align-items:center; margin:10px 0}
-  .controls .search{flex:1}
-  input[type="text"], select, button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:9px 12px; outline:none}
-  button.sortdir{min-width:40px}
-
-  /* 테이블 */
-  .table-wrap{overflow-x:auto}
-  table.cosmos-table{width:1200px; border-collapse:separate; border-spacing:0 10px;}
-  thead th{
-    position:sticky; top:calc(var(--toolbar-h) + 10px); z-index:2;
-    background:rgba(17,24,39,.88); backdrop-filter:blur(6px);
-    font-size:12px; color:var(--muted); font-weight:700; text-align:left; padding:8px 10px;
-  }
-  thead th.sortable{cursor:pointer}
-  tbody td{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); padding:12px 10px; vertical-align:middle}
-  tbody tr td:first-child{border-radius:12px 0 0 12px}
-  tbody tr td:last-child{border-radius:0 12px 12px 0}
-  .text-right{text-align:right}
-
-  /* 코인 칼럼(티커) */
-  .coin-cell{display:flex; align-items:center; gap:10px; min-width:220px; position:sticky; left:46px; background:rgba(17,24,39,.88); backdrop-filter:blur(6px); z-index:1; cursor:pointer;}
-  .coin-img{width:22px; height:22px; min-width:22px; border-radius:50%; object-fit:contain}
-  .row-index{width:46px; text-align:right; opacity:.7; font-weight:700; position:sticky; left:0; background:rgba(17,24,39,.88); backdrop-filter:blur(6px); z-index:1}
-
-  /* 모바일: 티커만 보이게 */
-  @media (max-width:767px){
-    thead th{ top:calc(var(--toolbar-h) + 6px); }   /* 겹침 보정 */
-
-    .cosmos-table thead th:nth-child(1),
-    .cosmos-table thead th:nth-child(3),
-    .cosmos-table thead th:nth-child(4),
-    .cosmos-table thead th:nth-child(5),
-    .cosmos-table thead th:nth-child(6),
-    .cosmos-table thead th:nth-child(7),
-    .cosmos-table thead th:nth-child(8),
-    .cosmos-table thead th:nth-child(9),
-    .cosmos-table tbody td:nth-child(1),
-    .cosmos-table tbody td:nth-child(3),
-    .cosmos-table tbody td:nth-child(4),
-    .cosmos-table tbody td:nth-child(5),
-    .cosmos-table tbody td:nth-child(6),
-    .cosmos-table tbody td:nth-child(7),
-    .cosmos-table tbody td:nth-child(8),
-    .cosmos-table tbody td:nth-child(9){
-      display:none !important;
+/* ---- Locale clamps (safety) ---- */
+(() => {
+  const orig = Number.prototype.toLocaleString;
+  Number.prototype.toLocaleString = function (l, o) {
+    if (o && typeof o === "object") {
+      let { minimumFractionDigits: mi, maximumFractionDigits: ma } = o;
+      if (!Number.isFinite(mi)) mi = undefined;
+      if (!Number.isFinite(ma)) ma = undefined;
+      if (mi !== undefined) mi = Math.min(20, Math.max(0, mi));
+      if (ma !== undefined) ma = Math.min(20, Math.max(0, ma));
+      if (mi !== undefined && ma !== undefined && ma < mi) ma = mi;
+      o = { ...o, ...(mi !== undefined ? { minimumFractionDigits: mi } : {}), ...(ma !== undefined ? { maximumFractionDigits: ma } : {}) };
     }
-    .cosmos-table tbody td:nth-child(2){
-      display:block; width:100%; border-radius:12px;
+    return orig.call(this, l || "en-US", o);
+  };
+})();
+
+/* ---- Utils ---- */
+const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+const $ = (s, sc = document) => sc.querySelector(s);
+const $$ = (s, sc = document) => Array.from(sc.querySelectorAll(s));
+const setHTML = (sel, html) => {
+  const el = typeof sel === "string" ? $(sel) : sel;
+  if (el) el.innerHTML = html;
+};
+const safeNum = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
+const safeLocale = (num, minFD = 0, maxFD = 2) => {
+  let m = Number.isFinite(minFD) ? clamp(minFD, 0, 20) : 0;
+  let x = Number.isFinite(maxFD) ? clamp(maxFD, 0, 20) : 2;
+  if (x < m) x = m;
+  try {
+    return Number(num ?? 0).toLocaleString("en-US", { minimumFractionDigits: m, maximumFractionDigits: x });
+  } catch {
+    return String(Number(num ?? 0).toFixed(x));
+  }
+};
+const fmtPrice = (v) =>
+  v == null || Number.isNaN(v)
+    ? "-"
+    : "$" + safeLocale(v, 0, clamp(v >= 100 ? 2 : v >= 1 ? 4 : v > 0 ? Math.ceil(Math.abs(Math.log10(v))) + 2 : 2, 0, 8));
+const fmtPctHTML = (v) => {
+  if (v == null || Number.isNaN(v)) return '<span class="neutral">-</span>';
+  const n = Number(v),
+    cls = n > 0 ? "up" : n < 0 ? "down" : "neutral",
+    sign = n > 0 ? "+" : "";
+  return `<span class="${cls}">${sign}${n.toFixed(2)}%</span>`;
+};
+const fmtNumSuffix = (v) => {
+  if (v == null || Number.isNaN(v)) return "-";
+  const n = Number(v),
+    a = Math.abs(n);
+  if (a >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
+  if (a >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+  if (a >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return "$" + (n / 1e3).toFixed(2) + "K";
+  return "$" + safeLocale(n, 0, 2);
+};
+
+/* ---- Sticky header auto-offset (겹침 방지) ---- */
+function setStickyOffset() {
+  // 상단 브랜드/허브 영역 높이를 합산해서 CSS 변수로 반영
+  const brand = $(".brand");
+  const controller = $(".star-ctl");
+  const extra = 10;
+  const h = (brand ? brand.getBoundingClientRect().height : 0) + (controller ? controller.getBoundingClientRect().height : 0) + extra;
+  document.documentElement.style.setProperty("--toolbar-h", `${Math.max(58, Math.round(h))}px`);
+}
+window.addEventListener("resize", setStickyOffset);
+
+/* ---- Fetch helpers (CORS + 429 방어) ---- */
+async function fetchJSON(direct, proxy) {
+  try {
+    const r = await fetch(direct, { cache: "no-store" });
+    if (!r.ok) throw 0;
+    return await r.json();
+  } catch {
+    try {
+      const r2 = await fetch(proxy, { cache: "no-store" });
+      if (!r2.ok) throw 0;
+      return await r2.json();
+    } catch {
+      return null;
     }
-    .coin-cell{position:static; left:auto; min-width:0; gap:10px;}
-    .row-index{display:none}
-    table.cosmos-table{width:100%}
+  }
+}
+async function fetchMarkets({ vs = "usd", perPage = 200, page = 1 } = {}) {
+  const q = `vs_currency=${vs}&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
+  return await fetchJSON(
+    `https://api.coingecko.com/api/v3/coins/markets?${q}`,
+    `/api/coins/markets?${q}`
+  );
+}
+async function fetchGlobal() {
+  return await fetchJSON(`https://api.coingecko.com/api/v3/global`, `/api/global`);
+}
+async function fetchFNG() {
+  return await fetchJSON(`https://api.alternative.me/fng/?limit=2`, `/api/fng`);
+}
+async function fetchBinanceLS(period = "1h") {
+  const sym = "BTCUSDT",
+    q = `symbol=${sym}&period=${period}&limit=1`;
+  return await fetchJSON(
+    `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?${q}`,
+    `/api/binance/globalLongShortAccountRatio?${q}`
+  );
+}
+// 차트는 실패해도 치명적이지 않도록 null 반환
+async function fetchMarketChart(id, days = 7) {
+  const q = `vs_currency=usd&days=${days}`;
+  return await fetchJSON(
+    `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`,
+    `/api/coins/${encodeURIComponent(id)}/market_chart?${q}`
+  );
+}
+
+/* ---- State ---- */
+const state = {
+  all: [],
+  filtered: [],
+  page: 1,
+  perPage: 50,
+  sortKey: "market_cap",
+  sortDir: -1, // -1 desc, 1 asc
+  lsPeriod: "1h",
+  filterQ: "",
+};
+const STABLE_IDS = new Set([
+  "tether",
+  "usd-coin",
+  "dai",
+  "first-digital-usd",
+  "true-usd",
+  "frax",
+  "usdd",
+  "paypal-usd",
+  "lusd",
+  "usde",
+  "usdx",
+]);
+
+/* ---- Sparklines ---- */
+function sparklineSVG(arr, w = 100, h = 24) {
+  if (!arr || arr.length < 2) return "";
+  const min = Math.min(...arr),
+    max = Math.max(...arr),
+    span = max - min || 1;
+  const pts = arr
+    .map((p, i) => {
+      const x = (i / (arr.length - 1)) * w,
+        y = h - ((p - min) / span) * h;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const up = arr.at(-1) >= arr[0];
+  const color = up ? "#22c55e" : "#ef4444";
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/></svg>`;
+}
+
+/* ---- Table ---- */
+function buildRowHTML(c) {
+  const s7 = (c.sparkline_in_7d && c.sparkline_in_7d.price) || null;
+  const sym = (c.symbol || "").toUpperCase();
+  const name = c.name || "";
+  const rank = c.market_cap_rank ?? "-";
+  const price = fmtPrice(c.current_price);
+  const ch1 = c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null;
+  const ch24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null;
+  const ch7 = c.price_change_percentage_7d_in_currency ?? null;
+  const mcap = fmtNumSuffix(c.market_cap);
+  const vol = fmtNumSuffix(c.total_volume);
+
+  // 링크/밑줄/보라색 방지: <a> 사용하지 않고 클릭은 tr에 이벤트 위임
+  return `<tr class="row" data-id="${c.id}">
+    <td class="row-index">${rank}</td>
+    <td class="coin-cell">
+      <img class="coin-img" src="${c.image}" alt="${sym}">
+      <span class="coin-name">${sym}</span>
+      <span class="coin-sym">${name}</span>
+    </td>
+    <td class="text-right"><span class="cell-price">${price}</span></td>
+    <td class="text-right">${fmtPctHTML(ch1)}</td>
+    <td class="text-right">${fmtPctHTML(ch24)}</td>
+    <td class="text-right">${fmtPctHTML(ch7)}</td>
+    <td class="text-right"><span class="cell-mcap">${mcap}</span></td>
+    <td class="text-right"><span class="cell-vol">${vol}</span></td>
+    <td class="text-right">${s7 ? sparklineSVG(s7) : ""}</td>
+  </tr>`;
+}
+
+const ensureTbody = () => $("#cosmos-tbody");
+
+function renderTableSlice(rows) {
+  const tbody = ensureTbody();
+  if (!tbody) return;
+  const s = (state.page - 1) * state.perPage,
+    e = s + state.perPage;
+  const slice = rows.slice(s, e);
+  setHTML(
+    tbody,
+    slice.map(buildRowHTML).join("") ||
+      `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`
+  );
+}
+
+/* ---- Pager ---- */
+function pageRange(total, current, max = innerWidth <= 767 ? 5 : 9) {
+  const half = Math.floor(max / 2);
+  let start = Math.max(1, current - half),
+    end = start + max - 1;
+  if (end > total) {
+    end = total;
+    start = Math.max(1, end - max + 1);
+  }
+  return { start, end };
+}
+function renderPager(total) {
+  const el = $("#pager");
+  if (!el) return;
+  const cur = state.page,
+    { start, end } = pageRange(total, cur);
+  const btn = (label, pg, cls = "") =>
+    `<button data-p="${pg}" class="${cls}">${label}</button>`;
+  let html = "";
+  html += btn("«", 1);
+  html += btn("‹", Math.max(1, cur - 1));
+  if (start > 1) html += `<span>…</span>`;
+  for (let p = start; p <= end; p++)
+    html += btn(p, p, p === cur ? "on" : "");
+  if (end < total) html += `<span>…</span>`;
+  html += btn("›", Math.min(total, cur + 1));
+  html += btn("»", total);
+  el.innerHTML = html;
+  el
+    .querySelectorAll("button[data-p]")
+    .forEach((b) =>
+      (b.onclick = () => {
+        const p = Number(b.dataset.p) || 1;
+        if (p !== state.page) {
+          state.page = p;
+          renderTableSlice(state.filtered);
+          renderPager(total);
+        }
+      })
+    );
+}
+
+/* ---- Filter + sort ---- */
+function applyFilterSort() {
+  const q = (state.filterQ || "").toLowerCase();
+  let arr = Array.isArray(state.all)
+    ? state.all.filter(
+        (c) =>
+          !q ||
+          (c.symbol || "").toLowerCase().includes(q) ||
+          (c.name || "").toLowerCase().includes(q)
+      )
+    : [];
+
+  const dir = state.sortDir,
+    k = state.sortKey,
+    get = (c) => {
+      switch (k) {
+        case "market_cap":
+          return c.market_cap ?? -1;
+        case "price":
+          return c.current_price ?? -1;
+        case "volume":
+          return c.total_volume ?? -1;
+        case "change1h":
+          return (
+            c.price_change_percentage_1h_in_currency ??
+            c.price_change_percentage_1h ??
+            -1
+          );
+        case "change24h":
+          return (
+            c.price_change_percentage_24h_in_currency ??
+            c.price_change_percentage_24h ??
+            -1
+          );
+        case "change7d":
+          return c.price_change_percentage_7d_in_currency ?? -1;
+        case "rank":
+          return c.market_cap_rank ?? 1e9;
+        case "symbol":
+          return (c.symbol || "").toUpperCase();
+        default:
+          return 0;
+      }
+    };
+
+  arr.sort((a, b) => {
+    const va = get(a),
+      vb = get(b);
+    const r =
+      typeof va === "string" && typeof vb === "string"
+        ? va.localeCompare(vb)
+        : va > vb
+        ? 1
+        : va < vb
+        ? -1
+        : 0;
+    return r * dir;
+  });
+
+  state.filtered = arr;
+
+  // 헤더 표시 (오름/내림 텍스트)
+  $$("#mkt thead th[data-key]").forEach((th) => {
+    const k = th.dataset.key;
+    const dirEl = th.querySelector(".dir");
+    if (dirEl)
+      dirEl.textContent =
+        k === state.sortKey ? (state.sortDir === -1 ? "▼" : "▲") : "";
+  });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(state.filtered.length / state.perPage)
+  );
+  if (state.page > totalPages) state.page = totalPages;
+
+  renderTableSlice(state.filtered);
+  renderPager(totalPages);
+}
+
+/* ---- Header click sort ---- */
+function wireHeaderSort() {
+  $$("#mkt thead th[data-key]").forEach((th) => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (state.sortKey === key) state.sortDir = state.sortDir === -1 ? 1 : -1;
+      else {
+        state.sortKey = key;
+        state.sortDir = -1;
+      }
+      applyFilterSort();
+    });
+  });
+}
+
+/* ---- KPIs & lists (좌우 카드 데이터) ---- */
+function renderKPIs(markets, global) {
+  const btc = markets?.find((x) => x.id === "bitcoin");
+  const tether = markets?.find((x) => x.id === "tether");
+  const total = global?.data?.total_market_cap?.usd ?? null;
+  const btcCap = btc?.market_cap ?? null;
+  const dom =
+    btcCap && total
+      ? (btcCap / total) * 100
+      : global?.data?.market_cap_percentage?.btc ?? null;
+
+  setHTML("#kpi-btc-mcap", btcCap ? fmtNumSuffix(btcCap) : "-");
+  setHTML("#kpi-usdt-mcap", tether?.market_cap ? fmtNumSuffix(tether.market_cap) : "-");
+  setHTML("#kpi-dominance", dom != null ? Number(dom).toFixed(2) + "%" : "-");
+}
+function renderRightLists(markets) {
+  if (!Array.isArray(markets) || markets.length === 0) {
+    setHTML("#list-gainers", "");
+    setHTML("#list-volume", "");
+    return;
+  }
+  const gainers = markets
+    .slice()
+    .filter((x) => Number.isFinite(x.price_change_percentage_24h))
+    .sort(
+      (a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h
+    )
+    .slice(0, 10);
+  setHTML(
+    "#list-gainers",
+    gainers
+      .map((c, i) => {
+        const sym = (c.symbol || "").toUpperCase(),
+          val = c.price_change_percentage_24h ?? 0,
+          cls = val >= 0 ? "up" : "down";
+        return `<div class="row"><div class="rank">${i + 1}.</div><div class="sym">${sym}</div><div class="price">${fmtPrice(
+          c.current_price
+        )}</div><div class="pct ${cls}">${
+          val >= 0 ? "+" : ""
+        }${val.toFixed(2)}%</div></div>`;
+      })
+      .join("")
+  );
+
+  const vol = markets
+    .slice()
+    .sort((a, b) => (b.total_volume || 0) - (a.total_volume || 0))
+    .slice(0, 10);
+  setHTML(
+    "#list-volume",
+    vol
+      .map((c, i) => {
+        const sym = (c.symbol || "").toUpperCase(),
+          pct = c.price_change_percentage_24h ?? 0,
+          cls = pct >= 0 ? "up" : "down";
+        return `<div class="row"><div class="rank">${i + 1}.</div><div class="sym">${sym}</div><div class="price">${fmtPrice(
+          c.current_price
+        )}</div><div class="pct ${cls}">${
+          pct >= 0 ? "+" : ""
+        }${pct.toFixed(2)}%</div></div>`;
+      })
+      .join("")
+  );
+}
+
+/* ---- FNG ---- */
+function renderFNGCard(data) {
+  try {
+    const item = Array.isArray(data?.data) ? data.data[0] : null;
+    if (!item) {
+      setHTML("#fng-title", "- / -");
+      setHTML("#fng-gauge", "");
+      return;
+    }
+    const value = Number(item.value),
+      cls = value <= 40 ? "risk" : value <= 60 ? "neutral" : "safe",
+      label =
+        item.value_classification ||
+        (value <= 40 ? "Fear" : value <= 60 ? "Neutral" : "Greed");
+
+    setHTML("#fng-title", `${value} / ${label}`);
+
+    const dt = item.timestamp
+      ? new Date(Number(item.timestamp) * 1000)
+      : new Date();
+    setHTML(
+      "#fng-date",
+      `Alternative.me · ${dt.getFullYear()}. ${String(
+        dt.getMonth() + 1
+      ).padStart(2, "0")}. ${String(dt.getDate()).padStart(2, "0")}`
+    );
+
+    const badge = $("#fng-badge");
+    if (badge) {
+      badge.className = `badge ${cls}`;
+      badge.textContent = label;
+    }
+
+    const pct = Math.max(0, Math.min(1, value / 100)),
+      start = -Math.PI,
+      end = 0,
+      ang = start + (end - start) * pct,
+      r = 56,
+      cx = 80,
+      cy = 86;
+    const arc = (a) => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`,
+      nx = cx + (r - 8) * Math.cos(ang),
+      ny = cy + (r - 8) * Math.sin(ang);
+    const svg = `<svg width="160" height="100" viewBox="0 0 160 100">
+      <defs>
+        <linearGradient id="seg1" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#f59e0b"/>
+        </linearGradient>
+        <linearGradient id="seg2" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/>
+        </linearGradient>
+      </defs>
+      <path d="M ${arc(start)} A ${r} ${r} 0 0 1 ${arc(-Math.PI/2)}" stroke="url(#seg1)" stroke-width="12" fill="none" opacity=".9"/>
+      <path d="M ${arc(-Math.PI/2)} A ${r} ${r} 0 0 1 ${arc(end)}" stroke="url(#seg2)" stroke-width="12" fill="none" opacity=".9"/>
+      <circle cx="${cx}" cy="${cy}" r="2.8" fill="#fff" opacity=".9"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+    setHTML("#fng-gauge", svg);
+  } catch {
+    setHTML("#fng-title", "- / -");
+    setHTML("#fng-gauge", "");
+  }
+}
+
+/* ---- Mini caps (sparks) ---- */
+function renderMiniCaps(btc, usdt) {
+  const arr = (d) =>
+    Array.isArray(d?.market_caps) ? d.market_caps.map((x) => x[1]) : null;
+  setHTML(
+    "#kpi-btc-spark",
+    arr(btc) ? sparklineSVG(arr(btc), 180, 44) : ""
+  );
+  setHTML(
+    "#kpi-usdt-spark",
+    arr(usdt) ? sparklineSVG(arr(usdt), 180, 44) : ""
+  );
+}
+
+/* ---- Long/Short ---- */
+function renderLongShort(period, arr) {
+  const last = Array.isArray(arr) ? arr.at(-1) : null;
+  if (!last) {
+    setHTML("#ls-long", "-");
+    setHTML("#ls-short", "-");
+    setHTML("#ls-ratio", "-");
+    return;
+  }
+  const ratio = Number(last.longShortRatio || last.longShortRatio?.toString() || 0);
+  let longPct, shortPct;
+  if (last.longAccount && last.shortAccount) {
+    const la = Number(last.longAccount),
+      sa = Number(last.shortAccount),
+      sum = la + sa || 1;
+    longPct = (la / sum) * 100;
+    shortPct = (sa / sum) * 100;
+  } else if (ratio) {
+    shortPct = 100 / (1 + ratio);
+    longPct = 100 - shortPct;
+  } else {
+    longPct = shortPct = 50;
+  }
+  setHTML("#ls-long", `${longPct.toFixed(1)}%`);
+  setHTML("#ls-short", `${shortPct.toFixed(1)}%`);
+  setHTML("#ls-ratio", ratio ? ratio.toFixed(2) : `${(longPct / shortPct).toFixed(2)}`);
+  const bar = $("#ls-longbar");
+  if (bar) bar.style.width = `${Math.max(0, Math.min(100, longPct))}%`;
+  $$(".ls-ctl button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.period === period)
+  );
+}
+
+/* ---- Init wiring ---- */
+function wireUI() {
+  // 행 클릭 → chart.html
+  $("#cosmos-tbody")?.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr.row");
+    if (!tr) return;
+    const id = tr.dataset.id;
+    if (id) location.href = `./chart.html?id=${encodeURIComponent(id)}`;
+  });
+
+  // 롱/숏 버튼
+  $$(".ls-ctl button").forEach((btn) =>
+    btn.addEventListener("click", async (e) => {
+      const p = e.currentTarget.dataset.period;
+      state.lsPeriod = p;
+      try {
+        const d = await fetchBinanceLS(p);
+        renderLongShort(p, d || []);
+      } catch {}
+    })
+  );
+
+  // 검색
+  $("#search")?.addEventListener("input", (e) => {
+    state.page = 1;
+    state.filterQ = e.target.value || "";
+    applyFilterSort();
+  });
+
+  wireHeaderSort();
+
+  // Star controller -> CSS 변수만 제어 (별 배경은 CSS 애니메이션)
+  const range = $("#starRange");
+  if (range) {
+    const saved = Number(localStorage.getItem("two4_star") || 65);
+    range.value = String(clamp(saved, 0, 100));
+    const apply = (v) =>
+      document.documentElement.style.setProperty("--starVis", String(v / 100));
+    apply(Number(range.value));
+    range.addEventListener("input", (e) => {
+      const v = clamp(Number(e.target.value || 0), 0, 100);
+      apply(v);
+      localStorage.setItem("two4_star", String(v));
+    });
   }
 
-  footer{margin:22px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
-</style>
-</head>
-<body>
-  <!-- ⭐ 별 배경 -->
-  <div class="sky"><div class="stars"></div><div class="stars2"></div><div class="stars3"></div></div>
+  setStickyOffset();
+}
 
-  <!-- ⭐ 상단(간결 컨트롤러) -->
-  <div class="star-ctl" aria-label="Star background controller">
-    <input id="starRange" type="range" min="0" max="100" value="70" />
-  </div>
+/* ---- Data init ---- */
+async function initData() {
+  try {
+    const [markets, global, fng, ls, btcChart, usdtChart] = await Promise.allSettled([
+      fetchMarkets(),
+      fetchGlobal(),
+      fetchFNG(),
+      fetchBinanceLS(state.lsPeriod),
+      fetchMarketChart("bitcoin", 7),
+      fetchMarketChart("tether", 7),
+    ]);
 
-  <div class="wrap">
-    <!-- 로고 -->
-    <div class="brand">
-      <img src="/media/logo.png" alt="TWO4">
-      <h1>COSMOS</h1> <!-- 숨김 처리됨 -->
-    </div>
+    const M = markets.status === "fulfilled" && Array.isArray(markets.value) ? markets.value : [];
+    const G = global.status === "fulfilled" ? global.value : null;
+    const F = fng.status === "fulfilled" ? fng.value : null;
+    const L = ls.status === "fulfilled" ? ls.value : null;
+    const BTC = btcChart.status === "fulfilled" ? btcChart.value : null;
+    const USDT = usdtChart.status === "fulfilled" ? usdtChart.value : null;
 
-    <!-- 3D 허브 (요약) -->
-    <section class="hub-wrap">
-      <div class="hub3d">
-        <svg id="hubSvg" viewBox="0 0 1000 1000" role="img" aria-label="Cosmos overview hub">
-          <defs>
-            <linearGradient id="mintWhiteGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#dffff9"/>
-              <stop offset="100%" stop-color="#7efcf3"/>
-            </linearGradient>
-            <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-        </svg>
-        <div class="hub-center">
-          <div class="val" id="hubVal">—</div>
-          <div class="lbl" id="hubLbl">COSMOS</div>
-        </div>
-      </div>
-      <aside class="hub-panel hidden" id="hubPanel">
-        <h4 id="hubTitle" style="margin:2px 0 10px;color:#9aa3b6;letter-spacing:.06em;font-size:13px">—</h4>
-        <div id="hubContent"></div>
-      </aside>
-    </section>
+    state.all = M;
 
-    <!-- 검색/정렬 -->
-    <div class="controls">
-      <input class="search" type="text" id="search" placeholder="코인 검색 (이름/심볼)">
-      <label>정렬:
-        <select id="sortkey">
-          <option value="market_cap">시가총액</option>
-          <option value="price">가격</option>
-          <option value="volume">거래량</option>
-          <option value="change1h">1시간</option>
-          <option value="change24h">24시간</option>
-          <option value="change7d">7일</option>
-          <option value="rank">순위</option>
-          <option value="symbol">티커</option>
-        </select>
-      </label>
-      <button id="sortdir" class="sortdir" title="정렬 방향">▼</button>
-      <label>페이지:
-        <select id="page"></select>
-      </label>
-    </div>
+    renderKPIs(M, G);
+    renderRightLists(M);
+    applyFilterSort();
+    if (F) renderFNGCard(F);
+    if (L) renderLongShort(state.lsPeriod, L);
+    renderMiniCaps(BTC, USDT);
+  } catch (e) {
+    console.error(e);
+    setHTML(
+      "#cosmos-tbody",
+      `<tr><td colspan="9" class="text-center">데이터 로딩 실패</td></tr>`
+    );
+  }
+}
 
-    <!-- 마켓 테이블 -->
-    <div class="table-wrap">
-      <table class="cosmos-table" id="mkt">
-        <colgroup>
-          <col><col><col><col><col><col><col><col><col>
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="sortable" data-key="rank">순위</th>
-            <th class="sortable" data-key="symbol">코인</th>
-            <th class="text-right sortable" data-key="price">시세</th>
-            <th class="text-right sortable" data-key="change1h">1h</th>
-            <th class="text-right sortable" data-key="change24h">24h</th>
-            <th class="text-right sortable" data-key="change7d">7d</th>
-            <th class="text-right sortable" data-key="market_cap">시가총액</th>
-            <th class="text-right sortable" data-key="volume">거래량</th>
-            <th class="text-right">7일 차트</th>
-          </tr>
-        </thead>
-        <tbody id="cosmos-tbody"></tbody>
-      </table>
-    </div>
+/* ---- Boot ---- */
+document.addEventListener("DOMContentLoaded", () => {
+  wireUI();
+  initData();
 
-    <footer>🚀 CoinGecko · Binance · Alternative.me | 네온 허브 + 마켓 테이블 · 30초 자동 업데이트</footer>
-  </div>
+  // 가시성 기반 폴링
+  let vis = document.visibilityState === "visible";
+  document.addEventListener("visibilitychange", () => {
+    vis = document.visibilityState === "visible";
+  });
 
-  <!-- 데이터/로직: 기존 cosmos.js 사용 -->
-  <script src="./cosmos.js"></script>
-
-  <!-- 별 컨트롤러 -->
-  <script>
-    (function(){
-      const range=document.getElementById('starRange');
-      const apply=v=>document.documentElement.style.setProperty('--starVis', String(Math.max(0,Math.min(1,v/100))));
-      range.addEventListener('input',e=>apply(e.target.value)); apply(range.value);
-    })();
-  </script>
-
-  <!-- 허브(도넛) 간단 빌드: 섹션/텍스트 등은 cosmos.js 데이터로 그려짐 -->
-  <script>
-    (function(){
-      const svg = document.getElementById('hubSvg');
-      const centerVal = document.getElementById('hubVal');
-      const centerLbl = document.getElementById('hubLbl');
-      const panel = document.getElementById('hubPanel');
-      const panelTitle = document.getElementById('hubTitle');
-      const panelContent = document.getElementById('hubContent');
-
-      function arcPath(cx, cy, r0, r1, a0, a1){
-        const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
-        const [x0,y0]=p(r1,a0),[x1,y1]=p(r1,a1),[x2,y2]=p(r0,a1),[x3,y3]=p(r0,a0);
-        const laf=(a1-a0)>Math.PI?1:0;
-        return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;
+  // 60초마다 시장/지표 업데이트
+  setInterval(async () => {
+    if (!vis) return;
+    try {
+      const [markets, global] = await Promise.allSettled([
+        fetchMarkets(),
+        fetchGlobal(),
+      ]);
+      const M = markets.status === "fulfilled" && Array.isArray(markets.value) ? markets.value : null;
+      const G = global.status === "fulfilled" ? global.value : null;
+      if (M) {
+        state.all = M;
+        renderKPIs(M, G);
+        renderRightLists(M);
+        applyFilterSort();
       }
-      function setCenter(lbl,val){centerLbl.textContent=lbl;centerVal.textContent=val}
+    } catch {}
+  }, 60000);
 
-      // 샘플(데이터는 cosmos.js initHub에서 주기적 갱신한다면 이 부분 생략 가능)
-      const TAU=Math.PI*2, cx=500,cy=500,rO=470,rI=260, n=7, seg=TAU/n, start=-Math.PI/2;
-      for(let i=0;i<n;i++){
-        const a0=start+seg*i+0.014, a1=start+seg*(i+1)-0.014;
-        const path=document.createElementNS(svg.namespaceURI,'path');
-        path.setAttribute('d',arcPath(cx,cy,rI,rO,a0,a1));
-        path.setAttribute('fill','url(#mintWhiteGrad)'); path.setAttribute('opacity','.18');
-        path.classList.add('hub-seg'); svg.appendChild(path);
+  // FNG는 1시간 주기
+  setInterval(async () => {
+    if (!vis) return;
+    try {
+      const d = await fetchFNG();
+      if (d) renderFNGCard(d);
+    } catch {}
+  }, 60 * 60 * 1000);
+});
 
-        const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-30)*Math.cos(mid), ty=cy+(rx-30)*Math.sin(mid)+6;
-        const text=document.createElementNS(svg.namespaceURI,'text');
-        text.setAttribute('x',tx); text.setAttribute('y',ty);
-        text.setAttribute('text-anchor','middle'); text.textContent=['TOP10','VOL','69%','56%','48','2.17T','168.03B'][i]||'';
-        text.setAttribute('class','hub-badge'); svg.appendChild(text);
-        path.addEventListener('mouseenter',()=>setCenter('COSMOS','—'));
-      }
-      setCenter('COSMOS','—');
-    })();
-  </script>
-
-  <!-- ✅ 추가 패치: ① 티커 클릭 → 차트 연동 ② 모바일은 티커만 보이게(스타일은 CSS에서) -->
-  <script>
-    // ① 티커(코인 칼럼) 클릭 → chart.html?id=... 이동
-    document.addEventListener("click", (e) => {
-      const coinCell = e.target.closest(".coin-cell");
-      const row = e.target.closest("tr.row");
-      if (!coinCell || !row) return;
-      const id = row.dataset.id || row.getAttribute("data-id");
-      if (!id) return;
-      location.href = `./chart.html?id=${encodeURIComponent(id)}`;
-    });
-
-    // ② 헤더 정렬 텍스트 클릭 (cosmos.js의 wireHeaderSort와 중복되지 않도록 selector 동일)
-    document.addEventListener("click",(e)=>{
-      const th=e.target.closest(".cosmos-table thead th.sortable[data-key]");
-      if(!th || !window._cosmos) return;
-      const st=window._cosmos.state;
-      const k=th.dataset.key;
-      if(st.sortKey===k){ st.sortDir = st.sortDir===-1 ? 1 : -1; }
-      else{ st.sortKey=k; st.sortDir=-1; }
-      if(typeof window.applySortFilter==="function") window.applySortFilter();
-      else if(window._cosmos && typeof window._cosmos.initData==="function") window._cosmos.initData();
-    });
-  </script>
-</body>
-</html>
+// debug
+window._cosmos = { state, applyFilterSort, initData };
