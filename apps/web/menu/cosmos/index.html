@@ -108,7 +108,6 @@
     .coin-sym{opacity:.85; margin-left:4px}
     .text-right{text-align:right}
 
-    /* responsive grid for mobile */
     @media (max-width:1199px){
       .list .row{grid-template-columns:2.2em 1fr auto auto; font-size:13px}
       table{width:1100px}
@@ -136,14 +135,27 @@
 
     /* ===== 3D Neon Hub styles ===== */
     .hub-wrap{display:grid;grid-template-columns:minmax(320px,460px) 1fr;gap:16px;align-items:center;margin:10px 0 18px}
-    .hub3d{position:relative;aspect-ratio:1/1;max-width:460px;border-radius:50%;
-      background: radial-gradient(120% 120% at 30% 30%, rgba(120,144,255,.25) 0%, rgba(80,42,150,.18) 35%, rgba(10,16,26,.0) 62%),
-                  radial-gradient(60% 60% at 70% 70%, rgba(0,0,0,.35), rgba(0,0,0,.0));
+    .hub3d{
+      position:relative;
+      width:100%;
+      max-width:460px;
+      border-radius:50%;
+      aspect-ratio:1/1; /* 기본 */
+      background:
+        radial-gradient(120% 120% at 30% 30%, rgba(120,144,255,.25) 0%, rgba(80,42,150,.18) 35%, rgba(10,16,26,.0) 62%),
+        radial-gradient(60% 60% at 70% 70%, rgba(0,0,0,.35), rgba(0,0,0,.0));
       box-shadow: inset 0 8px 24px rgba(180,200,255,.15), inset 0 -10px 40px rgba(0,0,0,.45), 0 12px 38px rgba(0,0,0,.35);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border:1px solid rgba(255,255,255,.10)}
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border:1px solid rgba(255,255,255,.10);
+      z-index:2;
+    }
+    /* 폴백: aspect-ratio 미지원 브라우저에서 정사각형 확보 */
+    @supports not (aspect-ratio: 1 / 1) {
+      .hub3d::before{content:"";display:block;padding-top:100%;}
+      .hub3d > *{position:absolute;inset:0;}
+    }
     .hub3d svg{position:absolute;inset:0}
 
-    /* ✅ 중앙 텍스트 완전 센터 고정 & 가운데 정렬 */
     .hub-center{
       position:absolute; inset:50% auto auto 50%;
       transform:translate(-50%,-50%);
@@ -268,6 +280,7 @@
   </footer>
 </div>
 
+<!-- 기존 공용 기능 -->
 <script src="./cosmos.js"></script>
 
 <!-- ===== 3D HUB script ===== -->
@@ -364,31 +377,51 @@
     });
   }
 
+  /* === 변경: 외부 요청 실패해도 허브 렌더 === */
   async function gather(){
-    const [markets, global, fng, ls1h, ls4h, lsd] = await Promise.all([
-      fetchMarkets(), fetchGlobal(), fetchFNG(),
-      fetchBinanceLS('1h'), fetchBinanceLS('4h'), fetchBinanceLS('1d')
+    const results = await Promise.allSettled([
+      fetchMarkets(),         // 0
+      fetchGlobal(),          // 1
+      fetchFNG(),             // 2
+      fetchBinanceLS('1h'),   // 3
+      fetchBinanceLS('4h'),   // 4
+      fetchBinanceLS('1d')    // 5
     ]);
-    const byId = Object.fromEntries(markets.map(m=>[m.id, m]));
-    const btc = byId.bitcoin, usdt = byId.tether;
+    const get = (i, dflt=null)=>results[i].status==='fulfilled' ? results[i].value : dflt;
 
-    const gainers = markets.slice().filter(x=>Number.isFinite(x.price_change_percentage_24h))
-      .sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h).slice(0,10);
+    const markets = Array.isArray(get(0,[])) ? get(0,[]) : [];
+    const global  = get(1, null);
+    const fng     = get(2, null);
+
+    const byId = Object.fromEntries(markets.map(m=>[m.id, m]));
+    const btc = byId.bitcoin || null;
+    const usdt = byId.tether || null;
+
+    const gainers = markets
+      .filter(x=>Number.isFinite(x.price_change_percentage_24h))
+      .sort((a,b)=>b.price_change_percentage_24h-a.price_change_percentage_24h)
+      .slice(0,10);
+
     const byVol = markets.slice().sort((a,b)=>b.total_volume-a.total_volume).slice(0,10);
 
     function parseLS(arr){
-      const last = Array.isArray(arr) ? arr[arr.length-1] : null;
+      const last = Array.isArray(arr) && arr.length ? arr[arr.length-1] : null;
       const ratio = last ? Number(last.longShortRatio||0) : 0;
       const shortPct = ratio ? 100/(1+ratio) : 50;
       const longPct = 100-shortPct;
       return {ratio, longPct, shortPct};
     }
+    const ls = {
+      h1: parseLS(get(3, null)),
+      h4: parseLS(get(4, null)),
+      d1: parseLS(get(5, null)),
+    };
 
     return {
       markets, btc, usdt, gainers, byVol,
-      dominance: (global?.data?.market_cap_percentage?.btc ?? null),
+      dominance: (global?.data?.market_cap_percentage?.btc ?? 0),
       fng: Array.isArray(fng?.data) ? fng.data[0] : null,
-      ls: {h1:parseLS(ls1h), h4:parseLS(ls4h), d1:parseLS(lsd)}
+      ls
     };
   }
 
@@ -397,7 +430,8 @@
       const d = await gather();
       const fngLbl = d.fng ? `${d.fng.value} / ${d.fng.value_classification||'—'}` : '—';
       const secs = [
-        { label:'롱/숏 (1H)', badge: `${d.ls.h1.longPct.toFixed(0)}%`, center:`${d.ls.h1.longPct.toFixed(1)} / ${d.ls.h1.shortPct.toFixed(1)}%`,
+        { label:'롱/숏 (1H)', badge: `${d.ls.h1.longPct.toFixed(0)}%`,
+          center:`${d.ls.h1.longPct.toFixed(1)} / ${d.ls.h1.shortPct.toFixed(1)}%`,
           html:`<div>BTCUSDT 롱/숏 (1H)</div>
                 <div style="margin-top:8px;height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden">
                   <div style="width:${d.ls.h1.longPct.toFixed(1)}%;height:100%;background:#22c55e"></div>
@@ -421,11 +455,14 @@
       ];
       buildHub(secs);
       setCenter('COSMOS', '—');
-    }catch(e){ console.error(e); }
+    }catch(e){
+      console.error(e);
+      buildHub([{label:'COSMOS', badge:'—', center:'—', html:'<div>데이터를 불러오지 못했습니다.</div>'}]);
+      setCenter('COSMOS','—');
+    }
   }
 
   document.getElementById('backBtn')?.addEventListener('click', ()=>history.back());
-
   initHub();
   setInterval(initHub, 60*1000);
 })();
