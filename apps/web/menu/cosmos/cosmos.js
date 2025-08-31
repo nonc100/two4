@@ -1,4 +1,4 @@
-/* ===== COSMOS JS (sticky toolbar 호환) ===== */
+/* ===== COSMOS JS (sticky toolbar + compact table + pager) ===== */
 
 /* Locale clamps */
 (()=>{const o=Number.prototype.toLocaleString;Number.prototype.toLocaleString=function(l,e){if(e&&typeof e=="object"){let{minimumFractionDigits:n,maximumFractionDigits:a}=e;Number.isFinite(n)||(n=void 0);Number.isFinite(a)||(a=void 0);n!==void 0&&(n=Math.min(20,Math.max(0,n)));a!==void 0&&(a=Math.min(20,Math.max(0,a)));n!==void 0&&a!==void 0&&a<n&&(a=n);e={...e,...(n!==void 0?{minimumFractionDigits:n}:{}) , ...(a!==void 0?{maximumFractionDigits:a}:{})}}return o.call(this,l||"en-US",e)};const t=Intl.NumberFormat;Intl.NumberFormat=function(l,e){if(e&&typeof e=="object"){let{minimumFractionDigits:n,maximumFractionDigits:a}=e;Number.isFinite(n)||(n=void 0);Number.isFinite(a)||(a=void 0);n!==void 0&&(n=Math.min(20,Math.max(0,n)));a!==void 0&&(a=Math.min(20,Math.max(0,a)));n!==void 0&&a!==void 0&&a<n&&(a=n);e={...e,...(n!==void 0?{minimumFractionDigits:n}:{}) , ...(a!==void 0?{maximumFractionDigits:a}:{})}}return new t(l||"en-US",e)}})();
@@ -28,7 +28,8 @@ async function fetchBinanceLS(period='1h'){const sym='BTCUSDT',q=`symbol=${sym}&
 async function fetchMarketChart(id,days=7){const q=`vs_currency=usd&days=${days}`, d=`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?${q}`, p=`/api/coins/${encodeURIComponent(id)}/market_chart?${q}`; try{const r=await fetch(d); if(!r.ok) throw 0; return await r.json();}catch{const r2=await fetch(p); if(!r2.ok) throw new Error("chart failed"); return await r2.json();}}
 
 /* State */
-const state={all:[],filtered:[],page:1,perPage:50,sortKey:"market_cap",sortDir:-1,lsPeriod:"1h"};
+const state={all:[],filtered:[],page:1,perPage:50,sortKey:"market_cap",sortDir:-1,lsPeriod:"1h",filter:"all"};
+const STABLE_IDS=new Set(["tether","usd-coin","dai","first-digital-usd","true-usd","frax","usdd","paypal-usd","lusd","usde","usdx"]);
 
 /* Table */
 function sparklineSVG(arr,w=100,h=24){if(!arr||arr.length<2)return"-";const min=Math.min(...arr),max=Math.max(...arr),span=(max-min)||1,pts=arr.map((p,i)=>{const x=(i/(arr.length-1))*w,y=h-((p-min)/span)*h; return `${x.toFixed(1)},${y.toFixed(1)}`}).join(" "); const up=arr.at(-1)>=arr[0], color=up?"#22c55e":"#ef4444"; return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline fill="none" stroke="${color}" stroke-width="2" points="${pts}"/></svg>`}
@@ -36,7 +37,11 @@ function buildRowHTML(c){
   const s7=(c.sparkline_in_7d&&c.sparkline_in_7d.price)||null, sym=(c.symbol||"").toUpperCase();
   return `<tr class="row" data-id="${c.id}">
     <td class="row-index">${c.market_cap_rank ?? "-"}</td>
-    <td class="coin-cell"><img class="coin-img" src="${c.image}" alt="${sym}"><span class="coin-name">${sym}</span></td>
+    <td class="coin-cell">
+      <img class="coin-img" src="${c.image}" alt="${sym}">
+      <span class="coin-name">${sym}</span>
+      <span class="coin-sym">${c.name ?? ""}</span>
+    </td>
     <td class="text-right">${fmtPrice(c.current_price)}</td>
     <td class="text-right">${fmtPctHTML(c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? null)}</td>
     <td class="text-right">${fmtPctHTML(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? null)}</td>
@@ -48,15 +53,64 @@ function buildRowHTML(c){
 }
 const ensureTbody=()=>$("#cosmos-tbody");
 function renderTableSlice(rows){const tbody=ensureTbody(); if(!tbody) return; const s=(state.page-1)*state.perPage,e=s+state.perPage; const slice=rows.slice(s,e); setHTML(tbody, slice.map(buildRowHTML).join("") || `<tr><td colspan="9" class="text-center">데이터 없음</td></tr>`);}
+
+/* Pager */
+function pageRange(total, current, max=(innerWidth<=767?5:9)){
+  const half=Math.floor(max/2);
+  let start=Math.max(1,current-half), end=start+max-1;
+  if(end>total){ end=total; start=Math.max(1,end-max+1); }
+  return {start,end};
+}
+function renderPager(total){
+  const el=$("#pager"); if(!el) return;
+  const cur=state.page, {start,end}=pageRange(total,cur);
+  const btn=(label,pg,cls="")=>`<button data-p="${pg}" class="${cls}">${label}</button>`;
+  let html="";
+  html+=btn("«",1);
+  html+=btn("‹",Math.max(1,cur-1));
+  if(start>1) html+=`<span>…</span>`;
+  for(let p=start;p<=end;p++) html+=btn(p,p, p===cur?"on":"");
+  if(end<total) html+=`<span>…</span>`;
+  html+=btn("›",Math.min(total,cur+1));
+  html+=btn("»",total);
+  el.innerHTML=html;
+  el.querySelectorAll("button[data-p]").forEach(b=>b.onclick=()=>{
+    const p=Number(b.dataset.p)||1; if(p!==state.page){ state.page=p; renderTableSlice(state.filtered); renderPager(total); }
+  });
+}
+
+/* Filter + sort */
 function applySortFilter(){
   const q=($("#search").value||"").trim().toLowerCase();
-  state.filtered=state.all.filter(c=>!q || (c.symbol||"").toLowerCase().includes(q) || (c.name||"").toLowerCase().includes(q));
-  const dir=state.sortDir,k=state.sortKey,get=c=>{switch(k){case"market_cap":return c.market_cap??-1;case"price":return c.current_price??-1;case"volume":return c.total_volume??-1;case"change1h":return c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? -1;case"change24h":return c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? -1;case"change7d":return c.price_change_percentage_7d_in_currency ?? -1;case"rank":return c.market_cap_rank ?? 1e9;case"symbol":return (c.symbol||"").toUpperCase();default:return 0}};
-  state.filtered.sort((a,b)=>{const va=get(a),vb=get(b); const r=(typeof va==="string"&&typeof vb==="string")?va.localeCompare(vb):(va>vb?1:va<vb?-1:0); return r*dir;});
+  let arr=state.all.filter(c=>!q || (c.symbol||"").toLowerCase().includes(q) || (c.name||"").toLowerCase().includes(q));
+
+  switch(state.filter){
+    case "nostable": arr=arr.filter(c=>!STABLE_IDS.has(c.id)); break;
+    case "top100":   arr=arr.filter(c=>(c.market_cap_rank||9999)<=100); break;
+    case "byvolume": arr=arr.slice().sort((a,b)=>(b.total_volume||0)-(a.total_volume||0)).slice(0,100); break;
+  }
+
+  const dir=state.sortDir,k=state.sortKey,get=c=>{switch(k){
+    case"market_cap":return c.market_cap??-1;
+    case"price":return c.current_price??-1;
+    case"volume":return c.total_volume??-1;
+    case"change1h":return c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h ?? -1;
+    case"change24h":return c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? -1;
+    case"change7d":return c.price_change_percentage_7d_in_currency ?? -1;
+    case"rank":return c.market_cap_rank ?? 1e9;
+    case"symbol":return (c.symbol||"").toUpperCase();
+    default:return 0;
+  }};
+  arr.sort((a,b)=>{const va=get(a),vb=get(b); const r=(typeof va==="string"&&typeof vb==="string")?va.localeCompare(vb):(va>vb?1:va<vb?-1:0); return r*dir;});
+  state.filtered=arr;
+
   $$(".cosmos-table thead th.sortable").forEach(th=>{const key=th.dataset.key; th.classList.toggle("sorted",key===state.sortKey); th.classList.toggle("asc",key===state.sortKey&&state.sortDir===1); th.classList.toggle("desc",key===state.sortKey&&state.sortDir===-1);});
-  const sel=$("#page"), totalPages=Math.max(1,Math.ceil(state.filtered.length/state.perPage));
-  if(sel){ sel.innerHTML=Array.from({length:totalPages},(_,i)=>{const s=i*state.perPage+1,e=Math.min(state.filtered.length,(i+1)*state.perPage);return `<option value="${i+1}">${s}~${e}</option>`}).join(""); if(state.page>totalPages)state.page=totalPages; sel.value=String(state.page);}
+
+  const totalPages=Math.max(1,Math.ceil(state.filtered.length/state.perPage));
+  if(state.page>totalPages) state.page=totalPages;
+
   renderTableSlice(state.filtered);
+  renderPager(totalPages);
 }
 
 /* KPIs & lists */
@@ -116,9 +170,9 @@ async function initOnce(){
   }));
 
   $("#search")?.addEventListener("input", ()=>{state.page=1; applySortFilter();});
+  $("#filter")?.addEventListener("change", e=>{state.filter=e.target.value; state.page=1; applySortFilter();});
   $("#sortkey")?.addEventListener("change", e=>{state.sortKey=e.target.value; applySortFilter();});
   $("#sortdir")?.addEventListener("click", e=>{state.sortDir=state.sortDir===-1?1:-1; e.currentTarget.textContent=state.sortDir===-1?"▼":"▲"; applySortFilter();});
-  $("#page")?.addEventListener("change", e=>{state.page=Number(e.target.value)||1; renderTableSlice(state.filtered);});
 
   wireHeaderSort();
 
