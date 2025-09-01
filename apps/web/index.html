@@ -48,30 +48,6 @@
       min-height:100vh;
       overflow-x:hidden;
     }
-/* HUB */
-.hub-wrap{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center;margin:8px 0 12px}
-@media (max-width:900px){.hub-wrap{grid-template-columns:1fr}}
-.hub{position:relative;aspect-ratio:1/1;border-radius:50%;
-  background:radial-gradient(100% 100% at 35% 30%, rgba(255,255,255,.06), rgba(0,0,0,0) 60%);
-  border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 10px 26px rgba(0,0,0,.35),0 18px 48px rgba(0,0,0,.35)}
-.hub svg{position:absolute;inset:0}
-.hub-center{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);
-  width:36%;height:36%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:radial-gradient(100% 100% at 40% 35%, rgba(34,211,238,.12), rgba(99,102,241,.08) 60%, transparent 80%);
-  border:1px solid rgba(255,255,255,.12);text-align:center}
-.hub-big{font-weight:900;font-size:clamp(18px,3vw,28px);letter-spacing:.02em;margin:0}
-.hub-sub{font-size:12px;color:#9aa3b6;margin-top:2px}
-
-.seg{cursor:pointer;stroke:rgba(255,255,255,.14);stroke-width:1.2;transition:transform .18s ease, opacity .18s ease}
-.seg:hover{transform:scale(1.02)}
-.seg.active{transform:scale(1.03)}
-/* 투명한 섹터(요청) */
-.seg[fill]{fill:rgba(255,255,255,.12)}
-.seg-label{font-weight:900;font-size:clamp(16px,1.8vw,22px);letter-spacing:.02em;fill:#e8f6ff}
-
-.hub-panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(12px)}
-.hub-panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
 
     /* ========== Background Video - 비율별 최적화 ========== */
     .video-background{
