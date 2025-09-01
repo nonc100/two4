@@ -1,324 +1,306 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>COSMOS • Chart</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<style>
-  :root{
-    --bg:#0b1018; --panel:#0e1421; --text:#e8eefc; --muted:#9aa3b6;
-    --up:#22c55e; --down:#ef4444; --chip:#1b2334; --chip-on:#2a3650;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-  .wrap{height:100svh; display:flex; flex-direction:column}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TWO4 COSMOS</title>
+  <style>
+    :root{
+      --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
+      --up:#22c55e; --down:#ef4444;
+      --sticky-top: 90px;             /* JS에서 실측 보정 */
+      --rank-w: 46px;                 /* 순위 칼럼 너비 */
+      --name-w: 180px;                /* 모바일에서 심볼만 보이므로 축소 */
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;padding:0;background:#0b1018;color:var(--text);
+      font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic";
+      overflow-x:hidden;
+    }
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;height:auto}
 
-  /* 상단: 심볼/가격 스트립 */
-  .ticker{display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(12,16,24,.55);
-    border-bottom:1px solid rgba(255,255,255,.06); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px)}
-  .sym{font-weight:900; letter-spacing:.04em; font-size:15px}
-  .price{font-weight:900; font-variant-numeric:tabular-nums}
-  .chg{font-weight:800; font-size:12px; padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.10)}
-  .up{color:var(--up); background:rgba(34,197,94,.08)}
-  .down{color:var(--down); background:rgba(239,68,68,.08)}
-  .muted{color:var(--muted)}
-  .spacer{flex:1}
+    /* ====== ★ 별 배경: Canvas (고밀도+큰 별, 슬라이더 연동) ====== */
+    #starCanvas{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background: radial-gradient(1200px 700px at 50% -180px, #182036 0%, #0b1018 55%);
+    }
 
-  /* 타임프레임 바 */
-  .tfbar{display:flex; gap:6px; padding:8px 12px; overflow-x:auto; border-bottom:1px solid rgba(255,255,255,.06); background:rgba(12,16,24,.35)}
-  .chip{flex:0 0 auto; background:var(--chip); color:#dbeafe; border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:6px 10px; font-weight:700; cursor:pointer; user-select:none}
-  .chip.on{background:var(--chip-on); border-color:rgba(114,153,255,.36)}
-  .ghost{background:transparent; border-color:rgba(255,255,255,.14)}
+    /* 상단 중앙 별 컨트롤러(아주 작게) */
+    .star-ctl{
+      position:fixed; top:10px; left:50%; transform:translateX(-50%);
+      z-index:10; display:flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.2);
+      font-size:12px; color:#dbeafe; font-weight:800;
+    }
+    .star-ctl input[type=range]{width:140px;height:6px;background:transparent}
+    .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#22d3ee)}
+    .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
 
-  /* 차트 */
-  #chart{flex:1; min-height:360px}
+    /* 우측 상단 로고 고정 */
+    .logo-fixed{
+      position:fixed; top:10px; right:12px; z-index:10;
+      display:flex; align-items:center; gap:8px;
+      padding:6px 8px; border-radius:10px;
+      background:rgba(17,24,39,.35); border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(8px);
+    }
+    .logo-fixed img{height:22px; width:auto; display:block}
 
-  /* 하단 도크 */
-  .dock{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 12px;
-    background:rgba(12,16,24,.55); border-top:1px solid rgba(255,255,255,.06); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
-  .dock .group{display:flex; gap:6px; flex-wrap:wrap}
+    .wrap{position:relative; z-index:1; max-width:1240px; margin:0 auto; padding: calc(var(--sticky-top) + 50px) 16px 80px;}
 
-  @media (min-width:1024px){
-    .ticker{padding:12px 18px}
-    .tfbar{padding:10px 18px}
-    .dock{padding:10px 18px}
-  }
-</style>
+    /* ===== HUB & PANEL (구조만 유지: cosmos.js와 호환) ===== */
+    .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center;margin-bottom:10px}
+    @media (max-width:900px){.hub-grid{grid-template-columns:1fr}}
+    .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
+      background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.10) 0%, rgba(99,102,241,.08) 60%, transparent 80%);
+      border:1px solid rgba(255,255,255,.10); box-shadow:inset 0 8px 28px rgba(255,255,255,.06), 0 18px 48px rgba(0,0,0,.35);
+    }
+    .hub svg{position:absolute;inset:0}
+    .center-cap{
+      position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
+      width:36%; height:36%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+      background:radial-gradient(100% 100% at 40% 35%, rgba(46,204,250,.16), rgba(124,58,237,.10) 60%, transparent 80%);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .center-big{font-weight:900;font-size:clamp(16px,3.2vw,28px);letter-spacing:.02em;margin:0 0 4px}
+    .center-sub{font-size:12px;color:var(--muted);margin:0}
+    .panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(12px)}
+    .panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
+
+    /* ===== Controls ===== */
+    .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
+    .controls .search{flex:1}
+    input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+
+    /* ===== Table ===== */
+    .table-wrap{overflow-x:auto;margin-top:8px}
+    table{width:1200px;border-collapse:separate;border-spacing:0 8px}
+
+    /* THEAD: 오직 한 곳만 sticky (겹침 해결) */
+    thead th{
+      position:sticky; top:var(--sticky-top);
+      background:rgba(17,24,39,.92); backdrop-filter:blur(8px);
+      font-size:12px; color:#b9c3d6; font-weight:700; padding:10px 12px;
+      z-index:6;
+    }
+
+    /* 폭(데스크톱) */
+    .c-rank{width:var(--rank-w)}
+    .c-name{width:var(--name-w)}
+    .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol,.c-spark{width:120px}
+
+    /* 본문 셀 */
+    #mkt tbody td{
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      padding:12px 10px; vertical-align:middle;
+    }
+    #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
+    #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
+
+    /* 좌측 고정 셀(헤더 바로 아래 레이어) */
+    #mkt .sticky-rank{ position:sticky; left:0; z-index:5; background:rgba(17,24,39,.92) }
+    #mkt .sticky-name{ position:sticky; left:var(--rank-w); z-index:5; background:rgba(17,24,39,.92) }
+
+    /* Name 셀 내용 */
+    .mkt-name{ display:flex; align-items:center; gap:8px; min-width:120px; }
+    .mkt-name img{ width:20px; height:20px; border-radius:50% }
+    .mkt-name .sym{ font-weight:900; margin-right:6px }
+    .mkt-name .full{ opacity:.85 }
+
+    /* 숫자/색 */
+    .num{ text-align:right; font-variant-numeric: tabular-nums; }
+    .pct.up{ color:#22c55e } .pct.down{ color:#ef4444 }
+
+    td.spark canvas{display:block;width:120px;height:28px}
+
+    /* ===== 모바일 (<=800px): 심볼 + 가격 + 24H + 7D 스파크 ===== */
+    @media (max-width:800px){
+      :root{ --name-w:130px; }                 /* 심볼만이라 더 좁게 */
+      .wrap{ padding-top: calc(var(--sticky-top) + 44px); }
+
+      /* 풀네임 숨김 → 심볼만 */
+      .mkt-name .full{ display:none !important; }
+
+      /* 1h, 7d(퍼센트), 시총, 거래량 숨김 */
+      .c-1h, .c-7d, .c-mcap, .c-vol{ display:none !important; }
+      /* 헤더도 동일하게 숨김 */
+      #mkt thead th:nth-child(4),
+      #mkt thead th:nth-child(6),
+      #mkt thead th:nth-child(7),
+      #mkt thead th:nth-child(8){ display:none !important; }
+
+      /* 가격/24h/스파크는 조금 더 넓게 */
+      .c-price{ width:132px !important }
+      .c-24h{ width:96px !important }
+      .c-spark{ width:120px !important }
+    }
+
+    footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <!-- 상단 심볼/가격 스트립 -->
-  <div class="ticker">
-    <div class="sym" id="symLabel">BTCUSDT</div>
-    <div class="price" id="lastPrice">-</div>
-    <div class="chg muted" id="pctChg">0.00%</div>
-    <div class="spacer"></div>
+  <!-- ★ 캔버스 별 배경 -->
+  <canvas id="starCanvas"></canvas>
+
+  <!-- ★ 상단 중앙 컨트롤러 -->
+  <div class="star-ctl" aria-label="Star background controller">
+    <span>Stars</span>
+    <input id="starRange" type="range" min="0" max="100" value="85" />
   </div>
 
-  <!-- 타임프레임 바 -->
-  <div class="tfbar" id="tfBar">
-    <div class="chip" data-tf="1m">1m</div>
-    <div class="chip" data-tf="5m">5m</div>
-    <div class="chip on" data-tf="15m">15m</div>
-    <div class="chip" data-tf="30m">30m</div>
-    <div class="chip" data-tf="1h">1h</div>
-    <div class="chip" data-tf="4h">4h</div>
-    <div class="chip" data-tf="1d">1d</div>
-    <div class="chip" data-tf="1w">1w</div>
+  <!-- 우측 상단 로고 -->
+  <div class="logo-fixed">
+    <img src="/media/logo.png" alt="TWO4">
   </div>
 
-  <!-- 차트 -->
-  <div id="chart"></div>
+  <div class="wrap">
+    <!-- HUB (구조 유지) -->
+    <section class="hub-grid">
+      <div class="hub">
+        <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
+        <div class="center-cap">
+          <div class="center-big" id="cBig">COSMOS</div>
+          <div class="center-sub" id="cSub">—</div>
+        </div>
+      </div>
+      <aside class="panel" id="panel">
+        <h4 id="pTitle">—</h4>
+        <div id="pBody">Select a sector.</div>
+      </aside>
+    </section>
 
-  <!-- 하단 도크 -->
-  <div class="dock">
-    <div class="group">
-      <div class="chip" id="togRSI">RSI</div>
-      <div class="chip on" id="togOI">OI</div>
-      <div class="chip" id="togHMA">HMA</div>
-      <div class="chip" id="togBB">BB</div>
+    <!-- 검색 -->
+    <div class="controls">
+      <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
     </div>
-    <div class="group">
-      <div class="chip ghost" id="btnFit">Fit</div>
-      <div class="chip ghost" id="btnReset">Reset</div>
+
+    <!-- 표 -->
+    <div class="table-wrap">
+      <table id="mkt" class="cosmos-table">
+        <colgroup>
+          <col class="c-rank">
+          <col class="c-name">
+          <col class="c-price">
+          <col class="c-1h">
+          <col class="c-24h">
+          <col class="c-7d">
+          <col class="c-mcap">
+          <col class="c-vol">
+          <col class="c-spark">
+        </colgroup>
+        <thead>
+          <tr>
+            <th data-key="rank"     class="sticky-rank th th-sort">#</th>
+            <th data-key="name"     class="sticky-name th th-sort">Name</th>
+            <th data-key="price"    class="text-right th th-sort">Price</th>
+            <th data-key="change1h" class="text-right th th-sort">1h</th>
+            <th data-key="change24h"class="text-right th th-sort">24h</th>
+            <th data-key="change7d" class="text-right th th-sort">7d</th>
+            <th data-key="market_cap" class="text-right th th-sort">Market Cap</th>
+            <th data-key="volume"     class="text-right th th-sort">24h Volume</th>
+            <th class="text-right">7d Spark</th>
+          </tr>
+        </thead>
+        <tbody id="mktBody"></tbody>
+      </table>
     </div>
+
+    <div id="pager" class="controls" style="justify-content:center;gap:6px"></div>
+
+    <footer>Cosmos Dashboard · CoinGecko · Binance · Alternative.me · 30s auto refresh</footer>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-<script>
-/* ===== 파라미터 ===== */
-const qs=new URLSearchParams(location.search);
-const SYMBOL=(qs.get('sym')||qs.get('symbol')||'BTCUSDT').toUpperCase();
-let TF=(qs.get('tf')||qs.get('interval')||'15m').toLowerCase();
+  <!-- ===== Sticky top 실측/적용 + 별 캔버스 드로잉 ===== -->
+  <script>
+    // sticky top 계산: 상단 컨트롤러 높이 + 여유
+    (function fixStickyTop(){
+      function apply(){
+        const ctl = document.querySelector('.star-ctl');
+        const h = (ctl ? ctl.offsetHeight : 0) + 16; // 여유
+        document.documentElement.style.setProperty('--sticky-top', Math.max(70, h) + 'px');
+      }
+      window.addEventListener('resize', apply, {passive:true});
+      document.addEventListener('DOMContentLoaded', apply);
+      apply();
+    })();
 
-/* ===== Fetch 도우미 (직접 → 프록시) ===== */
-async function getJson(direct, proxy){
-  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
-  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error('fetch failed'); return await r2.json(); }
-}
-function klineURL(sym,tf,limit=850){
-  const q=`symbol=${sym}&interval=${tf}&limit=${limit}`;
-  return [
-    `https://api.binance.com/api/v3/klines?${q}`,
-    `/api/binance/klines?${q}`
-  ];
-}
-function oiURL(sym,period='5m',limit=600){
-  const q=`symbol=${sym}&period=${period}&limit=${limit}`;
-  return [
-    `https://fapi.binance.com/futures/data/openInterestHist?${q}`,
-    `/api/binance/openInterestHist?${q}`
-  ];
-}
+    // 고밀도/대형 별 캔버스
+    (function starCanvas(){
+      const cv = document.getElementById('starCanvas');
+      if(!cv) return;
+      const ctx = cv.getContext('2d');
+      let W=0, H=0, dpr=1, stars=[], intensity=0.85, anim=null;
 
-/* ===== 수학: WMA/HMA & SMA/STD & BB & RSI ===== */
-function wma(values, period){
-  const out=[]; const w=period*(period+1)/2;
-  for(let i=0;i<values.length;i++){
-    if(i<period-1){ out.push(null); continue; }
-    let sum=0, weight=period;
-    for(let k=0;k<period;k++) sum += values[i-k]*weight-- ;
-    out.push(sum/w);
-  }
-  return out;
-}
-function hma(values, period){
-  const half=Math.floor(period/2), sqrt=Math.max(2, Math.floor(Math.sqrt(period)));
-  const wmaHalf = wma(values, half);
-  const wmaFull = wma(values, period);
-  const diff = values.map((_,i)=>{
-    const a=wmaHalf[i]??null, b=wmaFull[i]??null;
-    return (a==null || b==null)?null:(2*a - b);
-  });
-  return wma(diff, sqrt);
-}
-function sma(values, period){
-  const out=[]; let sum=0;
-  for(let i=0;i<values.length;i++){
-    sum += values[i];
-    if(i>=period) sum -= values[i-period];
-    out.push(i>=period-1 ? sum/period : null);
-  }
-  return out;
-}
-function std(values, period){
-  const out=[]; let sum=0, sumsq=0;
-  for(let i=0;i<values.length;i++){
-    const v=values[i]; sum += v; sumsq += v*v;
-    if(i>=period){ const old=values[i-period]; sum -= old; sumsq -= old*old; }
-    if(i>=period-1){
-      const mean = sum/period;
-      out.push(Math.sqrt(Math.max(0, (sumsq/period) - mean*mean )));
-    }else out.push(null);
-  }
-  return out;
-}
-function calcBB(close, period=20, mult=2){
-  const m = sma(close, period);
-  const s = std(close, period);
-  const upper=[], lower=[];
-  for(let i=0;i<close.length;i++){
-    const mi=m[i], si=s[i];
-    upper.push(mi==null?null:mi+mult*si);
-    lower.push(mi==null?null:mi-mult*si);
-  }
-  return {mid:m, upper, lower};
-}
+      function resize(){
+        dpr = window.devicePixelRatio || 1;
+        const vw = innerWidth, vh = innerHeight;
+        W = Math.floor(vw*dpr); H = Math.floor(vh*dpr);
+        cv.width = W; cv.height = H;
+        cv.style.width = vw+'px'; cv.style.height = vh+'px';
+        build();
+      }
 
-/* ===== 차트 생성 ===== */
-const root = document.getElementById('chart');
-const chart = LightweightCharts.createChart(root,{
-  layout:{ background:{ type:'solid', color:'transparent' }, textColor:'#dfe8ff' },
-  grid:{ vertLines:{color:'rgba(255,255,255,.06)'}, horzLines:{color:'rgba(255,255,255,.06)'} },
-  rightPriceScale:{ borderVisible:false, scaleMargins:{ top:0.10, bottom:0.22 } },
-  timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true },
-  crosshair:{ mode:LightweightCharts.CrosshairMode.Normal, vertLine:{color:'rgba(255,255,255,.25)'}, horzLine:{color:'rgba(255,255,255,.25)'} },
-  watermark:{ visible:true, text:'TWO.4', fontSize:22, color:'rgba(255,255,255,.14)', horzAlign:'right', vertAlign:'top' }
-});
-const mainSeries = chart.addCandlestickSeries({
-  upColor:'#22c55e', downColor:'#ef4444', borderVisible:false, wickUpColor:'#22c55e', wickDownColor:'#ef4444',
-  lastValueVisible:true, priceLineVisible:true, priceLineColor:'#6aa3ff'
-});
+      function build(){
+        // 기본 밀도(면적당): 0.18 ~ 0.65 사이 가변, 슬라이더 비율에 비례
+        const baseDensity = 0.00022; // 화면 px 당 계수
+        const count = Math.floor(W*H * baseDensity * intensity);
+        stars.length = 0;
+        for(let i=0;i<count;i++){
+          const r = (Math.random()<0.8 ? (0.9+Math.random()*1.6) : (1.8+Math.random()*2.2)) * dpr; // 약간 더 큰 별 섞기
+          stars.push({
+            x: Math.random()*W,
+            y: Math.random()*H,
+            r,
+            a: 0.6 + Math.random()*0.4,
+            tw: 0.015 + Math.random()*0.035,
+            ph: Math.random()*Math.PI*2
+          });
+        }
+      }
 
-/* 더 작은 볼륨(칸식) */
-const volSeries = chart.addHistogramSeries({
-  priceScaleId:'', priceFormat:{type:'volume'}, color:'rgba(180,200,255,.35)',
-  priceLineVisible:false, lastValueVisible:false, overlay:true, base:0
-});
-chart.priceScale('').applyOptions({ scaleMargins:{ top:0.93, bottom:0 }});
+      function loop(){
+        ctx.clearRect(0,0,W,H);
+        for(const s of stars){
+          s.ph += s.tw;
+          const alpha = s.a * (0.75 + 0.25*Math.sin(s.ph));
+          ctx.globalAlpha = alpha * intensity;
+          ctx.beginPath();
+          ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+          ctx.fillStyle = '#fff';
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        anim = requestAnimationFrame(loop);
+      }
 
-/* 보조지표 패널 */
-const rsiPane = chart.addLineSeries({ color:'#7aa5ff', lineWidth:2, priceScaleId:'rsi', lastValueVisible:false });
-chart.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.70, bottom:0.12 }, borderVisible:false });
-const oiPane = chart.addLineSeries({ color:'#b397ff', lineWidth:2, priceScaleId:'oi', lastValueVisible:false });
-chart.priceScale('oi').applyOptions({ scaleMargins:{ top:0.86, bottom:0.02 }, borderVisible:false });
+      function setIntensity(v){
+        intensity = Math.max(0, Math.min(1, v));
+        build();
+        if(!anim) anim = requestAnimationFrame(loop);
+      }
 
-/* HMA 3종 (동시 토글, 굵기 1) */
-const h50  = chart.addLineSeries({ color:'#ff4d4d', lineWidth:1, lastValueVisible:false });
-const h100 = chart.addLineSeries({ color:'#ffd24d', lineWidth:1, lastValueVisible:false });
-const h200 = chart.addLineSeries({ color:'#7dd3fc', lineWidth:1, lastValueVisible:false });
+      // 연결: 상단 슬라이더
+      const r = document.getElementById('starRange');
+      if(r){
+        const apply = ()=> setIntensity((+r.value||0)/100);
+        r.addEventListener('input', apply);
+        apply();
+      }else{
+        setIntensity(intensity);
+      }
 
-/* 볼린저밴드 3선 */
-const bbUpper = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false });
-const bbMid   = chart.addLineSeries({ color:'rgba(200,210,230,.9)', lineWidth:1, lastValueVisible:false });
-const bbLower = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false });
+      addEventListener('resize', resize);
+      resize();
+      loop();
+    })();
+  </script>
 
-/* UI 세팅 */
-document.getElementById('symLabel').textContent = SYMBOL;
-
-/* TF 바 동작 */
-const tfChips = Array.from(document.querySelectorAll('#tfBar .chip'));
-function syncTFUI(){ tfChips.forEach(c=>c.classList.toggle('on', c.dataset.tf===TF)); }
-tfChips.forEach(c=>c.onclick=()=>{ TF=c.dataset.tf; syncTFUI(); loadAll(); });
-
-/* 토글 */
-const togRSI  = document.getElementById('togRSI');
-const togOI   = document.getElementById('togOI');
-const togHMA  = document.getElementById('togHMA');
-const togBB   = document.getElementById('togBB');
-
-let showRSI=false, showOI=true, showHMA=false, showBB=false;
-function syncToggles(){
-  togRSI.classList.toggle('on',showRSI);
-  togOI.classList.toggle('on',showOI);
-  togHMA.classList.toggle('on',showHMA);
-  togBB.classList.toggle('on',showBB);
-  rsiPane.applyOptions({visible:showRSI});
-  oiPane.applyOptions({visible:showOI});
-  h50.applyOptions({visible:showHMA});
-  h100.applyOptions({visible:showHMA});
-  h200.applyOptions({visible:showHMA});
-  bbUpper.applyOptions({visible:showBB});
-  bbMid.applyOptions({visible:showBB});
-  bbLower.applyOptions({visible:showBB});
-}
-[togRSI,togOI,togHMA,togBB].forEach(btn=>{
-  btn.onclick=()=>{ 
-    if(btn===togRSI) showRSI=!showRSI;
-    if(btn===togOI) showOI=!showOI;
-    if(btn===togHMA) showHMA=!showHMA;
-    if(btn===togBB)  showBB=!showBB;
-    syncToggles();
-  };
-});
-
-/* Fit / Reset */
-document.getElementById('btnFit').onclick = ()=> chart.timeScale().fitContent();
-document.getElementById('btnReset').onclick = ()=> { chart.timeScale().setVisibleRange({from:undefined,to:undefined}); chart.timeScale().fitContent(); };
-
-/* 데이터 컨테이너 */
-let rtime=[], klines=[];
-
-/* 변환기 */
-const toCandle = k => ({ time:Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4] });
-const toVolume = k => ({ time:Math.floor(k[0]/1000), value:+k[5], color:(+k[4] >= +k[1]) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' });
-
-/* 로더 */
-async function loadAll(){
-  syncTFUI();
-  const [dURL,pURL] = klineURL(SYMBOL, TF);
-  const rows = await getJson(dURL,pURL);
-  klines = rows;
-  rtime = rows.map(r=>Math.floor(r[0]/1000));
-
-  const candles = rows.map(toCandle);
-  const volumes = rows.map(toVolume);
-  mainSeries.setData(candles);
-  volSeries.setData(volumes);
-
-  // 가격/등락 표시
-  const last = rows.at(-1), prev = rows.at(-2) || last;
-  const lastPrice = +last[4], prevClose = +prev[4];
-  const pct = ((lastPrice - prevClose)/prevClose)*100;
-  document.getElementById('lastPrice').textContent = lastPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const chg = document.getElementById('pctChg');
-  chg.textContent = (pct>=0?'+':'') + pct.toFixed(2) + '%';
-  chg.className = 'chg ' + (pct>=0?'up':'down');
-
-  // 클로즈 배열
-  const closes = rows.map(r => +r[4]);
-
-  // HMA(동시 세팅)
-  const h50v  = hma(closes,50).map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
-  const h100v = hma(closes,100).map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
-  const h200v = hma(closes,200).map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
-  h50.setData(h50v); h100.setData(h100v); h200.setData(h200v);
-
-  // RSI(14, 고정)
-  (function(){
-    const len=14, out=[];
-    let avgG=0, avgL=0;
-    for(let i=1;i<closes.length;i++){
-      const ch=closes[i]-closes[i-1], g=Math.max(ch,0), l=Math.max(-ch,0);
-      if(i<=len){ avgG+=g; avgL+=l; if(i===len){ avgG/=len; avgL/=len; const rs=avgL===0?100:avgG/avgL; out.push({time:rtime[i], value:100-(100/(1+rs))}); } }
-      else{ avgG=(avgG*(len-1)+g)/len; avgL=(avgL*(len-1)+l)/len; const rs=avgL===0?100:avgG/avgL; out.push({time:rtime[i], value:100-(100/(1+rs))}); }
-    }
-    rsiPane.setData(out);
-  })();
-
-  // OI
-  try{
-    const period = (TF.endsWith('m') ? TF : '5m'); // 근사
-    const [od,op] = oiURL(SYMBOL, period, 600);
-    const oij = await getJson(od,op);
-    const oiData = oij.map(x=>({ time: Math.floor(new Date(x.timestamp).getTime()/1000), value: +x.sumOpenInterest }));
-    oiPane.setData(oiData);
-  }catch(e){ oiPane.setData([]); }
-
-  // Bollinger Bands (20, 2σ)
-  const bb = calcBB(closes, 20, 2);
-  const bbU = bb.upper.map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
-  const bbM = bb.mid  .map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
-  const bbL = bb.lower.map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
-  bbUpper.setData(bbU); bbMid.setData(bbM); bbLower.setData(bbL);
-
-  chart.timeScale().fitContent();
-}
-syncToggles();
-document.getElementById('symLabel').textContent = SYMBOL;
-loadAll();
-</script>
+  <!-- 기존 로직 유지 -->
+  <script src="./cosmos.js"></script>
 </body>
 </html>
