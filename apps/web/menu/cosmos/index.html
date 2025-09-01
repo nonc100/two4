@@ -6,165 +6,107 @@
   <title>TWO4 COSMOS</title>
   <style>
     :root{
-      /* layout */
-      --wrap-max: 1240px;
-      --rank-w: 3.2ch;    /* 랭크 좁게 */
-      --name-w: 12ch;     /* 심볼 영역 */
-      --price-w: 10ch;
-      --pct-w: 7ch;
-      --spark-w: 120px;
-
-      /* colors */
-      --bg:#0b1018;
-      --panel:#111827;
-      --text:#e8eefc;
-      --muted:#9aa3b6;
+      --bg:#0b1018; --text:#e8eefc; --muted:#9aa3b6;
       --up:#22c55e; --down:#ef4444;
-
-      /* stars */
-      --starVis: .8;   /* 0~1 밝기/밀도 */
+      --sticky-top: 86px;              /* ⭐ 헤더가 겹치지 않도록 상단 여유 */
+      --rank-w:44px; --name-w:280px;   /* 좌측 sticky 너비 */
+      --starVis: .8;                   /* 별 밝기/밀도(0~1) */
     }
-
     *{box-sizing:border-box}
-    html,body{
-      margin:0; padding:0; color:var(--text);
-      background:#0b1018;
-      font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic";
-      overflow-x:hidden;
-    }
-    a, a:visited, a:hover, a:active{color:inherit; text-decoration:none}
+    html,body{margin:0;padding:0;background:#0b1018;color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"}
+    a, a:visited, a:hover, a:active{color:inherit;text-decoration:none} /* 보라/밑줄 제거 */
+    img{max-width:100%;height:auto}
 
-    /* ⭐ Starfield (더 촘촘 & 살짝 큼) */
-    .sky{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1200px 700px at 50% -200px, #182036 0%, var(--bg) 55%)}
-    .stars{position:absolute; inset:0}
-    /* 3 레이어를 서로 다른 타일/투명도로 반복 */
-    .stars.l1{
-      opacity:calc(.75 * var(--starVis));
-      background:
-        radial-gradient(circle, rgba(255,255,255,.9) 0 1.2px, transparent 1.3px) 0 0/3px 3px,
-        radial-gradient(circle, rgba(255,255,255,.8) 0 1.2px, transparent 1.3px) 1.5px 1.5px/3px 3px;
-      animation: drift1 50s linear infinite;
-      filter: drop-shadow(0 0 .6px #fff);
-    }
-    .stars.l2{
-      opacity:calc(.45 * var(--starVis));
-      background:
-        radial-gradient(circle, rgba(255,255,255,.8) 0 1px, transparent 1.1px) 0 0/4px 4px,
-        radial-gradient(circle, rgba(255,255,255,.7) 0 1px, transparent 1.1px) 2px 2px/4px 4px;
-      animation: drift2 70s linear infinite reverse;
-    }
-    .stars.l3{
-      opacity:calc(.30 * var(--starVis));
-      background:
-        radial-gradient(circle, rgba(255,255,255,.7) 0 .9px, transparent 1px) 0 0/6px 6px,
-        radial-gradient(circle, rgba(255,255,255,.6) 0 .9px, transparent 1px) 3px 3px/6px 6px;
-      animation: drift3 110s linear infinite;
-      filter: blur(.15px);
-    }
-    @keyframes drift1{from{transform:translate(0,0)} to{transform:translate(-60px,-40px)}}
-    @keyframes drift2{from{transform:translate(0,0)} to{transform:translate(40px,-30px)}}
-    @keyframes drift3{from{transform:translate(0,0)} to{transform:translate(-30px,30px)}}
+    /* ⭐ 캔버스 별 배경 */
+    #whiteStars{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-    /* ⭐ 상단 중앙 아주 작은 컨트롤러 */
+    /* 상단 초소형 컨트롤러 (중앙 고정) */
     .star-ctl{
       position:fixed; left:50%; top:10px; transform:translateX(-50%);
       z-index:10; display:flex; align-items:center; gap:8px;
       padding:6px 10px; border-radius:999px;
-      background:rgba(255,255,255,.08);
-      backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.22);
-      color:#dbeafe; font-size:12px; font-weight:800;
+      background:rgba(255,255,255,.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
+      font-size:12px; color:#cfe1ff; font-weight:800;
     }
-    .star-ctl input[type="range"]{width:120px; height:6px; background:transparent}
-    .star-ctl input[type="range"]::-webkit-slider-runnable-track{height:6px; border-radius:999px; background:linear-gradient(90deg,#a78bfa,#22d3ee)}
-    .star-ctl input[type="range"]::-webkit-slider-thumb{appearance:none; width:14px; height:14px; border-radius:50%; background:#fff; border:1px solid #0002}
+    .star-ctl input[type=range]{width:140px; height:6px; background:transparent}
+    .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#7dd3fc,#a78bfa)}
+    .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
 
-    /* 상단 로고(오른쪽 상단 배치) */
-    .logo{
-      position:fixed; right:12px; top:10px; z-index:9;
-      display:flex; align-items:center; gap:8px; opacity:.95;
-      padding:6px 8px; border-radius:10px; background:rgba(0,0,0,.15);
-      border:1px solid rgba(255,255,255,.08); backdrop-filter: blur(8px);
-    }
-    .logo img{height:24px; width:auto}
+    /* 우상단 로고 */
+    .brand{position:fixed; right:12px; top:10px; z-index:11}
+    .brand img{height:32px}
 
-    .wrap{position:relative; z-index:1; max-width:var(--wrap-max); margin:0 auto; padding:62px 16px 80px}
+    .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:100px 16px 80px} /* 상단 패딩으로 겹침 방지 */
 
-    /* Controls */
-    .controls{display:flex; gap:10px; align-items:center; margin:14px 0 8px}
+    /* ===== HUB(도넛) ===== */
+    .hub-wrap{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center;margin:8px 0 14px}
+    @media (max-width:900px){.hub-wrap{grid-template-columns:1fr}}
+    .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
+      background:radial-gradient(100% 100% at 35% 30%, rgba(255,255,255,.06), rgba(0,0,0,0) 60%);
+      border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 10px 26px rgba(0,0,0,.35),0 18px 48px rgba(0,0,0,.35)}
+    .hub svg{position:absolute;inset:0}
+    .hub-center{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);
+      width:38%;height:38%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:radial-gradient(100% 100% at 40% 35%, rgba(34,211,238,.12), rgba(99,102,241,.08) 60%, transparent 80%);
+      border:1px solid rgba(255,255,255,.12);text-align:center}
+    .hub-big{font-weight:900;font-size:clamp(18px,2.8vw,28px);letter-spacing:.02em;margin:0}
+    .hub-sub{font-size:12px;color:#9aa3b6;margin-top:2px}
+    .seg{cursor:pointer;stroke:rgba(255,255,255,.14);stroke-width:1.2;transition:transform .18s ease, opacity .18s ease; fill:rgba(255,255,255,.12)}
+    .seg:hover{transform:scale(1.02)}
+    .seg.active{transform:scale(1.03)}
+    .seg-label{font-weight:900;font-size:clamp(18px,2.4vw,26px);letter-spacing:.02em;fill:#e8f6ff}
+    .hub-panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(12px)}
+    .hub-panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
+
+    /* ===== Controls & Table ===== */
+    .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
     .controls .search{flex:1}
-    input[type="text"]{
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text);
-      border-radius:10px; padding:10px 12px; outline:none;
-    }
-
-    /* Table */
-    .table-wrap{overflow-x:auto; margin-top:8px}
-    table{width:1200px; border-collapse:separate; border-spacing:0 10px}
+    input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+    .table-wrap{overflow-x:auto;margin-top:8px}
+    table{width:1200px;border-collapse:separate;border-spacing:0 8px}
     thead th{
-      /* 상단 고정 제거 → 겹침 문제 해소 */
-      font-size:12px; color:#b9c3d6; font-weight:800; padding:8px 10px; text-align:left;
-      user-select:none; cursor:pointer;
+      position:sticky; top:var(--sticky-top); z-index:6;
+      backdrop-filter:blur(6px); background:rgba(17,24,39,.90);
+      font-size:12px; color:#b9c3d6; font-weight:700; padding:10px 12px;
     }
-    thead th.text-right, td.text-right{text-align:right}
-    tbody td{
-      background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
-      padding:12px 10px; vertical-align:middle;
-    }
-    tbody tr td:first-child{border-radius:12px 0 0 12px}
-    tbody tr td:last-child{border-radius:0 12px 12px 0}
-
-    /* 좌측 고정(정답) */
-    .sticky-rank{position:sticky; left:0; z-index:2; background:rgba(17,24,39,.86); font-weight:800; text-align:right; width:var(--rank-w)}
-    .sticky-name{position:sticky; left:var(--rank-w); z-index:2; background:rgba(17,24,39,.86); width:var(--name-w)}
-
-    /* name cell */
-    .mkt-name{display:flex; align-items:center; gap:8px; min-width:var(--name-w)}
-    .mkt-name img{width:18px; height:18px; border-radius:50%; object-fit:contain}
-    .mkt-name .sym{font-weight:900}
-    .mkt-name .full{opacity:.85; margin-left:4px}
-
-    /* 숫자 */
-    .num{font-variant-numeric: tabular-nums; text-align:right}
-    .pct.up{color:var(--up)} .pct.down{color:var(--down)}
-
     /* col widths */
-    .c-rank{width:var(--rank-w)}
-    .c-name{width:var(--name-w)}
-    .c-price{width:var(--price-w)}
-    .c-1h,.c-24h{width:var(--pct-w)}
-    .c-7d{width:var(--pct-w)}
-    .c-mcap,.c-vol{width:10ch}
-    .c-spark{width:var(--spark-w)}
+    .c-rank{width:var(--rank-w)} .c-name{width:var(--name-w)}
+    .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol,.c-spark{width:120px}
 
-    td.spark canvas{display:block; width:var(--spark-w); height:28px}
+    /* cells */
+    #mkt tbody td{
+      border:1px solid rgba(255,255,255,.08);padding:12px;vertical-align:middle;background:rgba(255,255,255,.04)
+    }
+    #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
+    #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
+    #mkt .sticky-rank{position:sticky; left:0; z-index:5; background:rgba(17,24,39,.90)}
+    #mkt .sticky-name{position:sticky; left:var(--rank-w); z-index:5; background:rgba(17,24,39,.90)}
 
-    /* 모바일(새로버전): # · 티커 · Price · 24h · Spark 만 */
+    .mkt-name{display:flex; align-items:center; gap:10px}
+    .mkt-name img{width:20px; height:20px; border-radius:50%}
+    .mkt-name .sym{font-weight:900}
+    .mkt-name .full{opacity:.85}
+
+    .num{text-align:right; font-variant-numeric:tabular-nums}
+    .pct.up{color:var(--up)} .pct.down{color:var(--down)}
+    td.spark canvas{display:block;width:120px;height:28px}
+
+    /* 모바일: 심볼(Ticker) + Price + 24h + Spark만 */
     @media (max-width:800px){
-      table{width:900px}
-      .hide-m{display:none !important}
-      .mkt-name .full{display:none}
-      :root{ --name-w: 8.6ch; --price-w: 9.8ch; --pct-w: 6.6ch; }
+      :root{ --sticky-top: 112px; --name-w:140px }
+      table{width:800px}
+      .hide-m{display:none!important}
+      .mkt-name .full{display:none} /* 이름 제거 → 심볼만 */
+      .wrap{padding-top:120px}       /* 상단 겹침 방지 */
     }
 
-    /* Pager */
-    #pager{display:flex; gap:6px; justify-content:center; margin-top:10px}
-    #pager button{
-      padding:6px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06); color:var(--text)
-    }
-    #pager button.on{background:rgba(255,255,255,.16)}
-
-    footer{margin:24px 0 0; text-align:center; color:#9aa3b6; opacity:.8; font-size:12px}
+    footer{margin:24px 0 0;text-align:center;color:#9aa3b6;opacity:.8;font-size:12px}
   </style>
 </head>
 <body>
-  <!-- ⭐ 별 배경 -->
-  <div class="sky">
-    <div class="stars l1"></div>
-    <div class="stars l2"></div>
-    <div class="stars l3"></div>
-  </div>
+  <!-- ⭐ 별 배경 캔버스 -->
+  <canvas id="whiteStars"></canvas>
 
   <!-- ⭐ 상단 중앙 컨트롤러 -->
   <div class="star-ctl" aria-label="Star background controller">
@@ -172,16 +114,31 @@
     <input id="starRange" type="range" min="0" max="100" value="80" />
   </div>
 
-  <!-- 상단 로고(우상단) -->
-  <div class="logo">
-    <img src="/media/logo.png" alt="TWO4" />
-  </div>
+  <!-- 우상단 로고 -->
+  <div class="brand"><img src="/media/logo.png" alt="TWO4"></div>
 
   <div class="wrap">
+    <!-- HUB (Donut + Detail panel) -->
+    <section class="hub-wrap">
+      <div class="hub">
+        <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
+        <div class="hub-center">
+          <div class="hub-big" id="hubBig">COSMOS</div>
+          <div class="hub-sub" id="hubSub">—</div>
+        </div>
+      </div>
+      <aside class="hub-panel" id="hubPanel">
+        <h4 id="hubTitle">—</h4>
+        <div id="hubBody">Select a sector.</div>
+      </aside>
+    </section>
+
+    <!-- 검색 -->
     <div class="controls">
-      <input id="search" class="search" type="text" placeholder="Search coin (symbol/name)" />
+      <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
     </div>
 
+    <!-- 테이블 -->
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
         <colgroup>
@@ -191,14 +148,14 @@
         </colgroup>
         <thead>
           <tr>
-            <th data-key="rank"     class="sticky-rank">#</th>
-            <th data-key="symbol"   class="sticky-name">Name</th>
-            <th data-key="price"    class="text-right">Price</th>
-            <th data-key="change1h" class="text-right hide-m">1h</th>
-            <th data-key="change24h" class="text-right">24h</th>
-            <th data-key="change7d" class="text-right hide-m">7d</th>
-            <th data-key="market_cap" class="text-right hide-m">Market Cap</th>
-            <th data-key="volume"     class="text-right hide-m">24h Volume</th>
+            <th data-key="rank"     class="sticky-rank th th-sort">#</th>
+            <th data-key="name"     class="sticky-name th th-sort">Name</th>
+            <th data-key="price"    class="text-right th th-sort">Price</th>
+            <th data-key="change1h" class="text-right th th-sort hide-m">1h</th>
+            <th data-key="change24h"class="text-right th th-sort">24h</th>
+            <th data-key="change7d" class="text-right th th-sort hide-m">7d</th>
+            <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
+            <th data-key="volume"     class="text-right th th-sort hide-m">24h Volume</th>
             <th class="text-right">7d Spark</th>
           </tr>
         </thead>
@@ -206,9 +163,9 @@
       </table>
     </div>
 
-    <div id="pager"></div>
+    <div id="pager" class="controls" style="justify-content:center;gap:6px"></div>
 
-    <footer>Cosmos Dashboard · CoinGecko API · 30s auto refresh · row click → /menu/cosmos/chart.html</footer>
+    <footer>Cosmos Dashboard · CoinGecko · Alternative.me · 30s auto refresh</footer>
   </div>
 
   <script src="./cosmos.js"></script>
