@@ -229,3 +229,85 @@ async function init(){
 /* Kick */
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
 else init();
+/* ===== HUB (Donut) ===== */
+async function fetchGlobal(){
+  try{
+    const r=await fetch("https://api.coingecko.com/api/v3/global");
+    if(!r.ok) throw 0; return await r.json();
+  }catch{ return null; }
+}
+async function fetchFNG(){
+  try{
+    const r=await fetch("https://api.alternative.me/fng/?limit=1&format=json");
+    if(!r.ok) throw 0; return await r.json();
+  }catch{ return null; }
+}
+function gaugeHTML(val){
+  const v=Math.max(0,Math.min(100, Number(val)||0));
+  const deg=-90+(v/100)*180;
+  const color = v<=40 ? "#ef4444" : v<=60 ? "#f59e0b" : "#22c55e";
+  const label = v<=20?"Extreme Fear":v<=40?"Fear":v<=60?"Neutral":v<=80?"Greed":"Extreme Greed";
+  return `<div style="display:flex;flex-direction:column;gap:6px">
+    <svg viewBox="0 0 300 160" style="width:100%;height:120px">
+      <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#ef4444"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/></linearGradient></defs>
+      <path d="M30,140 A120,120 0 0 1 270,140" stroke="url(#g1)" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <g transform="translate(150,140) rotate(${deg})"><line x1="0" y1="0" x2="0" y2="-88" stroke="${color}" stroke-width="8" stroke-linecap="round"/></g>
+      <circle cx="150" cy="140" r="9" fill="#fff" fill-opacity=".9"/>
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-weight:800">
+      <span>${v}</span><span style="color:${color}">${label}</span>
+    </div>
+  </div>`;
+}
+function buildHub(sections){
+  const svg=$("#hubSvg"); if(!svg) return; svg.innerHTML="";
+  const cx=500,cy=500,rI=260,rO=470, TAU=Math.PI*2, seg=TAU/sections.length, start=-Math.PI/2;
+  sections.forEach((s,i)=>{
+    const a0=start+seg*i+0.014, a1=start+seg*(i+1)-0.014;
+    const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+    const arc=(r0,r1,b0,b1)=>{const [x0,y0]=p(r1,b0),[x1,y1]=p(r1,b1),[x2,y2]=p(r0,b1),[x3,y3]=p(r0,b0);
+      const laf=(b1-b0)>Math.PI?1:0; return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;};
+    const path=document.createElementNS(svg.namespaceURI,'path');
+    path.setAttribute("d", arc(rI,rO,a0,a1));
+    path.setAttribute("class","seg");
+    path.setAttribute("fill","rgba(255,255,255,.12)");
+    svg.appendChild(path);
+    const mid=(a0+a1)/2, rx=(rI+rO)/2, tx=cx+(rx-30)*Math.cos(mid), ty=cy+(rx-30)*Math.sin(mid)+6;
+    const label=document.createElementNS(svg.namespaceURI,'text');
+    label.setAttribute("x",tx); label.setAttribute("y",ty); label.setAttribute("text-anchor","middle");
+    label.setAttribute("class","seg-label"); label.textContent=s.badge; svg.appendChild(label);
+    const act=()=>{svg.querySelectorAll(".seg").forEach(e=>e.classList.remove("active")); path.classList.add("active");
+      $("#hubBig").textContent=s.centerTop; $("#hubSub").textContent=s.centerSub;
+      $("#hubTitle").textContent=s.title; $("#hubBody").innerHTML=s.html;};
+    path.addEventListener("click", act); label.addEventListener("click", act);
+  });
+}
+async function initHub(){
+  const [mkts, global, fng] = await Promise.all([ Promise.resolve(state.all), fetchGlobal(), fetchFNG() ]);
+  const listTop=(by,n=10)=> mkts.slice().sort((a,b)=> (b[by]??0)-(a[by]??0)).slice(0,n);
+  const toList=(arr,kind)=>`<div style="display:flex;flex-direction:column;gap:6px">`+arr.map((c,i)=>{
+    const sym=(c.symbol||"").toUpperCase();
+    const px=fmtPrice(c.current_price);
+    const pct=(c.price_change_percentage_24h||0); const cls=pct>=0?'up':'down';
+    const vol=fmtMoney(c.total_volume);
+    return `<div style="display:grid;grid-template-columns:1.6em 1fr auto auto;gap:8px;align-items:center">
+      <div style="opacity:.7;text-align:right;font-weight:800">${i+1}</div>
+      <div style="font-weight:900">${sym}</div>
+      <div style="opacity:.9;text-align:right">${px}</div>
+      <div class="${kind==='vol'?'':'pct '+cls}" style="text-align:right">${kind==='vol'?vol:((pct>=0?'+':'')+pct.toFixed(2)+'%')}</div>
+    </div>`;}).join("")+`</div>`;
+  const btc=mkts.find(x=>x.id==="bitcoin"), usdt=mkts.find(x=>x.id==="tether");
+  const dom = global?.data?.market_cap_percentage?.btc ?? null;
+  const f = Number(fng?.data?.[0]?.value ?? NaN);
+  const secs=[
+    {badge:"VOL", title:"거래량 TOP10", centerTop:"Volume Top10", centerSub:"거래량", html: toList(listTop("total_volume"),"vol")},
+    {badge:"+24H", title:"24H % TOP10 [USDT]", centerTop:"+24H Gainers", centerSub:"상승률", html: toList(listTop("price_change_percentage_24h"),"pct")},
+    {badge:"F&G", title:"공포/탐욕 지수", centerTop: isFinite(f)? String(f):"—", centerSub:"Index", html: isFinite(f)?gaugeHTML(f):"—"},
+    {badge:"BTC MC", title:"비트코인 시가총액", centerTop: btc?fmtMoney(btc.market_cap):"—", centerSub:"Market Cap", html:`<div>비트코인 시가총액</div><div style="margin-top:6px">${btc?fmtMoney(btc.market_cap):'—'}</div>`},
+    {badge:"USDT MC", title:"테더 시가총액", centerTop: usdt?fmtMoney(usdt.market_cap):"—", centerSub:"Market Cap", html:`<div>테더 시가총액</div><div style="margin-top:6px">${usdt?fmtMoney(usdt.market_cap):'—'}</div>`},
+    {badge:"BTC DOM", title:"비트코인 도미넌스", centerTop: dom!=null?dom.toFixed(2)+"%":"—", centerSub:"Dominance", html:`<div>비트코인 도미넌스</div><div style="margin-top:6px">${dom!=null?dom.toFixed(2)+"%":"—"}</div>`},
+  ];
+  buildHub(secs);
+  $("#hubBig").textContent="COSMOS"; $("#hubSub").textContent="—";
+}
