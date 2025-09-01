@@ -23,6 +23,9 @@
       --starVis: .9;
       --rank-w:44px;
       --name-w:280px;
+
+      /* ✅ 연한 파랑 와이어 색상 */
+      --wire:#7dd3fc;
     }
 
     *{box-sizing:border-box}
@@ -167,24 +170,21 @@
     }
     .hub svg{position:absolute;inset:0}
 
-    /* 홀로그램 중앙 - 3D 구형 와이어프레임 */
+    /* ✅ 중앙 홀로그램 캡: 연파랑 톤 번짐 + 그물 드롭쉐도우 */
     .center-cap{
       position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
       width:38%; height:38%; border-radius:50%; 
       display:flex; align-items:center; justify-content:center; flex-direction:column;
-      background: transparent;
+      background: radial-gradient(80% 80% at 50% 45%, rgba(125,211,252,.18), rgba(0,0,0,.20) 70%, transparent 71%);
       border:2px solid rgba(168,85,247,0.4);
       overflow:visible;
       text-align: center;
       z-index: 10;
     }
-    .wireframe-sphere {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.9;
-      pointer-events: none;
+    .wireframe-sphere{
+      position:absolute;inset:0;width:100%;height:100%;
+      opacity:.95; pointer-events:none;
+      filter: drop-shadow(0 0 6px rgba(125,211,252,.6));
     }
     .center-big{
       position:relative; z-index:1; font-weight:900;
@@ -410,51 +410,48 @@
         <div class="hub">
           <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cyberpunk sectors"></svg>
         </div>
-        <div class="center-cap">
-          <svg class="wireframe-sphere" viewBox="0 0 200 200" style="position:absolute;inset:0;width:100%;height:100%;">
-            <!-- 경선들 (Longitude) -->
-            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.8)" stroke-width="1" fill="none">
-              <animate attributeName="rx" values="0;30;60;80;60;30;0" dur="8s" repeatCount="indefinite"/>
-            </ellipse>
-            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none" transform="rotate(30 100 100)">
-              <animate attributeName="rx" values="30;60;80;60;30;0;30" dur="8s" repeatCount="indefinite"/>
-            </ellipse>
-            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none" transform="rotate(60 100 100)">
-              <animate attributeName="rx" values="60;80;60;30;0;30;60" dur="8s" repeatCount="indefinite"/>
-            </ellipse>
-            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.8)" stroke-width="1" fill="none" transform="rotate(90 100 100)">
-              <animate attributeName="rx" values="80;60;30;0;30;60;80" dur="8s" repeatCount="indefinite"/>
-            </ellipse>
-            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none" transform="rotate(120 100 100)">
-              <animate attributeName="rx" values="60;30;0;30;60;80;60" dur="8s" repeatCount="indefinite"/>
-            </ellipse>
-            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none" transform="rotate(150 100 100)">
-              <animate attributeName="rx" values="30;0;30;60;80;60;30" dur="8s" repeatCount="indefinite"/>
-            </ellipse>
 
-            <!-- 위선들 (Latitude) -->
-            <ellipse cx="100" cy="100" rx="80" ry="8" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none"/>
-            <ellipse cx="100" cy="100" rx="75" ry="15" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none"/>
-            <ellipse cx="100" cy="100" rx="65" ry="25" stroke="rgba(168,85,247,0.8)" stroke-width="1" fill="none"/>
-            <ellipse cx="100" cy="100" rx="50" ry="35" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none"/>
-            <ellipse cx="100" cy="100" rx="30" ry="45" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none"/>
-            
-            <!-- 적도 -->
-            <circle cx="100" cy="100" r="80" stroke="rgba(168,85,247,0.9)" stroke-width="2" fill="none"/>
-            
-            <!-- 전체 회전 애니메이션 -->
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              values="0 100 100;360 100 100"
-              dur="20s"
-              repeatCount="indefinite"/>
+        <!-- ✅ 중앙 와이어 그물: 연파랑 + 더 촘촘 + 그물만 느리게 회전 -->
+        <div class="center-cap">
+          <svg class="wireframe-sphere" viewBox="0 0 200 200">
+            <g>
+              <!-- 위도선 (라티튜드) -->
+              <ellipse cx="100" cy="100" rx="78" ry="10" fill="none" stroke="var(--wire)" stroke-opacity=".55" stroke-width="1"/>
+              <ellipse cx="100" cy="100" rx="72" ry="18" fill="none" stroke="var(--wire)" stroke-opacity=".5"  stroke-width="1"/>
+              <ellipse cx="100" cy="100" rx="62" ry="26" fill="none" stroke="var(--wire)" stroke-opacity=".45" stroke-width="1"/>
+              <ellipse cx="100" cy="100" rx="50" ry="36" fill="none" stroke="var(--wire)" stroke-opacity=".4"  stroke-width="1"/>
+              <ellipse cx="100" cy="100" rx="36" ry="46" fill="none" stroke="var(--wire)" stroke-opacity=".35" stroke-width="1"/>
+              <ellipse cx="100" cy="100" rx="20" ry="54" fill="none" stroke="var(--wire)" stroke-opacity=".3"  stroke-width="1"/>
+              <!-- 적도 -->
+              <circle  cx="100" cy="100" r="80" fill="none" stroke="var(--wire)" stroke-opacity=".7" stroke-width="1.2"/>
+
+              <!-- 경도선 (롱티튜드) 0~165도 / 15도 간격 = 12개 -->
+              <g stroke="var(--wire)" stroke-width="1" stroke-opacity=".45" fill="none">
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(0 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(15 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(30 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(45 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(60 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(75 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(90 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(105 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(120 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(135 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(150 100 100)"/>
+                <ellipse cx="100" cy="100" rx="0" ry="80" transform="rotate(165 100 100)"/>
+              </g>
+
+              <!-- 그물만 천천히 회전 (텍스트는 아래 div에 있어 고정됨) -->
+              <animateTransform attributeName="transform" type="rotate"
+                values="0 100 100;360 100 100" dur="30s" repeatCount="indefinite"/>
+            </g>
           </svg>
-          
+
           <div class="center-big" id="cBig">NEURAL NET</div>
           <div class="center-sub" id="cSub">INTERFACE</div>
         </div>
       </div>
+
       <aside class="panel" id="panel">
         <h4 id="pTitle">MARKET MATRIX</h4>
         <div id="pBody">
@@ -530,7 +527,7 @@
   </div>
 
   <script>
-    // 사이버펑크 암호화폐 데이터
+    // 사이버펑크 암호화폐 데이터(데모)
     const cryptoData = [
       { rank: 1, symbol: 'BTC', name: 'Bitcoin', price: 108630, change1h: 0.1, change24h: 0.8, change7d: -5.2, market_cap: 2165218091492, volume: 37438783971 },
       { rank: 2, symbol: 'ETH', name: 'Ethereum', price: 4365, change1h: 0.3, change24h: 1.2, change7d: -7.1, market_cap: 527511672629, volume: 25060814540 },
@@ -541,88 +538,59 @@
       { rank: 7, symbol: 'DOT', name: 'Polkadot', price: 8.90, change1h: 1.5, change24h: 6.7, change7d: 9.8, market_cap: 12800000000, volume: 950000000 },
       { rank: 8, symbol: 'USDT', name: 'Tether', price: 1.00, change1h: 0.0, change24h: 0.0, change7d: 0.0, market_cap: 167617900652, volume: 73442809149 },
       { rank: 9, symbol: 'BNB', name: 'BNB', price: 858.08, change1h: 0.39, change24h: -0.13, change7d: -3.46, market_cap: 119516874107, volume: 1000140452 },
-      { rank: 10, symbol: 'XRP', name: 'XRP', price: 2.80, change1h: 0.2, change24h: -1.3, change7d: -6.8, market_cap: 166823926646, volume: 5375874969 }
+      { rank:10, symbol: 'XRP', name: 'XRP', price: 2.80, change1h: 0.2, change24h: -1.3, change7d: -6.8, market_cap: 166823926646, volume: 5375874969 }
     ];
 
-    // 사이버펑크 섹터 데이터 (3톤으로 제한)
+    // 사이버펑크 섹터 데이터
     const sectorData = {
       btc: {
         title: 'BTC CORE',
         percentage: 22,
         color: '#00d4ff',
         description: 'Bitcoin network protocol analysis',
-        stats: { 
-          dominance: '32.5%', 
-          marketCap: '$2.14T', 
-          hashRate: '450 EH/s', 
-          difficulty: '62.5T' 
-        }
+        stats: { dominance: '32.5%', marketCap: '$2.14T', hashRate: '450 EH/s', difficulty: '62.5T' }
       },
       gainers: {
         title: 'TOP GAINERS',
         percentage: 25,
         color: '#6366f1',
         description: '24H performance leaders',
-        stats: { 
-          topGainer: 'SOL +8.4%', 
-          avgGain: '+6.8%', 
-          count: '2,150', 
-          momentum: 'BULLISH' 
-        }
+        stats: { topGainer: 'SOL +8.4%', avgGain: '+6.8%', count: '2,150', momentum: 'BULLISH' }
       },
       volume: {
         title: 'VOLUME SURGE',
         percentage: 23,
         color: '#00d4ff',
         description: 'High-frequency trading zones',
-        stats: { 
-          totalVol: '$156.4B', 
-          topVol: 'USDT $73.4B', 
-          spike: '+45.2%', 
-          liquidity: 'HIGH' 
-        }
+        stats: { totalVol: '$156.4B', topVol: 'USDT $73.4B', spike: '+45.2%', liquidity: 'HIGH' }
       },
       defi: {
         title: 'DEFI MATRIX',
         percentage: 18,
         color: '#6366f1',
         description: 'Decentralized protocol network',
-        stats: { 
-          tvl: '$82.5B', 
-          protocols: '847', 
-          yield: '12.3% APY', 
-          growth: '+18.5%' 
-        }
+        stats: { tvl: '$82.5B', protocols: '847', yield: '12.3% APY', growth: '+18.5%' }
       },
       feargreed: {
         title: 'FEAR/GREED',
         percentage: 12,
         color: '#ffffff',
         description: 'Market sentiment neural scan',
-        stats: { 
-          index: '49', 
-          status: 'NEUTRAL', 
-          fear: '25%', 
-          greed: '26%' 
-        }
+        stats: { index: '49', status: 'NEUTRAL', fear: '25%', greed: '26%' }
       }
     };
 
     let currentData = [...cryptoData];
     let searchQuery = '';
 
-    // 사이버펑크 초기화
     document.addEventListener('DOMContentLoaded', function() {
       initNeonControl();
       initCyberHub();
       renderNeuralTable();
       initQuantumSearch();
-      
-      // 네온 데이터 스트림 업데이트
       setInterval(updateNeuralData, 25000);
     });
 
-    // 네온 컨트롤
     function initNeonControl() {
       const neonRange = document.getElementById('starRange');
       neonRange.addEventListener('input', function() {
@@ -631,7 +599,6 @@
       });
     }
 
-    // 사이버 허브 생성
     function initCyberHub() {
       const svg = document.getElementById('hubSvg');
       const hub = document.querySelector('.hub');
@@ -639,298 +606,13 @@
       const percentages = [22, 25, 23, 18, 12];
       let currentAngle = 0;
 
-      // 그레이 그라데이션 정의
+      // 그레이 그라데이션
       const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
       const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
       gradient.setAttribute('id', 'grayGradient');
       gradient.setAttribute('cx', '50%');
       gradient.setAttribute('cy', '50%');
       gradient.setAttribute('r', '50%');
-      
       const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-      stop1.setAttribute('offset', '0%');
-      stop1.setAttribute('stop-color', '#666666');
-      
+      stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', '#666666');
       const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-      stop2.setAttribute('offset', '100%');
-      stop2.setAttribute('stop-color', '#333333');
-      
-      gradient.appendChild(stop1);
-      gradient.appendChild(stop2);
-      defs.appendChild(gradient);
-      svg.appendChild(defs);
-
-      sectors.forEach((sector, index) => {
-        const angle = (percentages[index] / 100) * 360;
-        const sectorInfo = sectorData[sector];
-        
-        // 그레이 섹터 생성
-        const path = createNeonSector(500, 500, 160, 340, currentAngle, angle);
-        const sectorEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        
-        sectorEl.setAttribute('d', path);
-        sectorEl.setAttribute('class', 'seg');
-        sectorEl.setAttribute('data-sector', sector);
-        
-        // 섹터 라벨
-        const labelAngle = currentAngle + angle / 2;
-        const labelRadius = 250;
-        const labelX = 500 + Math.cos((labelAngle - 90) * Math.PI / 180) * labelRadius;
-        const labelY = 500 + Math.sin((labelAngle - 90) * Math.PI / 180) * labelRadius;
-        
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('x', labelX);
-        label.setAttribute('y', labelY);
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('class', 'seg-label');
-        label.textContent = sectorInfo.title.split(' ')[0];
-        
-        svg.appendChild(sectorEl);
-        svg.appendChild(label);
-        
-        // 클릭 이벤트 (도넛 스핀 + 섹터 활성화)
-        sectorEl.addEventListener('click', () => {
-          // 도넛 스핀 애니메이션
-          hub.classList.add('spinning');
-          setTimeout(() => {
-            hub.classList.remove('spinning');
-            activateNeuralSector(sector);
-          }, 1500);
-        });
-        
-        currentAngle += angle;
-      });
-
-      // 단일 에메랄드 행성 추가
-      const orbitRadius = 390;
-      const planetGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      planetGroup.setAttribute('transform', 'translate(500, 500)');
-      
-      // 궤도선 (선택사항 - 미세하게 보이는 궤도)
-      const orbit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      orbit.setAttribute('cx', '0');
-      orbit.setAttribute('cy', '0');
-      orbit.setAttribute('r', orbitRadius);
-      orbit.setAttribute('fill', 'none');
-      orbit.setAttribute('stroke', 'rgba(80, 227, 194, 0.1)');
-      orbit.setAttribute('stroke-width', '1');
-      orbit.setAttribute('stroke-dasharray', '5,5');
-      svg.appendChild(orbit);
-      
-      // 에메랄드 행성
-      const planet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      planet.setAttribute('cx', orbitRadius);
-      planet.setAttribute('cy', 0);
-      planet.setAttribute('r', 7);
-      planet.setAttribute('class', 'planet');
-      
-      // 행성 회전 애니메이션
-      const animateTransform = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
-      animateTransform.setAttribute('attributeName', 'transform');
-      animateTransform.setAttribute('attributeType', 'XML');
-      animateTransform.setAttribute('type', 'rotate');
-      animateTransform.setAttribute('from', '0 500 500');
-      animateTransform.setAttribute('to', '360 500 500');
-      animateTransform.setAttribute('dur', '25s');
-      animateTransform.setAttribute('repeatCount', 'indefinite');
-      
-      planetGroup.appendChild(planet);
-      planetGroup.appendChild(animateTransform);
-      svg.appendChild(planetGroup);
-    }
-
-    function createNeonSector(cx, cy, innerR, outerR, startAngle, sweepAngle) {
-      const start1 = polarToCartesian(cx, cy, outerR, startAngle);
-      const end1 = polarToCartesian(cx, cy, outerR, startAngle + sweepAngle);
-      const start2 = polarToCartesian(cx, cy, innerR, startAngle);
-      const end2 = polarToCartesian(cx, cy, innerR, startAngle + sweepAngle);
-      
-      const largeArcFlag = sweepAngle <= 180 ? "0" : "1";
-      
-      return [
-        "M", start1.x, start1.y,
-        "A", outerR, outerR, 0, largeArcFlag, 1, end1.x, end1.y,
-        "L", end2.x, end2.y,
-        "A", innerR, innerR, 0, largeArcFlag, 0, start2.x, start2.y,
-        "Z"
-      ].join(" ");
-    }
-
-    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-      const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
-      return {
-        x: centerX + (radius * Math.cos(angleInRadians)),
-        y: centerY + (radius * Math.sin(angleInRadians))
-      };
-    }
-
-    // 뉴럴 섹터 활성화
-    function activateNeuralSector(sector) {
-      // 모든 섹터 비활성화
-      document.querySelectorAll('.seg').forEach(seg => seg.classList.remove('active'));
-      
-      // 선택 섹터 활성화
-      const activeSeg = document.querySelector(`[data-sector="${sector}"]`);
-      if (activeSeg) activeSeg.classList.add('active');
-      
-      // 사이버 패널 업데이트
-      const data = sectorData[sector];
-      updateCyberPanel(data);
-      
-      // 홀로그램 텍스트 업데이트
-      document.getElementById('cBig').textContent = data.title;
-      document.getElementById('cSub').textContent = `${data.percentage}%`;
-    }
-
-    function updateCyberPanel(data) {
-      const title = document.getElementById('pTitle');
-      const body = document.getElementById('pBody');
-      
-      title.textContent = data.title + ' PROTOCOL';
-      
-      const statsHtml = Object.entries(data.stats).map(([key, value]) => 
-        `<div class="stat-box">
-          <div class="stat-label">${key.toUpperCase()}</div>
-          <div class="stat-value">${value}</div>
-        </div>`
-      ).join('');
-      
-      body.innerHTML = `
-        <div class="stats-grid">${statsHtml}</div>
-        <p style="margin-top: 16px; color: var(--muted); font-size: 13px; line-height: 1.6;">
-          ${data.description.toUpperCase()}
-        </p>
-      `;
-    }
-
-    // 뉴럴 테이블 렌더링
-    function renderNeuralTable() {
-      const tbody = document.getElementById('mktBody');
-      const filteredData = searchQuery ? 
-        currentData.filter(coin => 
-          coin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          coin.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-        ) : currentData;
-
-      const tableHtml = filteredData.map(coin => {
-        const changeClass1h = coin.change1h > 0 ? 'up' : coin.change1h < 0 ? 'down' : '';
-        const changeClass24h = coin.change24h > 0 ? 'up' : coin.change24h < 0 ? 'down' : '';
-        const changeClass7d = coin.change7d > 0 ? 'up' : coin.change7d < 0 ? 'down' : '';
-        
-        return `<tr>
-          <td class="sticky-rank num">${coin.rank}</td>
-          <td class="sticky-name">
-            <div class="mkt-name">
-              <div style="width:24px;height:24px;background:${getCyberColor(coin.symbol)};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#000;box-shadow:0 0 10px ${getCyberColor(coin.symbol)};">${coin.symbol.slice(0,2)}</div>
-              <div><span class="sym">${coin.symbol}</span><span class="full">${coin.name}</span></div>
-            </div>
-          </td>
-          <td class="num">${formatCyberPrice(coin.price)}</td>
-          <td class="num pct ${changeClass1h} hide-m">${formatCyberChange(coin.change1h)}%</td>
-          <td class="num pct ${changeClass24h}">${formatCyberChange(coin.change24h)}%</td>
-          <td class="num pct ${changeClass7d} hide-m">${formatCyberChange(coin.change7d)}%</td>
-          <td class="num hide-m">${formatCyberNumber(coin.market_cap)}</td>
-          <td class="num hide-m">${formatCyberNumber(coin.volume)}</td>
-          <td class="spark">
-            <canvas width="120" height="32" style="width:120px;height:32px;" data-spark="${coin.change7d}"></canvas>
-          </td>
-        </tr>`;
-      }).join('');
-      
-      tbody.innerHTML = tableHtml;
-      
-      // 네온 스파크 차트
-      drawNeonSparklines();
-    }
-
-    function getCyberColor(symbol) {
-      // 3톤으로 제한: primary, accent, neutral
-      const colorMap = {
-        'BTC': '#00d4ff', 'ETH': '#6366f1', 'SOL': '#00d4ff',
-        'AVAX': '#6366f1', 'ADA': '#00d4ff', 'MATIC': '#6366f1',
-        'DOT': '#00d4ff', 'USDT': '#ffffff', 'BNB': '#6366f1',
-        'XRP': '#00d4ff'
-      };
-      return colorMap[symbol] || '#00d4ff';
-    }
-
-    function drawNeonSparklines() {
-      const canvases = document.querySelectorAll('[data-spark]');
-      canvases.forEach(canvas => {
-        const change = parseFloat(canvas.dataset.spark);
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        
-        ctx.clearRect(0, 0, width, height);
-        
-        // 네온 데이터 생성
-        const points = [];
-        let value = 50;
-        for (let i = 0; i < 40; i++) {
-          value += (Math.random() - 0.5) * 6 + (change > 0 ? 0.2 : -0.2);
-          points.push(Math.max(8, Math.min(88, value)));
-        }
-        
-        // 3톤 네온 글로우 효과
-        const color = change > 0 ? '#00d4ff' : '#6366f1';
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 3;
-        
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        
-        points.forEach((point, index) => {
-          const x = (index / (points.length - 1)) * width;
-          const y = height - (point / 100) * height;
-          if (index === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        
-        ctx.stroke();
-      });
-    }
-
-    // 퀀텀 검색
-    function initQuantumSearch() {
-      const searchInput = document.getElementById('q');
-      searchInput.addEventListener('input', function() {
-        searchQuery = this.value;
-        renderNeuralTable();
-      });
-    }
-
-    // 뉴럴 데이터 업데이트
-    function updateNeuralData() {
-      currentData.forEach(coin => {
-        const volatility = (Math.random() - 0.5) * 0.03;
-        coin.price *= (1 + volatility);
-        coin.change24h += (Math.random() - 0.5) * 0.8;
-        coin.change7d += (Math.random() - 0.5) * 1.2;
-      });
-      renderNeuralTable();
-    }
-
-    // 사이버 포매팅 함수들
-    function formatCyberPrice(price) {
-      if (price >= 1000) return '$' + price.toLocaleString();
-      if (price >= 1) return '$' + price.toFixed(2);
-      return '$' + price.toFixed(6);
-    }
-
-    function formatCyberChange(change) {
-      const sign = change >= 0 ? '+' : '';
-      return sign + change.toFixed(1);
-    }
-
-    function formatCyberNumber(num) {
-      if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
-      if (num >= 1e9) return '$' + (num / 1e9).toFixed(2) + 'B';
-      if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
-      if (num >= 1e3) return '$' + (num / 1e3).toFixed(2) + 'K';
-      return '$' + num.toLocaleString();
-    }
-  </script>
-</body>
-</html>
