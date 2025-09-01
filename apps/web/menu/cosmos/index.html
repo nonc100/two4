@@ -3,227 +3,505 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>TWO4 COSMOS</title>
+  <title>CYBERPUNK COSMOS</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
     :root{
-      --bg:#0b1018;
-      --panel:#111827;
+      --bg:#0a0a0f;
+      --bg-secondary:#1a1a2e;
+      --panel:#0f0516;
       --text:#e8eefc;
       --muted:#9aa3b6;
-      --up:#22c55e; --down:#ef4444;
-      --card-border: rgba(255,255,255,.08);
-      --sticky-top: 90px;     /* 데스크탑 고정 헤더 기준 */
-      --starVis: .9;          /* 0~1 별 밝기 */
+      --primary:#00d4ff;
+      --accent:#6366f1;
+      --neutral:#ffffff;
+      --up:#00d4ff; 
+      --down:#6366f1;
+      --card-border: rgba(0,212,255,.3);
+      --sticky-top: 90px;
+      --starVis: .9;
       --rank-w:44px;
       --name-w:280px;
     }
+
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-      font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"}
+    html,body{
+      margin:0;padding:0;
+      background: radial-gradient(ellipse at center, #1a0e2e 0%, #0a0a0f 70%);
+      color:var(--text);
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    
+    /* 사이버펑크 스캔라인 효과 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,255,255,0.03) 0px,
+        rgba(0,255,255,0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
     a{color:inherit;text-decoration:none}
     img{max-width:100%;height:auto}
 
-    /* ⭐ starfield – 더 밝고 밀도 높게 */
-    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;background:#0b1018}
+    /* 네온 별 */
+    .sky{position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--bg)}
     .star{position:absolute;inset:0;opacity:var(--starVis,0.9)}
     .star.s1{
       background:
-        radial-gradient(2px 2px at 12% 18%, #ffffffcc 50%, transparent 52%),
-        radial-gradient(1.5px 1.5px at 33% 40%, #ffffffaa 50%, transparent 52%),
-        radial-gradient(1.2px 1.2px at 70% 12%, #ffffff88 50%, transparent 52%),
-        radial-gradient(1px 1px at 82% 66%, #ffffff77 50%, transparent 52%),
-        radial-gradient(1.5px 1.5px at 15% 80%, #ffffff88 50%, transparent 52%);
+        radial-gradient(2px 2px at 12% 18%, var(--primary) 50%, transparent 52%),
+        radial-gradient(1.5px 1.5px at 33% 40%, var(--accent) 50%, transparent 52%),
+        radial-gradient(1.2px 1.2px at 70% 12%, var(--primary) 50%, transparent 52%),
+        radial-gradient(1px 1px at 82% 66%, var(--accent) 50%, transparent 52%),
+        radial-gradient(1.5px 1.5px at 15% 80%, var(--neutral) 50%, transparent 52%);
       animation: tw1 40s linear infinite;
-      filter: drop-shadow(0 0 2px #8ecaff);
+      filter: drop-shadow(0 0 3px var(--primary));
     }
     .star.s2{
       background:
-        radial-gradient(1.2px 1.2px at 50% 24%, #ffffffaa 50%, transparent 52%),
-        radial-gradient(1px 1px at 72% 52%, #ffffff88 50%, transparent 52%),
-        radial-gradient(1.5px 1.5px at 28% 66%, #ffffff99 50%, transparent 52%),
-        radial-gradient(1px 1px at 90% 30%, #ffffff77 50%, transparent 52%);
+        radial-gradient(1.2px 1.2px at 50% 24%, var(--accent) 50%, transparent 52%),
+        radial-gradient(1px 1px at 72% 52%, var(--primary) 50%, transparent 52%),
+        radial-gradient(1.5px 1.5px at 28% 66%, var(--neutral) 50%, transparent 52%),
+        radial-gradient(1px 1px at 90% 30%, var(--accent) 50%, transparent 52%);
       animation: tw2 60s linear infinite reverse;
     }
     .star.s3{
       background:
-        radial-gradient(1px 1px at 40% 80%, #ffffff77 50%, transparent 52%),
-        radial-gradient(1.2px 1.2px at 64% 70%, #ffffff88 50%, transparent 52%),
-        radial-gradient(1px 1px at 10% 30%, #ffffff66 50%, transparent 52%);
+        radial-gradient(1px 1px at 40% 80%, var(--primary) 50%, transparent 52%),
+        radial-gradient(1.2px 1.2px at 64% 70%, var(--accent) 50%, transparent 52%),
+        radial-gradient(1px 1px at 10% 30%, var(--neutral) 50%, transparent 52%);
       animation: tw3 90s linear infinite;
     }
     @keyframes tw1{from{transform:translate(0,0)}to{transform:translate(-10%, -8%)}}
     @keyframes tw2{from{transform:translate(0,0)}to{transform:translate(8%, -6%)}}
     @keyframes tw3{from{transform:translate(0,0)}to{transform:translate(-6%, 6%)}}
 
-    /* 상단 미니 컨트롤러(중앙) */
+    /* 네온 상단 컨트롤러 */
     .star-ctl{
       position:fixed; left:50%; top:10px; transform:translateX(-50%);
-      z-index:10; display:flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px;
-      background:rgba(255,255,255,.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
-      font-size:12px; color:#cfe1ff;
+      z-index:10; display:flex; align-items:center; gap:8px;
+      padding:8px 16px; border-radius:20px;
+      background:rgba(0,0,0,.8); 
+      backdrop-filter:blur(15px); 
+      border:2px solid var(--primary);
+      box-shadow: 
+        0 0 10px var(--primary),
+        inset 0 0 10px rgba(0,212,255,0.1);
+      font-size:12px; color:var(--primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    .star-ctl input[type=range]{width:140px; height:6px; background:transparent}
-    .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#22d3ee)}
-    .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
+    .star-ctl input[type=range]{
+      width:140px; height:8px; background:transparent;
+      -webkit-appearance: none;
+    }
+    .star-ctl input[type=range]::-webkit-slider-runnable-track{
+      height:8px;border-radius:4px;
+      background:linear-gradient(90deg,var(--accent),var(--primary));
+      box-shadow: 0 0 5px var(--primary);
+    }
+    .star-ctl input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+      background:var(--primary);border:none;
+      box-shadow: 0 0 10px var(--primary);
+    }
 
     .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:64px 16px 80px}
-    .brand{position:relative; height:32px; margin-bottom:8px}
-    .brand img{height:32px; position:absolute; right:0; top:0} /* 로고 우상단 */
+    .brand{position:relative; height:40px; margin-bottom:20px; text-align: center;}
+    .brand h1{
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 900;
+      background: linear-gradient(45deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 20px var(--primary);
+      letter-spacing: 3px;
+      margin: 0;
+    }
 
-    /* HUB */
-    .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center}
+    /* 사이버 허브 */
+    .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:24px;align-items:center}
     @media (max-width:900px){.hub-grid{grid-template-columns:1fr}}
-    .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
-      background:radial-gradient(100% 100% at 35% 30%, #1e2742 0%, #0c1220 60%, #0000 80%);
-      box-shadow:inset 0 8px 28px rgba(255,255,255,.06), 0 18px 48px rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.06);
+    .hub-container {
+      position: relative;
+      aspect-ratio: 1/1;
+    }
+    .hub{
+      position:relative;width:100%;height:100%;border-radius:50%;
+      background:radial-gradient(100% 100% at 35% 30%, rgba(0,212,255,0.08) 0%, rgba(99,102,241,0.04) 60%, transparent 80%);
+      box-shadow:
+        inset 0 0 50px rgba(0,212,255,0.15),
+        0 0 50px rgba(0,212,255,0.2),
+        0 0 100px rgba(99,102,241,0.1);
+      border:2px solid var(--primary);
+      animation: hubPulse 6s ease-in-out infinite;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hub.spinning{
+      animation: hubSpin 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes hubPulse {
+      0%, 100% { box-shadow: inset 0 0 50px rgba(0,212,255,0.15), 0 0 50px rgba(0,212,255,0.2), 0 0 100px rgba(99,102,241,0.1); }
+      50% { box-shadow: inset 0 0 50px rgba(99,102,241,0.15), 0 0 50px rgba(99,102,241,0.2), 0 0 100px rgba(0,212,255,0.1); }
+    }
+    @keyframes hubSpin {
+      0% { transform: rotate(0deg); }
+      70% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
     }
     .hub svg{position:absolute;inset:0}
-    /* 중앙 행성(회전), 텍스트 고정 */
-    .center-cap{position:absolute;inset:50% auto auto 50%; transform:translate(-50%,-50%);
-      width:36%; height:36%; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column;
-      background: radial-gradient(120% 120% at 30% 30%, rgba(46,204,250,.18), rgba(124,58,237,.14) 60%, transparent 80%);
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:inset 0 10px 26px rgba(0,0,0,.35);
-      overflow:hidden;
-    }
-    .center-cap::before{
-      content:""; position:absolute; inset:-20%;
-      background:radial-gradient(60% 60% at 20% 20%, rgba(255,255,255,.25), rgba(255,255,255,0) 70%);
-      filter:blur(10px); animation:orb 12s linear infinite;
-    }
-    @keyframes orb{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-    .center-big{position:relative; z-index:1; font-weight:900;font-size:clamp(16px,3.2vw,28px);letter-spacing:.02em;margin:0 0 4px}
-    .center-sub{position:relative; z-index:1; font-size:12px;color:var(--muted);margin:0}
 
-    .seg{cursor:pointer;stroke:rgba(255,255,255,.14);stroke-width:1.2;transition:transform .18s ease, opacity .18s ease; fill-opacity:.65;}
-    .seg:hover{transform:scale(1.02)}
-    .seg.active{transform:scale(1.03)}
-    /* 섹터 라벨(2배, 글로우 제거) */
-    .seg-label{font-weight:900;font-size:clamp(16px,1.8vw,22px);letter-spacing:.02em;fill:#e8f6ff;}
+    /* 홀로그램 중앙 - 3D 구형 와이어프레임 */
+    .center-cap{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:38%; height:38%; border-radius:50%; 
+      display:flex; align-items:center; justify-content:center; flex-direction:column;
+      background: transparent;
+      border:2px solid rgba(168,85,247,0.4);
+      overflow:visible;
+      text-align: center;
+      z-index: 10;
+    }
+    .wireframe-sphere {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+    .center-big{
+      position:relative; z-index:1; font-weight:900;
+      font-size:clamp(16px,3.2vw,28px);letter-spacing:.1em;margin:0;
+      color: #E9D5FF;
+      text-shadow: 
+        0 0 15px rgba(139,92,246,0.8),
+        0 0 30px rgba(139,92,246,0.4);
+      text-align: center;
+      width: 100%;
+    }
+    .center-sub{
+      position:relative; z-index:1; font-size:12px;color:#C4B5FD;margin:4px 0 0;
+      text-shadow: 
+        0 0 8px rgba(139,92,246,0.6),
+        0 0 15px rgba(139,92,246,0.3);
+      text-align: center;
+      width: 100%;
+    }
 
-    /* 패널 */
-    .panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10); backdrop-filter:blur(12px)}
-    .panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
-    .list{display:flex;flex-direction:column;gap:6px}
-    .row{display:grid;grid-template-columns:1.6em 1fr auto auto;gap:8px;align-items:center;font-size:13.5px}
-    .row .rk{opacity:.7;text-align:right;font-weight:800}
-    .row .tk{font-weight:900}
-    .row .px{opacity:.9;text-align:right}
+    .seg{
+      cursor:pointer;stroke:rgba(255,255,255,.08);stroke-width:2;
+      transition:all .3s ease; 
+      fill: url(#grayGradient);
+      fill-opacity:.4;
+      filter: drop-shadow(0 0 3px rgba(255,255,255,0.1));
+    }
+    .seg:hover{
+      transform:scale(1.02); 
+      fill-opacity:.6;
+      filter: brightness(1.2) drop-shadow(0 0 8px rgba(255,255,255,0.2));
+      stroke-width: 3;
+    }
+    .seg.active{
+      transform:scale(1.04); 
+      fill-opacity:.8;
+      filter: brightness(1.4) drop-shadow(0 0 15px rgba(255,255,255,0.3));
+      stroke-width: 4;
+      animation: sectorGlow 3s ease-in-out infinite;
+    }
+    @keyframes sectorGlow {
+      0%, 100% { filter: brightness(1.4) drop-shadow(0 0 15px rgba(255,255,255,0.3)); }
+      50% { filter: brightness(1.6) drop-shadow(0 0 25px rgba(255,255,255,0.4)); }
+    }
+    .seg-label{
+      font-weight:900;font-size:clamp(18px,2.4vw,26px);letter-spacing:.05em;
+      fill: #d1d5db;
+      text-shadow: 0 0 8px rgba(209,213,219,0.6);
+      filter: drop-shadow(0 0 4px rgba(209,213,219,0.3));
+    }
+
+    /* 에메랄드 행성 */
+    .planet {
+      fill: #50e3c2;
+      filter: drop-shadow(0 0 6px #50e3c2);
+      animation: planetGlow 2s ease-in-out infinite alternate;
+    }
+    @keyframes planetGlow {
+      0% { filter: drop-shadow(0 0 6px #50e3c2); }
+      100% { filter: drop-shadow(0 0 12px #50e3c2) brightness(1.4); }
+    }
+
+    /* 네온 패널 */
+    .panel{
+      min-height:280px;border-radius:16px;padding:20px;
+      background:rgba(0,0,0,.8);
+      border:2px solid var(--accent);
+      backdrop-filter:blur(20px);
+      box-shadow: 
+        0 0 20px rgba(99,102,241,0.2),
+        inset 0 0 20px rgba(99,102,241,0.05);
+    }
+    .panel h4{
+      margin:0 0 16px;font-size:16px;color:var(--accent);
+      letter-spacing:.1em; font-weight: 700;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px currentColor;
+    }
+
+    .list{display:flex;flex-direction:column;gap:8px}
+    .row{
+      display:grid;grid-template-columns:1.6em 1fr auto auto;gap:10px;
+      align-items:center;font-size:13px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(0,212,255,0.1);
+    }
+    .row .rk{opacity:.8;text-align:right;font-weight:800;color:var(--primary)}
+    .row .tk{font-weight:900;color:var(--text)}
+    .row .px{opacity:.9;text-align:right;color:var(--text)}
     .row .pc{font-weight:900;text-align:right}
-    .row .pc.up{color:var(--up)} .row .pc.down{color:var(--down)}
+    .row .pc.up{color:var(--primary);text-shadow: 0 0 5px var(--primary)} 
+    .row .pc.down{color:var(--accent);text-shadow: 0 0 5px var(--accent)}
 
-    /* Gauge (F&G) */
-    .gauge{width:100%;height:140px}
-    .g-arc{stroke-linecap:round;stroke-width:16;fill:none}
-    .needle{stroke:#fff;stroke-width:8;stroke-linecap:round}
+    /* 네온 스탯 그리드 */
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+    .stat-box{
+      background:rgba(0,0,0,.6);
+      border:1px solid var(--primary);
+      border-radius:8px;padding:12px;text-align:center;
+      box-shadow: 0 0 10px rgba(0,212,255,0.15);
+    }
+    .stat-box:nth-child(even){
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(99,102,241,0.15);
+    }
+    .stat-label{
+      font-size:10px;color:var(--muted);margin-bottom:4px;
+      text-transform:uppercase;letter-spacing:.05em;font-weight:600;
+    }
+    .stat-value{
+      font-size:16px;font-weight:900;color:var(--text);
+      text-shadow: 0 0 5px currentColor;
+    }
 
-    /* 검색/테이블 */
-    .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
+    /* 네온 검색 */
+    .controls{display:flex;gap:12px;align-items:center;margin:20px 0 12px}
     .controls .search{flex:1}
-    input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
+    input[type=text]{
+      background:rgba(0,0,0,.8);
+      border:2px solid var(--primary);
+      color:var(--primary);
+      border-radius:12px;padding:12px 16px;outline:none;
+      font-family: 'Orbitron', monospace;
+      font-weight: 600;
+      box-shadow: 0 0 10px rgba(0,212,255,0.2);
+    }
+    input[type=text]:focus{
+      box-shadow: 0 0 20px var(--primary);
+      text-shadow: 0 0 5px var(--primary);
+    }
+    input[type=text]::placeholder{
+      color: rgba(0,212,255,0.5);
+    }
 
-    .table-wrap{overflow-x:auto;margin-top:8px}
+    .table-wrap{overflow-x:auto;margin-top:12px}
 
-    /* 고정 “엑셀틀” 헤더 */
+    /* 네온 고정 헤더 */
     .grid-head{
       position:sticky; top:var(--sticky-top); z-index:6;
-      display:grid; grid-template-columns: var(--rank-w) var(--name-w) 120px 120px 120px 120px 120px 120px 120px;
-      gap:0; align-items:center; padding:8px 10px;
-      background:rgba(17,24,39,.92); backdrop-filter:blur(6px);
-      border:1px solid rgba(255,255,255,.08); border-radius:12px;
-      color:#b9c3d6; font-weight:700; font-size:12px;
-      margin-bottom:8px;
+      display:grid; 
+      grid-template-columns: var(--rank-w) var(--name-w) 120px 120px 120px 120px 120px 120px 120px;
+      gap:0; align-items:center; padding:12px 16px;
+      background:rgba(0,0,0,.9); 
+      backdrop-filter:blur(10px);
+      border:2px solid var(--accent); 
+      border-radius:12px;
+      color:var(--accent); font-weight:700; font-size:12px;
+      margin-bottom:12px;
+      box-shadow: 0 0 15px rgba(99,102,241,0.2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    table{width:1200px;border-collapse:separate;border-spacing:0 10px}
-    thead th{font-size:12px; color:#b9c3d6; font-weight:700; padding:8px 10px;}
+    table{width:1200px;border-collapse:separate;border-spacing:0 8px}
+    thead th{font-size:12px; color:var(--accent); font-weight:700; padding:10px 12px;}
 
-    /* 칼럼 너비 */
     .c-rank{width:var(--rank-w)} .c-name{width:var(--name-w)}
     .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol,.c-spark{width:120px}
 
-    #mkt tbody td{border:1px solid rgba(255,255,255,.08);padding:12px 10px;vertical-align:middle;background:rgba(17,24,39,.85)}
+    #mkt tbody td{
+      border:1px solid rgba(0,212,255,.15);
+      padding:12px;vertical-align:middle;
+      background:rgba(0,0,0,.7);
+      font-family: 'Orbitron', monospace;
+    }
+    #mkt tbody tr:hover td{
+      background:rgba(0,212,255,.03);
+      box-shadow: inset 0 0 20px rgba(0,212,255,0.05);
+    }
     #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
     #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
     #mkt .sticky-rank{position:sticky; left:0; z-index:2}
     #mkt .sticky-name{position:sticky; left:var(--rank-w); z-index:2}
 
-    .mkt-name{ display:flex; align-items:center; gap:10px; }
-    .mkt-name img { width:20px; height:20px; border-radius:50%; }
-    .mkt-name .sym { font-weight:800; margin-right:6px; }
-    .mkt-name .full { opacity:.85; }
+    .mkt-name{ display:flex; align-items:center; gap:12px; }
+    .mkt-name img { width:24px; height:24px; border-radius:50%; }
+    .mkt-name .sym { font-weight:900; margin-right:8px; color:var(--primary); }
+    .mkt-name .full { opacity:.85; color:var(--text); }
 
-    .num { text-align:right; font-variant-numeric: tabular-nums; }
-    .pct.up { color:#22c55e; } .pct.down { color:#ef4444; }
+    .num { text-align:right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .pct.up { color:var(--primary); text-shadow: 0 0 5px var(--primary); } 
+    .pct.down { color:var(--accent); text-shadow: 0 0 5px var(--accent); }
     .text-right { text-align:right; }
-    td.spark canvas{display:block;width:120px;height:28px}
+    td.spark canvas{display:block;width:120px;height:32px}
 
-    /* 모바일: 심볼만 + 가격/24h/스파크 + 순번 보임 */
     @media (max-width:800px){
       :root{ --sticky-top: 132px; --name-w:140px; }
       .hide-m{display:none!important}
       table{width:1000px}
-      .mkt-name .full{display:none} /* 풀네임 숨김 */
+      .mkt-name .full{display:none}
       .wrap{padding-top:84px}
       .grid-head{ grid-template-columns: var(--rank-w) var(--name-w) 120px 120px 120px; }
       .grid-head .col-1h, .grid-head .col-7d, .grid-head .col-mcap, .grid-head .col-vol { display:none }
     }
 
-    footer{margin:24px 0 0;text-align:center;color:#9aa3b6;opacity:.8;font-size:12px}
+    footer{
+      margin:32px 0 0;text-align:center;
+      color:var(--accent);opacity:.8;font-size:12px;
+      text-shadow: 0 0 10px currentColor;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
-  <!-- ⭐ star background -->
+  <!-- 네온 별 배경 -->
   <div class="sky"><div class="star s1"></div><div class="star s2"></div><div class="star s3"></div></div>
 
-  <!-- ⭐ tiny controller -->
+  <!-- 네온 컨트롤러 -->
   <div class="star-ctl">
-    <span style="opacity:.8">Stars</span>
+    <span>NEON INTENSITY</span>
     <input id="starRange" type="range" min="0" max="100" value="90">
   </div>
 
   <div class="wrap">
     <div class="brand">
-      <img src="/media/logo.png" alt="TWO4" />
+      <h1> TWO.4 COSMOS</h1>
     </div>
 
-    <!-- HUB -->
+    <!-- 사이버 허브 -->
     <section class="hub-grid">
-      <div class="hub">
-        <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
+      <div class="hub-container">
+        <div class="hub">
+          <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cyberpunk sectors"></svg>
+        </div>
         <div class="center-cap">
-          <div class="center-big" id="cBig">COSMOS</div>
-          <div class="center-sub" id="cSub">—</div>
+          <svg class="wireframe-sphere" viewBox="0 0 200 200" style="position:absolute;inset:0;width:100%;height:100%;">
+            <!-- 경선들 (Longitude) -->
+            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.8)" stroke-width="1" fill="none">
+              <animate attributeName="rx" values="0;30;60;80;60;30;0" dur="8s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none" transform="rotate(30 100 100)">
+              <animate attributeName="rx" values="30;60;80;60;30;0;30" dur="8s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none" transform="rotate(60 100 100)">
+              <animate attributeName="rx" values="60;80;60;30;0;30;60" dur="8s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.8)" stroke-width="1" fill="none" transform="rotate(90 100 100)">
+              <animate attributeName="rx" values="80;60;30;0;30;60;80" dur="8s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none" transform="rotate(120 100 100)">
+              <animate attributeName="rx" values="60;30;0;30;60;80;60" dur="8s" repeatCount="indefinite"/>
+            </ellipse>
+            <ellipse cx="100" cy="100" rx="0" ry="80" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none" transform="rotate(150 100 100)">
+              <animate attributeName="rx" values="30;0;30;60;80;60;30" dur="8s" repeatCount="indefinite"/>
+            </ellipse>
+
+            <!-- 위선들 (Latitude) -->
+            <ellipse cx="100" cy="100" rx="80" ry="8" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none"/>
+            <ellipse cx="100" cy="100" rx="75" ry="15" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none"/>
+            <ellipse cx="100" cy="100" rx="65" ry="25" stroke="rgba(168,85,247,0.8)" stroke-width="1" fill="none"/>
+            <ellipse cx="100" cy="100" rx="50" ry="35" stroke="rgba(168,85,247,0.7)" stroke-width="1" fill="none"/>
+            <ellipse cx="100" cy="100" rx="30" ry="45" stroke="rgba(168,85,247,0.6)" stroke-width="1" fill="none"/>
+            
+            <!-- 적도 -->
+            <circle cx="100" cy="100" r="80" stroke="rgba(168,85,247,0.9)" stroke-width="2" fill="none"/>
+            
+            <!-- 전체 회전 애니메이션 -->
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              values="0 100 100;360 100 100"
+              dur="20s"
+              repeatCount="indefinite"/>
+          </svg>
+          
+          <div class="center-big" id="cBig">NEURAL NET</div>
+          <div class="center-sub" id="cSub">INTERFACE</div>
         </div>
       </div>
       <aside class="panel" id="panel">
-        <h4 id="pTitle">—</h4>
-        <div id="pBody">Select a sector.</div>
+        <h4 id="pTitle">MARKET MATRIX</h4>
+        <div id="pBody">
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">Total Cap</div>
+              <div class="stat-value">$3.21T</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">24h Volume</div>
+              <div class="stat-value">$156B</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">BTC Dominance</div>
+              <div class="stat-value">32.5%</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Active Protocols</div>
+              <div class="stat-value">2,847</div>
+            </div>
+          </div>
+          <p style="margin-top: 16px; color: var(--muted); font-size: 13px; line-height: 1.6;">
+            Navigate the digital asset matrix. Click sectors for real-time intelligence.
+          </p>
+        </div>
       </aside>
     </section>
 
-    <!-- 검색 -->
+    <!-- 네온 검색 -->
     <div class="controls">
-      <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
+      <input class="search" id="q" type="text" placeholder=">>> SEARCH PROTOCOL (NAME/SYMBOL)">
     </div>
 
-    <!-- 고정 엑셀틀 헤더 -->
+    <!-- 네온 헤더 -->
     <div id="gridHead" class="grid-head">
-      <div>#</div>
-      <div>Name</div>
-      <div class="text-right">Price</div>
-      <div class="text-right col-1h">1h</div>
-      <div class="text-right">24h</div>
-      <div class="text-right col-7d">7d</div>
-      <div class="text-right col-mcap">Market Cap</div>
-      <div class="text-right col-vol">24h Volume</div>
-      <div class="text-right">7d Spark</div>
+      <div>RANK</div>
+      <div>PROTOCOL</div>
+      <div class="text-right">PRICE</div>
+      <div class="text-right col-1h">1H</div>
+      <div class="text-right">24H</div>
+      <div class="text-right col-7d">7D</div>
+      <div class="text-right col-mcap">MARKET CAP</div>
+      <div class="text-right col-vol">VOLUME</div>
+      <div class="text-right">NEURAL SPARK</div>
     </div>
 
-    <!-- 테이블 -->
+    <!-- 데이터 테이블 -->
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
         <colgroup>
@@ -233,26 +511,426 @@
         </colgroup>
         <thead>
           <tr>
-            <th data-key="rank"     class="sticky-rank th th-sort">#</th>
-            <th data-key="name"     class="sticky-name th th-sort">Name</th>
-            <th data-key="price"    class="text-right th th-sort">Price</th>
-            <th data-key="change1h" class="text-right th th-sort hide-m">1h</th>
-            <th data-key="change24h"class="text-right th th-sort">24h</th>
-            <th data-key="change7d" class="text-right th th-sort hide-m">7d</th>
-            <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
-            <th data-key="volume"     class="text-right th th-sort hide-m">24h Volume</th>
-            <th class="text-right">7d Spark</th>
+            <th data-key="rank"     class="sticky-rank th th-sort">RANK</th>
+            <th data-key="name"     class="sticky-name th th-sort">PROTOCOL</th>
+            <th data-key="price"    class="text-right th th-sort">PRICE</th>
+            <th data-key="change1h" class="text-right th th-sort hide-m">1H</th>
+            <th data-key="change24h"class="text-right th th-sort">24H</th>
+            <th data-key="change7d" class="text-right th th-sort hide-m">7D</th>
+            <th data-key="market_cap" class="text-right th th-sort hide-m">CAP</th>
+            <th data-key="volume"     class="text-right th th-sort hide-m">VOL</th>
+            <th class="text-right">SPARK</th>
           </tr>
         </thead>
         <tbody id="mktBody"></tbody>
       </table>
     </div>
 
-    <div id="pager" class="controls" style="justify-content:center;gap:6px"></div>
-
-    <footer>Cosmos Dashboard · CoinGecko · Binance · Alternative.me · 30s auto refresh</footer>
+    <footer>CYBERPUNK COSMOS ⚡ NEURAL MARKET INTERFACE ⚡ REAL-TIME DATA STREAM</footer>
   </div>
 
-  <script src="./cosmos.js"></script>
+  <script>
+    // 사이버펑크 암호화폐 데이터
+    const cryptoData = [
+      { rank: 1, symbol: 'BTC', name: 'Bitcoin', price: 108630, change1h: 0.1, change24h: 0.8, change7d: -5.2, market_cap: 2165218091492, volume: 37438783971 },
+      { rank: 2, symbol: 'ETH', name: 'Ethereum', price: 4365, change1h: 0.3, change24h: 1.2, change7d: -7.1, market_cap: 527511672629, volume: 25060814540 },
+      { rank: 3, symbol: 'SOL', name: 'Solana', price: 200.18, change1h: 2.5, change24h: 8.4, change7d: 15.6, market_cap: 108393312997, volume: 8256224424 },
+      { rank: 4, symbol: 'AVAX', name: 'Avalanche', price: 45.23, change1h: 3.2, change24h: 12.4, change7d: 18.3, market_cap: 18500000000, volume: 1200000000 },
+      { rank: 5, symbol: 'ADA', name: 'Cardano', price: 1.05, change1h: 1.8, change24h: 9.3, change7d: 14.1, market_cap: 36850000000, volume: 2100000000 },
+      { rank: 6, symbol: 'MATIC', name: 'Polygon', price: 1.15, change1h: 2.1, change24h: 7.8, change7d: 11.2, market_cap: 11500000000, volume: 800000000 },
+      { rank: 7, symbol: 'DOT', name: 'Polkadot', price: 8.90, change1h: 1.5, change24h: 6.7, change7d: 9.8, market_cap: 12800000000, volume: 950000000 },
+      { rank: 8, symbol: 'USDT', name: 'Tether', price: 1.00, change1h: 0.0, change24h: 0.0, change7d: 0.0, market_cap: 167617900652, volume: 73442809149 },
+      { rank: 9, symbol: 'BNB', name: 'BNB', price: 858.08, change1h: 0.39, change24h: -0.13, change7d: -3.46, market_cap: 119516874107, volume: 1000140452 },
+      { rank: 10, symbol: 'XRP', name: 'XRP', price: 2.80, change1h: 0.2, change24h: -1.3, change7d: -6.8, market_cap: 166823926646, volume: 5375874969 }
+    ];
+
+    // 사이버펑크 섹터 데이터 (3톤으로 제한)
+    const sectorData = {
+      btc: {
+        title: 'BTC CORE',
+        percentage: 22,
+        color: '#00d4ff',
+        description: 'Bitcoin network protocol analysis',
+        stats: { 
+          dominance: '32.5%', 
+          marketCap: '$2.14T', 
+          hashRate: '450 EH/s', 
+          difficulty: '62.5T' 
+        }
+      },
+      gainers: {
+        title: 'TOP GAINERS',
+        percentage: 25,
+        color: '#6366f1',
+        description: '24H performance leaders',
+        stats: { 
+          topGainer: 'SOL +8.4%', 
+          avgGain: '+6.8%', 
+          count: '2,150', 
+          momentum: 'BULLISH' 
+        }
+      },
+      volume: {
+        title: 'VOLUME SURGE',
+        percentage: 23,
+        color: '#00d4ff',
+        description: 'High-frequency trading zones',
+        stats: { 
+          totalVol: '$156.4B', 
+          topVol: 'USDT $73.4B', 
+          spike: '+45.2%', 
+          liquidity: 'HIGH' 
+        }
+      },
+      defi: {
+        title: 'DEFI MATRIX',
+        percentage: 18,
+        color: '#6366f1',
+        description: 'Decentralized protocol network',
+        stats: { 
+          tvl: '$82.5B', 
+          protocols: '847', 
+          yield: '12.3% APY', 
+          growth: '+18.5%' 
+        }
+      },
+      feargreed: {
+        title: 'FEAR/GREED',
+        percentage: 12,
+        color: '#ffffff',
+        description: 'Market sentiment neural scan',
+        stats: { 
+          index: '49', 
+          status: 'NEUTRAL', 
+          fear: '25%', 
+          greed: '26%' 
+        }
+      }
+    };
+
+    let currentData = [...cryptoData];
+    let searchQuery = '';
+
+    // 사이버펑크 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+      initNeonControl();
+      initCyberHub();
+      renderNeuralTable();
+      initQuantumSearch();
+      
+      // 네온 데이터 스트림 업데이트
+      setInterval(updateNeuralData, 25000);
+    });
+
+    // 네온 컨트롤
+    function initNeonControl() {
+      const neonRange = document.getElementById('starRange');
+      neonRange.addEventListener('input', function() {
+        const intensity = this.value / 100;
+        document.documentElement.style.setProperty('--starVis', intensity);
+      });
+    }
+
+    // 사이버 허브 생성
+    function initCyberHub() {
+      const svg = document.getElementById('hubSvg');
+      const hub = document.querySelector('.hub');
+      const sectors = ['btc', 'gainers', 'volume', 'defi', 'feargreed'];
+      const percentages = [22, 25, 23, 18, 12];
+      let currentAngle = 0;
+
+      // 그레이 그라데이션 정의
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+      gradient.setAttribute('id', 'grayGradient');
+      gradient.setAttribute('cx', '50%');
+      gradient.setAttribute('cy', '50%');
+      gradient.setAttribute('r', '50%');
+      
+      const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stop1.setAttribute('offset', '0%');
+      stop1.setAttribute('stop-color', '#666666');
+      
+      const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stop2.setAttribute('offset', '100%');
+      stop2.setAttribute('stop-color', '#333333');
+      
+      gradient.appendChild(stop1);
+      gradient.appendChild(stop2);
+      defs.appendChild(gradient);
+      svg.appendChild(defs);
+
+      sectors.forEach((sector, index) => {
+        const angle = (percentages[index] / 100) * 360;
+        const sectorInfo = sectorData[sector];
+        
+        // 그레이 섹터 생성
+        const path = createNeonSector(500, 500, 160, 340, currentAngle, angle);
+        const sectorEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        
+        sectorEl.setAttribute('d', path);
+        sectorEl.setAttribute('class', 'seg');
+        sectorEl.setAttribute('data-sector', sector);
+        
+        // 섹터 라벨
+        const labelAngle = currentAngle + angle / 2;
+        const labelRadius = 250;
+        const labelX = 500 + Math.cos((labelAngle - 90) * Math.PI / 180) * labelRadius;
+        const labelY = 500 + Math.sin((labelAngle - 90) * Math.PI / 180) * labelRadius;
+        
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', labelX);
+        label.setAttribute('y', labelY);
+        label.setAttribute('text-anchor', 'middle');
+        label.setAttribute('class', 'seg-label');
+        label.textContent = sectorInfo.title.split(' ')[0];
+        
+        svg.appendChild(sectorEl);
+        svg.appendChild(label);
+        
+        // 클릭 이벤트 (도넛 스핀 + 섹터 활성화)
+        sectorEl.addEventListener('click', () => {
+          // 도넛 스핀 애니메이션
+          hub.classList.add('spinning');
+          setTimeout(() => {
+            hub.classList.remove('spinning');
+            activateNeuralSector(sector);
+          }, 1500);
+        });
+        
+        currentAngle += angle;
+      });
+
+      // 단일 에메랄드 행성 추가
+      const orbitRadius = 390;
+      const planetGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      planetGroup.setAttribute('transform', 'translate(500, 500)');
+      
+      // 궤도선 (선택사항 - 미세하게 보이는 궤도)
+      const orbit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      orbit.setAttribute('cx', '0');
+      orbit.setAttribute('cy', '0');
+      orbit.setAttribute('r', orbitRadius);
+      orbit.setAttribute('fill', 'none');
+      orbit.setAttribute('stroke', 'rgba(80, 227, 194, 0.1)');
+      orbit.setAttribute('stroke-width', '1');
+      orbit.setAttribute('stroke-dasharray', '5,5');
+      svg.appendChild(orbit);
+      
+      // 에메랄드 행성
+      const planet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      planet.setAttribute('cx', orbitRadius);
+      planet.setAttribute('cy', 0);
+      planet.setAttribute('r', 7);
+      planet.setAttribute('class', 'planet');
+      
+      // 행성 회전 애니메이션
+      const animateTransform = document.createElementNS('http://www.w3.org/2000/svg', 'animateTransform');
+      animateTransform.setAttribute('attributeName', 'transform');
+      animateTransform.setAttribute('attributeType', 'XML');
+      animateTransform.setAttribute('type', 'rotate');
+      animateTransform.setAttribute('from', '0 500 500');
+      animateTransform.setAttribute('to', '360 500 500');
+      animateTransform.setAttribute('dur', '25s');
+      animateTransform.setAttribute('repeatCount', 'indefinite');
+      
+      planetGroup.appendChild(planet);
+      planetGroup.appendChild(animateTransform);
+      svg.appendChild(planetGroup);
+    }
+
+    function createNeonSector(cx, cy, innerR, outerR, startAngle, sweepAngle) {
+      const start1 = polarToCartesian(cx, cy, outerR, startAngle);
+      const end1 = polarToCartesian(cx, cy, outerR, startAngle + sweepAngle);
+      const start2 = polarToCartesian(cx, cy, innerR, startAngle);
+      const end2 = polarToCartesian(cx, cy, innerR, startAngle + sweepAngle);
+      
+      const largeArcFlag = sweepAngle <= 180 ? "0" : "1";
+      
+      return [
+        "M", start1.x, start1.y,
+        "A", outerR, outerR, 0, largeArcFlag, 1, end1.x, end1.y,
+        "L", end2.x, end2.y,
+        "A", innerR, innerR, 0, largeArcFlag, 0, start2.x, start2.y,
+        "Z"
+      ].join(" ");
+    }
+
+    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+      const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+      return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+      };
+    }
+
+    // 뉴럴 섹터 활성화
+    function activateNeuralSector(sector) {
+      // 모든 섹터 비활성화
+      document.querySelectorAll('.seg').forEach(seg => seg.classList.remove('active'));
+      
+      // 선택 섹터 활성화
+      const activeSeg = document.querySelector(`[data-sector="${sector}"]`);
+      if (activeSeg) activeSeg.classList.add('active');
+      
+      // 사이버 패널 업데이트
+      const data = sectorData[sector];
+      updateCyberPanel(data);
+      
+      // 홀로그램 텍스트 업데이트
+      document.getElementById('cBig').textContent = data.title;
+      document.getElementById('cSub').textContent = `${data.percentage}%`;
+    }
+
+    function updateCyberPanel(data) {
+      const title = document.getElementById('pTitle');
+      const body = document.getElementById('pBody');
+      
+      title.textContent = data.title + ' PROTOCOL';
+      
+      const statsHtml = Object.entries(data.stats).map(([key, value]) => 
+        `<div class="stat-box">
+          <div class="stat-label">${key.toUpperCase()}</div>
+          <div class="stat-value">${value}</div>
+        </div>`
+      ).join('');
+      
+      body.innerHTML = `
+        <div class="stats-grid">${statsHtml}</div>
+        <p style="margin-top: 16px; color: var(--muted); font-size: 13px; line-height: 1.6;">
+          ${data.description.toUpperCase()}
+        </p>
+      `;
+    }
+
+    // 뉴럴 테이블 렌더링
+    function renderNeuralTable() {
+      const tbody = document.getElementById('mktBody');
+      const filteredData = searchQuery ? 
+        currentData.filter(coin => 
+          coin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          coin.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+        ) : currentData;
+
+      const tableHtml = filteredData.map(coin => {
+        const changeClass1h = coin.change1h > 0 ? 'up' : coin.change1h < 0 ? 'down' : '';
+        const changeClass24h = coin.change24h > 0 ? 'up' : coin.change24h < 0 ? 'down' : '';
+        const changeClass7d = coin.change7d > 0 ? 'up' : coin.change7d < 0 ? 'down' : '';
+        
+        return `<tr>
+          <td class="sticky-rank num">${coin.rank}</td>
+          <td class="sticky-name">
+            <div class="mkt-name">
+              <div style="width:24px;height:24px;background:${getCyberColor(coin.symbol)};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#000;box-shadow:0 0 10px ${getCyberColor(coin.symbol)};">${coin.symbol.slice(0,2)}</div>
+              <div><span class="sym">${coin.symbol}</span><span class="full">${coin.name}</span></div>
+            </div>
+          </td>
+          <td class="num">${formatCyberPrice(coin.price)}</td>
+          <td class="num pct ${changeClass1h} hide-m">${formatCyberChange(coin.change1h)}%</td>
+          <td class="num pct ${changeClass24h}">${formatCyberChange(coin.change24h)}%</td>
+          <td class="num pct ${changeClass7d} hide-m">${formatCyberChange(coin.change7d)}%</td>
+          <td class="num hide-m">${formatCyberNumber(coin.market_cap)}</td>
+          <td class="num hide-m">${formatCyberNumber(coin.volume)}</td>
+          <td class="spark">
+            <canvas width="120" height="32" style="width:120px;height:32px;" data-spark="${coin.change7d}"></canvas>
+          </td>
+        </tr>`;
+      }).join('');
+      
+      tbody.innerHTML = tableHtml;
+      
+      // 네온 스파크 차트
+      drawNeonSparklines();
+    }
+
+    function getCyberColor(symbol) {
+      // 3톤으로 제한: primary, accent, neutral
+      const colorMap = {
+        'BTC': '#00d4ff', 'ETH': '#6366f1', 'SOL': '#00d4ff',
+        'AVAX': '#6366f1', 'ADA': '#00d4ff', 'MATIC': '#6366f1',
+        'DOT': '#00d4ff', 'USDT': '#ffffff', 'BNB': '#6366f1',
+        'XRP': '#00d4ff'
+      };
+      return colorMap[symbol] || '#00d4ff';
+    }
+
+    function drawNeonSparklines() {
+      const canvases = document.querySelectorAll('[data-spark]');
+      canvases.forEach(canvas => {
+        const change = parseFloat(canvas.dataset.spark);
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        ctx.clearRect(0, 0, width, height);
+        
+        // 네온 데이터 생성
+        const points = [];
+        let value = 50;
+        for (let i = 0; i < 40; i++) {
+          value += (Math.random() - 0.5) * 6 + (change > 0 ? 0.2 : -0.2);
+          points.push(Math.max(8, Math.min(88, value)));
+        }
+        
+        // 3톤 네온 글로우 효과
+        const color = change > 0 ? '#00d4ff' : '#6366f1';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 3;
+        
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        
+        points.forEach((point, index) => {
+          const x = (index / (points.length - 1)) * width;
+          const y = height - (point / 100) * height;
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        
+        ctx.stroke();
+      });
+    }
+
+    // 퀀텀 검색
+    function initQuantumSearch() {
+      const searchInput = document.getElementById('q');
+      searchInput.addEventListener('input', function() {
+        searchQuery = this.value;
+        renderNeuralTable();
+      });
+    }
+
+    // 뉴럴 데이터 업데이트
+    function updateNeuralData() {
+      currentData.forEach(coin => {
+        const volatility = (Math.random() - 0.5) * 0.03;
+        coin.price *= (1 + volatility);
+        coin.change24h += (Math.random() - 0.5) * 0.8;
+        coin.change7d += (Math.random() - 0.5) * 1.2;
+      });
+      renderNeuralTable();
+    }
+
+    // 사이버 포매팅 함수들
+    function formatCyberPrice(price) {
+      if (price >= 1000) return '$' + price.toLocaleString();
+      if (price >= 1) return '$' + price.toFixed(2);
+      return '$' + price.toFixed(6);
+    }
+
+    function formatCyberChange(change) {
+      const sign = change >= 0 ? '+' : '';
+      return sign + change.toFixed(1);
+    }
+
+    function formatCyberNumber(num) {
+      if (num >= 1e12) return '$' + (num / 1e12).toFixed(2) + 'T';
+      if (num >= 1e9) return '$' + (num / 1e9).toFixed(2) + 'B';
+      if (num >= 1e6) return '$' + (num / 1e6).toFixed(2) + 'M';
+      if (num >= 1e3) return '$' + (num / 1e3).toFixed(2) + 'K';
+      return '$' + num.toLocaleString();
+    }
+  </script>
 </body>
 </html>
