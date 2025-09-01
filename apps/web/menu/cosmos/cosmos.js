@@ -1,15 +1,14 @@
 /* =========================
-   COSMOS CORE (stable)
+   COSMOS CORE (safe build)
    ========================= */
 
-/* 전역 DOM 캐시 */
-let table=null, tbody=null, pager=null;
+/* ---- 전역 DOM ---- */
+var table=null, tbody=null, pager=null;
 
-/* 유틸 */
+/* ---- 유틸 ---- */
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
-
 function fmtMoney(n){
   if(n==null || isNaN(n)) return "-";
   const a = Math.abs(n);
@@ -21,24 +20,24 @@ function fmtMoney(n){
 function fmtPrice(n){
   return n==null || isNaN(n) ? '-' : '$' + Number(n).toLocaleString('en-US',{maximumFractionDigits:2});
 }
-function fmtPctTag(n){
+function fmtPct(n){
   if(n==null || isNaN(n)) return '-';
-  const cls = n>=0 ? 'up' : 'down';
-  const sign = n>=0 ? '+' : '';
-  return `<span class="pct ${cls}">${sign}${n.toFixed(2)}%</span>`;
+  const s=n>=0?'up':'down';
+  return `<span class="pct ${s}">${(n>=0?'+':'')+n.toFixed(2)}%</span>`;
+}
+function fmtCap(n){
+  if(n==null || isNaN(n)) return '-';
+  const a=Math.abs(n);
+  if(a>=1e12) return '$'+(n/1e12).toFixed(2)+'T';
+  if(a>=1e9)  return '$'+(n/1e9).toFixed(2)+'B';
+  if(a>=1e6)  return '$'+(n/1e6).toFixed(2)+'M';
+  return '$'+Number(n).toLocaleString('en-US');
 }
 
-/* 상태 */
-const state = {
-  all: [],
-  filtered: [],
-  sortKey: "market_cap",
-  sortDir: -1,
-  page: 1,
-  perPage: 50,
-};
+/* ---- 상태 ---- */
+const state = { all:[], filtered:[], sortKey:"market_cap", sortDir:-1, page:1, perPage:50 };
 
-/* ⭐ 별 컨트롤러 */
+/* ---- 별 컨트롤 ---- */
 (function starCtl(){
   const r = $("#starRange");
   if(!r) return;
@@ -47,11 +46,10 @@ const state = {
   apply(r.value);
 })();
 
-/* 데이터 */
+/* ---- 데이터 페치 ---- */
 async function fetchMarkets(){
   try{
-    const url = "https://api.coingecko.com/api/v3/coins/markets"
-      + "?vs_currency=usd&sparkline=true&price_change_percentage=1h,24h,7d&per_page=250&page=1";
+    const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&sparkline=true&price_change_percentage=1h,24h,7d&per_page=250&page=1";
     const rs = await fetch(url);
     if(!rs.ok) throw new Error("coingecko blocked");
     return await rs.json();
@@ -72,22 +70,21 @@ async function fetchFNG(){
   }catch(e){ return null; }
 }
 
-/* HUB(도넛) */
+/* ---- 도넛(HUB) ---- */
 function buildHub(sections){
   const svg = $("#hubSvg");
   svg.innerHTML = "";
   const cx=500, cy=500, rI=260, rO=470;
-  const TAU=Math.PI*2, seg=TAU/sections.length, start=-Math.PI/2;
-
-  const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
-  const arcPath = (r0,r1,b0,b1)=>{
-    const [x0,y0]=p(r1,b0), [x1,y1]=p(r1,b1), [x2,y2]=p(r0,b1), [x3,y3]=p(r0,b0);
-    const laf=(b1-b0)>Math.PI?1:0;
-    return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;
-  };
+  const TAU = Math.PI*2, seg = TAU/sections.length, start=-Math.PI/2;
 
   sections.forEach((s,i)=>{
     const a0=start+seg*i+0.014, a1=start+seg*(i+1)-0.014;
+    const p=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+    const arcPath = (r0,r1,b0,b1)=>{
+      const [x0,y0]=p(r1,b0), [x1,y1]=p(r1,b1), [x2,y2]=p(r0,b1), [x3,y3]=p(r0,b0);
+      const laf=(b1-b0)>Math.PI?1:0;
+      return `M ${x0} ${y0} A ${r1} ${r1} 0 ${laf} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${laf} 0 ${x3} ${y3} Z`;
+    };
     const path=document.createElementNS(svg.namespaceURI,'path');
     path.setAttribute('d', arcPath(rI,rO,a0,a1));
     path.setAttribute('fill', i%2? "#334155" : "#1f2a44");
@@ -116,11 +113,21 @@ function buildHub(sections){
   });
 }
 
-/* F&G Gauge */
+/* Fear&Greed gauge (색/라벨) */
 function gaugeHTML(val){
-  const v = clamp(Number(val),0,100);
+  const v = clamp(val,0,100);
   const deg = -90 + (v/100)*180;
+  let label="Neutral", color="#eab308";
+  if(v<25){ label="Extreme Fear"; color="#ef4444"; }
+  else if(v<45){ label="Fear"; color="#f97316"; }
+  else if(v<=55){ label="Neutral"; color="#eab308"; }
+  else if(v<=75){ label="Greed"; color="#22c55e"; }
+  else { label="Extreme Greed"; color="#16a34a"; }
   return `
+  <div style="display:flex;align-items:center;gap:10px;margin:0 0 6px 2px">
+    <span style="font-weight:800;color:${color}">${v}</span>
+    <span style="opacity:.85">${label}</span>
+  </div>
   <svg viewBox="0 0 300 160" class="gauge" aria-label="Fear & Greed gauge">
     <defs>
       <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
@@ -131,7 +138,7 @@ function gaugeHTML(val){
     </defs>
     <path d="M30,140 A120,120 0 0 1 270,140" class="g-arc" stroke="url(#g1)"/>
     <g transform="translate(150,140)">
-      <line x1="0" y1="0" x2="0" y2="-90" stroke="#000" stroke-opacity=".2" stroke-width="10" />
+      <line x1="0" y1="0" x2="0" y2="-90" stroke="#000" stroke-opacity=".25" stroke-width="10" />
       <g transform="rotate(${deg})">
         <line x1="0" y1="0" x2="0" y2="-90" class="needle" />
       </g>
@@ -140,94 +147,113 @@ function gaugeHTML(val){
   </svg>`;
 }
 
+/* 패널용 7일 마켓캡 스파크 */
+async function fetchMarketCap7d(coinId){
+  try{
+    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=7`;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error("cap blocked");
+    const j = await r.json();
+    return (j.market_caps||[]).map(p=>p[1]);
+  }catch(e){ return null; }
+}
+function drawPanelSpark(canvasId, arr){
+  const cvs = document.getElementById(canvasId);
+  if(!cvs || !Array.isArray(arr) || arr.length<2) return;
+  const ctx = cvs.getContext("2d");
+  const W = cvs.width, H = cvs.height;
+  ctx.clearRect(0,0,W,H);
+  const min = Math.min(...arr), max = Math.max(...arr), span=max-min||1;
+  const xStep = W/(arr.length-1);
+  ctx.lineWidth = 2;
+  const up = arr[arr.length-1] >= arr[0];
+  ctx.strokeStyle = up ? "#22c55e" : "#ef4444";
+  ctx.beginPath();
+  arr.forEach((v,i)=>{
+    const x = i*xStep;
+    const y = H - ( (v-min)/span )*H;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+async function paintPanelSparks(){
+  const [btcCap, usdtCap] = await Promise.all([
+    fetchMarketCap7d("bitcoin"),
+    fetchMarketCap7d("tether"),
+  ]);
+  if(btcCap)  drawPanelSpark("spark-btc-cap",  btcCap);
+  if(usdtCap) drawPanelSpark("spark-usdt-cap", usdtCap);
+}
+
 /* HUB 데이터 */
 async function initHub(){
   const [mkts, global, fng] = await Promise.all([fetchMarkets(), fetchGlobal(), fetchFNG()]);
-  const listTop = (arr,by,n=10)=>arr.slice().sort((a,b)=>(b[by]??0)-(a[by]??0)).slice(0,n);
+  const listTop = (arr, by, n=10)=>arr.slice().sort((a,b)=> (b[by]??0) - (a[by]??0)).slice(0,n);
   const toList = (items,kind)=>`
     <div class="list">
       ${items.map((c,i)=>{
         const tk=(c.symbol||"").toUpperCase();
         const px=fmtMoney(c.current_price);
-        const pc=kind==='vol' ? fmtMoney(c.total_volume) : ((c.price_change_percentage_24h||0)>=0?`<span class="pc up">+${(c.price_change_percentage_24h||0).toFixed(2)}%</span>`:`<span class="pc down">${(c.price_change_percentage_24h||0).toFixed(2)}%</span>`);
-        return `<div class="row"><div class="rk">${i+1}</div><div class="tk">${tk}</div><div class="px">${px}</div><div class="pc">${pc}</div></div>`;
+        const pc=kind==='vol' ? fmtMoney(c.total_volume) : (c.price_change_percentage_24h!=null?(c.price_change_percentage_24h.toFixed(2)+"%"):"-");
+        const cls=kind==='vol'?'':((c.price_change_percentage_24h||0)>=0?'up':'down');
+        return `<div class="row"><div class="rk">${i+1}</div><div class="tk">${tk}</div><div class="px">${px}</div><div class="pc ${cls}">${pc}</div></div>`;
       }).join("")}
     </div>`;
 
-  const btc = mkts.find(x=>x.id==="bitcoin");
-  const usdt= mkts.find(x=>x.id==="tether");
-  const dom = global?.data?.market_cap_percentage?.btc ?? null;
+  const btc  = mkts.find(x=>x.id==="bitcoin");
+  const usdt = mkts.find(x=>x.id==="tether");
+  const dom  = global?.data?.market_cap_percentage?.btc ?? null;
   const fngVal = Number((fng?.data?.[0]?.value) ?? NaN);
 
   const secs = [
-    { badge:"VOL",  title:"Volume TOP10",         centerTop:"Volume Top10",  centerSub:"거래량",    html: toList(listTop(mkts,"total_volume"),"vol") },
-    { badge:"+24H", title:"24H % TOP10 [USDT]",   centerTop:"+24H Gainers",  centerSub:"상승률",    html: toList(listTop(mkts,"price_change_percentage_24h"),"pct") },
-    { badge:"F&G",  title:"Fear & Greed",         centerTop:isFinite(fngVal)?String(fngVal):"—", centerSub:"index",
-      html:`<div style="margin-bottom:6px">Fear & Greed Index</div>${isFinite(fngVal)?gaugeHTML(fngVal):"—"}` },
-    { badge:"BTC",  title:"BTC Market Cap",       centerTop:btc?fmtMoney(btc.market_cap):"—",   centerSub:"Market Cap",
-      html:`<div>BTC Market Cap</div><div style="margin-top:6px">${btc?fmtMoney(btc.market_cap):"—"}</div>` },
-    { badge:"USDT", title:"USDT Market Cap",      centerTop:usdt?fmtMoney(usdt.market_cap):"—", centerSub:"Market Cap",
-      html:`<div>USDT Market Cap</div><div style="margin-top:6px">${usdt?fmtMoney(usdt.market_cap):"—"}</div>` },
-    { badge:"DOM",  title:"BTC Dominance",        centerTop:dom!=null? dom.toFixed(2)+"%":"—",  centerSub:"dominance",
-      html:`<div>BTC Dominance</div><div style="margin-top:6px">${dom!=null? dom.toFixed(2)+"%":"—"}</div>` },
+    { badge:"VOL", title:"Volume TOP10", centerTop:"Volume Top10", centerSub:"거래량",
+      html: toList(listTop(mkts,"total_volume"),"vol") },
+
+    { badge:"+24H", title:"24H % TOP10 [USDT]", centerTop:"+24H Gainers", centerSub:"상승률",
+      html: toList(listTop(mkts,"price_change_percentage_24h"),"pct") },
+
+    { badge:"F&G", title:"Fear & Greed", centerTop: isFinite(fngVal)? String(fngVal) : "—", centerSub:"index",
+      html:`<div style="margin-bottom:8px">Fear & Greed Index</div>${isFinite(fngVal)?gaugeHTML(fngVal):"—"}` },
+
+    { badge:"BTC", title:"비트코인 시가총액", centerTop: btc?fmtMoney(btc.market_cap):"—", centerSub:"시가총액",
+      html:`<div>비트코인 시가총액</div>
+            <canvas id="spark-btc-cap" width="280" height="42" style="margin-top:8px;display:block"></canvas>` },
+
+    { badge:"USDT", title:"테더 시가총액", centerTop: usdt?fmtMoney(usdt.market_cap):"—", centerSub:"시가총액",
+      html:`<div>테더 시가총액</div>
+            <canvas id="spark-usdt-cap" width="280" height="42" style="margin-top:8px;display:block"></canvas>` },
+
+    { badge:"DOM", title:"비트코인 도미넌스", centerTop: dom!=null? dom.toFixed(2)+"%":"—", centerSub:"도미넌스",
+      html:`<div>비트코인 도미넌스</div>
+            <div style="margin-top:6px">${dom!=null? dom.toFixed(2)+"%":"—"}</div>` },
   ];
   buildHub(secs);
+  paintPanelSparks();
   $("#cBig").textContent="COSMOS"; $("#cSub").textContent="—";
 }
 
-/* Sparkline */
-function drawSparkForEach(){
-  $$("#mkt tbody canvas[data-id]").forEach(cv=>{
-    const tr = cv.closest("tr");
-    const id = cv.dataset.id;
-    const item = state.filtered.find(x=>x.id===id);
-    const arr = item?.sparkline_in_7d?.price || [];
-    const ctx = cv.getContext("2d");
-    const w=cv.width, h=cv.height;
-    ctx.clearRect(0,0,w,h);
-    if(arr.length<2) return;
-
-    // normalize
-    const min=Math.min(...arr), max=Math.max(...arr), pad=2;
-    const xstep = (w- pad*2)/(arr.length-1);
-    ctx.beginPath();
-    arr.forEach((v,i)=>{
-      const x = pad + i*xstep;
-      const y = h - pad - ((v-min)/(max-min||1))*(h-pad*2);
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    });
-    ctx.lineWidth = 2;
-    // 색상: 7d 변화 기준
-    const p7 = (item.price_change_percentage_7d_in_currency ?? item.price_change_percentage_7d) || 0;
-    ctx.strokeStyle = p7>=0 ? "#34d399" : "#ef4444";
-    ctx.stroke();
-  });
-}
-
-/* 테이블 */
+/* ---- Table ---- */
 function rowHTML(c, i){
   const p1h = c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h;
   const p24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
   const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
-
   const sym = (c.symbol||'').toUpperCase();
-  const chartHref = `/menu/cosmos/chart.html?symbol=${encodeURIComponent(sym)}`;
-
+  const link = `./chart.html?symbol=${encodeURIComponent(sym)}`;
   return `<tr>
     <td class="sticky-rank num">${c.market_cap_rank ?? (i+1)}</td>
     <td class="sticky-name">
-      <div class="mkt-name">
+      <a class="mkt-name" href="${link}" style="text-decoration:none">
         <img src="${c.image}" alt="${sym}">
-        <a class="sym no-link" href="${chartHref}" title="Open chart">${sym}</a>
+        <span class="sym">${sym}</span>
         <span class="full">${c.name ?? ''}</span>
-      </div>
+      </a>
     </td>
     <td class="num">${fmtPrice(c.current_price)}</td>
-    <td class="num hide-m">${fmtPctTag(p1h)}</td>
-    <td class="num">${fmtPctTag(p24)}</td>
-    <td class="num hide-m">${fmtPctTag(p7d)}</td>
-    <td class="num hide-m">${fmtMoney(c.market_cap)}</td>
-    <td class="num hide-m">${fmtMoney(c.total_volume)}</td>
+    <td class="num hide-m">${fmtPct(p1h)}</td>
+    <td class="num">${fmtPct(p24)}</td>
+    <td class="num hide-m">${fmtPct(p7d)}</td>
+    <td class="num hide-m">${fmtCap(c.market_cap)}</td>
+    <td class="num hide-m">${fmtCap(c.total_volume)}</td>
     <td class="spark"><canvas width="120" height="28" data-id="${c.id}"></canvas></td>
   </tr>`;
 }
@@ -260,12 +286,36 @@ function applyFilterSort(){
   renderTable(); renderPager();
 }
 
+function drawSparkForEachCanvas(){
+  $$("#mkt tbody canvas[data-id]").forEach(cv=>{
+    const id = cv.dataset.id;
+    const coin = state.filtered.find(c=>c.id===id);
+    if(!coin || !coin.sparkline_in_7d || !coin.sparkline_in_7d.price) return;
+    const arr = coin.sparkline_in_7d.price;
+    const ctx = cv.getContext("2d");
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    const min = Math.min(...arr), max = Math.max(...arr), span=max-min||1;
+    const xStep = W/(arr.length-1);
+    ctx.lineWidth = 1.5;
+    const up = arr[arr.length-1] >= arr[0];
+    ctx.strokeStyle = up ? "#22c55e" : "#ef4444";
+    ctx.beginPath();
+    arr.forEach((v,i)=>{
+      const x = i*xStep;
+      const y = H - ( (v-min)/span )*H;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  });
+}
+
 function renderTable(){
   if(!tbody) return;
   const start = (state.page-1)*state.perPage;
   const items = state.filtered.slice(start, start+state.perPage);
   tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
-  drawSparkForEach();
+  drawSparkForEachCanvas();
 }
 
 function renderPager(){
@@ -284,7 +334,7 @@ function renderPager(){
   });
 }
 
-/* 헤더 정렬 이벤트 */
+/* ---- 헤더 정렬 ---- */
 function wireSort(){
   $$("#mkt thead th.th-sort").forEach(th=>{
     th.style.cursor="pointer";
@@ -297,19 +347,16 @@ function wireSort(){
   });
 }
 
-/* 초기화 */
+/* ---- 초기화 ---- */
 async function init(){
   table = $("#mkt"); tbody = $("#mktBody"); pager = $("#pager");
-
   wireSort();
   $("#q").addEventListener("input", ()=>{ state.page=1; applyFilterSort(); });
 
-  // 데이터
   const mkts = await fetchMarkets();
   state.all = Array.isArray(mkts)? mkts : [];
   applyFilterSort();
 
-  // 허브
   initHub();
 
   // 30초마다 갱신
