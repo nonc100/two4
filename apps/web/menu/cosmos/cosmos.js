@@ -359,7 +359,7 @@ function rowHTML(c, i){
   const p24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
   const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
   
-  return `<tr data-id="${c.id}">
+const SYMBOL=(qs.get('sym')||'BTCUSDT').toUpperCase();
     <td class="sticky-rank num">${c.market_cap_rank ?? (i+1)}</td>
     <td class="sticky-name">
       <div class="mkt-name">
@@ -418,11 +418,11 @@ function renderTable(){
   drawSparks(items);
   
   // row click → chart.html (바이낸스 차트 페이지로 이동)
-  tbody.querySelectorAll("tr[data-id]").forEach(tr=>{
+  tbody.querySelectorAll("tr[data-symbol]").forEach(tr=>{
     tr.addEventListener("click", ()=>{
-      const id=tr.getAttribute("data-id");
-      // apps/web/menu/cosmos/chart.html 경로로 이동
-      if (id) location.href=`/apps/web/menu/cosmos/chart.html?id=${encodeURIComponent(id)}`;
+      const symbol=tr.getAttribute("data-symbol");
+      // menu/cosmos/chart.html 경로로 이동
+      if (symbol) location.href=`/menu/cosmos/chart.html?sym=${encodeURIComponent(symbol)}`;
     });
   });
 }
