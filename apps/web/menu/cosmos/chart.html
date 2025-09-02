@@ -90,7 +90,7 @@
 <script>
 /* ===== 파라미터 ===== */
 const qs=new URLSearchParams(location.search);
-const SYMBOL=(qs.get('sym')||qs.get('symbol')||'BTCUSDT').toUpperCase();
+const SYMBOL=(qs.get('sym')||'BTCUSDT').toUpperCase();
 let TF=(qs.get('tf')||qs.get('interval')||'15m').toLowerCase();
 
 /* ===== Fetch 도우미 (직접 → 프록시) ===== */
