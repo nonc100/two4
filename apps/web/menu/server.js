@@ -92,6 +92,12 @@ app.get("/api/fng", async (req, res) => {
   keep(key, payload);
 });
 
+/* 존재하지 않는 정적/비HTML 요청은 404 처리 */
+app.use((req, res, next) => {
+  if (req.accepts("html")) return next();
+  res.status(404).end();
+});
+
 /* SPA fallback */
 app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
