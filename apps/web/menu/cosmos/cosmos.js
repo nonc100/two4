@@ -402,13 +402,12 @@ function renderTable(){
   // sparklines with cyberpunk glow
   drawSparks(items);
   
-  // row click → chart.html
+  // row click → chart.html (바이낸스 차트 페이지로 이동)
   tbody.querySelectorAll("tr[data-id]").forEach(tr=>{
     tr.addEventListener("click", ()=>{
       const id=tr.getAttribute("data-id");
-      if(id) location.href=`/menu/cosmos/chart.html?id=${encodeURIComponent(id)}`;
-    });
-  });
+      // apps/web/menu/cosmos/chart.html 경로로 이동
+      if(id) location.href=`/apps/web/menu/cosmos/chart.html?id=${encodeUR
 }
 
 function renderPager(){
