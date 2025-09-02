@@ -3,304 +3,693 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>TWO4 COSMOS</title>
+  <title>TWO4 COSMOS · Cyberpunk Market</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
     :root{
-      --bg:#0b1018; --panel:#111827; --text:#e8eefc; --muted:#9aa3b6;
-      --up:#22c55e; --down:#ef4444;
-      --sticky-top: 90px;             /* JS에서 실측 보정 */
-      --rank-w: 46px;                 /* 순위 칼럼 너비 */
-      --name-w: 180px;                /* 모바일에서 심볼만 보이므로 축소 */
+      /* Cyberpunk Color Palette */
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #0f1729;
+      --neon-cyan: #00ffff;
+      --neon-pink: #ff00ff;
+      --neon-purple: #9945ff;
+      --neon-blue: #00d4ff;
+      --neon-yellow: #ffff00;
+      --neon-green: #00ff88;
+      --neon-red: #ff0066;
+      
+      --text-primary: #ffffff;
+      --text-secondary: #8b95a7;
+      --text-muted: #4a5568;
+      
+      --glass-bg: rgba(15, 23, 41, 0.3);
+      --glass-border: rgba(0, 255, 255, 0.2);
+      
+      --up: #00ff88;
+      --down: #ff0066;
+      
+      --sticky-top: 86px;
+      --rank-w: 60px;
+      --name-w: 320px;
+      --starVis: 0.8;
     }
-    *{box-sizing:border-box}
-    html,body{
-      margin:0;padding:0;background:#0b1018;color:var(--text);
-      font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic";
-      overflow-x:hidden;
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    a{color:inherit;text-decoration:none}
-    img{max-width:100%;height:auto}
-
-    /* ====== ★ 별 배경: Canvas (고밀도+큰 별, 슬라이더 연동) ====== */
-    #starCanvas{
-      position:fixed; inset:0; z-index:0; pointer-events:none;
-      background: radial-gradient(1200px 700px at 50% -180px, #182036 0%, #0b1018 55%);
+    
+    html, body {
+      background: linear-gradient(135deg, #0a0e1a 0%, #1a0f2e 50%, #0f1729 100%);
+      color: var(--text-primary);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
     }
-
-    /* 상단 중앙 별 컨트롤러(아주 작게) */
-    .star-ctl{
-      position:fixed; top:10px; left:50%; transform:translateX(-50%);
-      z-index:10; display:flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px;
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.2);
-      font-size:12px; color:#dbeafe; font-weight:800;
+    
+    /* Animated Background Grid */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: grid-move 20s linear infinite;
+      z-index: 0;
     }
-    .star-ctl input[type=range]{width:140px;height:6px;background:transparent}
-    .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#a78bfa,#22d3ee)}
-    .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
-
-    /* 우측 상단 로고 고정 */
-    .logo-fixed{
-      position:fixed; top:10px; right:12px; z-index:10;
-      display:flex; align-items:center; gap:8px;
-      padding:6px 8px; border-radius:10px;
-      background:rgba(17,24,39,.35); border:1px solid rgba(255,255,255,.12);
-      backdrop-filter:blur(8px);
+    
+    @keyframes grid-move {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
     }
-    .logo-fixed img{height:22px; width:auto; display:block}
-
-    .wrap{position:relative; z-index:1; max-width:1240px; margin:0 auto; padding: calc(var(--sticky-top) + 50px) 16px 80px;}
-
-    /* ===== HUB & PANEL (구조만 유지: cosmos.js와 호환) ===== */
-    .hub-grid{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center;margin-bottom:10px}
-    @media (max-width:900px){.hub-grid{grid-template-columns:1fr}}
-    .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
-      background:radial-gradient(100% 100% at 35% 30%, rgba(34,211,238,.10) 0%, rgba(99,102,241,.08) 60%, transparent 80%);
-      border:1px solid rgba(255,255,255,.10); box-shadow:inset 0 8px 28px rgba(255,255,255,.06), 0 18px 48px rgba(0,0,0,.35);
+    
+    a { color: inherit; text-decoration: none; }
+    
+    /* Star Canvas with Glow */
+    #whiteStars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.8;
+      filter: blur(0.5px);
     }
-    .hub svg{position:absolute;inset:0}
-    .center-cap{
-      position:absolute; inset:50% auto auto 50%; transform:translate(-50%,-50%);
-      width:36%; height:36%; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
-      background:radial-gradient(100% 100% at 40% 35%, rgba(46,204,250,.16), rgba(124,58,237,.10) 60%, transparent 80%);
-      border:1px solid rgba(255,255,255,.12);
+    
+    /* Cyberpunk Star Controller */
+    .star-ctl {
+      position: fixed;
+      left: 50%;
+      top: 20px;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(153, 69, 255, 0.1));
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 20px rgba(153, 69, 255, 0.1);
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
-    .center-big{font-weight:900;font-size:clamp(16px,3.2vw,28px);letter-spacing:.02em;margin:0 0 4px}
-    .center-sub{font-size:12px;color:var(--muted);margin:0}
-    .panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(12px)}
-    .panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
-
-    /* ===== Controls ===== */
-    .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
-    .controls .search{flex:1}
-    input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
-
-    /* ===== Table ===== */
-    .table-wrap{overflow-x:auto;margin-top:8px}
-    table{width:1200px;border-collapse:separate;border-spacing:0 8px}
-
-    /* THEAD: 오직 한 곳만 sticky (겹침 해결) */
-    thead th{
-      position:sticky; top:var(--sticky-top);
-      background:rgba(17,24,39,.92); backdrop-filter:blur(8px);
-      font-size:12px; color:#b9c3d6; font-weight:700; padding:10px 12px;
-      z-index:6;
+    
+    .star-ctl span {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px currentColor;
     }
-
-    /* 폭(데스크톱) */
-    .c-rank{width:var(--rank-w)}
-    .c-name{width:var(--name-w)}
-    .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol,.c-spark{width:120px}
-
-    /* 본문 셀 */
-    #mkt tbody td{
-      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
-      padding:12px 10px; vertical-align:middle;
+    
+    .star-ctl input[type=range] {
+      width: 140px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+      border-radius: 10px;
+      outline: none;
+      -webkit-appearance: none;
     }
-    #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
-    #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
-
-    /* 좌측 고정 셀(헤더 바로 아래 레이어) */
-    #mkt .sticky-rank{ position:sticky; left:0; z-index:5; background:rgba(17,24,39,.92) }
-    #mkt .sticky-name{ position:sticky; left:var(--rank-w); z-index:5; background:rgba(17,24,39,.92) }
-
-    /* Name 셀 내용 */
-    .mkt-name{ display:flex; align-items:center; gap:8px; min-width:120px; }
-    .mkt-name img{ width:20px; height:20px; border-radius:50% }
-    .mkt-name .sym{ font-weight:900; margin-right:6px }
-    .mkt-name .full{ opacity:.85 }
-
-    /* 숫자/색 */
-    .num{ text-align:right; font-variant-numeric: tabular-nums; }
-    .pct.up{ color:#22c55e } .pct.down{ color:#ef4444 }
-
-    td.spark canvas{display:block;width:120px;height:28px}
-
-    /* ===== 모바일 (<=800px): 심볼 + 가격 + 24H + 7D 스파크 ===== */
-    @media (max-width:800px){
-      :root{ --name-w:130px; }                 /* 심볼만이라 더 좁게 */
-      .wrap{ padding-top: calc(var(--sticky-top) + 44px); }
-
-      /* 풀네임 숨김 → 심볼만 */
-      .mkt-name .full{ display:none !important; }
-
-      /* 1h, 7d(퍼센트), 시총, 거래량 숨김 */
-      .c-1h, .c-7d, .c-mcap, .c-vol{ display:none !important; }
-      /* 헤더도 동일하게 숨김 */
-      #mkt thead th:nth-child(4),
-      #mkt thead th:nth-child(6),
-      #mkt thead th:nth-child(7),
-      #mkt thead th:nth-child(8){ display:none !important; }
-
-      /* 가격/24h/스파크는 조금 더 넓게 */
-      .c-price{ width:132px !important }
-      .c-24h{ width:96px !important }
-      .c-spark{ width:120px !important }
+    
+    .star-ctl input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--neon-cyan);
     }
-
-    footer{margin:28px auto 0; max-width:1220px; color:#9aa3b6; opacity:.8; font-size:12px; text-align:center}
+    
+    /* Brand Logo with Glow */
+    .brand {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      z-index: 101;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+    }
+    
+    .brand img {
+      height: 40px;
+    }
+    
+    /* Main Container */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 120px 20px 80px;
+    }
+    
+    /* ===== CYBER HUB (3D Donut) ===== */
+    .hub-wrap {
+      display: grid;
+      grid-template-columns: minmax(320px, 580px) 1fr;
+      gap: 24px;
+      align-items: center;
+      margin: 20px 0 40px;
+      perspective: 1000px;
+    }
+    
+    @media (max-width: 1000px) {
+      .hub-wrap { grid-template-columns: 1fr; }
+    }
+    
+    .hub {
+      position: relative;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.1), transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(255, 0, 255, 0.1), transparent 50%),
+        linear-gradient(135deg, rgba(15, 23, 41, 0.8), rgba(10, 14, 26, 0.9));
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      position: relative;
+      transform: rotateX(10deg) rotateY(-10deg);
+      transition: transform 0.3s ease;
+      animation: hub-float 6s ease-in-out infinite;
+    }
+    
+    .hub::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      padding: 2px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: border-rotate 4s linear infinite;
+    }
+    
+    @keyframes hub-float {
+      0%, 100% { transform: rotateX(10deg) rotateY(-10deg) translateY(0); }
+      50% { transform: rotateX(10deg) rotateY(-10deg) translateY(-10px); }
+    }
+    
+    @keyframes border-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .hub svg {
+      position: absolute;
+      inset: 0;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3));
+    }
+    
+    .hub-center {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      width: 38%;
+      height: 38%;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: 
+        radial-gradient(circle at center, rgba(0, 255, 255, 0.2), transparent 70%),
+        linear-gradient(135deg, rgba(15, 23, 41, 0.9), rgba(10, 14, 26, 0.95));
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 
+        inset 0 0 30px rgba(0, 255, 255, 0.2),
+        0 0 40px rgba(0, 255, 255, 0.3);
+      text-align: center;
+    }
+    
+    .hub-big {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: clamp(20px, 3vw, 32px);
+      letter-spacing: 3px;
+      margin: 0;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+      animation: text-glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes text-glow {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.3); }
+    }
+    
+    .hub-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+    
+    .seg {
+      cursor: pointer;
+      stroke: rgba(0, 255, 255, 0.2);
+      stroke-width: 1.5;
+      fill: rgba(0, 255, 255, 0.03);
+      transition: all 0.3s ease;
+    }
+    
+    .seg:hover {
+      fill: rgba(0, 255, 255, 0.1);
+      stroke: rgba(0, 255, 255, 0.5);
+      filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
+    }
+    
+    .seg.active {
+      fill: rgba(153, 69, 255, 0.15);
+      stroke: var(--neon-purple);
+      filter: drop-shadow(0 0 20px var(--neon-purple));
+    }
+    
+    .seg-label {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: clamp(14px, 2vw, 20px);
+      letter-spacing: 1px;
+      fill: var(--text-primary);
+      pointer-events: none;
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    /* Cyber Panel */
+    .hub-panel {
+      min-height: 280px;
+      border-radius: 20px;
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 0 40px rgba(0, 255, 255, 0.2),
+        inset 0 0 40px rgba(153, 69, 255, 0.05);
+    }
+    
+    .hub-panel::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+      transform: rotate(45deg);
+      animation: panel-shine 3s linear infinite;
+    }
+    
+    @keyframes panel-shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    .hub-panel h4 {
+      margin: 0 0 16px;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin: 24px 0;
+    }
+    
+    .controls .search {
+      flex: 1;
+    }
+    
+    input[type=text] {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    input[type=text]:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 10px rgba(0, 255, 255, 0.1);
+    }
+    
+    input[type=text]::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    
+    /* Cyber Table */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 16px;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.02), rgba(153, 69, 255, 0.02));
+      border-radius: 20px;
+      border: 1px solid rgba(0, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      box-shadow: 
+        0 0 40px rgba(0, 255, 255, 0.1),
+        inset 0 0 40px rgba(153, 69, 255, 0.02);
+    }
+    
+    table {
+      width: 100%;
+      min-width: 1200px;
+      border-collapse: separate;
+      border-spacing: 0 12px;
+    }
+    
+    thead th {
+      position: sticky;
+      top: var(--sticky-top);
+      z-index: 6;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
+      backdrop-filter: blur(20px);
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--glass-border);
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    thead th.th-sort {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    thead th.th-sort:hover {
+      color: var(--neon-purple);
+      text-shadow: 0 0 15px currentColor;
+    }
+    
+    /* Column widths */
+    .c-rank { width: var(--rank-w); }
+    .c-name { width: var(--name-w); }
+    .c-price, .c-1h, .c-24h, .c-7d, .c-mcap, .c-vol, .c-spark { width: 140px; }
+    
+    /* Table cells with glass effect */
+    #mkt tbody td {
+      padding: 16px;
+      vertical-align: middle;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.03), rgba(153, 69, 255, 0.03));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    #mkt tbody tr {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    #mkt tbody tr:hover td {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(153, 69, 255, 0.08));
+      border-color: rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    
+    #mkt tbody tr td:first-child {
+      border-radius: 16px 0 0 16px;
+    }
+    
+    #mkt tbody tr td:last-child {
+      border-radius: 0 16px 16px 0;
+    }
+    
+    #mkt .sticky-rank {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
+      backdrop-filter: blur(20px);
+    }
+    
+    #mkt .sticky-name {
+      position: sticky;
+      left: var(--rank-w);
+      z-index: 5;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
+      backdrop-filter: blur(20px);
+    }
+    
+    .mkt-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .mkt-name img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      padding: 2px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    
+    .mkt-name .sym {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 8px currentColor;
+    }
+    
+    .mkt-name .full {
+      opacity: 0.7;
+      font-weight: 400;
+    }
+    
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    
+    .pct.up {
+      color: var(--up);
+      text-shadow: 0 0 10px currentColor;
+      font-weight: 700;
+    }
+    
+    .pct.down {
+      color: var(--down);
+      text-shadow: 0 0 10px currentColor;
+      font-weight: 700;
+    }
+    
+    td.spark canvas {
+      display: block;
+      width: 140px;
+      height: 32px;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    
+    /* Pager */
+    #pager {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 32px 0;
+    }
+    
+    #pager button {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
+      color: var(--text-primary);
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    #pager button:hover:not(:disabled) {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      color: var(--neon-cyan);
+    }
+    
+    #pager button[disabled] {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    #pager button[data-pg].active {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(153, 69, 255, 0.2));
+      border-color: var(--neon-purple);
+      color: var(--neon-purple);
+      box-shadow: 0 0 20px var(--neon-purple);
+    }
+    
+    /* Footer */
+    footer {
+      margin: 48px 0 0;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-family: 'Orbitron', monospace;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.6;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 800px) {
+      :root {
+        --sticky-top: 120px;
+        --name-w: 160px;
+      }
+      
+      table {
+        min-width: 800px;
+      }
+      
+      .hide-m {
+        display: none !important;
+      }
+      
+      .mkt-name .full {
+        display: none;
+      }
+      
+      .wrap {
+        padding-top: 140px;
+      }
+      
+      .hub-wrap {
+        perspective: none;
+      }
+      
+      .hub {
+        transform: none;
+      }
+    }
+    
+    /* Loading animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    .loading {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
-  <!-- ★ 캔버스 별 배경 -->
-  <canvas id="starCanvas"></canvas>
-
-  <!-- ★ 상단 중앙 컨트롤러 -->
+  <!-- Star Background Canvas -->
+  <canvas id="whiteStars"></canvas>
+  
+  <!-- Star Controller -->
   <div class="star-ctl" aria-label="Star background controller">
     <span>Stars</span>
-    <input id="starRange" type="range" min="0" max="100" value="85" />
+    <input id="starRange" type="range" min="0" max="100" value="80" />
   </div>
-
-  <!-- 우측 상단 로고 -->
-  <div class="logo-fixed">
-    <img src="/media/logo.png" alt="TWO4">
-  </div>
-
+  
+  <!-- Brand Logo -->
+  <div class="brand"><img src="/media/logo.png" alt="TWO4"></div>
+  
   <div class="wrap">
-    <!-- HUB (구조 유지) -->
-    <section class="hub-grid">
+    <!-- Cyber HUB (3D Donut + Detail panel) -->
+    <section class="hub-wrap">
       <div class="hub">
         <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
-        <div class="center-cap">
-          <div class="center-big" id="cBig">COSMOS</div>
-          <div class="center-sub" id="cSub">—</div>
+        <div class="hub-center">
+          <div class="hub-big" id="hubBig">COSMOS</div>
+          <div class="hub-sub" id="hubSub">INITIALIZE</div>
         </div>
       </div>
-      <aside class="panel" id="panel">
-        <h4 id="pTitle">—</h4>
-        <div id="pBody">Select a sector.</div>
+      <aside class="hub-panel" id="hubPanel">
+        <h4 id="hubTitle">System Status</h4>
+        <div id="hubBody">Initializing quantum data stream...</div>
       </aside>
     </section>
-
-    <!-- 검색 -->
+    
+    <!-- Search -->
     <div class="controls">
-      <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
+      <input class="search" id="q" type="text" placeholder="🔍 Search cryptocurrency (name/symbol)">
     </div>
-
-    <!-- 표 -->
+    
+    <!-- Cyber Table -->
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
         <colgroup>
-          <col class="c-rank">
-          <col class="c-name">
-          <col class="c-price">
-          <col class="c-1h">
-          <col class="c-24h">
-          <col class="c-7d">
-          <col class="c-mcap">
-          <col class="c-vol">
-          <col class="c-spark">
+          <col class="c-rank"><col class="c-name"><col class="c-price">
+          <col class="c-1h"><col class="c-24h"><col class="c-7d">
+          <col class="c-mcap"><col class="c-vol"><col class="c-spark">
         </colgroup>
         <thead>
           <tr>
-            <th data-key="rank"     class="sticky-rank th th-sort">#</th>
-            <th data-key="name"     class="sticky-name th th-sort">Name</th>
-            <th data-key="price"    class="text-right th th-sort">Price</th>
-            <th data-key="change1h" class="text-right th th-sort">1h</th>
-            <th data-key="change24h"class="text-right th th-sort">24h</th>
-            <th data-key="change7d" class="text-right th th-sort">7d</th>
-            <th data-key="market_cap" class="text-right th th-sort">Market Cap</th>
-            <th data-key="volume"     class="text-right th th-sort">24h Volume</th>
-            <th class="text-right">7d Spark</th>
+            <th data-key="rank" class="sticky-rank th th-sort">#</th>
+            <th data-key="name" class="sticky-name th th-sort">Asset</th>
+            <th data-key="price" class="text-right th th-sort">Price</th>
+            <th data-key="change1h" class="text-right th th-sort hide-m">1h</th>
+            <th data-key="change24h" class="text-right th th-sort">24h</th>
+            <th data-key="change7d" class="text-right th th-sort hide-m">7d</th>
+            <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
+            <th data-key="volume" class="text-right th th-sort hide-m">Volume 24h</th>
+            <th class="text-right">7d Chart</th>
           </tr>
         </thead>
         <tbody id="mktBody"></tbody>
       </table>
     </div>
-
-    <div id="pager" class="controls" style="justify-content:center;gap:6px"></div>
-
-    <footer>Cosmos Dashboard · CoinGecko · Binance · Alternative.me · 30s auto refresh</footer>
+    
+    <div id="pager" class="controls"></div>
+    
+    <footer>Cosmos Dashboard · Powered by CoinGecko · Alternative.me · Auto refresh 30s</footer>
   </div>
-
-  <!-- ===== Sticky top 실측/적용 + 별 캔버스 드로잉 ===== -->
-  <script>
-    // sticky top 계산: 상단 컨트롤러 높이 + 여유
-    (function fixStickyTop(){
-      function apply(){
-        const ctl = document.querySelector('.star-ctl');
-        const h = (ctl ? ctl.offsetHeight : 0) + 16; // 여유
-        document.documentElement.style.setProperty('--sticky-top', Math.max(70, h) + 'px');
-      }
-      window.addEventListener('resize', apply, {passive:true});
-      document.addEventListener('DOMContentLoaded', apply);
-      apply();
-    })();
-
-    // 고밀도/대형 별 캔버스
-    (function starCanvas(){
-      const cv = document.getElementById('starCanvas');
-      if(!cv) return;
-      const ctx = cv.getContext('2d');
-      let W=0, H=0, dpr=1, stars=[], intensity=0.85, anim=null;
-
-      function resize(){
-        dpr = window.devicePixelRatio || 1;
-        const vw = innerWidth, vh = innerHeight;
-        W = Math.floor(vw*dpr); H = Math.floor(vh*dpr);
-        cv.width = W; cv.height = H;
-        cv.style.width = vw+'px'; cv.style.height = vh+'px';
-        build();
-      }
-
-      function build(){
-        // 기본 밀도(면적당): 0.18 ~ 0.65 사이 가변, 슬라이더 비율에 비례
-        const baseDensity = 0.00022; // 화면 px 당 계수
-        const count = Math.floor(W*H * baseDensity * intensity);
-        stars.length = 0;
-        for(let i=0;i<count;i++){
-          const r = (Math.random()<0.8 ? (0.9+Math.random()*1.6) : (1.8+Math.random()*2.2)) * dpr; // 약간 더 큰 별 섞기
-          stars.push({
-            x: Math.random()*W,
-            y: Math.random()*H,
-            r,
-            a: 0.6 + Math.random()*0.4,
-            tw: 0.015 + Math.random()*0.035,
-            ph: Math.random()*Math.PI*2
-          });
-        }
-      }
-
-      function loop(){
-        ctx.clearRect(0,0,W,H);
-        for(const s of stars){
-          s.ph += s.tw;
-          const alpha = s.a * (0.75 + 0.25*Math.sin(s.ph));
-          ctx.globalAlpha = alpha * intensity;
-          ctx.beginPath();
-          ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-          ctx.fillStyle = '#fff';
-          ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-        anim = requestAnimationFrame(loop);
-      }
-
-      function setIntensity(v){
-        intensity = Math.max(0, Math.min(1, v));
-        build();
-        if(!anim) anim = requestAnimationFrame(loop);
-      }
-
-      // 연결: 상단 슬라이더
-      const r = document.getElementById('starRange');
-      if(r){
-        const apply = ()=> setIntensity((+r.value||0)/100);
-        r.addEventListener('input', apply);
-        apply();
-      }else{
-        setIntensity(intensity);
-      }
-
-      addEventListener('resize', resize);
-      resize();
-      loop();
-    })();
-  </script>
-
-  <!-- 기존 로직 유지 -->
+  
+  <!-- JavaScript 파일 로드 -->
   <script src="./cosmos.js"></script>
 </body>
 </html>
