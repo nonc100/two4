@@ -196,20 +196,27 @@ const volSeries = chart.addHistogramSeries({
 chart.priceScale('').applyOptions({ scaleMargins:{ top:0.93, bottom:0 }});
 
 /* 보조지표 패널 */
-const rsiPane = chart.addLineSeries({ color:'#7aa5ff', lineWidth:2, priceScaleId:'rsi', lastValueVisible:false });
+const rsiPane = chart.addLineSeries({ 
+  color:'#7aa5ff', lineWidth:2, priceScaleId:'rsi', 
+  lastValueVisible:false, priceLineVisible:false 
+});
 chart.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.70, bottom:0.12 }, borderVisible:false });
-const oiPane = chart.addLineSeries({ color:'#b397ff', lineWidth:2, priceScaleId:'oi', lastValueVisible:false });
+
+const oiPane = chart.addLineSeries({ 
+  color:'#b397ff', lineWidth:2, priceScaleId:'oi', 
+  lastValueVisible:false, priceLineVisible:false 
+});
 chart.priceScale('oi').applyOptions({ scaleMargins:{ top:0.86, bottom:0.02 }, borderVisible:false });
 
 /* HMA 3종 (동시 토글, 굵기 1) */
-const h50  = chart.addLineSeries({ color:'#ff4d4d', lineWidth:1, lastValueVisible:false });
-const h100 = chart.addLineSeries({ color:'#ffd24d', lineWidth:1, lastValueVisible:false });
-const h200 = chart.addLineSeries({ color:'#7dd3fc', lineWidth:1, lastValueVisible:false });
+const h50  = chart.addLineSeries({ color:'#ff4d4d', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+const h100 = chart.addLineSeries({ color:'#ffd24d', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+const h200 = chart.addLineSeries({ color:'#7dd3fc', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
 
 /* 볼린저밴드 3선 */
-const bbUpper = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false });
-const bbMid   = chart.addLineSeries({ color:'rgba(200,210,230,.9)', lineWidth:1, lastValueVisible:false });
-const bbLower = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false });
+const bbUpper = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+const bbMid   = chart.addLineSeries({ color:'rgba(200,210,230,.9)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
+const bbLower = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
 
 /* UI 세팅 */
 document.getElementById('symLabel').textContent = SYMBOL;
