@@ -362,13 +362,17 @@ function rowHTML(c, i){
   const p1h = c.price_change_percentage_1h_in_currency ?? c.price_change_percentage_1h;
   const p24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
   const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
-  
-const SYMBOL=(qs.get('sym')||'BTCUSDT').toUpperCase();
-    <td class="sticky-rank num">${c.market_cap_rank ?? (i+1)}</td>
+
+  const sym  = (c.symbol || '').toUpperCase();      // 예: BTC
+  const pair = sym ? sym + 'USDT' : '';             // 예: BTCUSDT
+
+  return `
+  <tr data-symbol="${pair}">
+    <td class="sticky-rank num">${c.market_cap_rank ?? (i + 1)}</td>
     <td class="sticky-name">
       <div class="mkt-name">
         <img src="${c.image}" alt="${c.symbol}">
-        <span class="sym">${(c.symbol||'').toUpperCase()}</span>
+        <span class="sym">${sym}</span>
         <span class="full">${c.name ?? ''}</span>
       </div>
     </td>
