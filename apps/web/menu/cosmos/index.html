@@ -35,8 +35,8 @@
       
       --up: #00ff88;
       --down: #ff0066;
-      
-      --sticky-top: 160px;
+  
+      --sticky-top: 0px;
       --rank-w: 60px;
       --name-w: 320px;
       --starVis: 0.8;
@@ -591,7 +591,7 @@
     /* Mobile responsive - Enhanced */
     @media (max-width: 800px) {
       :root {
-        --sticky-top: 160px;
+        --sticky-top: 0px;
         --name-w: 120px;
         --rank-w: 45px;
       }
@@ -677,6 +677,7 @@
       }
       
       thead th {
+        top: var(--sticky-top);
         padding: 10px 8px;
         font-size: 10px;
         letter-spacing: 1px;
