@@ -90,7 +90,13 @@
 <script>
 /* ===== 파라미터 ===== */
 const qs=new URLSearchParams(location.search);
-const SYMBOL=(qs.get('sym')||'BTCUSDT').toUpperCase();
+const idMap={bitcoin:'BTCUSDT',ethereum:'ETHUSDT',ripple:'XRPUSDT'};
+let s=qs.get('sym')||qs.get('symbol');
+if(!s){
+  const id=qs.get('id');
+  if(id) s=idMap[id.toLowerCase()]||id;
+}
+const SYMBOL=(s||'BTCUSDT').toUpperCase();
 let TF=(qs.get('tf')||qs.get('interval')||'15m').toLowerCase();
 
 /* ===== Fetch 도우미 (직접 → 프록시) ===== */
