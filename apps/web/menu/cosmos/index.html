@@ -2,7 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0e1a">
   <title>TWO4 COSMOS · Cyberpunk Market</title>
   
   <!-- Fonts -->
@@ -54,6 +57,8 @@
       min-height: 100vh;
       position: relative;
       overflow-x: hidden;
+      /* iOS safe area */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     
     /* Animated Background Grid */
@@ -444,6 +449,7 @@
     #mkt tbody tr {
       cursor: pointer;
       transition: all 0.3s ease;
+      transform-origin: center center;
     }
     
     #mkt tbody tr:hover td {
@@ -582,35 +588,227 @@
       opacity: 0.6;
     }
     
-    /* Mobile responsive */
+    /* Mobile responsive - Enhanced */
     @media (max-width: 800px) {
       :root {
-        --sticky-top: 120px;
-        --name-w: 160px;
+        --sticky-top: 100px;
+        --name-w: 120px;
+        --rank-w: 45px;
       }
       
+      /* Adjust main wrapper */
+      .wrap {
+        padding: 100px 12px 60px;
+        max-width: 100%;
+      }
+      
+      /* Star controller - smaller on mobile */
+      .star-ctl {
+        top: 10px;
+        padding: 6px 12px;
+        font-size: 10px;
+        gap: 8px;
+      }
+      
+      .star-ctl input[type=range] {
+        width: 100px;
+      }
+      
+      /* Brand logo - smaller */
+      .brand {
+        right: 12px;
+        top: 10px;
+      }
+      
+      .brand img {
+        height: 28px;
+      }
+      
+      /* Hub adjustments */
+      .hub-wrap {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin: 12px 0 24px;
+        perspective: none;
+      }
+      
+      .hub {
+        transform: none;
+        max-width: 350px;
+        margin: 0 auto;
+      }
+      
+      .hub-big {
+        font-size: 24px;
+      }
+      
+      .seg-label {
+        font-size: 12px;
+      }
+      
+      .hub-panel {
+        min-height: 200px;
+        padding: 16px;
+      }
+      
+      .hub-panel h4 {
+        font-size: 11px;
+        letter-spacing: 2px;
+      }
+      
+      /* Search input */
+      input[type=text] {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+      
+      /* Table wrapper - better mobile scroll */
+      .table-wrap {
+        padding: 12px;
+        margin-top: 12px;
+        border-radius: 16px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Table optimizations */
       table {
-        min-width: 800px;
+        min-width: 600px;
       }
       
+      thead th {
+        padding: 10px 8px;
+        font-size: 10px;
+        letter-spacing: 1px;
+      }
+      
+      #mkt tbody td {
+        padding: 12px 8px;
+      }
+      
+      /* Column adjustments */
+      .c-price, .c-24h, .c-spark {
+        width: 100px;
+      }
+      
+      /* Hide columns on mobile */
       .hide-m {
         display: none !important;
+      }
+      
+      /* Name column optimization */
+      .mkt-name {
+        gap: 8px;
+      }
+      
+      .mkt-name img {
+        width: 24px;
+        height: 24px;
+      }
+      
+      .mkt-name .sym {
+        font-size: 13px;
       }
       
       .mkt-name .full {
         display: none;
       }
       
+      /* Number cells */
+      .num {
+        font-size: 13px;
+      }
+      
+      /* Sparkline smaller */
+      td.spark canvas {
+        width: 100px;
+        height: 24px;
+      }
+      
+      /* Pager buttons - touch friendly */
+      #pager button {
+        padding: 10px 14px;
+        font-size: 11px;
+        min-width: 36px;
+      }
+      
+      /* Footer */
+      footer {
+        font-size: 10px;
+        letter-spacing: 1px;
+        margin: 24px 0;
+      }
+    }
+    
+    /* Extra small devices */
+    @media (max-width: 480px) {
+      :root {
+        --name-w: 100px;
+        --rank-w: 40px;
+      }
+      
       .wrap {
-        padding-top: 140px;
+        padding: 90px 8px 40px;
       }
       
-      .hub-wrap {
-        perspective: none;
-      }
-      
+      /* Even smaller hub on very small screens */
       .hub {
-        transform: none;
+        max-width: 300px;
+      }
+      
+      .hub-big {
+        font-size: 20px;
+      }
+      
+      /* Minimal table */
+      table {
+        min-width: 500px;
+      }
+      
+      .mkt-name .sym {
+        font-size: 12px;
+      }
+      
+      /* Mobile: show only essential columns */
+      @media (max-width: 480px) {
+        table {
+          min-width: 100%;
+        }
+        
+        /* Show only: Rank, Name(Symbol only), Price, 24h */
+        .c-spark {
+          display: none !important;
+        }
+        
+        .c-price {
+          width: 85px;
+        }
+        
+        .c-24h {
+          width: 65px;
+        }
+        
+        td.num {
+          font-size: 12px;
+          padding: 10px 6px;
+        }
+      }
+    }
+    
+    /* Touch-friendly hover states for mobile */
+    @media (hover: none) and (pointer: coarse) {
+      #mkt tbody tr:active td {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(153, 69, 255, 0.1));
+        border-color: rgba(0, 255, 255, 0.4);
+      }
+      
+      .seg:active {
+        fill: rgba(0, 255, 255, 0.15);
+        stroke: rgba(0, 255, 255, 0.6);
+      }
+      
+      button:active:not(:disabled) {
+        transform: scale(0.95);
       }
     }
     
