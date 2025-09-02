@@ -1,695 +1,324 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>TWO4 COSMOS · Cyberpunk Market</title>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <style>
-    :root{
-      /* Cyberpunk Color Palette */
-      --bg-primary: #0a0e1a;
-      --bg-secondary: #0f1729;
-      --neon-cyan: #00ffff;
-      --neon-pink: #ff00ff;
-      --neon-purple: #9945ff;
-      --neon-blue: #00d4ff;
-      --neon-yellow: #ffff00;
-      --neon-green: #00ff88;
-      --neon-red: #ff0066;
-      
-      --text-primary: #ffffff;
-      --text-secondary: #8b95a7;
-      --text-muted: #4a5568;
-      
-      --glass-bg: rgba(15, 23, 41, 0.3);
-      --glass-border: rgba(0, 255, 255, 0.2);
-      
-      --up: #00ff88;
-      --down: #ff0066;
-      
-      --sticky-top: 0px;
-      --rank-w: 60px;
-      --name-w: 320px;
-      --starVis: 0.8;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    html, body {
-      background: linear-gradient(135deg, #0a0e1a 0%, #1a0f2e 50%, #0f1729 100%);
-      color: var(--text-primary);
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 16px;
-      font-weight: 400;
-      min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
-    }
-    
-    /* Animated Background Grid */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: 
-        linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 50px 50px;
-      animation: grid-move 20s linear infinite;
-      z-index: 0;
-    }
-    
-    @keyframes grid-move {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(50px, 50px); }
-    }
-    
-    a { color: inherit; text-decoration: none; }
-    
-    /* Star Canvas with Glow */
-    #whiteStars {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      opacity: 0.8;
-      filter: blur(0.5px);
-    }
-    
-    /* Cyberpunk Star Controller */
-    .star-ctl {
-      position: fixed;
-      left: 50%;
-      top: 20px;
-      transform: translateX(-50%);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 16px;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(153, 69, 255, 0.1));
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
-      border-radius: 50px;
-      box-shadow: 
-        0 0 20px rgba(0, 255, 255, 0.3),
-        inset 0 0 20px rgba(153, 69, 255, 0.1);
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    
-    .star-ctl span {
-      color: var(--neon-cyan);
-      text-shadow: 0 0 10px currentColor;
-    }
-    
-    .star-ctl input[type=range] {
-      width: 140px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
-      border-radius: 10px;
-      outline: none;
-      -webkit-appearance: none;
-    }
-    
-    .star-ctl input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      background: var(--neon-cyan);
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 0 15px var(--neon-cyan);
-    }
-    
-    /* Brand Logo with Glow */
-    .brand {
-      position: fixed;
-      right: 20px;
-      top: 20px;
-      z-index: 101;
-      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
-    }
-    
-    .brand img {
-      height: 40px;
-    }
-    
-    /* Main Container */
-    .wrap {
-      position: relative;
-      z-index: 1;
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 120px 20px 80px;
-    }
-    
-    /* ===== CYBER HUB (3D Donut) ===== */
-    .hub-wrap {
-      display: grid;
-      grid-template-columns: minmax(320px, 580px) 1fr;
-      gap: 24px;
-      align-items: center;
-      margin: 20px 0 40px;
-      perspective: 1000px;
-    }
-    
-    @media (max-width: 1000px) {
-      .hub-wrap { grid-template-columns: 1fr; }
-    }
-    
-    .hub {
-      position: relative;
-      aspect-ratio: 1/1;
-      border-radius: 50%;
-      background: 
-        radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.1), transparent 50%),
-        radial-gradient(circle at 70% 70%, rgba(255, 0, 255, 0.1), transparent 50%),
-        linear-gradient(135deg, rgba(15, 23, 41, 0.8), rgba(10, 14, 26, 0.9));
-      border: 2px solid transparent;
-      background-clip: padding-box;
-      position: relative;
-      transform: rotateX(10deg) rotateY(-10deg);
-      transition: transform 0.3s ease;
-      animation: hub-float 6s ease-in-out infinite;
-    }
-    
-    .hub::before {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: 50%;
-      padding: 2px;
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      animation: border-rotate 4s linear infinite;
-    }
-    
-    @keyframes hub-float {
-      0%, 100% { transform: rotateX(10deg) rotateY(-10deg) translateY(0); }
-      50% { transform: rotateX(10deg) rotateY(-10deg) translateY(-10px); }
-    }
-    
-    @keyframes border-rotate {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .hub svg {
-      position: absolute;
-      inset: 0;
-      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3));
-    }
-    
-    .hub-center {
-      position: absolute;
-      inset: 50% auto auto 50%;
-      transform: translate(-50%, -50%);
-      width: 38%;
-      height: 38%;
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: 
-        radial-gradient(circle at center, rgba(0, 255, 255, 0.2), transparent 70%),
-        linear-gradient(135deg, rgba(15, 23, 41, 0.9), rgba(10, 14, 26, 0.95));
-      border: 1px solid rgba(0, 255, 255, 0.3);
-      box-shadow: 
-        inset 0 0 30px rgba(0, 255, 255, 0.2),
-        0 0 40px rgba(0, 255, 255, 0.3);
-      text-align: center;
-    }
-    
-    .hub-big {
-      font-family: 'Orbitron', monospace;
-      font-weight: 900;
-      font-size: clamp(20px, 3vw, 32px);
-      letter-spacing: 3px;
-      margin: 0;
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-      animation: text-glow 2s ease-in-out infinite alternate;
-    }
-    
-    @keyframes text-glow {
-      from { filter: brightness(1); }
-      to { filter: brightness(1.3); }
-    }
-    
-    .hub-sub {
-      font-size: 11px;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-top: 4px;
-    }
-    
-    .seg {
-      cursor: pointer;
-      stroke: rgba(0, 255, 255, 0.2);
-      stroke-width: 1.5;
-      fill: rgba(0, 255, 255, 0.03);
-      transition: all 0.3s ease;
-    }
-    
-    .seg:hover {
-      fill: rgba(0, 255, 255, 0.1);
-      stroke: rgba(0, 255, 255, 0.5);
-      filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
-    }
-    
-    .seg.active {
-      fill: rgba(153, 69, 255, 0.15);
-      stroke: var(--neon-purple);
-      filter: drop-shadow(0 0 20px var(--neon-purple));
-    }
-    
-    .seg-label {
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: clamp(14px, 2vw, 20px);
-      letter-spacing: 1px;
-      fill: var(--text-primary);
-      pointer-events: none;
-      text-shadow: 0 0 10px currentColor;
-    }
-    
-    /* Cyber Panel */
-    .hub-panel {
-      min-height: 280px;
-      border-radius: 20px;
-      padding: 24px;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
-      position: relative;
-      overflow: hidden;
-      box-shadow: 
-        0 0 40px rgba(0, 255, 255, 0.2),
-        inset 0 0 40px rgba(153, 69, 255, 0.05);
-    }
-    
-    .hub-panel::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.1), transparent);
-      transform: rotate(45deg);
-      animation: panel-shine 3s linear infinite;
-    }
-    
-    @keyframes panel-shine {
-      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-    }
-    
-    .hub-panel h4 {
-      margin: 0 0 16px;
-      font-family: 'Orbitron', monospace;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--neon-cyan);
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      text-shadow: 0 0 10px currentColor;
-    }
-    
-    /* Controls */
-    .controls {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      margin: 24px 0;
-    }
-    
-    .controls .search {
-      flex: 1;
-    }
-    
-    input[type=text] {
-      width: 100%;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      color: var(--text-primary);
-      border-radius: 12px;
-      padding: 12px 20px;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 16px;
-      font-weight: 500;
-      outline: none;
-      transition: all 0.3s ease;
-    }
-    
-    input[type=text]:focus {
-      border-color: var(--neon-cyan);
-      box-shadow: 
-        0 0 20px rgba(0, 255, 255, 0.3),
-        inset 0 0 10px rgba(0, 255, 255, 0.1);
-    }
-    
-    input[type=text]::placeholder {
-      color: var(--text-muted);
-      font-style: italic;
-    }
-    
-    /* Cyber Table */
-    .table-wrap {
-      overflow-x: auto;
-      margin-top: 16px;
-      padding: 20px;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.02), rgba(153, 69, 255, 0.02));
-      border-radius: 20px;
-      border: 1px solid rgba(0, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      box-shadow: 
-        0 0 40px rgba(0, 255, 255, 0.1),
-        inset 0 0 40px rgba(153, 69, 255, 0.02);
-    }
-    
-    table {
-      width: 100%;
-      min-width: 1200px;
-      border-collapse: separate;
-      border-spacing: 0 12px;
-    }
-    
-    thead th {
-      position: sticky;
-      top: var(--sticky-top);
-      z-index: 6;
-      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
-      backdrop-filter: blur(20px);
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--neon-cyan);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      padding: 14px 16px;
-      border-bottom: 2px solid var(--glass-border);
-      text-shadow: 0 0 10px currentColor;
-    }
-    
-    thead th.th-sort {
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    thead th.th-sort:hover {
-      color: var(--neon-purple);
-      text-shadow: 0 0 15px currentColor;
-    }
-    
-    /* Column widths */
-    .c-rank { width: var(--rank-w); }
-    .c-name { width: var(--name-w); }
-    .c-price, .c-1h, .c-24h, .c-7d, .c-mcap, .c-vol, .c-spark { width: 140px; }
-    
-    /* Table cells with glass effect */
-    #mkt tbody td {
-      padding: 16px;
-      vertical-align: middle;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.03), rgba(153, 69, 255, 0.03));
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 255, 255, 0.1);
-      transition: all 0.3s ease;
-    }
-    
-    #mkt tbody tr {
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    #mkt tbody tr:hover td {
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(153, 69, 255, 0.08));
-      border-color: rgba(0, 255, 255, 0.3);
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-    }
-    
-    #mkt tbody tr td:first-child {
-      border-radius: 16px 0 0 16px;
-    }
-    
-    #mkt tbody tr td:last-child {
-      border-radius: 0 16px 16px 0;
-    }
-    
-    #mkt .sticky-rank {
-      position: sticky;
-      left: 0;
-      z-index: 5;
-      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
-      backdrop-filter: blur(20px);
-    }
-    
-    #mkt .sticky-name {
-      position: sticky;
-      left: var(--rank-w);
-      z-index: 5;
-      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
-      backdrop-filter: blur(20px);
-    }
-    
-    .mkt-name {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .mkt-name img {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      border: 2px solid rgba(0, 255, 255, 0.3);
-      padding: 2px;
-      background: rgba(0, 0, 0, 0.5);
-    }
-    
-    .mkt-name .sym {
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 1px;
-      color: var(--neon-cyan);
-      text-shadow: 0 0 8px currentColor;
-    }
-    
-    .mkt-name .full {
-      opacity: 0.7;
-      font-weight: 400;
-    }
-    
-    .num {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-weight: 600;
-      font-size: 15px;
-    }
-    
-    .pct.up {
-      color: var(--up);
-      text-shadow: 0 0 10px currentColor;
-      font-weight: 700;
-    }
-    
-    .pct.down {
-      color: var(--down);
-      text-shadow: 0 0 10px currentColor;
-      font-weight: 700;
-    }
-    
-    td.spark canvas {
-      display: block;
-      width: 140px;
-      height: 32px;
-      filter: drop-shadow(0 0 5px currentColor);
-    }
-    
-    /* Pager */
-    #pager {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin: 32px 0;
-    }
-    
-    #pager button {
-      padding: 8px 16px;
-      border-radius: 10px;
-      border: 1px solid var(--glass-border);
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
-      color: var(--text-primary);
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    
-    #pager button:hover:not(:disabled) {
-      border-color: var(--neon-cyan);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-      color: var(--neon-cyan);
-    }
-    
-    #pager button[disabled] {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    
-    #pager button[data-pg].active {
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(153, 69, 255, 0.2));
-      border-color: var(--neon-purple);
-      color: var(--neon-purple);
-      box-shadow: 0 0 20px var(--neon-purple);
-    }
-    
-    /* Footer */
-    footer {
-      margin: 48px 0 0;
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 12px;
-      font-family: 'Orbitron', monospace;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      opacity: 0.6;
-    }
-    
-    /* Mobile responsive */
-    @media (max-width: 800px) {
-      :root {
-        --sticky-top: 0px;
-        --name-w: 160px;
-      }
-      
-      table {
-        min-width: 800px;
-      }
-      
-      .hide-m {
-        display: none !important;
-      }
-      
-      .mkt-name .full {
-        display: none;
-      }
-      
-      .wrap {
-        padding-top: 140px;
-      }
-      
-      .hub-wrap {
-        perspective: none;
-      }
-      
-      .hub {
-        transform: none;
-      }
-    }
-    
-    /* Loading animation */
-    @keyframes pulse {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1; }
-    }
-    
-    .loading {
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>COSMOS • Chart</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<style>
+  :root{
+    --bg:#0b1018; --panel:#0e1421; --text:#e8eefc; --muted:#9aa3b6;
+    --up:#22c55e; --down:#ef4444; --chip:#1b2334; --chip-on:#2a3650;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+  .wrap{height:100svh; display:flex; flex-direction:column}
+
+  /* 상단: 심볼/가격 스트립 */
+  .ticker{display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(12,16,24,.55);
+    border-bottom:1px solid rgba(255,255,255,.06); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px)}
+  .sym{font-weight:900; letter-spacing:.04em; font-size:15px}
+  .price{font-weight:900; font-variant-numeric:tabular-nums}
+  .chg{font-weight:800; font-size:12px; padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.10)}
+  .up{color:var(--up); background:rgba(34,197,94,.08)}
+  .down{color:var(--down); background:rgba(239,68,68,.08)}
+  .muted{color:var(--muted)}
+  .spacer{flex:1}
+
+  /* 타임프레임 바 */
+  .tfbar{display:flex; gap:6px; padding:8px 12px; overflow-x:auto; border-bottom:1px solid rgba(255,255,255,.06); background:rgba(12,16,24,.35)}
+  .chip{flex:0 0 auto; background:var(--chip); color:#dbeafe; border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:6px 10px; font-weight:700; cursor:pointer; user-select:none}
+  .chip.on{background:var(--chip-on); border-color:rgba(114,153,255,.36)}
+  .ghost{background:transparent; border-color:rgba(255,255,255,.14)}
+
+  /* 차트 */
+  #chart{flex:1; min-height:360px}
+
+  /* 하단 도크 */
+  .dock{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 12px;
+    background:rgba(12,16,24,.55); border-top:1px solid rgba(255,255,255,.06); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
+  .dock .group{display:flex; gap:6px; flex-wrap:wrap}
+
+  @media (min-width:1024px){
+    .ticker{padding:12px 18px}
+    .tfbar{padding:10px 18px}
+    .dock{padding:10px 18px}
+  }
+</style>
 </head>
 <body>
-  <!-- Star Background Canvas -->
-  <canvas id="whiteStars"></canvas>
-  
-  <!-- Star Controller -->
-  <div class="star-ctl" aria-label="Star background controller">
-    <span>Stars</span>
-    <input id="starRange" type="range" min="0" max="100" value="80" />
+<div class="wrap">
+  <!-- 상단 심볼/가격 스트립 -->
+  <div class="ticker">
+    <div class="sym" id="symLabel">BTCUSDT</div>
+    <div class="price" id="lastPrice">-</div>
+    <div class="chg muted" id="pctChg">0.00%</div>
+    <div class="spacer"></div>
   </div>
-  
-  <!-- Brand Logo -->
-  <div class="brand"><img src="/media/logo.png" alt="TWO4"></div>
-  
-  <div class="wrap">
-    <!-- Cyber HUB (3D Donut + Detail panel) -->
-    <section class="hub-wrap">
-      <div class="hub">
-        <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
-        <div class="hub-center">
-          <div class="hub-big" id="hubBig">COSMOS</div>
-          <div class="hub-sub" id="hubSub">INITIALIZE</div>
-        </div>
-      </div>
-      <aside class="hub-panel" id="hubPanel">
-        <h4 id="hubTitle">System Status</h4>
-        <div id="hubBody">Initializing quantum data stream...</div>
-      </aside>
-    </section>
-    
-    <!-- Search -->
-    <div class="controls">
-      <input class="search" id="q" type="text" placeholder="🔍 Search cryptocurrency (name/symbol)">
-    </div>
-    
-    <!-- Cyber Table -->
-    <div class="table-wrap">
-      <table id="mkt" class="cosmos-table">
-        <colgroup>
-          <col class="c-rank"><col class="c-name"><col class="c-price">
-          <col class="c-1h"><col class="c-24h"><col class="c-7d">
-          <col class="c-mcap"><col class="c-vol"><col class="c-spark">
-        </colgroup>
-        <thead>
-          <tr>
-            <th data-key="rank" class="sticky-rank th th-sort">#</th>
-            <th data-key="name" class="sticky-name th th-sort">Asset</th>
-            <th data-key="price" class="text-right th th-sort">Price</th>
-            <th data-key="change1h" class="text-right th th-sort hide-m">1h</th>
-            <th data-key="change24h" class="text-right th th-sort">24h</th>
-            <th data-key="change7d" class="text-right th th-sort hide-m">7d</th>
-            <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
-            <th data-key="volume" class="text-right th th-sort hide-m">Volume 24h</th>
-            <th class="text-right">7d Chart</th>
-          </tr>
-        </thead>
-        <tbody id="mktBody"></tbody>
-      </table>
-    </div>
-    
-    <div id="pager" class="controls"></div>
-    
-    <footer>Cosmos Dashboard · Powered by CoinGecko · Alternative.me · Auto refresh 30s</footer>
+
+  <!-- 타임프레임 바 -->
+  <div class="tfbar" id="tfBar">
+    <div class="chip" data-tf="1m">1m</div>
+    <div class="chip" data-tf="5m">5m</div>
+    <div class="chip on" data-tf="15m">15m</div>
+    <div class="chip" data-tf="30m">30m</div>
+    <div class="chip" data-tf="1h">1h</div>
+    <div class="chip" data-tf="4h">4h</div>
+    <div class="chip" data-tf="1d">1d</div>
+    <div class="chip" data-tf="1w">1w</div>
   </div>
-  
-  <!-- JavaScript 파일 로드 -->
-  <script src="./cosmos.js"></script>
+
+  <!-- 차트 -->
+  <div id="chart"></div>
+
+  <!-- 하단 도크 -->
+  <div class="dock">
+    <div class="group">
+      <div class="chip" id="togRSI">RSI</div>
+      <div class="chip on" id="togOI">OI</div>
+      <div class="chip" id="togHMA">HMA</div>
+      <div class="chip" id="togBB">BB</div>
+    </div>
+    <div class="group">
+      <div class="chip ghost" id="btnFit">Fit</div>
+      <div class="chip ghost" id="btnReset">Reset</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+/* ===== 파라미터 ===== */
+const qs=new URLSearchParams(location.search);
+const SYMBOL=(qs.get('sym')||qs.get('symbol')||'BTCUSDT').toUpperCase();
+let TF=(qs.get('tf')||qs.get('interval')||'15m').toLowerCase();
+
+/* ===== Fetch 도우미 (직접 → 프록시) ===== */
+async function getJson(direct, proxy){
+  try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
+  catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error('fetch failed'); return await r2.json(); }
+}
+function klineURL(sym,tf,limit=850){
+  const q=`symbol=${sym}&interval=${tf}&limit=${limit}`;
+  return [
+    `https://api.binance.com/api/v3/klines?${q}`,
+    `/api/binance/klines?${q}`
+  ];
+}
+function oiURL(sym,period='5m',limit=600){
+  const q=`symbol=${sym}&period=${period}&limit=${limit}`;
+  return [
+    `https://fapi.binance.com/futures/data/openInterestHist?${q}`,
+    `/api/binance/openInterestHist?${q}`
+  ];
+}
+
+/* ===== 수학: WMA/HMA & SMA/STD & BB & RSI ===== */
+function wma(values, period){
+  const out=[]; const w=period*(period+1)/2;
+  for(let i=0;i<values.length;i++){
+    if(i<period-1){ out.push(null); continue; }
+    let sum=0, weight=period;
+    for(let k=0;k<period;k++) sum += values[i-k]*weight-- ;
+    out.push(sum/w);
+  }
+  return out;
+}
+function hma(values, period){
+  const half=Math.floor(period/2), sqrt=Math.max(2, Math.floor(Math.sqrt(period)));
+  const wmaHalf = wma(values, half);
+  const wmaFull = wma(values, period);
+  const diff = values.map((_,i)=>{
+    const a=wmaHalf[i]??null, b=wmaFull[i]??null;
+    return (a==null || b==null)?null:(2*a - b);
+  });
+  return wma(diff, sqrt);
+}
+function sma(values, period){
+  const out=[]; let sum=0;
+  for(let i=0;i<values.length;i++){
+    sum += values[i];
+    if(i>=period) sum -= values[i-period];
+    out.push(i>=period-1 ? sum/period : null);
+  }
+  return out;
+}
+function std(values, period){
+  const out=[]; let sum=0, sumsq=0;
+  for(let i=0;i<values.length;i++){
+    const v=values[i]; sum += v; sumsq += v*v;
+    if(i>=period){ const old=values[i-period]; sum -= old; sumsq -= old*old; }
+    if(i>=period-1){
+      const mean = sum/period;
+      out.push(Math.sqrt(Math.max(0, (sumsq/period) - mean*mean )));
+    }else out.push(null);
+  }
+  return out;
+}
+function calcBB(close, period=20, mult=2){
+  const m = sma(close, period);
+  const s = std(close, period);
+  const upper=[], lower=[];
+  for(let i=0;i<close.length;i++){
+    const mi=m[i], si=s[i];
+    upper.push(mi==null?null:mi+mult*si);
+    lower.push(mi==null?null:mi-mult*si);
+  }
+  return {mid:m, upper, lower};
+}
+
+/* ===== 차트 생성 ===== */
+const root = document.getElementById('chart');
+const chart = LightweightCharts.createChart(root,{
+  layout:{ background:{ type:'solid', color:'transparent' }, textColor:'#dfe8ff' },
+  grid:{ vertLines:{color:'rgba(255,255,255,.06)'}, horzLines:{color:'rgba(255,255,255,.06)'} },
+  rightPriceScale:{ borderVisible:false, scaleMargins:{ top:0.10, bottom:0.22 } },
+  timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true },
+  crosshair:{ mode:LightweightCharts.CrosshairMode.Normal, vertLine:{color:'rgba(255,255,255,.25)'}, horzLine:{color:'rgba(255,255,255,.25)'} },
+  watermark:{ visible:true, text:'TWO.4', fontSize:22, color:'rgba(255,255,255,.14)', horzAlign:'right', vertAlign:'top' }
+});
+const mainSeries = chart.addCandlestickSeries({
+  upColor:'#22c55e', downColor:'#ef4444', borderVisible:false, wickUpColor:'#22c55e', wickDownColor:'#ef4444',
+  lastValueVisible:true, priceLineVisible:true, priceLineColor:'#6aa3ff'
+});
+
+/* 더 작은 볼륨(칸식) */
+const volSeries = chart.addHistogramSeries({
+  priceScaleId:'', priceFormat:{type:'volume'}, color:'rgba(180,200,255,.35)',
+  priceLineVisible:false, lastValueVisible:false, overlay:true, base:0
+});
+chart.priceScale('').applyOptions({ scaleMargins:{ top:0.93, bottom:0 }});
+
+/* 보조지표 패널 */
+const rsiPane = chart.addLineSeries({ color:'#7aa5ff', lineWidth:2, priceScaleId:'rsi', lastValueVisible:false });
+chart.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.70, bottom:0.12 }, borderVisible:false });
+const oiPane = chart.addLineSeries({ color:'#b397ff', lineWidth:2, priceScaleId:'oi', lastValueVisible:false });
+chart.priceScale('oi').applyOptions({ scaleMargins:{ top:0.86, bottom:0.02 }, borderVisible:false });
+
+/* HMA 3종 (동시 토글, 굵기 1) */
+const h50  = chart.addLineSeries({ color:'#ff4d4d', lineWidth:1, lastValueVisible:false });
+const h100 = chart.addLineSeries({ color:'#ffd24d', lineWidth:1, lastValueVisible:false });
+const h200 = chart.addLineSeries({ color:'#7dd3fc', lineWidth:1, lastValueVisible:false });
+
+/* 볼린저밴드 3선 */
+const bbUpper = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false });
+const bbMid   = chart.addLineSeries({ color:'rgba(200,210,230,.9)', lineWidth:1, lastValueVisible:false });
+const bbLower = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false });
+
+/* UI 세팅 */
+document.getElementById('symLabel').textContent = SYMBOL;
+
+/* TF 바 동작 */
+const tfChips = Array.from(document.querySelectorAll('#tfBar .chip'));
+function syncTFUI(){ tfChips.forEach(c=>c.classList.toggle('on', c.dataset.tf===TF)); }
+tfChips.forEach(c=>c.onclick=()=>{ TF=c.dataset.tf; syncTFUI(); loadAll(); });
+
+/* 토글 */
+const togRSI  = document.getElementById('togRSI');
+const togOI   = document.getElementById('togOI');
+const togHMA  = document.getElementById('togHMA');
+const togBB   = document.getElementById('togBB');
+
+let showRSI=false, showOI=true, showHMA=false, showBB=false;
+function syncToggles(){
+  togRSI.classList.toggle('on',showRSI);
+  togOI.classList.toggle('on',showOI);
+  togHMA.classList.toggle('on',showHMA);
+  togBB.classList.toggle('on',showBB);
+  rsiPane.applyOptions({visible:showRSI});
+  oiPane.applyOptions({visible:showOI});
+  h50.applyOptions({visible:showHMA});
+  h100.applyOptions({visible:showHMA});
+  h200.applyOptions({visible:showHMA});
+  bbUpper.applyOptions({visible:showBB});
+  bbMid.applyOptions({visible:showBB});
+  bbLower.applyOptions({visible:showBB});
+}
+[togRSI,togOI,togHMA,togBB].forEach(btn=>{
+  btn.onclick=()=>{ 
+    if(btn===togRSI) showRSI=!showRSI;
+    if(btn===togOI) showOI=!showOI;
+    if(btn===togHMA) showHMA=!showHMA;
+    if(btn===togBB)  showBB=!showBB;
+    syncToggles();
+  };
+});
+
+/* Fit / Reset */
+document.getElementById('btnFit').onclick = ()=> chart.timeScale().fitContent();
+document.getElementById('btnReset').onclick = ()=> { chart.timeScale().setVisibleRange({from:undefined,to:undefined}); chart.timeScale().fitContent(); };
+
+/* 데이터 컨테이너 */
+let rtime=[], klines=[];
+
+/* 변환기 */
+const toCandle = k => ({ time:Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4] });
+const toVolume = k => ({ time:Math.floor(k[0]/1000), value:+k[5], color:(+k[4] >= +k[1]) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' });
+
+/* 로더 */
+async function loadAll(){
+  syncTFUI();
+  const [dURL,pURL] = klineURL(SYMBOL, TF);
+  const rows = await getJson(dURL,pURL);
+  klines = rows;
+  rtime = rows.map(r=>Math.floor(r[0]/1000));
+
+  const candles = rows.map(toCandle);
+  const volumes = rows.map(toVolume);
+  mainSeries.setData(candles);
+  volSeries.setData(volumes);
+
+  // 가격/등락 표시
+  const last = rows.at(-1), prev = rows.at(-2) || last;
+  const lastPrice = +last[4], prevClose = +prev[4];
+  const pct = ((lastPrice - prevClose)/prevClose)*100;
+  document.getElementById('lastPrice').textContent = lastPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const chg = document.getElementById('pctChg');
+  chg.textContent = (pct>=0?'+':'') + pct.toFixed(2) + '%';
+  chg.className = 'chg ' + (pct>=0?'up':'down');
+
+  // 클로즈 배열
+  const closes = rows.map(r => +r[4]);
+
+  // HMA(동시 세팅)
+  const h50v  = hma(closes,50).map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
+  const h100v = hma(closes,100).map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
+  const h200v = hma(closes,200).map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
+  h50.setData(h50v); h100.setData(h100v); h200.setData(h200v);
+
+  // RSI(14, 고정)
+  (function(){
+    const len=14, out=[];
+    let avgG=0, avgL=0;
+    for(let i=1;i<closes.length;i++){
+      const ch=closes[i]-closes[i-1], g=Math.max(ch,0), l=Math.max(-ch,0);
+      if(i<=len){ avgG+=g; avgL+=l; if(i===len){ avgG/=len; avgL/=len; const rs=avgL===0?100:avgG/avgL; out.push({time:rtime[i], value:100-(100/(1+rs))}); } }
+      else{ avgG=(avgG*(len-1)+g)/len; avgL=(avgL*(len-1)+l)/len; const rs=avgL===0?100:avgG/avgL; out.push({time:rtime[i], value:100-(100/(1+rs))}); }
+    }
+    rsiPane.setData(out);
+  })();
+
+  // OI
+  try{
+    const period = (TF.endsWith('m') ? TF : '5m'); // 근사
+    const [od,op] = oiURL(SYMBOL, period, 600);
+    const oij = await getJson(od,op);
+    const oiData = oij.map(x=>({ time: Math.floor(new Date(x.timestamp).getTime()/1000), value: +x.sumOpenInterest }));
+    oiPane.setData(oiData);
+  }catch(e){ oiPane.setData([]); }
+
+  // Bollinger Bands (20, 2σ)
+  const bb = calcBB(closes, 20, 2);
+  const bbU = bb.upper.map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
+  const bbM = bb.mid  .map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
+  const bbL = bb.lower.map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean);
+  bbUpper.setData(bbU); bbMid.setData(bbM); bbLower.setData(bbL);
+
+  chart.timeScale().fitContent();
+}
+syncToggles();
+document.getElementById('symLabel').textContent = SYMBOL;
+loadAll();
+</script>
 </body>
 </html>
