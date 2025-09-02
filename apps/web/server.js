@@ -13,22 +13,20 @@ const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 /* -------------------------
    Static files
 -------------------------- */
-// 현재 폴더 정적 서빙
+// 루트 사이트 정적 서빙 => apps/web/menu/index.html 이 홈페이지
 app.use(express.static(__dirname));
 
-// 신규 경로: /cosmos/*  (여기에 index.html 있음)
+// COSMOS 정적 서빙 (부가 서비스)
 const COSMOS_DIR = path.join(__dirname, "cosmos");
 app.use("/cosmos", express.static(COSMOS_DIR));
 
-// 과거 경로 호환: /menu/cosmos/*  , /apps/web/menu/cosmos/*
+// 과거 경로 호환
 app.use("/menu/cosmos", express.static(COSMOS_DIR));
 app.use("/apps/web/menu/cosmos", express.static(COSMOS_DIR));
 
-// media 폴더
+// media 정적
 app.use("/media", express.static(path.join(__dirname, "..", "media")));
 
-// 루트는 /cosmos/로
-app.get("/", (_req, res) => res.redirect(302, "/cosmos/"));
 // 파비콘 경고 제거
 app.get("/favicon.ico", (_req, res) => res.sendStatus(204));
 
@@ -40,22 +38,25 @@ function setCorsAndCache(res) {
   res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
 }
 
+// CoinGecko API 키 (둘 중 하나만 있어도 됨)
 const CG_PRO  = process.env.X_CG_PRO_API_KEY || "";
 const CG_DEMO = process.env.COINGECKO_API_KEY || process.env.X_CG_DEMO_API_KEY || "";
 const cgHeaders = { "User-Agent": "two4-cosmos/1.0" };
 if (CG_PRO)      cgHeaders["x-cg-pro-api-key"]   = CG_PRO;
 else if (CG_DEMO) cgHeaders["x-cg-demo-api-key"] = CG_DEMO;
 
+// 초간단 메모리 캐시
 const cache = new Map(); // key -> { t, body, ct, status, ok }
 const TTL_MS = 60_000;
 const hit  = (k) => { const v = cache.get(k); return v && Date.now() - v.t < TTL_MS ? v : null; };
 const keep = (k, p) => { if (p.ok) cache.set(k, { ...p, t: Date.now() }); };
 
+// 공용 fetch (8초 타임아웃)
 async function proxyFetch(url, headers = {}) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 8000);
   try {
-    const r = await fetch(url, { headers, signal: ac.signal }); // Node 18 전역 fetch
+    const r = await fetch(url, { headers, signal: ac.signal });
     const body = await r.text();
     clearTimeout(timer);
     return { ok: r.ok, status: r.status, body,
@@ -78,7 +79,7 @@ app.get("/api/coins/markets", async (req, res) => {
   for (const [k, v] of Object.entries(req.query)) u.searchParams.set(k, v);
   if (!u.searchParams.get("vs_currency")) u.searchParams.set("vs_currency", "usd");
   if (!u.searchParams.get("order")) u.searchParams.set("order", "market_cap_desc");
-  if (!u.searchParams.get("per_page")) u.searchParams.set("per_page", "200");
+  if (!u.searchParams.get("per_page")) u.searchParams.set("per_page", "200"); // 상위 200만
   if (!u.searchParams.get("page")) u.searchParams.set("page", "1");
   if (!u.searchParams.get("sparkline")) u.searchParams.set("sparkline", "true");
   if (!u.searchParams.get("price_change_percentage"))
@@ -124,17 +125,18 @@ app.get("/api/fng", async (req, res) => {
 });
 
 /* -------------------------
-   Catch-all & Health
+   SPA fallbacks & Catch-all
 -------------------------- */
 
-// /api/* 는 그대로 통과, 그 외는 /cosmos/로 강제 이동
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api")) return next();
-  return res.redirect(302, "/cosmos/");
-});
+// COSMOS(부가 서비스) 내부 라우팅: /cosmos/** 는 SPA index.html 반환
+app.get(/^\/(cosmos|menu\/cosmos|apps\/web\/menu\/cosmos)(\/.*)?$/, (_req, res) =>
+  res.sendFile(path.join(COSMOS_DIR, "index.html"))
+);
 
-// 헬스체크
-app.get("/healthz", (_req, res) => res.type("text/plain").send("ok"));
+// 마지막 캐치올: 홈페이지 SPA로 (루트 사이트)
+app.get("*", (_req, res) =>
+  res.sendFile(path.join(__dirname, "index.html"))
+);
 
 /* -------------------------
    Start
