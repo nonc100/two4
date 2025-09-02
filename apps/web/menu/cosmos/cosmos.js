@@ -377,7 +377,7 @@ function applyFilterSort(){
     change7d: c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d ?? 0,
     market_cap: c.market_cap ?? -1,
     volume: c.total_volume ?? -1
-  }[k]);
+  })[k];
   
   arr.sort((a,b)=>{
     const va=get(a), vb=get(b);
@@ -398,7 +398,7 @@ function renderTable(){
   const items=state.filtered.slice(start, start+state.perPage);
   
   tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
-  
+   
   // sparklines with cyberpunk glow
   drawSparks(items);
   
@@ -407,7 +407,9 @@ function renderTable(){
     tr.addEventListener("click", ()=>{
       const id=tr.getAttribute("data-id");
       // apps/web/menu/cosmos/chart.html 경로로 이동
-      if(id) location.href=`/apps/web/menu/cosmos/chart.html?id=${encodeUR
+      if (id) location.href=`/apps/web/menu/cosmos/chart.html?id=${encodeURIComponent(id)}`;
+    });
+  });
 }
 
 function renderPager(){
