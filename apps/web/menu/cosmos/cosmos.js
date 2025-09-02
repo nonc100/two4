@@ -140,10 +140,14 @@ async function fetchMarkets(page=1, per=200){
   const q = `vs_currency=usd&order=market_cap_desc&per_page=${per}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
   try{
     const r = await fetch(`${base}?${q}`);
-    if(!r.ok) throw 0;
+if(!r.ok) {
+      console.error('Market fetch failed', r.status, await r.text());
+      throw 0;
+    }
     return await r.json();
   }catch(e){
     console.warn("markets fail p"+page);
+   console.error('Market fetch error', e);
     return [];
   }
 }
