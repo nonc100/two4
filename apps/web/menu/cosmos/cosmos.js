@@ -134,43 +134,42 @@ const StarField=(()=>{
 /* =========================
    Data fetchers (CoinGecko & Alternative.me)
    ========================= */
-async function fetchMarkets(page=1,per=250){
-  const base="https://api.coingecko.com/api/v3/coins/markets";
-  const q=`vs_currency=usd&order=market_cap_desc&per_page=${per}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
+// 1) markets
+async function fetchMarkets(page=1, per=200){
+  const base = "/api/coins/markets";
+  const q = `vs_currency=usd&order=market_cap_desc&per_page=${per}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
   try{
-    const r=await fetch(`${base}?${q}`);
+    const r = await fetch(`${base}?${q}`);
     if(!r.ok) throw 0;
     return await r.json();
-  }catch(e){ 
-    console.warn("markets fail p"+page); 
-    return []; 
+  }catch(e){
+    console.warn("markets fail p"+page);
+    return [];
   }
 }
 
-async function fetchAllMarkets(){
-  const p1 = await fetchMarkets(1, 200); // 상위 200
-  return Array.isArray(p1) ? p1 : [];
-}
-
+// 2) global
 async function fetchGlobal(){
-  try{ 
-    const r=await fetch("https://api.coingecko.com/api/v3/global");
-    if(!r.ok) throw 0; 
+  try{
+    const r = await fetch("/api/global");
+    if(!r.ok) throw 0;
     return await r.json();
-  }catch{ 
-    return null; 
+  }catch{
+    return null;
   }
 }
 
+// 3) FNG
 async function fetchFNG(){
-  try{ 
-    const r=await fetch("https://api.alternative.me/fng/?limit=1&format=json");
-    if(!r.ok) throw 0; 
+  try{
+    const r = await fetch("/api/fng?limit=1&format=json");
+    if(!r.ok) throw 0;
     return await r.json();
-  }catch{ 
-    return null; 
+  }catch{
+    return null;
   }
 }
+
 
 /* =========================
    HUB (Cyberpunk Donut)
