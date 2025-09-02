@@ -148,8 +148,8 @@ async function fetchMarkets(page=1,per=250){
 }
 
 async function fetchAllMarkets(){
-  const [p1,p2]=await Promise.all([fetchMarkets(1,250), fetchMarkets(2,250)]);
-  return [...p1,...p2]; // 최대 500개
+  const p1 = await fetchMarkets(1, 200); // 상위 200
+  return Array.isArray(p1) ? p1 : [];
 }
 
 async function fetchGlobal(){
