@@ -1,19 +1,27 @@
-// apps/web/server.js  (CommonJS)
-const express = require('express');
-const path = require('path');
+// apps/web/server.js  (ESM)
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
-/* 정적 파일 (menu 폴더 + /media) */
-app.use(express.static(path.join(__dirname)));
+/* 정적 파일 (apps/web 루트 + /media) */
+app.use(express.static(__dirname));
 app.use('/media', express.static(path.join(__dirname, '..', 'media')));
 
 /* CoinGecko 키 & 헤더 */
-const CG_DEMO = process.env.COINGECKO_API_KEY || process.env.CG_API_KEY || process.env.X_CG_DEMO_API_KEY || '';
+const CG_DEMO = process.env.COINGECKO_API_KEY
+             || process.env.CG_API_KEY
+             || process.env.X_CG_DEMO_API_KEY
+             || '';
 const CG_PRO  = process.env.X_CG_PRO_API_KEY || '';
+
 const cgHeaders = { 'User-Agent': 'two4-cosmos/1.0' };
-if (CG_PRO) cgHeaders['x-cg-pro-api-key'] = CG_PRO;
+if (CG_PRO) cgHeaders['x-cg-pro-api-key']   = CG_PRO;
 else if (CG_DEMO) cgHeaders['x-cg-demo-api-key'] = CG_DEMO;
 
 function setCorsAndCache(res){
@@ -21,7 +29,7 @@ function setCorsAndCache(res){
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 }
 
-/* Fear & Greed */
+/* Fear & Greed 프록시 */
 app.get('/api/fng', async (req, res) => {
   try {
     const u = new URL('https://api.alternative.me/fng/');
@@ -41,7 +49,8 @@ app.get('/api/fng', async (req, res) => {
 /* CoinGecko 와일드카드 프록시: /api/* → /api/v3/* */
 app.get('/api/*', async (req, res) => {
   try {
-    const target = 'https://api.coingecko.com/api/v3' + req.url.replace(/^\/api/, '');
+    const target = 'https://api.coingecko.com/api/v3' +
+                   req.originalUrl.replace(/^\/api/, '');
     const r = await fetch(target, { headers: cgHeaders });
     const body = await r.text();
     setCorsAndCache(res);
@@ -58,5 +67,5 @@ app.get('*', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
+  console.log(`🚀 Web server listening on ${PORT}`);
 });
