@@ -148,6 +148,22 @@ async function fetchMarkets(page=1, per=200){
   }
 }
 
+// Fetch top markets from CoinGecko across multiple pages.
+// CoinGecko limits the number of items per request, so we request
+// consecutive pages until we gather all available markets or a page
+// returns fewer results than requested.
+async function fetchAllMarkets(){
+  const per = 200; // maximum allowed by the API per request
+  const all = [];
+  for(let page=1; page<10; page++){
+    const items = await fetchMarkets(page, per);
+    if(!Array.isArray(items) || items.length === 0) break;
+    all.push(...items);
+    if(items.length < per) break; // reached the last page
+  }
+  return all;
+}
+
 // 2) global
 async function fetchGlobal(){
   try{
