@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname)));
 app.use('/media', express.static(path.join(__dirname, '..', 'media')));
 
-/* 공통 헤더 & 키 */
+/* CoinGecko 키 & 헤더 */
 const CG_DEMO = process.env.COINGECKO_API_KEY || process.env.CG_API_KEY || process.env.X_CG_DEMO_API_KEY || '';
 const CG_PRO  = process.env.X_CG_PRO_API_KEY || '';
 const cgHeaders = { 'User-Agent': 'two4-cosmos/1.0' };
@@ -21,7 +21,7 @@ function setCorsAndCache(res){
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 }
 
-/* /api/fng (alternative.me) */
+/* Fear & Greed */
 app.get('/api/fng', async (req, res) => {
   try {
     const u = new URL('https://api.alternative.me/fng/');
@@ -38,7 +38,7 @@ app.get('/api/fng', async (req, res) => {
   }
 });
 
-/* /api/* → CoinGecko v3 와일드카드 프록시 (global/markets 등 전부 커버) */
+/* CoinGecko 와일드카드 프록시: /api/* → /api/v3/* */
 app.get('/api/*', async (req, res) => {
   try {
     const target = 'https://api.coingecko.com/api/v3' + req.url.replace(/^\/api/, '');
