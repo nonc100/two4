@@ -3,142 +3,663 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>TWO4 COSMOS</title>
+  <title>TWO4 COSMOS · Cyberpunk Market</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
     :root{
-      --bg:#0b1018; --text:#e8eefc; --muted:#9aa3b6;
-      --up:#22c55e; --down:#ef4444;
-      --sticky-top: 86px;              /* ⭐ 헤더가 겹치지 않도록 상단 여유 */
-      --rank-w:44px; --name-w:280px;   /* 좌측 sticky 너비 */
-      --starVis: .8;                   /* 별 밝기/밀도(0~1) */
+      /* Cyberpunk Color Palette */
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #0f1729;
+      --neon-cyan: #00ffff;
+      --neon-pink: #ff00ff;
+      --neon-purple: #9945ff;
+      --neon-blue: #00d4ff;
+      --neon-yellow: #ffff00;
+      --neon-green: #00ff88;
+      --neon-red: #ff0066;
+      
+      --text-primary: #ffffff;
+      --text-secondary: #8b95a7;
+      --text-muted: #4a5568;
+      
+      --glass-bg: rgba(15, 23, 41, 0.3);
+      --glass-border: rgba(0, 255, 255, 0.2);
+      
+      --up: #00ff88;
+      --down: #ff0066;
+      
+      --sticky-top: 86px;
+      --rank-w: 60px;
+      --name-w: 320px;
+      --starVis: 0.8;
     }
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:#0b1018;color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic"}
-    a, a:visited, a:hover, a:active{color:inherit;text-decoration:none} /* 보라/밑줄 제거 */
-    img{max-width:100%;height:auto}
-
-    /* ⭐ 캔버스 별 배경 */
-    #whiteStars{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-    /* 상단 초소형 컨트롤러 (중앙 고정) */
-    .star-ctl{
-      position:fixed; left:50%; top:10px; transform:translateX(-50%);
-      z-index:10; display:flex; align-items:center; gap:8px;
-      padding:6px 10px; border-radius:999px;
-      background:rgba(255,255,255,.08); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,.2);
-      font-size:12px; color:#cfe1ff; font-weight:800;
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    .star-ctl input[type=range]{width:140px; height:6px; background:transparent}
-    .star-ctl input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,#7dd3fc,#a78bfa)}
-    .star-ctl input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:1px solid #0002}
-
-    /* 우상단 로고 */
-    .brand{position:fixed; right:12px; top:10px; z-index:11}
-    .brand img{height:32px}
-
-    .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:100px 16px 80px} /* 상단 패딩으로 겹침 방지 */
-
-    /* ===== HUB(도넛) ===== */
-    .hub-wrap{display:grid;grid-template-columns:minmax(280px,520px) 1fr;gap:18px;align-items:center;margin:8px 0 14px}
-    @media (max-width:900px){.hub-wrap{grid-template-columns:1fr}}
-    .hub{position:relative;aspect-ratio:1/1;border-radius:50%;
-      background:radial-gradient(100% 100% at 35% 30%, rgba(255,255,255,.06), rgba(0,0,0,0) 60%);
-      border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 10px 26px rgba(0,0,0,.35),0 18px 48px rgba(0,0,0,.35)}
-    .hub svg{position:absolute;inset:0}
-    .hub-center{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);
-      width:38%;height:38%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      background:radial-gradient(100% 100% at 40% 35%, rgba(34,211,238,.12), rgba(99,102,241,.08) 60%, transparent 80%);
-      border:1px solid rgba(255,255,255,.12);text-align:center}
-    .hub-big{font-weight:900;font-size:clamp(18px,2.8vw,28px);letter-spacing:.02em;margin:0}
-    .hub-sub{font-size:12px;color:#9aa3b6;margin-top:2px}
-    .seg{cursor:pointer;stroke:rgba(255,255,255,.14);stroke-width:1.2;transition:transform .18s ease, opacity .18s ease; fill:rgba(255,255,255,.12)}
-    .seg:hover{transform:scale(1.02)}
-    .seg.active{transform:scale(1.03)}
-    .seg-label{font-weight:900;font-size:clamp(18px,2.4vw,26px);letter-spacing:.02em;fill:#e8f6ff}
-    .hub-panel{min-height:240px;border-radius:16px;padding:14px;background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(12px)}
-    .hub-panel h4{margin:2px 0 10px;font-size:14px;color:#b9c3d6;letter-spacing:.08em}
-
-    /* ===== Controls & Table ===== */
-    .controls{display:flex;gap:10px;align-items:center;margin:14px 0 8px}
-    .controls .search{flex:1}
-    input[type=text]{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:10px;padding:9px 12px;outline:none}
-    .table-wrap{overflow-x:auto;margin-top:8px}
-    table{width:1200px;border-collapse:separate;border-spacing:0 8px}
-    thead th{
-      position:sticky; top:var(--sticky-top); z-index:6;
-      backdrop-filter:blur(6px); background:rgba(17,24,39,.90);
-      font-size:12px; color:#b9c3d6; font-weight:700; padding:10px 12px;
+    
+    html, body {
+      background: linear-gradient(135deg, #0a0e1a 0%, #1a0f2e 50%, #0f1729 100%);
+      color: var(--text-primary);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
     }
-    /* col widths */
-    .c-rank{width:var(--rank-w)} .c-name{width:var(--name-w)}
-    .c-price,.c-1h,.c-24h,.c-7d,.c-mcap,.c-vol,.c-spark{width:120px}
-
-    /* cells */
-    #mkt tbody td{
-      border:1px solid rgba(255,255,255,.08);padding:12px;vertical-align:middle;background:rgba(255,255,255,.04)
+    
+    /* Animated Background Grid */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: grid-move 20s linear infinite;
+      z-index: 0;
     }
-    #mkt tbody tr td:first-child{border-radius:12px 0 0 12px}
-    #mkt tbody tr td:last-child{border-radius:0 12px 12px 0}
-    #mkt .sticky-rank{position:sticky; left:0; z-index:5; background:rgba(17,24,39,.90)}
-    #mkt .sticky-name{position:sticky; left:var(--rank-w); z-index:5; background:rgba(17,24,39,.90)}
-
-    .mkt-name{display:flex; align-items:center; gap:10px}
-    .mkt-name img{width:20px; height:20px; border-radius:50%}
-    .mkt-name .sym{font-weight:900}
-    .mkt-name .full{opacity:.85}
-
-    .num{text-align:right; font-variant-numeric:tabular-nums}
-    .pct.up{color:var(--up)} .pct.down{color:var(--down)}
-    td.spark canvas{display:block;width:120px;height:28px}
-
-    /* 모바일: 심볼(Ticker) + Price + 24h + Spark만 */
-    @media (max-width:800px){
-      :root{ --sticky-top: 112px; --name-w:140px }
-      table{width:800px}
-      .hide-m{display:none!important}
-      .mkt-name .full{display:none} /* 이름 제거 → 심볼만 */
-      .wrap{padding-top:120px}       /* 상단 겹침 방지 */
+    
+    @keyframes grid-move {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
     }
-
-    footer{margin:24px 0 0;text-align:center;color:#9aa3b6;opacity:.8;font-size:12px}
+    
+    a { color: inherit; text-decoration: none; }
+    
+    /* Star Canvas with Glow */
+    #whiteStars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.8;
+      filter: blur(0.5px);
+    }
+    
+    /* Cyberpunk Star Controller */
+    .star-ctl {
+      position: fixed;
+      left: 50%;
+      top: 20px;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(153, 69, 255, 0.1));
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 50px;
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 20px rgba(153, 69, 255, 0.1);
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    
+    .star-ctl span {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    .star-ctl input[type=range] {
+      width: 140px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+      border-radius: 10px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    .star-ctl input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 15px var(--neon-cyan);
+    }
+    
+    /* Brand Logo with Glow */
+    .brand {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      z-index: 101;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+    }
+    
+    .brand img {
+      height: 40px;
+    }
+    
+    /* Main Container */
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 120px 20px 80px;
+    }
+    
+    /* ===== CYBER HUB (3D Donut) ===== */
+    .hub-wrap {
+      display: grid;
+      grid-template-columns: minmax(320px, 580px) 1fr;
+      gap: 24px;
+      align-items: center;
+      margin: 20px 0 40px;
+      perspective: 1000px;
+    }
+    
+    @media (max-width: 1000px) {
+      .hub-wrap { grid-template-columns: 1fr; }
+    }
+    
+    .hub {
+      position: relative;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.1), transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(255, 0, 255, 0.1), transparent 50%),
+        linear-gradient(135deg, rgba(15, 23, 41, 0.8), rgba(10, 14, 26, 0.9));
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      position: relative;
+      transform: rotateX(10deg) rotateY(-10deg);
+      transition: transform 0.3s ease;
+      animation: hub-float 6s ease-in-out infinite;
+    }
+    
+    .hub::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      padding: 2px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: border-rotate 4s linear infinite;
+    }
+    
+    @keyframes hub-float {
+      0%, 100% { transform: rotateX(10deg) rotateY(-10deg) translateY(0); }
+      50% { transform: rotateX(10deg) rotateY(-10deg) translateY(-10px); }
+    }
+    
+    @keyframes border-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .hub svg {
+      position: absolute;
+      inset: 0;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3));
+    }
+    
+    .hub-center {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      width: 38%;
+      height: 38%;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: 
+        radial-gradient(circle at center, rgba(0, 255, 255, 0.2), transparent 70%),
+        linear-gradient(135deg, rgba(15, 23, 41, 0.9), rgba(10, 14, 26, 0.95));
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 
+        inset 0 0 30px rgba(0, 255, 255, 0.2),
+        0 0 40px rgba(0, 255, 255, 0.3);
+      text-align: center;
+    }
+    
+    .hub-big {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900;
+      font-size: clamp(20px, 3vw, 32px);
+      letter-spacing: 3px;
+      margin: 0;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+      animation: text-glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes text-glow {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.3); }
+    }
+    
+    .hub-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+    
+    .seg {
+      cursor: pointer;
+      stroke: rgba(0, 255, 255, 0.2);
+      stroke-width: 1.5;
+      fill: rgba(0, 255, 255, 0.03);
+      transition: all 0.3s ease;
+    }
+    
+    .seg:hover {
+      fill: rgba(0, 255, 255, 0.1);
+      stroke: rgba(0, 255, 255, 0.5);
+      filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
+    }
+    
+    .seg.active {
+      fill: rgba(153, 69, 255, 0.15);
+      stroke: var(--neon-purple);
+      filter: drop-shadow(0 0 20px var(--neon-purple));
+    }
+    
+    .seg-label {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: clamp(14px, 2vw, 20px);
+      letter-spacing: 1px;
+      fill: var(--text-primary);
+      pointer-events: none;
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    /* Cyber Panel */
+    .hub-panel {
+      min-height: 280px;
+      border-radius: 20px;
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 0 40px rgba(0, 255, 255, 0.2),
+        inset 0 0 40px rgba(153, 69, 255, 0.05);
+    }
+    
+    .hub-panel::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+      transform: rotate(45deg);
+      animation: panel-shine 3s linear infinite;
+    }
+    
+    @keyframes panel-shine {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+    
+    .hub-panel h4 {
+      margin: 0 0 16px;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin: 24px 0;
+    }
+    
+    .controls .search {
+      flex: 1;
+    }
+    
+    input[type=text] {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    input[type=text]:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 10px rgba(0, 255, 255, 0.1);
+    }
+    
+    input[type=text]::placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    
+    /* Cyber Table */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 16px;
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.02), rgba(153, 69, 255, 0.02));
+      border-radius: 20px;
+      border: 1px solid rgba(0, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      box-shadow: 
+        0 0 40px rgba(0, 255, 255, 0.1),
+        inset 0 0 40px rgba(153, 69, 255, 0.02);
+    }
+    
+    table {
+      width: 100%;
+      min-width: 1200px;
+      border-collapse: separate;
+      border-spacing: 0 12px;
+    }
+    
+    thead th {
+      position: sticky;
+      top: var(--sticky-top);
+      z-index: 6;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
+      backdrop-filter: blur(20px);
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--glass-border);
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    thead th.th-sort {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    thead th.th-sort:hover {
+      color: var(--neon-purple);
+      text-shadow: 0 0 15px currentColor;
+    }
+    
+    /* Column widths */
+    .c-rank { width: var(--rank-w); }
+    .c-name { width: var(--name-w); }
+    .c-price, .c-1h, .c-24h, .c-7d, .c-mcap, .c-vol, .c-spark { width: 140px; }
+    
+    /* Table cells with glass effect */
+    #mkt tbody td {
+      padding: 16px;
+      vertical-align: middle;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.03), rgba(153, 69, 255, 0.03));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    #mkt tbody tr {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    #mkt tbody tr:hover td {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(153, 69, 255, 0.08));
+      border-color: rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    
+    #mkt tbody tr td:first-child {
+      border-radius: 16px 0 0 16px;
+    }
+    
+    #mkt tbody tr td:last-child {
+      border-radius: 0 16px 16px 0;
+    }
+    
+    #mkt .sticky-rank {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
+      backdrop-filter: blur(20px);
+    }
+    
+    #mkt .sticky-name {
+      position: sticky;
+      left: var(--rank-w);
+      z-index: 5;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95), rgba(26, 15, 46, 0.95));
+      backdrop-filter: blur(20px);
+    }
+    
+    .mkt-name {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .mkt-name img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      padding: 2px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    
+    .mkt-name .sym {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 8px currentColor;
+    }
+    
+    .mkt-name .full {
+      opacity: 0.7;
+      font-weight: 400;
+    }
+    
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    
+    .pct.up {
+      color: var(--up);
+      text-shadow: 0 0 10px currentColor;
+      font-weight: 700;
+    }
+    
+    .pct.down {
+      color: var(--down);
+      text-shadow: 0 0 10px currentColor;
+      font-weight: 700;
+    }
+    
+    td.spark canvas {
+      display: block;
+      width: 140px;
+      height: 32px;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+    
+    /* Pager */
+    #pager {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 32px 0;
+    }
+    
+    #pager button {
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(153, 69, 255, 0.05));
+      color: var(--text-primary);
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    #pager button:hover:not(:disabled) {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      color: var(--neon-cyan);
+    }
+    
+    #pager button[disabled] {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    #pager button[data-pg].active {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(153, 69, 255, 0.2));
+      border-color: var(--neon-purple);
+      color: var(--neon-purple);
+      box-shadow: 0 0 20px var(--neon-purple);
+    }
+    
+    /* Footer */
+    footer {
+      margin: 48px 0 0;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-family: 'Orbitron', monospace;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.6;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 800px) {
+      :root {
+        --sticky-top: 120px;
+        --name-w: 160px;
+      }
+      
+      table {
+        min-width: 800px;
+      }
+      
+      .hide-m {
+        display: none !important;
+      }
+      
+      .mkt-name .full {
+        display: none;
+      }
+      
+      .wrap {
+        padding-top: 140px;
+      }
+      
+      .hub-wrap {
+        perspective: none;
+      }
+      
+      .hub {
+        transform: none;
+      }
+    }
+    
+    /* Loading animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    .loading {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
-  <!-- ⭐ 별 배경 캔버스 -->
+  <!-- Star Background Canvas -->
   <canvas id="whiteStars"></canvas>
-
-  <!-- ⭐ 상단 중앙 컨트롤러 -->
+  
+  <!-- Star Controller -->
   <div class="star-ctl" aria-label="Star background controller">
     <span>Stars</span>
     <input id="starRange" type="range" min="0" max="100" value="80" />
   </div>
-
-  <!-- 우상단 로고 -->
+  
+  <!-- Brand Logo -->
   <div class="brand"><img src="/media/logo.png" alt="TWO4"></div>
-
+  
   <div class="wrap">
-    <!-- HUB (Donut + Detail panel) -->
+    <!-- Cyber HUB (3D Donut + Detail panel) -->
     <section class="hub-wrap">
       <div class="hub">
         <svg id="hubSvg" viewBox="0 0 1000 1000" aria-label="Cosmos sectors"></svg>
         <div class="hub-center">
           <div class="hub-big" id="hubBig">COSMOS</div>
-          <div class="hub-sub" id="hubSub">—</div>
+          <div class="hub-sub" id="hubSub">INITIALIZE</div>
         </div>
       </div>
       <aside class="hub-panel" id="hubPanel">
-        <h4 id="hubTitle">—</h4>
-        <div id="hubBody">Select a sector.</div>
+        <h4 id="hubTitle">System Status</h4>
+        <div id="hubBody">Initializing quantum data stream...</div>
       </aside>
     </section>
-
-    <!-- 검색 -->
+    
+    <!-- Search -->
     <div class="controls">
-      <input class="search" id="q" type="text" placeholder="Search coin (name/symbol)">
+      <input class="search" id="q" type="text" placeholder="🔍 Search cryptocurrency (name/symbol)">
     </div>
-
-    <!-- 테이블 -->
+    
+    <!-- Cyber Table -->
     <div class="table-wrap">
       <table id="mkt" class="cosmos-table">
         <colgroup>
@@ -148,26 +669,27 @@
         </colgroup>
         <thead>
           <tr>
-            <th data-key="rank"     class="sticky-rank th th-sort">#</th>
-            <th data-key="name"     class="sticky-name th th-sort">Name</th>
-            <th data-key="price"    class="text-right th th-sort">Price</th>
+            <th data-key="rank" class="sticky-rank th th-sort">#</th>
+            <th data-key="name" class="sticky-name th th-sort">Asset</th>
+            <th data-key="price" class="text-right th th-sort">Price</th>
             <th data-key="change1h" class="text-right th th-sort hide-m">1h</th>
-            <th data-key="change24h"class="text-right th th-sort">24h</th>
+            <th data-key="change24h" class="text-right th th-sort">24h</th>
             <th data-key="change7d" class="text-right th th-sort hide-m">7d</th>
             <th data-key="market_cap" class="text-right th th-sort hide-m">Market Cap</th>
-            <th data-key="volume"     class="text-right th th-sort hide-m">24h Volume</th>
-            <th class="text-right">7d Spark</th>
+            <th data-key="volume" class="text-right th th-sort hide-m">Volume 24h</th>
+            <th class="text-right">7d Chart</th>
           </tr>
         </thead>
         <tbody id="mktBody"></tbody>
       </table>
     </div>
-
-    <div id="pager" class="controls" style="justify-content:center;gap:6px"></div>
-
-    <footer>Cosmos Dashboard · CoinGecko · Alternative.me · 30s auto refresh</footer>
+    
+    <div id="pager" class="controls"></div>
+    
+    <footer>Cosmos Dashboard · Powered by CoinGecko · Alternative.me · Auto refresh 30s</footer>
   </div>
-
+  
+  <!-- JavaScript 파일 로드 -->
   <script src="./cosmos.js"></script>
 </body>
 </html>
