@@ -3,7 +3,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// __dirname 셋업
+// __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -22,7 +22,7 @@ app.use("/media", express.static(path.join(__dirname, "..", "media")));
 
 // 루트는 /cosmos/로 리다이렉트
 app.get("/", (_req, res) => res.redirect(302, "/cosmos/"));
-// 파비콘 경고 제거(없다면 204)
+// 파비콘 경고 제거(없으면 204)
 app.get("/favicon.ico", (_req, res) => res.sendStatus(204));
 
 /* -------------------------
@@ -33,11 +33,11 @@ function setCorsAndCache(res) {
   res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
 }
 
-// CoinGecko API 키 (Railway Variables 중 하나만 설정돼 있어도 됨)
+// CoinGecko API 키 (아래 중 하나만 설정돼 있어도 됨)
 const CG_PRO  = process.env.X_CG_PRO_API_KEY || "";
 const CG_DEMO = process.env.COINGECKO_API_KEY || process.env.X_CG_DEMO_API_KEY || "";
 const cgHeaders = { "User-Agent": "two4-cosmos/1.0" };
-if (CG_PRO)   cgHeaders["x-cg-pro-api-key"]   = CG_PRO;
+if (CG_PRO)      cgHeaders["x-cg-pro-api-key"]   = CG_PRO;
 else if (CG_DEMO) cgHeaders["x-cg-demo-api-key"] = CG_DEMO;
 
 // 초간단 메모리 캐시
@@ -127,13 +127,14 @@ app.get("/api/fng", async (req, res) => {
 });
 
 /* -------------------------
-   Fallback & Health
+   Catch-all & Health
 -------------------------- */
 
-// SPA fallback: cosmos/index.html 반환
-app.get("*", (_req, res) =>
-  res.sendFile(path.join(__dirname, "cosmos", "index.html"))
-);
+// /api/* 는 그대로 통과, 그 외는 /cosmos/로 강제 이동
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) return next();
+  return res.redirect(302, "/cosmos/");
+});
 
 // 헬스체크 (옵션)
 app.get("/healthz", (_req, res) => res.type("text/plain").send("ok"));
