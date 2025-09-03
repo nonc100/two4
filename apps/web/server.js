@@ -49,8 +49,13 @@ app.get('/api/fng', async (req, res) => {
 /* CoinGecko 와일드카드 프록시: /api/* → /api/v3/* */
 app.get('/api/*', async (req, res) => {
   try {
-    const target = 'https://api.coingecko.com/api/v3' +
-                   req.originalUrl.replace(/^\/api/, '');
+    const pathAfter = req.originalUrl.replace(/^\/api/, '');
+    const u = new URL('https://api.coingecko.com/api/v3' + pathAfter);
+    if (req.query.per_page || u.searchParams.has('per_page')) {
+      const per_page = Math.min(Number(req.query.per_page) || 100, 250);
+      u.searchParams.set('per_page', String(per_page));
+    }
+    const target = u.toString();
     const r = await fetch(target, { headers: cgHeaders });
     const body = await r.text();
     setCorsAndCache(res);
@@ -75,4 +80,5 @@ app.get('*', (_req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Web server listening on ${PORT}`);
 });
+
 
