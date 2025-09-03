@@ -423,11 +423,12 @@ function renderTable(){
   tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
    
   if (window.innerWidth <= 768) {
+         const maxChars = 5;
     tbody.querySelectorAll('.symbol-name').forEach(el => {
       const len = (el.textContent || '').trim().length;
-      if (len > 4) {
+      if (len > maxChars) {
         const base = parseFloat(getComputedStyle(el).fontSize) || 16;
-        const scaled = base * (4 / len);
+        const scaled = base * (maxChars / len);
         el.style.fontSize = `${scaled}px`;
       }
     });
