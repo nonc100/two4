@@ -135,7 +135,7 @@ const StarField=(()=>{
    Data fetchers (CoinGecko & Alternative.me)
    ========================= */
 // 1) markets
-async function fetchMarkets(page=1, per=200){
+async function fetchMarkets(page=1, per=250){
   const base = "/api/coins/markets";
   const q = `vs_currency=usd&order=market_cap_desc&per_page=${per}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
   try{
@@ -157,7 +157,7 @@ if(!r.ok) {
 // consecutive pages until we gather all available markets or a page
 // returns fewer results than requested.
 async function fetchAllMarkets(){
-  const per = 200; // maximum allowed by the API per request
+const per = 250; // maximum allowed by the API per request
   const all = [];
   for(let page=1; page<10; page++){
     const items = await fetchMarkets(page, per);
