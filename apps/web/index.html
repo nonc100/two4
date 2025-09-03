@@ -686,11 +686,16 @@
       .menu-overlay{ width:100%; right:-100% }
       .content-section{ padding:60px 20px 100px }
       .section-title{ font-size:2rem }
-      .chart-header{ flex-direction:column; gap:15px; align-items:flex-start }
-      .chart-legend{ justify-content:center }
-      .chart-container{ height:550px; padding:1.5rem }
-      .cosmos-chart-canvas{ height:400px }
+      .chart-header{ flex-direction:column; gap:10px; align-items:flex-start }
+      .chart-legend{ justify-content:center; gap:8px }
+      .legend-item{ font-size:10px; gap:4px; padding:4px 8px }
+      .chart-container{ padding:1.5rem; height:auto }
+      .cosmos-chart-canvas{ width:100%; height:auto }
       .hero-title{ font-size:2.5rem }
+    }
+    
+    @media (max-width:768px) and (orientation:portrait){
+      .cosmos-chart-canvas{ aspect-ratio:1/1.618 }
     }
     
     @media (max-width:600px){
@@ -1129,7 +1134,7 @@
       {id:'dogecoin',name:'DOGE',color:'#c2a633',visible:true,basePrice:.384}
     ];
 
-    async function initCosmosChart(){
+     async function initCosmosChart(){
       chartCanvas=document.getElementById('cosmosChart');
       if(!chartCanvas) return;
       
