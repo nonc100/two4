@@ -181,6 +181,8 @@
     
     .hub {
       position: relative;
+      width: 100%;
+      max-width: 580px;
       aspect-ratio: 1/1;
       border-radius: 50%;
       background: 
@@ -189,10 +191,16 @@
         linear-gradient(135deg, rgba(15, 23, 41, 0.8), rgba(10, 14, 26, 0.9));
       border: 2px solid transparent;
       background-clip: padding-box;
-      position: relative;
       transform: rotateX(10deg) rotateY(-10deg);
       transition: transform 0.3s ease;
       animation: hub-float 6s ease-in-out infinite;
+    }
+
+    @supports not (aspect-ratio: 1/1) {
+      .hub {
+        height: 0;
+        padding-top: 100%;
+      }
     }
     
     .hub::before {
@@ -634,6 +642,7 @@
       
       .hub {
         transform: none;
+        width: 90vw;
         max-width: 350px;
         margin: 0 auto;
       }
@@ -754,6 +763,7 @@
       
       /* Even smaller hub on very small screens */
       .hub {
+        width: 90vw;
         max-width: 300px;
       }
       
