@@ -179,7 +179,7 @@ const chart = LightweightCharts.createChart(root,{
   layout:{ background:{ type:'solid', color:'transparent' }, textColor:'#dfe8ff' },
   grid:{ vertLines:{color:'rgba(255,255,255,.06)'}, horzLines:{color:'rgba(255,255,255,.06)'} },
   rightPriceScale:{ borderVisible:false, scaleMargins:{ top:0.10, bottom:0.22 } },
-  timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true },
+timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true, timezone:'Asia/Seoul' },
   crosshair:{ mode:LightweightCharts.CrosshairMode.Normal, vertLine:{color:'rgba(255,255,255,.25)'}, horzLine:{color:'rgba(255,255,255,.25)'} },
   watermark:{ visible:true, text:'TWO.4', fontSize:22, color:'rgba(255,255,255,.14)', horzAlign:'right', vertAlign:'top' }
 });
