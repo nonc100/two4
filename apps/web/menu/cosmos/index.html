@@ -512,20 +512,26 @@
       white-space: nowrap;
       text-align: left;
       flex: 0 0 4.5ch;
+      box-sizing: border-box;
+      padding: 0 2px;
     }
 
-    .mkt-name .symbol-text {
+    .mkt-name .symbol-name {
       font-family: 'Orbitron', monospace;
       font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 1px;
+      font-size: 0.95rem;
+      letter-spacing: -0.5px;
       color: var(--neon-cyan);
       text-shadow: 0 0 8px currentColor;
-            display: inline-block;
+      display: inline-block;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
     }
 
-    .mkt-name .symbol-text.small {
-      font-size: 0.75em;
+    .mkt-name .symbol-name.long {
+      font-size: 0.8rem;
     }
     
     .mkt-name .full {
