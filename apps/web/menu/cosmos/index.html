@@ -505,13 +505,27 @@
       background: rgba(0, 0, 0, 0.5);
     }
     
-    .mkt-name .sym {
+    .mkt-name .symbol-box {
+      width: 4.5ch;
+      max-width: 4.5ch;
+      overflow: hidden;
+      white-space: nowrap;
+      text-align: left;
+      flex: 0 0 4.5ch;
+    }
+
+    .mkt-name .symbol-text {
       font-family: 'Orbitron', monospace;
       font-weight: 700;
       font-size: 14px;
       letter-spacing: 1px;
       color: var(--neon-cyan);
       text-shadow: 0 0 8px currentColor;
+            display: inline-block;
+    }
+
+    .mkt-name .symbol-text.small {
+      font-size: 0.75em;
     }
     
     .mkt-name .full {
@@ -716,7 +730,7 @@
         height: 24px;
       }
       
-      .mkt-name .sym {
+      .mkt-name .symbol-text {
         font-size: 13px;
       }
       
@@ -775,8 +789,8 @@
       table {
         min-width: 500px;
       }
-      
-      .mkt-name .sym {
+
+      .mkt-name .symbol-text {
         font-size: 12px;
       }
       
