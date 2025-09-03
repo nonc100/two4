@@ -372,7 +372,7 @@ function rowHTML(c, i){
     <td class="sticky-name">
       <div class="mkt-name">
         <img src="${c.image}" alt="${c.symbol}">
-        <span class="sym">${sym}</span>
+        <div class="symbol-box"><span class="symbol-text">${sym}</span></div>
         <span class="full">${c.name ?? ''}</span>
       </div>
     </td>
@@ -422,6 +422,14 @@ function renderTable(){
   
   tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
    
+  if(window.innerWidth <= 768){
+    tbody.querySelectorAll('.symbol-text').forEach(el=>{
+      if((el.textContent||'').trim().length > 4){
+        el.classList.add('small');
+      }
+    });
+  }
+
   // sparklines with cyberpunk glow
   drawSparks(items);
   
