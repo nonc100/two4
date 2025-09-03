@@ -51,7 +51,8 @@ app.get("/api/coins/markets", async (req, res) => {
   for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
   if (!u.searchParams.get("vs_currency")) u.searchParams.set("vs_currency","usd");
   if (!u.searchParams.get("order"))      u.searchParams.set("order","market_cap_desc");
-  if (!u.searchParams.get("per_page"))   u.searchParams.set("per_page","200");
+  const per_page = Math.min(Number(req.query.per_page) || 100, 250);
+  u.searchParams.set("per_page", String(per_page));
   if (!u.searchParams.get("page"))       u.searchParams.set("page","1");
   if (!u.searchParams.get("sparkline"))  u.searchParams.set("sparkline","true");
   if (!u.searchParams.get("price_change_percentage")) u.searchParams.set("price_change_percentage","1h,24h,7d");
