@@ -422,10 +422,13 @@ function renderTable(){
   
   tbody.innerHTML = items.map((c,i)=>rowHTML(c,start+i)).join('');
    
-  if(window.innerWidth <= 768){
-    tbody.querySelectorAll('.symbol-name').forEach(el=>{
-      if((el.textContent||'').trim().length > 4){
-        el.classList.add('long');
+  if (window.innerWidth <= 768) {
+    tbody.querySelectorAll('.symbol-name').forEach(el => {
+      const len = (el.textContent || '').trim().length;
+      if (len > 4) {
+        const base = parseFloat(getComputedStyle(el).fontSize) || 16;
+        const scaled = base * (4 / len);
+        el.style.fontSize = `${scaled}px`;
       }
     });
   }
