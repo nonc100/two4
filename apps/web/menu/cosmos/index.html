@@ -506,12 +506,11 @@
     }
     
     .mkt-name .symbol-box {
-      width: 4ch;
-      max-width: 4ch;
+     max-width: 5.5ch;
       overflow: hidden;
       white-space: nowrap;
       text-align: left;
-       flex: 0 0 4ch;
+      flex: 0 0 5.5ch;
       box-sizing: border-box;
       padding: 0 2px;
     }
@@ -523,9 +522,11 @@
       letter-spacing: -0.5px;
       color: var(--neon-cyan);
       text-shadow: 0 0 8px currentColor;
-      display: inline-block;
-      max-width: 4ch;
+      display: block;
+      width: 100%;
       white-space: nowrap;
+            overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .mkt-name .full {
