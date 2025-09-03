@@ -1129,19 +1129,20 @@
       {id:'dogecoin',name:'DOGE',color:'#c2a633',visible:true,basePrice:.384}
     ];
 
-    function initCosmosChart(){
+    async function initCosmosChart(){
       chartCanvas=document.getElementById('cosmosChart');
       if(!chartCanvas) return;
       
       chartContext=chartCanvas.getContext('2d');
       resizeChart();
       createChartLegend();
-      generateAllCosmosData();
+    document.getElementById('marketCap').textContent='COSMOS Loading...';
+      await fetchAllCosmosData();
+      await fetchMarketCap();
       startChartAnimation();
       startRealTimeUpdates();
       
-      window.addEventListener('resize',resizeChart);
-      document.getElementById('marketCap').textContent='COSMOS Live: $3.85T';
+      window.addEventListener('resize',resizeChart);    
     }
     
     function resizeChart(){
@@ -1169,38 +1170,24 @@
       });
     }
     
-    function generateAllCosmosData(){
-      cryptoConfig.forEach(c=>{
-        const data=generateCosmosData(c,100);
-        currentData.set(c.id,data);
-      });
+ async function fetchAllCosmosData(){
+      const promises=cryptoConfig.map(c=>fetchCoinHistory(c));
+      await Promise.all(promises);
+      drawChart();
     }
-    
-    function generateCosmosData(crypto,points){
-      const data=[];
-      const now=Date.now(); 
-      const interval=3600000;
-      let price=crypto.basePrice, base=price;
-      
-      for(let i=points;i>=0;i--){
-        const ts=now-i*interval; 
-        const hr=new Date(ts).getHours();
-        let v=.015; 
-        if(hr>=8&&hr<=16) v=.025; 
-        if(hr>=14&&hr<=22) v=.035;
-        
-        price*=(1+(Math.random()-.5)*v);
-        const trend=Math.sin((i/30)*Math.PI)*.001; 
-        price*=(1+trend);
-        
-        if(price>1.4*base) price=1.35*base; 
-        if(price<.6*base) price=.65*base;
-        
-        data.push({timestamp:ts,price:Math.max(price,.001)});
+
+    async function fetchCoinHistory(crypto){
+      try{
+        const days=document.getElementById('timeSelector')?.value||'7';
+        const interval=Number(days)<=1?'hourly':'daily';
+        const res=await fetch(`/api/coins/${crypto.id}/market_chart?vs_currency=usd&days=${days}&interval=${interval}`);
+        const json=await res.json();
+        const data=json.prices.map(p=>({timestamp:p[0],price:p[1]}));
+        currentData.set(crypto.id,data);
+      }catch(err){
+        console.error('fetchCoinHistory',crypto.id,err);
       }
-      
-      return data.sort((a,b)=>a.timestamp-b.timestamp);
-    }
+       }
     
     let raf=0;
     function startChartAnimation(){
@@ -1309,35 +1296,40 @@
       ctx.textAlign='start';
     }
     
-    function updateCosmosData(){
-      cryptoConfig.forEach(c=>{
-        const d=currentData.get(c.id); 
-        if(!d||!d.length) return;
-        
-        const last=d[d.length-1]; 
+    async function updateCosmosData(){
+      try{
+        const ids=cryptoConfig.map(c=>c.id).join(',');
+        const res=await fetch(`/api/simple/price?ids=${ids}&vs_currencies=usd`);
+        const prices=await res.json();
         const now=Date.now();
-        const varr=(Math.random()-.5)*.04; 
-        const wave=Math.sin(now/30000)*.01; 
-        const bias=(Math.random()-.48)*.02;
-        const total=varr+wave+bias; 
-        const next={
-          timestamp:now, 
-          price:Math.max(last.price*(1+total),.001)
-        };
-        
-        d.push(next); 
-        if(d.length>120) d.shift();
-      });
-      
-      drawChart();
-      
-      // 시장총액 업데이트
-      const marketCap = 2.31 + (Math.random() - 0.5) * 0.2;
-      document.getElementById('marketCap').textContent=`COSMOS Live: ${marketCap.toFixed(2)}T`;
+    cryptoConfig.forEach(c=>{
+          const price=prices[c.id]?.usd;
+          if(price===undefined) return;
+          const d=currentData.get(c.id)||[];
+          d.push({timestamp:now,price});
+          if(d.length>120) d.shift();
+          currentData.set(c.id,d);
+        });
+        drawChart();
+      }catch(err){
+        console.error('updateCosmosData',err);
+      }
     }
-    
-    function startRealTimeUpdates(){ 
-      setInterval(updateCosmosData,2000) 
+
+    async function fetchMarketCap(){
+      try{
+        const res=await fetch('/api/global');
+        const json=await res.json();
+        const cap=json.data?.total_market_cap?.usd||0;
+        document.getElementById('marketCap').textContent=`COSMOS Live: $${(cap/1e12).toFixed(2)}T`;
+      }catch(err){
+        console.error('fetchMarketCap',err);
+      }
+    }
+
+    function startRealTimeUpdates(){
+      setInterval(updateCosmosData,10000);
+      setInterval(fetchMarketCap,60000);
     }
 
     // 초기화
@@ -1349,7 +1341,7 @@
     });
 
     // 차트 컨트롤 이벤트
-    document.getElementById('timeSelector')?.addEventListener('change',()=>generateAllCosmosData());
+    document.getElementById('timeSelector')?.addEventListener('change',()=>fetchAllCosmosData());
     document.getElementById('chartType')?.addEventListener('change',e=>{ 
       if(e.target.value==='single'){ 
         alert('Single Orbit 모드는 곧 출시됩니다!'); 
