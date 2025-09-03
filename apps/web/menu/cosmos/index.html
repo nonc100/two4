@@ -506,12 +506,12 @@
     }
     
     .mkt-name .symbol-box {
-      width: 4.5ch;
-      max-width: 4.5ch;
+      width: 4ch;
+      max-width: 4ch;
       overflow: hidden;
       white-space: nowrap;
       text-align: left;
-      flex: 0 0 4.5ch;
+       flex: 0 0 4ch;
       box-sizing: border-box;
       padding: 0 2px;
     }
@@ -519,19 +519,13 @@
     .mkt-name .symbol-name {
       font-family: 'Orbitron', monospace;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: clamp(12px, 3.5vw, 0.95rem);
       letter-spacing: -0.5px;
       color: var(--neon-cyan);
       text-shadow: 0 0 8px currentColor;
       display: inline-block;
-      max-width: 100%;
+      max-width: 4ch;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: clip;
-    }
-
-    .mkt-name .symbol-name.long {
-      font-size: 0.8rem;
     }
     
     .mkt-name .full {
