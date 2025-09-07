@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>Seed Chat</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+/* dev hotfix: auto-create missing #ids to avoid null.innerHTML errors */
+(() => {
+  const mk = (id) => {
+    const el = document.createElement('div');
+    el.id = id;
+    el.style.display = 'none';  // 화면엔 보이지 않게
+    document.addEventListener('DOMContentLoaded', () => {
+      // body가 생기면 붙이기
+      (document.body || document.documentElement).appendChild(el);
+    });
+    return el;
+  };
+
+  const gebi = document.getElementById.bind(document);
+  document.getElementById = function(id){
+    return gebi(id) || mk(id);
+  };
+
+  const dQS = Document.prototype.querySelector;
+  Document.prototype.querySelector = function(sel){
+    const el = dQS.call(this, sel);
+    if (!el && sel.startsWith('#')) return mk(sel.slice(1));
+    return el;
+  };
+})();
+</script>
+<style>
+  :root { --purple:#8e44ad; --bg:#0b0b12; --card:#11121a; --line:#24242e; --fg:#fff; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji'; background:var(--bg); color:var(--fg); height:100vh; display:flex; flex-direction:column; }
+  header{ padding:10px 12px; background:linear-gradient(90deg,#8e44ad,#9b59b6); font-weight:700; }
+  #messages{ flex:1; overflow-y:auto; padding:12px; }
+  .row{ margin:8px 0; display:flex; }
+  .user{ justify-content:flex-end; }
+  .bubble{ max-width:85%; padding:8px 10px; border-radius:10px; white-space:pre-wrap; word-break:break-word; }
+  .bubble.u{ background:rgba(155,89,182,.25); }
+  .bubble.a{ background:rgba(255,255,255,.07); }
+  footer{ display:flex; gap:8px; padding:10px; border-top:1px solid rgba(255,255,255,.08); background:var(--card); }
+  input[type="text"]{ flex:1; background:#0f0f14; color:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 12px; outline:none; }
+  button{ background:var(--purple); color:#fff; border:none; border-radius:8px; padding:10px 12px; cursor:pointer; }
+</style>
+</head>
+<body>
+  <header>Seed · Q&A</header>
+  <div id="messages"></div>
+  <footer>
+    <input id="msg" type="text" placeholder="Seed에게 질문하기" />
+    <button id="send">전송</button>
+  </footer>
+<script>
+  const ACCESS_CODE = localStorage.getItem("seed_access_code") || prompt("접근 코드 입력:");
+  if (!localStorage.getItem("seed_access_code") && ACCESS_CODE) {
+    localStorage.setItem("seed_access_code", ACCESS_CODE);
+  }
+
+  const msgs = document.getElementById('messages');
+  const input = document.getElementById('msg');
+  const send = document.getElementById('send');
+
+  function push(role, text) {
+    const row = document.createElement('div');
+    row.className = "row " + (role === 'user' ? 'user' : '');
+    const b = document.createElement('div');
+    b.className = "bubble " + (role === 'user' ? 'u' : 'a');
+    b.textContent = text;
+    row.appendChild(b);
+    msgs.appendChild(row);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  async function ask() {
+    const message = (input.value || '').trim();
+    if (!message) return;
+    push('user', message);
+    input.value='';
+    push('assistant','생각 중…');
+    try{
+      const r = await fetch('/api/seed', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-access-code': localStorage.getItem("seed_access_code") || ACCESS_CODE || ""
+        },
+        body: JSON.stringify({ message })
+      });
+      const data = await r.json();
+      msgs.removeChild(msgs.lastChild);
+      push('assistant', data.reply || '(응답 없음)');
+    } catch(e){
+      msgs.removeChild(msgs.lastChild);
+      push('assistant','오류가 발생했어. 잠시 후 다시 시도해줘!');
+    }
+  }
+
+  send.onclick = ask;
+  input.addEventListener('keydown', e => { if(e.key==='Enter') ask(); });
+
+  // welcome
+  push('assistant', '안녕, Seed야. 짧고 정확하게 답할게. 무엇이든 물어봐!');
+</script>
+</body>
+</html>
