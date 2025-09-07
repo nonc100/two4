@@ -1,17 +1,17 @@
 // apps/web/server.js  (ESM)
 import express from 'express';
-import path from 'path';
+import path, { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname  = dirname(__filename);
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
 /* 정적 파일 (apps/web 루트 + /media) */
 app.use(express.static(__dirname));
-app.use('/media', express.static(path.join(__dirname, '..', 'media')));
+app.use('/media', express.static(join(__dirname, '..', 'media')));
 
 /* CoinGecko 키 & 헤더 */
 const CG_DEMO = process.env.COINGECKO_API_KEY
@@ -28,6 +28,11 @@ function setCorsAndCache(res){
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 }
+
+/* 헬스체크 */
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, app: 'two4-cosmos', at: Date.now() });
+});
 
 /* Fear & Greed 프록시 */
 app.get('/api/fng', async (req, res) => {
@@ -66,19 +71,24 @@ app.get('/api/*', async (req, res) => {
   }
 });
 
+/* ✅ Tidewave 라우트 (menu/index.html 연결) */
+app.get('/tidewave', (_req, res) => {
+  const filePath = join(__dirname, 'menu', 'studio.html');
+  console.log('HIT /tidewave ->', filePath);
+  res.sendFile(filePath);
+});
+
 /* 존재하지 않는 정적/비HTML 요청은 404 처리 */
 app.use((req, res, next) => {
   if (req.accepts('html')) return next();
   res.status(404).end();
 });
 
-/* SPA fallback */
+/* SPA fallback (맨 마지막) */
 app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Web server listening on ${PORT}`);
 });
-
-

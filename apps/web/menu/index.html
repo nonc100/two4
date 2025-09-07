@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tidewave Local</title>
+  <style>
+    html,body{height:100%;margin:0}
+    body{display:flex;align-items:center;justify-content:center;background:#0b0f1a;color:#e2e8f0;font-family:system-ui,Segoe UI,Apple SD Gothic Neo,Malgun Gothic,sans-serif}
+    .card{padding:32px 40px;border-radius:16px;background:rgba(255,255,255,.06);backdrop-filter:blur(4px);box-shadow:0 8px 40px rgba(0,0,0,.35)}
+    h1{margin:0 0 8px;font-size:28px}
+    p{margin:0;font-size:14px;opacity:.85}
+    .ok{margin-top:14px;font-size:12px;opacity:.7}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>✅ Tidewave Local</h1>
+    <p>라우트 연결 OK (/tidewave → menu/index.html)</p>
+    <div class="ok">서버 헬스: <a href="/api/health" style="color:#93c5fd">/api/health</a></div>
+  </div>
+  <!-- ===== Tidewave 연동 패널 (붙여넣기) ===== -->
+<section id="tw-panel" style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
+  <button id="btnHealth">/api/health</button>
+  <button id="btnGlobal">/api/global</button>
+  <button id="btnMarkets">/api/coins/markets</button>
+  <pre id="twOut" style="flex:1 1 100%; min-height:180px; background:rgba(0,0,0,.35); padding:12px; border-radius:12px; overflow:auto;"></pre>
+</section>
+
+<script>
+  const out = document.getElementById('twOut');
+  const show = (obj) => out.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+
+  async function hit(path){
+    try{
+      const r = await fetch(path);
+      const ct = r.headers.get('content-type') || '';
+      if(ct.includes('application/json')) return show(await r.json());
+      return show(await r.text());
+    }catch(e){ show('ERR: ' + e); }
+  }
+
+  document.getElementById('btnHealth').onclick  = () => hit('/api/health');
+  document.getElementById('btnGlobal').onclick  = () => hit('/api/global');
+  document.getElementById('btnMarkets').onclick = () => hit('/api/coins/markets?vs_currency=usd&per_page=25&price_change_percentage=1h,24h,7d');
+</script>
+<!-- ===== /Tidewave 연동 패널 ===== -->
+
+</body>
+</html>

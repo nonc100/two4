@@ -13,6 +13,11 @@ const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 app.use(express.static(__dirname));
 app.use("/media", express.static(path.join(__dirname, "..", "media")));
 
+/* 간단 헬스체크 */
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, app: "two4-cosmos", at: Date.now() });
+});
+
 function setCorsAndCache(res){
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
@@ -93,13 +98,18 @@ app.get("/api/fng", async (req, res) => {
   keep(key, payload);
 });
 
+/* ✅ 명시적 Tidewave 라우트: /tidewave -> menu/index.html */
+app.get("/tidewave", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 /* 존재하지 않는 정적/비HTML 요청은 404 처리 */
 app.use((req, res, next) => {
   if (req.accepts("html")) return next();
   res.status(404).end();
 });
 
-/* SPA fallback */
+/* SPA fallback (그 외 HTML 요청은 menu/index.html) */
 app.get("*", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 app.listen(PORT, () => console.log(`🚀 Cosmos server on ${PORT}`));
