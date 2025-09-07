@@ -18,3 +18,13 @@
     "typescript": "^5.9.2"
   }
 }
+{
+  "dependencies": {
+    // ... 기존 패키지들 ...
+    "socket.io": "^4.7.4",
+    "openai": "^4.20.1",
+    "mongoose": "^8.0.3",      // DB 사용한다면
+    "bcryptjs": "^2.4.3",      // 암호화용
+    "jsonwebtoken": "^9.0.2"   // 인증용
+  }
+}
