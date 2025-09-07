@@ -647,11 +647,18 @@
       width:120px;
       height:130px;
       opacity:.85;
-      transition:opacity .3s ease;
+      transition:opacity .3s ease, transform .2s ease;
       transform-origin:bottom left;
       z-index:900;
+        cursor:pointer;
     }
-    #seed-container:hover{opacity:1;}
+    #seed-container:hover{
+      opacity:1;
+      transform:scale(1.05);
+    }
+    #seed-container:active{
+      transform:scale(0.98);
+    }
     #planet-canvas{width:100px;height:100px;}
     .seed-tooltip{
       position:absolute;
@@ -679,7 +686,16 @@
       visibility:visible;
       transform:translateX(-50%) translateY(0);
     }
-
+ #seed-container:hover .seed-tooltip::after{
+      content:" → Click!";
+      color:#ffffff;
+      animation:blink 1s infinite;
+    }
+    @keyframes blink{
+      0%,50%{opacity:1}
+      51%,100%{opacity:.3}
+    }
+    
     /* ========== Mobile tweaks ========== */
     @media (max-width:768px){
       .nav{ top:16px; right:16px }
@@ -865,7 +881,11 @@
 <div class="menu-section">
   <ul class="menu-items">
     <li class="menu-item"><a href="https://open.kakao.com/o/gakOu7Og" target="_blank" rel="noopener" class="menu-link featured">OPEN CHAT<span class="korean-desc">카카오 오픈채팅</span></a></li>
-    <li class="menu-item"><a href="/menu/seed-oracle.html" class="menu-link featured">SEED ORACLE (SEED AI Q/A)<span class="korean-desc">seed AI (챗봇 서비스)</span></a></li>
+    <li class="menu-item">
+      <a href="/ai-chat.html" class="menu-link featured">
+        SEED AI CHAT<span class="korean-desc">AI 채팅</span>
+      </a>
+    </li>
     <li class="menu-item"><a href="/menu/portal.html" class="menu-link featured">PORTAL<span class="korean-desc">(가입/로그인/로그아웃)</span></a></li>
 
       </ul>
@@ -1347,11 +1367,33 @@
 
     // 차트 컨트롤 이벤트
     document.getElementById('timeSelector')?.addEventListener('change',()=>fetchAllCosmosData());
-    document.getElementById('chartType')?.addEventListener('change',e=>{ 
-      if(e.target.value==='single'){ 
-        alert('Single Orbit 모드는 곧 출시됩니다!'); 
-        e.target.value='multi' 
-      } 
+       document.getElementById('chartType')?.addEventListener('change',e=>{
+      if(e.target.value==='single'){
+        alert('Single Orbit 모드는 곧 출시됩니다!');
+        e.target.value='multi'
+      }
+    });
+
+    // Seed AI click event
+    document.addEventListener('DOMContentLoaded', function() {
+      const seedContainer = document.getElementById('seed-container');
+
+      if (seedContainer) {
+        seedContainer.addEventListener('click', function() {
+          window.location.href = '/ai-chat.html';
+        });
+
+        seedContainer.style.cursor = 'pointer';
+
+        seedContainer.addEventListener('mouseenter', function() {
+          seedContainer.style.transform = 'scale(1.05)';
+          seedContainer.style.transition = 'transform 0.2s ease';
+        });
+
+        seedContainer.addEventListener('mouseleave', function() {
+          seedContainer.style.transform = 'scale(1.0)';
+        });
+      }
     });
   </script>
 </body>
