@@ -3,11 +3,18 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p tsconfig.json",
     "prestart": "npm run build",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "fastify": "^4.0.0"
+    "@fastify/cors": "^8.5.0",
+    "fastify": "^4.29.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   }
 }
