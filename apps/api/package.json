@@ -1,30 +1,22 @@
 {
-  "name": "two4-api",
+  "name": "two4-api-ai-chat",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "app.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "prestart": "npm run build",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "dependencies": {
-    "@fastify/cors": "^8.5.0",
-    "fastify": "^4.29.1"
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "mongoose": "^8.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@types/node": "^24.3.1",
-    "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
-  }
-}
-{
-  "dependencies": {
-    // ... 기존 패키지들 ...
-    "socket.io": "^4.7.4",
-    "openai": "^4.20.1",
-    "mongoose": "^8.0.3",      // DB 사용한다면
-    "bcryptjs": "^2.4.3",      // 암호화용
-    "jsonwebtoken": "^9.0.2"   // 인증용
+   "nodemon": "^3.0.2"
   }
 }
