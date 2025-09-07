@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app  = express();
-const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
+const PORT = process.env.COSMOS_PORT || process.env.PORT || 5180;
 
 /* 정적 파일 (menu 폴더 + /media) */
 app.use(express.static(__dirname));

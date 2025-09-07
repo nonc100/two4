@@ -1,147 +1,81 @@
-// apps/web/menu/studio.js
-(() => {
-  const $ = (id) => document.getElementById(id);
+// apps/web/menu/server.js
+const express = require('express');
+const app = express();
+const path = require('path');
+const fs = require('fs');
+const fetch = require('node-fetch'); // npm i node-fetch 필요 (구버전일 경우 require 가능)
+require('dotenv').config();
 
-  // ------------------------------------------------------------------
-  // ADMIN_TOKEN (최초 1회만)
-  // ------------------------------------------------------------------
-  const TOKEN_KEY = 'ADMIN_TOKEN';
-  async function ensureToken(){
-    let t = localStorage.getItem(TOKEN_KEY);
-    if (!t){
-      t = prompt('ADMIN_TOKEN? (처음 한 번)');
-      if (t) localStorage.setItem(TOKEN_KEY, t);
-    }
-    return t || '';
-  }
+const PORT = process.env.PORT || 3000;
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN; // .env에 정의해줘야 함
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // .env에 정의해줘야 함
 
-  // ------------------------------------------------------------------
-  // UI refs
-  // ------------------------------------------------------------------
-  const chatInput  = $('chatInput');
-  const chatStatus = $('chatStatus');
-  const btnSend    = $('btnSend');
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-  const preview    = $('preview');
-  const previewUrl = $('previewUrl');
-  const btnGo      = $('btnGo');
-  const btnRefresh = $('btnRefresh');
+// 💡 정적 파일 라우트 (예: /menu/*.html, /tidewave)
+app.use(express.static(path.join(__dirname)));
+app.use('/tidewave', express.static(path.join(__dirname, 'tidewave')));
 
-  const editPath   = $('editPath');
-  const editor     = $('editor');
-  const btnOpen    = $('btnOpen');
-  const btnSave    = $('btnSave');
-  const commitMsg  = $('commitMsg');
-  const btnCommit  = $('btnCommit');
-  const log        = $('log');
+// 🩺 Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, app: 'two4-cosmos', at: Date.now() });
+});
 
-  // ------------------------------------------------------------------
-  // Helpers
-  // ------------------------------------------------------------------
-  function setLog(msg, ok=true){
-    log.textContent = msg;
-    log.className = 'row ' + (ok ? 'ok' : 'err');
-  }
+// 📂 Read file API
+app.get('/fs/read', (req, res) => {
+  const filePath = path.resolve(__dirname, '../../..', req.query.path || '');
+  if (!fs.existsSync(filePath)) return res.json({ ok: false, error: 'File not found' });
 
-  async function apiRead(p){
-    const url = `/fs/read?path=${encodeURIComponent(p)}`;
-    const r = await fetch(url);
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error || 'read failed');
-    return j.data;
-  }
+  const content = fs.readFileSync(filePath, 'utf8');
+  res.json({ ok: true, data: content });
+});
 
-  async function apiSave(p, content){
-    const t = await ensureToken();
-    const r = await fetch('/fs/save', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-admin-token': t
+// 💾 Save file API
+app.post('/fs/save', (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (token !== ADMIN_TOKEN) return res.status(403).json({ ok: false, error: 'Invalid token' });
+
+  const { path: relativePath, content } = req.body;
+  const filePath = path.resolve(__dirname, '../../..', relativePath || '');
+  fs.writeFileSync(filePath, content, 'utf8');
+
+  res.json({ ok: true, bytes: content.length });
+});
+
+// 🤖 AI API (Claude via OpenRouter)
+app.post('/ai/claude', async (req, res) => {
+  const token = req.headers['x-admin-token'];
+  if (token !== ADMIN_TOKEN) return res.status(403).json({ ok: false, error: 'Invalid token' });
+
+  const { prompt } = req.body;
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ path:p, content })
+      body: JSON.stringify({
+        model: 'mistralai/mixtral-8x7b', // or gpt-4, claude-2, etc.
+        messages: [
+          { role: 'system', content: '너는 코드 수정 비서야. 사용자의 지시를 코드 수정 명령처럼 해석해.' },
+          { role: 'user', content: prompt }
+        ]
+      })
     });
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error || 'save failed');
-    return j;
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '응답 없음';
+    res.json({ ok: true, text });
+  } catch (err) {
+    console.error(err);
+    res.json({ ok: false, error: err.message });
   }
+});
 
-  async function aiChat(prompt){
-    const t = await ensureToken();
-    const r = await fetch('/ai/claude', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-admin-token': t
-      },
-      body: JSON.stringify({ prompt })
-    });
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error || 'ai error');
-    return j.text;
-  }
-
-  // ------------------------------------------------------------------
-  // Chat
-  // ------------------------------------------------------------------
-  btnSend.addEventListener('click', async () => {
-    const q = chatInput.value.trim();
-    if (!q) return;
-    btnSend.disabled = true;
-    chatStatus.textContent = 'Thinking...';
-    try{
-      const a = await aiChat(q);
-      chatStatus.textContent = '';
-      // 간단히 오른쪽 에디터에 내려줌 (원하는 동작으로 바꿔도 됨)
-      editor.value = a;
-      setLog('AI 응답 수신');
-    }catch(e){
-      setLog(String(e), false);
-    }finally{
-      btnSend.disabled = false;
-    }
-  });
-
-  // ------------------------------------------------------------------
-  // Preview
-  // ------------------------------------------------------------------
-  function loadPreview(){ preview.src = previewUrl.value || '/menu/index.html'; }
-  btnGo.addEventListener('click', loadPreview);
-  btnRefresh.addEventListener('click', () => preview.contentWindow?.location?.reload());
-  loadPreview();
-
-  // ------------------------------------------------------------------
-  // Editor
-  // ------------------------------------------------------------------
-  btnOpen.addEventListener('click', async () => {
-    const p = editPath.value.trim();
-    if (!p) return;
-    btnOpen.disabled = true;
-    try{
-      editor.value = await apiRead(p);
-      setLog(`Opened: ${p}`);
-    }catch(e){
-      setLog(String(e), false);
-    }finally{
-      btnOpen.disabled = false;
-    }
-  });
-
-  btnSave.addEventListener('click', async () => {
-    const p = editPath.value.trim();
-    btnSave.disabled = true;
-    try{
-      const res = await apiSave(p, editor.value);
-      setLog(`Saved (${res.bytes} bytes): ${p}`);
-    }catch(e){
-      setLog(String(e), false);
-    }finally{
-      btnSave.disabled = false;
-    }
-  });
-
-  // Commit & Push는 아직 비활성화
-  btnCommit.addEventListener('click', () => {
-    setLog('Commit & Push는 추후 활성화', false);
-  });
-})();
+// 🚀 서버 시작
+app.listen(PORT, () => {
+  console.log(`🌐 Server running at http://localhost:${PORT}`);
+});

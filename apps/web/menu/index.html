@@ -3,48 +3,181 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tidewave Local</title>
+  <title>TWO4 · Local Menu</title>
   <style>
+    :root{
+      --bg:#0b0f1a; --card:rgba(255,255,255,.06); --txt:#e2e8f0; --mut:#9aa4b2; --pri:#93c5fd;
+      --br:16px; --shadow:0 8px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
     html,body{height:100%;margin:0}
-    body{display:flex;align-items:center;justify-content:center;background:#0b0f1a;color:#e2e8f0;font-family:system-ui,Segoe UI,Apple SD Gothic Neo,Malgun Gothic,sans-serif}
-    .card{padding:32px 40px;border-radius:16px;background:rgba(255,255,255,.06);backdrop-filter:blur(4px);box-shadow:0 8px 40px rgba(0,0,0,.35)}
-    h1{margin:0 0 8px;font-size:28px}
-    p{margin:0;font-size:14px;opacity:.85}
-    .ok{margin-top:14px;font-size:12px;opacity:.7}
+    body{
+      background:var(--bg); color:var(--txt);
+      font-family:system-ui,Segoe UI,Apple SD Gothic Neo,Malgun Gothic,sans-serif;
+      display:flex; align-items:flex-start; justify-content:center; padding:40px 20px;
+    }
+    .wrap{width:min(1100px,100%); display:grid; gap:16px; grid-template-columns: 1.15fr .85fr}
+    .card{background:var(--card); border-radius:var(--br); box-shadow:var(--shadow); backdrop-filter:blur(4px); padding:18px 20px}
+    h1{margin:0 0 4px; font-size:26px}
+    .mut{color:var(--mut)}
+    a{color:var(--pri)}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .pill{background:rgba(255,255,255,.08); padding:6px 10px; border-radius:999px; font-size:12px}
+    .btn{cursor:pointer; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.04); color:var(--txt)}
+    .btn:hover{background:rgba(255,255,255,.08)}
+    .input{padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25); color:var(--txt); min-width:260px}
+    .pre{white-space:pre-wrap; word-break:break-word; background:rgba(0,0,0,.35); padding:12px; border-radius:12px; min-height:160px; max-height:420px; overflow:auto}
+    /* chat */
+    #chat ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:360px; overflow:auto}
+    #chat li{padding:10px 12px; border-radius:12px; width:fit-content; max-width:90%}
+    #chat .me{background:rgba(255,255,255,.08); align-self:flex-end}
+    #chat .ai{background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)}
+    form#chat-form{display:flex; gap:8px; margin-top:10px}
+    @media (max-width:980px){ .wrap{grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>✅ Tidewave Local</h1>
-    <p>라우트 연결 OK (/tidewave → menu/index.html)</p>
-    <div class="ok">서버 헬스: <a href="/api/health" style="color:#93c5fd">/api/health</a></div>
+  <div class="wrap">
+    <!-- 왼쪽: 대시보드/패널 -->
+    <section class="card">
+      <h1>✅ TWO4 Local</h1>
+      <div class="mut">라우트 연결 OK · 이 페이지는 <code>/menu/index.html</code></div>
+
+      <div class="row" style="margin-top:12px">
+        <span class="pill">서버 헬스: <b id="apiHealth">확인중…</b></span>
+        <span class="pill">ENV: <b id="env">-</b></span>
+        <span class="pill">API BASE: <b id="apiBaseBadge">-</b></span>
+      </div>
+
+      <!-- API 베이스 변경 -->
+      <div class="row" style="margin-top:10px">
+        <input id="apiBase" class="input" placeholder="API Base URL (예: http://localhost:8787)" />
+        <button class="btn" id="saveBase">저장</button>
+        <button class="btn" id="ping">/healthz</button>
+        <button class="btn" id="clear">Clear</button>
+      </div>
+
+      <!-- 결과 출력 -->
+      <div class="pre" id="out" style="margin-top:10px"></div>
+
+      <!-- Quick API 패널 -->
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btnHealth">/healthz</button>
+        <button class="btn" id="btnEcho">/chat/echo</button>
+        <!-- 추후 마켓 API 붙이면 활성화 -->
+        <button class="btn" id="btnMarkets" title="(아직 라우트 없으면 에러가 정상)">/markets sample</button>
+      </div>
+    </section>
+
+    <!-- 오른쪽: 미니 채팅 -->
+    <section class="card" id="chat">
+      <div class="row" style="justify-content:space-between">
+        <h1 style="margin:0">💬 Chat (MVP)</h1>
+        <span class="mut">/chat/echo 엔드포인트</span>
+      </div>
+      <ul id="messages" style="margin-top:10px"></ul>
+      <form id="chat-form">
+        <input id="msg" class="input" placeholder="메시지 입력…" />
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </section>
   </div>
-  <!-- ===== Tidewave 연동 패널 (붙여넣기) ===== -->
-<section id="tw-panel" style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
-  <button id="btnHealth">/api/health</button>
-  <button id="btnGlobal">/api/global</button>
-  <button id="btnMarkets">/api/coins/markets</button>
-  <pre id="twOut" style="flex:1 1 100%; min-height:180px; background:rgba(0,0,0,.35); padding:12px; border-radius:12px; overflow:auto;"></pre>
-</section>
 
-<script>
-  const out = document.getElementById('twOut');
-  const show = (obj) => out.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+  <script>
+    // ---------- 기본 설정/헬퍼 ----------
+    const $ = (q) => document.querySelector(q);
+    const out = $('#out');
+    const show = (v) => out.textContent = typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+    const readAPIBase = () =>
+      new URLSearchParams(location.search).get('api') ||
+      localStorage.getItem('API_BASE_URL') ||
+      (window.API_BASE_URL || 'http://localhost:8787');
 
-  async function hit(path){
-    try{
-      const r = await fetch(path);
+    let API_BASE_URL = readAPIBase();
+    $('#apiBase').value = API_BASE_URL;
+    $('#apiBaseBadge').textContent = API_BASE_URL;
+
+    $('#saveBase').onclick = () => {
+      API_BASE_URL = $('#apiBase').value.trim() || API_BASE_URL;
+      localStorage.setItem('API_BASE_URL', API_BASE_URL);
+      $('#apiBaseBadge').textContent = API_BASE_URL;
+      show('✔ API_BASE_URL 저장됨: ' + API_BASE_URL);
+      ping();
+    };
+    $('#clear').onclick = () => { out.textContent = ''; };
+
+    async function getJSON(path, opts){
+      const url = path.startsWith('http') ? path : (API_BASE_URL + path);
+      const r = await fetch(url, opts);
       const ct = r.headers.get('content-type') || '';
-      if(ct.includes('application/json')) return show(await r.json());
-      return show(await r.text());
-    }catch(e){ show('ERR: ' + e); }
-  }
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return ct.includes('application/json') ? r.json() : r.text();
+    }
 
-  document.getElementById('btnHealth').onclick  = () => hit('/api/health');
-  document.getElementById('btnGlobal').onclick  = () => hit('/api/global');
-  document.getElementById('btnMarkets').onclick = () => hit('/api/coins/markets?vs_currency=usd&per_page=25&price_change_percentage=1h,24h,7d');
-</script>
-<!-- ===== /Tidewave 연동 패널 ===== -->
+    // ---------- 헬스체크 ----------
+    async function ping(){
+      try{
+        const data = await getJSON('/healthz');
+        $('#apiHealth').textContent = data.ok ? 'OK' : 'DOWN';
+        $('#env').textContent = data.env || '-';
+        show(data);
+      }catch(e){
+        $('#apiHealth').textContent = 'DOWN';
+        show('ERR ' + e.message);
+      }
+    }
+    $('#ping').onclick = ping;
+    $('#btnHealth').onclick = ping;
+    // 최초 1회 핑
+    ping();
 
+    // ---------- 샘플 라우트들 ----------
+    $('#btnEcho').onclick = async () => {
+      try{
+        const data = await getJSON('/chat/echo', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ text:'hello TWO4' })
+        });
+        show(data);
+      }catch(e){ show('ERR ' + e.message); }
+    };
+
+    // 아직 구현 전이면 에러가 정상
+    $('#btnMarkets').onclick = async () => {
+      try{
+        const data = await getJSON('/coins/markets?vs_currency=usd&per_page=10&price_change_percentage=1h,24h,7d');
+        show(data);
+      }catch(e){ show('ERR ' + e.message + ' (아직 라우트 미구현이면 정상)'); }
+    };
+
+    // ---------- 미니 채팅(UI) ----------
+    const $list = $('#messages');
+    const add = (who, text) => {
+      const li = document.createElement('li');
+      li.className = who === '나' ? 'me' : 'ai';
+      li.innerHTML = `<b>${who}:</b> ${text}`;
+      $list.appendChild(li);
+      $list.scrollTop = $list.scrollHeight;
+    };
+    $('#chat-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const $msg = $('#msg');
+      const text = ($msg.value || '').trim();
+      if(!text) return;
+      add('나', text);
+      $msg.value = '';
+      try{
+        const data = await getJSON('/chat/echo', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ text })
+        });
+        add('AI', data.reply ?? '(응답 없음)');
+      }catch(err){
+        add('AI', '(에러) ' + err.message);
+      }
+    });
+  </script>
 </body>
 </html>
