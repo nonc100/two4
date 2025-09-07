@@ -67,3 +67,105 @@ const setupAIChatSocket = (io) => {
           if (commandResult.type === 'private') {
             // ## 개인 전용 - 본인에게만
             socket.emit('ai-response', {
+              id: Date.now() + 1,
+              userId: 'AI',
+              username: 'TWO4 AI',
+              content: aiResponse.response,
+              timestamp: new Date(),
+              isAI: true,
+              isPrivate: true,
+              effect: aiResponse.effect
+            });
+
+            // 개인 메시지도 DB에 저장
+            const aiMessage = new ChatMessage({
+              roomId,
+              content: aiResponse.response,
+              username: 'TWO4 AI',
+              userId: 'AI',
+              type: 'ai-response',
+              isPrivate: true,
+              targetUser: username,
+              effect: aiResponse.effect,
+              tokens: aiResponse.tokens
+            });
+            await aiMessage.save();
+          } else {
+            // 다른 명령어들 - 전체 공개
+            const publicAiMessage = {
+              id: Date.now() + 1,
+              userId: 'AI',
+              username: 'TWO4 AI',
+              content: aiResponse.response,
+              timestamp: new Date(),
+              isAI: true,
+              effect: aiResponse.effect
+            };
+
+            aiChatNamespace.to(roomId).emit('ai-response', publicAiMessage);
+
+            // 공개 AI 응답 DB 저장
+            const aiMessage = new ChatMessage({
+              roomId,
+              content: aiResponse.response,
+              username: 'TWO4 AI',
+              userId: 'AI',
+              type: 'ai-response',
+              isPrivate: false,
+              effect: aiResponse.effect,
+              tokens: aiResponse.tokens
+            });
+            await aiMessage.save();
+          }
+        } else {
+          // 일반 메시지
+          const normalMessage = {
+            id: Date.now(),
+            userId,
+            username,
+            content: message,
+            timestamp: new Date()
+          };
+
+          // 일반 메시지 DB 저장
+          const savedMessage = new ChatMessage({
+            roomId,
+            content: message,
+            username,
+            userId,
+            type: 'text'
+          });
+          await savedMessage.save();
+
+          aiChatNamespace.to(roomId).emit('receive-message', normalMessage);
+        }
+      } catch (error) {
+        console.error('❌ 메시지 처리 오류:', error);
+        socket.emit('error', { message: '메시지 처리 중 오류가 발생했습니다.' });
+      }
+    });
+
+    // 타이핑 상태
+    socket.on('typing', (data) => {
+      socket.to(data.roomId).emit('user-typing', {
+        username: socket.username,
+        isTyping: data.isTyping
+      });
+    });
+
+    // 연결 해제
+    socket.on('disconnect', () => {
+      console.log(`👋 AI 채팅 사용자 연결 해제: ${socket.id}`);
+      if (socket.roomId && socket.username) {
+        socket.to(socket.roomId).emit('user-left', { 
+          username: socket.username,
+          socketId: socket.id 
+        });
+      }
+    });
+  });
+
+  return aiChatNamespace;
+};
+
+module.exports = setupAIChatSocket;
