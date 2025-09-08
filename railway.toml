@@ -2,4 +2,4 @@
 root = "apps/api"
 
 [build.env]
-NIXPACKS_INSTALL_CMD = "npm ci"
+NIXPACKS_INSTALL_CMD = "npm install"
