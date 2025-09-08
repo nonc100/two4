@@ -2,14 +2,121 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-
-// 미들웨어
-app.use(express.json());
+const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 
 // 정적 파일 서빙 (apps/web 폴더)
 app.use(express.static(path.join(__dirname, 'apps/web')));
+app.use("/media", express.static(path.join(__dirname, 'apps/web/media')));
 
-// 기본 라우트
+function setCorsAndCache(res){
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+}
+
+// CoinGecko 키 (Railway Variables)
+const CG_PRO  = process.env.X_CG_PRO_API_KEY || "";
+const CG_DEMO = process.env.COINGECKO_API_KEY || process.env.X_CG_DEMO_API_KEY || "";
+const cgHeaders = { "User-Agent": "two4-cosmos/1.0" };
+if (CG_PRO)   cgHeaders["x-cg-pro-api-key"]   = CG_PRO;
+else if (CG_DEMO) cgHeaders["x-cg-demo-api-key"] = CG_DEMO;
+
+// 초간단 메모리 캐시
+const cache = new Map();
+const TTL_MS = 60_000;
+const hit  = k => { const v = cache.get(k); return v && Date.now()-v.t < TTL_MS ? v : null; };
+const keep = (k,p) => { if (p.ok) cache.set(k, { ...p, t: Date.now() }); };
+
+async function proxyFetch(url, headers = {}){
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(url, { headers, signal: ac.signal });
+    const body = await r.text();
+    clearTimeout(timer);
+    return { ok: r.ok, status: r.status, body, ct: r.headers.get("content-type") || "application/json; charset=utf-8" };
+  } catch (e){
+    clearTimeout(timer);
+    return { ok:false, status:502, body: JSON.stringify({ error:"proxy failed", detail:String(e) }), ct:"application/json; charset=utf-8" };
+  }
+}
+
+// /api/coins/markets
+app.get("/api/coins/markets", async (req, res) => {
+  const u = new URL("https://api.coingecko.com/api/v3/coins/markets");
+  for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
+  if (!u.searchParams.get("vs_currency")) u.searchParams.set("vs_currency","usd");
+  if (!u.searchParams.get("order"))      u.searchParams.set("order","market_cap_desc");
+  const per_page = Math.min(Number(req.query.per_page) || 100, 250);
+  u.searchParams.set("per_page", String(per_page));
+  if (!u.searchParams.get("page"))       u.searchParams.set("page","1");
+  if (!u.searchParams.get("sparkline"))  u.searchParams.set("sparkline","true");
+  if (!u.searchParams.get("price_change_percentage")) u.searchParams.set("price_change_percentage","1h,24h,7d");
+
+  const key = `CG:${u.toString()}`;
+  const cached = hit(key); if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
+
+  const payload = await proxyFetch(u, cgHeaders);
+  setCorsAndCache(res);
+  res.type(payload.ct).status(payload.status).send(payload.body);
+  keep(key, payload);
+});
+
+// /api/global
+app.get("/api/global", async (_req, res) => {
+  const u = "https://api.coingecko.com/api/v3/global";
+  const key = `CG:${u}`;
+  const cached = hit(key); if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
+
+  const payload = await proxyFetch(u, cgHeaders);
+  setCorsAndCache(res);
+  res.type(payload.ct).status(payload.status).send(payload.body);
+  keep(key, payload);
+});
+
+// /api/simple/price
+app.get("/api/simple/price", async (req, res) => {
+  const u = new URL("https://api.coingecko.com/api/v3/simple/price");
+  for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
+  
+  const key = `CG:${u.toString()}`;
+  const cached = hit(key); if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
+
+  const payload = await proxyFetch(u, cgHeaders);
+  setCorsAndCache(res);
+  res.type(payload.ct).status(payload.status).send(payload.body);
+  keep(key, payload);
+});
+
+// /api/coins/:id/market_chart
+app.get("/api/coins/:id/market_chart", async (req, res) => {
+  const u = new URL(`https://api.coingecko.com/api/v3/coins/${req.params.id}/market_chart`);
+  for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
+  
+  const key = `CG:${u.toString()}`;
+  const cached = hit(key); if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
+
+  const payload = await proxyFetch(u, cgHeaders);
+  setCorsAndCache(res);
+  res.type(payload.ct).status(payload.status).send(payload.body);
+  keep(key, payload);
+});
+
+// /api/fng (alternative.me)
+app.get("/api/fng", async (req, res) => {
+  const u = new URL("https://api.alternative.me/fng/");
+  u.searchParams.set("limit",  req.query.limit  || "1");
+  u.searchParams.set("format", req.query.format || "json");
+
+  const key = `FNG:${u.toString()}`;
+  const cached = hit(key); if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
+
+  const payload = await proxyFetch(u, { "User-Agent":"two4-cosmos/1.0" });
+  setCorsAndCache(res);
+  res.type(payload.ct).status(payload.status).send(payload.body);
+  keep(key, payload);
+});
+
+// 기본 라우트들
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'apps/web/index.html'));
 });
@@ -18,59 +125,13 @@ app.get('/ai-chat', (req, res) => {
   res.sendFile(path.join(__dirname, 'apps/web/ai-chat.html'));
 });
 
-// API 라우트들 (기본 더미 데이터)
-app.get('/api/simple/price', (req, res) => {
-  res.json({
-    bitcoin: { usd: 45000 },
-    ethereum: { usd: 3000 },
-    binancecoin: { usd: 500 },
-    solana: { usd: 100 },
-    cardano: { usd: 0.5 },
-    ripple: { usd: 0.6 },
-    'avalanche-2': { usd: 25 },
-    dogecoin: { usd: 0.08 }
-  });
+// 존재하지 않는 정적/비HTML 요청은 404 처리
+app.use((req, res, next) => {
+  if (req.accepts("html")) return next();
+  res.status(404).end();
 });
 
-app.get('/api/global', (req, res) => {
-  res.json({
-    data: {
-      total_market_cap: {
-        usd: 2000000000000
-      }
-    }
-  });
-});
+// SPA fallback
+app.get("*", (req, res) => res.sendFile(path.join(__dirname, 'apps/web/index.html')));
 
-app.get('/api/coins/:id/market_chart', (req, res) => {
-  const now = Date.now();
-  const prices = [];
-  
-  // 7일 간의 더미 데이터 생성
-  for (let i = 0; i < 7; i++) {
-    const timestamp = now - (6 - i) * 24 * 60 * 60 * 1000;
-    const basePrice = 45000;
-    const variation = (Math.random() - 0.5) * 0.1;
-    const price = basePrice * (1 + variation);
-    prices.push([timestamp, price]);
-  }
-  
-  res.json({
-    prices: prices
-  });
-});
-
-// API 상태 확인
-app.get('/api/status', (req, res) => {
-  res.json({ 
-    status: 'ok',
-    service: 'TWO4 서버',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 서버 시작
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`서버가 포트 ${PORT}에서 실행중입니다.`);
-});
+app.listen(PORT, () => console.log(`🚀 Cosmos server on ${PORT}`));
