@@ -1,8 +1,17 @@
 const express = require('express');
 const path = require('path');
+const http = require('http');
+const setupAIChatSocket = require('./apps/api/utils/socket');
 
 const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
+const server = http.createServer(app);
+const io = require('socket.io')(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
 
 // 정적 파일 서빙 (apps/web 폴더)
 app.use(express.static(path.join(__dirname, 'apps/web')));
@@ -133,5 +142,7 @@ app.use((req, res, next) => {
 
 // SPA fallback
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, 'apps/web/index.html')));
+// Socket.io 설정
+setupAIChatSocket(io);
 
-app.listen(PORT, () => console.log(`🚀 Cosmos server on ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Cosmos server on ${PORT}`));
