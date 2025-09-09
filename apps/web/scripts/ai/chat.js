@@ -12,7 +12,18 @@ class TWO4AIChatApp {
     init() {
         this.setupElements();
         this.generateUserInfo();
-        this.connectSocket();
+
+        try {
+            if (typeof io !== 'undefined') {
+                this.connectSocket();
+            } else {
+                this.addSystemMessage('소켓 라이브러리가 로드되지 않았습니다.', 'error');
+            }
+        } catch (e) {
+            console.error('Socket connection failed:', e);
+            this.addSystemMessage('소켓 연결 실패', 'error');
+        }
+
         this.setupEventListeners();
         this.showWelcomeMessage();
     }
