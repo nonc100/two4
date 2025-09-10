@@ -2,45 +2,61 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- 모바일 꽉 채우기 + 인앱 브라우저 대응 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"/>
+  <meta name="format-detection" content="telephone=no">
   <title>Seed AI</title>
   <style>
+    /* ---------- Reset & base ---------- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
       color: #e0e0e0;
-      height: 100vh; display:flex; justify-content:center; align-items:center;
-      padding: 20px; overflow: hidden;
+      height: 100dvh; min-height: 100dvh;
+      display: flex; justify-content: center; align-items: stretch;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      background-attachment: fixed;
+      padding-bottom: env(safe-area-inset-bottom);
     }
+
+    /* 배경 애니메이션 */
     body::before {
-      content: ''; position:absolute; width:200%; height:200%;
+      content: ''; position: fixed; inset: -50vmax;
       background:
-        radial-gradient(circle at 20% 50%, rgba(102,126,234,.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(118,75,162,.1) 0%, transparent 50%),
+        radial-gradient(circle at 20% 50%, rgba(102,126,234,.10) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(118,75,162,.10) 0%, transparent 50%),
         radial-gradient(circle at 40% 20%, rgba(102,126,234,.05) 0%, transparent 50%);
-      animation: bgFloat 20s ease-in-out infinite;
+      animation: bgFloat 20s ease-in-out infinite; pointer-events: none;
     }
     @keyframes bgFloat { 0%,100% { transform: translate(-10%, -10%) rotate(0) } 50% { transform: translate(10%,10%) rotate(180deg) } }
 
+    /* ---------- Shell ---------- */
     .chat-wrapper{
-      width:100%; max-width:1200px; height:90vh; display:flex; flex-direction:column;
-      background:rgba(15,15,25,.6); backdrop-filter: blur(20px);
-      border-radius:24px; border:1px solid rgba(255,255,255,.1);
-      box-shadow:0 0 40px rgba(102,126,234,.1), inset 0 0 40px rgba(255,255,255,.02), 0 20px 60px rgba(0,0,0,.5);
-      position:relative; overflow:hidden;
+      width: 100vw; max-width: 100vw;
+      height: 100dvh; max-height: 100dvh;
+      display: flex; flex-direction: column;
+      background: rgba(15,15,25,.55);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 0 40px rgba(102,126,234,.10), inset 0 0 40px rgba(255,255,255,.02), 0 20px 60px rgba(0,0,0,.50);
+      position: relative; overflow: hidden;
     }
     .chat-wrapper::before{
-      content:''; position:absolute; inset:-2px; border-radius:24px; padding:2px;
-      background:linear-gradient(45deg, rgba(102,126,234,.6), rgba(118,75,162,.6), rgba(102,126,234,.6), rgba(118,75,162,.6));
+      content:''; position:absolute; inset:-2px; border-radius:0; padding:2px;
+      background:linear-gradient(45deg, rgba(102,126,234,.55), rgba(118,75,162,.55), rgba(102,126,234,.55), rgba(118,75,162,.55));
       -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite:xor; mask-composite:exclude; animation:borderRotate 8s linear infinite; opacity:.8;
+      -webkit-mask-composite:xor; mask-composite:exclude; animation:borderRotate 8s linear infinite; opacity:.8; pointer-events:none;
     }
     @keyframes borderRotate { 0%{ transform:rotate(0) } 100%{ transform:rotate(360deg) } }
 
+    /* ---------- Header ---------- */
     .header{
-      background:rgba(20,20,35,.5); backdrop-filter: blur(10px);
-      padding:15px 20px; border-bottom:1px solid rgba(102,126,234,.2); position:relative; z-index:10; text-align:center;
+      background: rgba(20,20,35,.55);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid rgba(102,126,234,.2);
+      position: relative; z-index: 10;
     }
     .header::after{
       content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
@@ -49,101 +65,119 @@
     }
     @keyframes shimmer { 0%,100%{ opacity:.5; transform:translateX(-100%) } 50%{ opacity:1; transform:translateX(100%) } }
 
+    .title-row{
+      display:flex; align-items:center; gap:10px; justify-content:center; position:relative;
+    }
+    .back-button{
+      position:absolute; left:0; top:50%; transform:translateY(-50%);
+      width:40px; height:40px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(135deg, rgba(102,126,234,.18), rgba(118,75,162,.18));
+      color:#cfd3ff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition: .25s;
+    }
+    .back-button:hover{ filter: brightness(1.15); transform: translateY(-50%) scale(1.03); }
     .header h1{
-      font-size:22px; font-weight:300; letter-spacing:2px; text-transform:uppercase;
-      background:linear-gradient(135deg, #fff 0%, #667eea 50%, #764ba2 100%);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      font-size: clamp(18px, 5vw, 22px); font-weight: 300; letter-spacing: 2px; text-transform: uppercase;
+      background: linear-gradient(135deg, #ffffff 0%, #8ea2ff 50%, #b98aff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-        .back-button{
-      position:absolute; left:20px; top:50%; transform:translateY(-50%);
-      background:none; border:none; color:rgba(255,255,255,.7); font-size:20px; cursor:pointer;
-    }
-    
-    .status{ display:flex; align-items:center; gap:10px; margin-top:10px; font-size:12px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:1px; }
+    .status{ display:flex; align-items:center; gap:8px; margin-top:8px; justify-content:center; font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:1px; }
     .status-dot{ width:6px; height:6px; background:#00ff88; border-radius:50%; box-shadow:0 0 10px #00ff88; animation:pulse 2s infinite; }
     @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1) } 50%{ opacity:.5; transform:scale(1.5) } }
 
-    .chat-container{ flex:1; overflow-y:auto; padding:30px; background:rgba(10,10,20,.2); position:relative; }
-    .chat-container::-webkit-scrollbar{ width:4px; } 
-    .chat-container::-webkit-scrollbar-track{ background:rgba(255,255,255,.02) }
-    .chat-container::-webkit-scrollbar-thumb{ background:linear-gradient(to bottom, #667eea, #764ba2); border-radius:2px }
-
-    .message{ display:flex; gap:15px; margin-bottom:25px; animation: slideIn .4s ease; }
-    @keyframes slideIn { from{ opacity:0; transform:translateY(20px) } to{ opacity:1; transform:translateY(0) } }
-    .message.user{ flex-direction: row-reverse; }
-
-    .avatar{ width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; flex-shrink:0; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.1) }
-    .message.ai .avatar{ background:linear-gradient(135deg, rgba(102,126,234,.3), rgba(118,75,162,.3)); box-shadow:0 0 20px rgba(102,126,234,.3) }
-    .message.user .avatar{ background:rgba(255,255,255,.05) }
-
-    .message-content{ max-width:70%; padding:15px 20px; border-radius:20px; line-height:1.6; font-size:15px; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.05); position:relative; overflow:hidden }
-    .message.ai .message-content{ background:rgba(102,126,234,.1); box-shadow:0 4px 20px rgba(102,126,234,.1), inset 0 0 20px rgba(255,255,255,.02) }
-    .message.user .message-content{ background:rgba(255,255,255,.05); box-shadow:0 4px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(255,255,255,.02) }
-    .message-content img{ max-width:100%; border-radius:12px; display:block }
-
-    .typing-indicator{ display:flex; gap:4px; padding:15px }
-    .typing-dot{ width:8px; height:8px; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:50%; animation: typing 1.4s infinite }
-    .typing-dot:nth-child(2){ animation-delay:.2s } .typing-dot:nth-child(3){ animation-delay:.4s }
-    @keyframes typing { 0%,60%,100%{ transform:translateY(0); opacity:.4 } 30%{ transform:translateY(-15px); opacity:1 } }
-
-    .input-container{ background:rgba(20,20,35,.5); backdrop-filter: blur(10px); border-top:1px solid rgba(102,126,234,.2); padding:20px 30px; position:relative }
-    .input-container::before{
-      content:''; position:absolute; top:0; left:0; right:0; height:1px;
-      background:linear-gradient(90deg, transparent, rgba(102,126,234,.8), rgba(118,75,162,.8), transparent);
-      animation:shimmer 3s ease-in-out infinite reverse;
+    /* ---------- Scroll area ---------- */
+    .chat-container{
+      height: calc(100dvh - 64px - 78px); /* header ~64, input ~78 */
+      max-height: calc(100dvh - 64px - 78px);
+      overflow-y: auto; padding: 18px 16px 10px;
+      background: rgba(10,10,20,.22);
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
+    .chat-container::-webkit-scrollbar{ width:4px; }
+    .chat-container::-webkit-scrollbar-thumb{ background:linear-gradient(to bottom, #667eea, #764ba2); border-radius:2px; }
 
-    .input-wrapper{ display:flex; gap:12px; align-items:center; background:rgba(10,10,20,.3); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:8px 12px 8px 16px; transition: all .4s cubic-bezier(.4,0,.2,1); position:relative; overflow:hidden }    .input-wrapper::before{
-      .input-wrapper::before{
-      content:''; position:absolute; inset:0; border-radius:16px; padding:1px;
-      background:linear-gradient(135deg, transparent, rgba(102,126,234,.3), transparent);
-      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:opacity .4s ease;
+    /* ---------- Messages (avatar-less) ---------- */
+    .message{ display:flex; margin: 8px 0 14px; }
+    .message .bubble{
+      max-width: 88%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.6; font-size: 15px;
+      border: 1px solid rgba(255,255,255,.06);
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 0 14px rgba(255,255,255,.02);
+      word-break: break-word;
     }
-    .input-wrapper:focus-within::before{ opacity:1 }
+    .message.ai   { justify-content: flex-start; }
+    .message.user { justify-content: flex-end; }
+    .message.ai .bubble   { background: rgba(102,126,234,.11); }
+    .message.user .bubble { background: rgba(255,255,255,.06); }
+
+    .bubble img{ max-width:100%; height:auto; border-radius:12px; display:block; }
+
+    /* ---------- Input ---------- */
+    .input-container{
+      position: sticky; bottom: 0; z-index: 20;
+      background: rgba(20,20,35,.55);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(102,126,234,.2);
+      padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    }
+    .input-wrapper{
+      display:flex; align-items: center; gap: 8px;
+      background: rgba(10,10,20,.35);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px; padding: 8px 8px 8px 12px;
+      position: relative; overflow: hidden;
+      transition: .25s;
+    }
     .input-wrapper:focus-within{
-      background:rgba(10,10,20,.5); border-color:rgba(102,126,234,.2);
-      box-shadow:0 0 20px rgba(102,126,234,.1), inset 0 0 20px rgba(102,126,234,.02)
+      border-color: rgba(102,126,234,.35);
+      box-shadow: 0 0 18px rgba(102,126,234,.14), inset 0 0 18px rgba(102,126,234,.04);
+      background: rgba(10,10,20,.5);
     }
 
-    .input-field{ flex:1; background:none; border:none; outline:none; color:rgba(255,255,255,.9); font-size:15px; padding:8px 0; font-family:inherit; resize:none; line-height:1.4; max-height:120px; }
-    .input-field::placeholder{ color:rgba(255,255,255,.3) }
-    .upload-button{ width:40px; height:40px; border-radius:12px; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .4s cubic-bezier(.4,0,.2,1); color:rgba(255,255,255,.15); font-size:20px }
-    .upload-button:hover{ color:rgba(102,126,234,.6); transform:scale(1.1) }
-    .upload-button:active{ transform:scale(.95); color:rgba(118,75,162,.7) }
-    .send-button{ width:40px; height:40px; border-radius:12px; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .4s cubic-bezier(.4,0,.2,1); color:rgba(255,255,255,.15); position:relative; font-size:20px }
-    .send-button:hover{ color:rgba(102,126,234,.6); transform:scale(1.1) }
-    .send-button:active{ transform:scale(.95); color:rgba(118,75,162,.7) }
-    .send-button:disabled{ opacity:.2; cursor:not-allowed }
-
-    @media (max-width:768px){
-      body{ padding:0; align-items:stretch; }
-      .chat-wrapper{ height:100vh; max-width:100%; border-radius:0; }
-      .header{ padding:12px 15px; }
-      .header h1{ font-size:18px; }
-      .message-content{ max-width:85%; }
+    .icon-btn{
+      width:40px; height:40px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(135deg, rgba(102,126,234,.18), rgba(118,75,162,.18));
+      color: #cfd3ff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:18px; transition: .25s; flex: 0 0 auto;
     }
-      </style>
+    .icon-btn:hover{ filter: brightness(1.12); transform: scale(1.04); }
+    .icon-btn:active{ transform: scale(.96); }
+    .icon-btn:disabled{ opacity:.4; cursor:not-allowed; }
 
-  <!-- 분리된 JS -->
+    .input-field{
+      flex: 1; background: transparent; color: rgba(255,255,255,.92);
+      border: none; outline: none; resize: none;
+      font: 16px/1.45 inherit; padding: 6px 4px; max-height: 120px;
+    }
+    .input-field::placeholder{ color: rgba(255,255,255,.35); }
+
+    @media (min-width: 769px){
+      .chat-container{ padding: 24px 28px; height: calc(100dvh - 72px - 88px); max-height: calc(100dvh - 72px - 88px); }
+      .message .bubble{ max-width: 70%; font-size: 15px; }
+    }
+  </style>
+
   <script src="/ai/seed.js" defer></script>
 </head>
 <body>
   <div class="chat-wrapper">
     <div class="header">
-      <button class="back-button" id="backButton">←</button>
-      <h1>Seed AI</h1>
+      <div class="title-row">
+        <button class="back-button" id="backButton" aria-label="뒤로">←</button>
+        <h1>Seed AI</h1>
+      </div>
       <div class="status">
-        <span class="status-dot"></span>
-        <span>Connected</span>
+        <span class="status-dot"></span><span>Connected</span>
       </div>
     </div>
 
     <div class="chat-container" id="chatContainer">
       <div class="message ai">
-        <div class="avatar">AI</div>
-        <div class="message-content">
+        <div class="bubble">
           안녕하세요! <b>Seed AI</b>입니다. 텍스트는 그대로, 이미지는 <code>/image 우주 고양이</code>처럼 요청해보세요.
         </div>
       </div>
@@ -151,10 +185,10 @@
 
     <div class="input-container">
       <div class="input-wrapper">
-        <button class="upload-button" id="uploadButton" type="button">📎</button>
+        <button class="icon-btn" id="uploadButton" type="button" title="이미지 업로드">📎</button>
         <textarea class="input-field" id="messageInput" rows="1" placeholder="메시지를 입력하세요..." autocomplete="off"></textarea>
-        <button class="send-button" id="sendButton" type="button">▶</button>
-        <input type="file" id="imageInput" accept="image/*" style="display:none" />
+        <button class="icon-btn" id="sendButton" type="button" title="보내기">▶</button>
+        <input type="file" id="imageInput" accept="image/*" hidden />
       </div>
     </div>
   </div>
