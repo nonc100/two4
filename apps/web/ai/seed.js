@@ -1,4 +1,5 @@
 // apps/web/ai/seed.js
+// Seed AI 클라이언트 스크립트 (텍스트/이미지/시세 명령 지원)
 
 (function () {
   const chatContainer = document.getElementById('chatContainer');
@@ -8,6 +9,7 @@
   let isTyping = false;
   let messageHistory = []; // { role, content }
 
+  // ---------------- UI helpers ----------------
   function addMessage(content, isUser = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
@@ -20,14 +22,12 @@
     messageHistory.push({ role: isUser ? 'user' : 'assistant', content });
   }
 
-  function addImage(url) {
+  function addImage(url, alt = 'AI generated image') {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message ai';
     messageDiv.innerHTML = `
       <div class="avatar">AI</div>
-      <div class="message-content">
-        <img src="${url}" alt="AI generated image"/>
-      </div>
+      <div class="message-content"><img src="${url}" alt="${alt}" /></div>
     `;
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -41,9 +41,7 @@
     typingDiv.innerHTML = `
       <div class="avatar">AI</div>
       <div class="message-content typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
       </div>
     `;
     chatContainer.appendChild(typingDiv);
@@ -54,78 +52,175 @@
     if (indicator) indicator.remove();
   }
 
-  // 텍스트 응답
-  async function getAIResponse(userMessage) {
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are Seed AI for TWO4. Reply in the user language (Korean by default). Keep it concise, helpful, with a subtle cyberpunk tone.' },
-            ...messageHistory.slice(-10),
-            { role: 'user', content: userMessage }
-          ]
-        })
-      });
-      if (!response.ok) throw new Error('API 요청 실패');
-      const data = await response.json();
-      return data.reply || '응답이 비어있습니다.';
-    } catch (error) {
-      console.error('API 에러:', error);
-      return '서버와 통신 중 오류가 발생했어요. 잠시 후 다시 시도해줘!';
+  // ---------------- Utils ----------------
+  const coinIdMap = {
+    BTC: 'bitcoin',
+    ETH: 'ethereum',
+    SOL: 'solana',
+    XRP: 'ripple',
+    BNB: 'binancecoin',
+    ADA: 'cardano',
+    DOGE: 'dogecoin',
+    AVAX: 'avalanche-2',
+    TRX: 'tron',
+    TON: 'the-open-network',
+    MATIC: 'matic-network',
+    DOT: 'polkadot'
+  };
+
+  const fmt = {
+    n(n) { return Number(n).toLocaleString('en-US'); },
+    p(p) {
+      const v = Number(p);
+      const s = (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+      return v >= 0 ? `<b style="color:#60ffa3">${s}</b>` : `<b style="color:#ff6b6b">${s}</b>`;
+    },
+    money(x, cur = 'USD') {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(Number(x));
     }
+  };
+
+  // ---------------- API calls ----------------
+  async function fetchChat(messages) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
+    });
+    if (!res.ok) throw new Error('chat api error');
+    const data = await res.json();
+    return data.reply || '(no content)';
   }
 
-  async function sendMessage() {
-    const message = messageInput.value.trim();
-    if (!message || isTyping) return;
+  // 시세: 심볼→id 매핑 후 /api/coins/markets 로 상세 (현재가/24h/7d 등)
+  async function fetchPrice(symRaw) {
+    const sym = String(symRaw || '').trim().toUpperCase();
+    const id = coinIdMap[sym] || null;
+    if (!id) throw new Error(`지원하지 않는 심볼이에요: ${sym}`);
 
-    // 사용자 메시지 출력
-    addMessage(message, true);
-    messageInput.value = '';
-    messageInput.focus();
+    const u = new URL('/api/coins/markets', window.location.origin);
+    u.searchParams.set('vs_currency', 'usd');
+    u.searchParams.set('ids', id);
+    u.searchParams.set('price_change_percentage', '1h,24h,7d');
 
-    // 이미지 명령 처리: /image 프롬프트
-    const imgMatch = message.match(/^\/image\s+(.+)/i);
+    const res = await fetch(u);
+    if (!res.ok) throw new Error('가격 API 오류');
+    const arr = await res.json();
+    if (!Array.isArray(arr) || arr.length === 0) throw new Error('코인 데이터를 찾을 수 없어요.');
+
+    const c = arr[0];
+    return {
+      name: c.name,
+      symbol: sym,
+      price: c.current_price,
+      high24h: c.high_24h,
+      low24h: c.low_24h,
+      mc: c.market_cap,
+      change1h: c.price_change_percentage_1h_in_currency,
+      change24h: c.price_change_percentage_24h_in_currency,
+      change7d: c.price_change_percentage_7d_in_currency
+    };
+  }
+
+  function renderPriceCard(info) {
+    return `
+      <div>
+        <div style="font-weight:600;margin-bottom:6px">${info.name} (${info.symbol})</div>
+        <div>가격: <b>${fmt.money(info.price)}</b>
+            &nbsp; 1h ${fmt.p(info.change1h)} · 24h ${fmt.p(info.change24h)} · 7d ${fmt.p(info.change7d)}</div>
+        <div style="opacity:.8;margin-top:4px">24h 고가 ${fmt.money(info.high24h)} · 저가 ${fmt.money(info.low24h)} · 시총 ${fmt.money(info.mc)}</div>
+      </div>
+    `;
+  }
+
+  // ---------------- Command router ----------------
+  // 지원 명령:
+  //  - /price BTC   : 실시간 가격 카드
+  //  - /image 프롬프트 : (서버가 구현되면) 이미지 생성
+  async function handleCommandOrChat(raw) {
+    // 1) 이미지 명령
+    const imgMatch = raw.match(/^\/image\s+(.+)/i);
     if (imgMatch) {
-      isTyping = true; sendButton.disabled = true; showTypingIndicator();
+      showTypingIndicator();
       try {
-        const r = await fetch('/api/image', {
+        const res = await fetch('/api/image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: imgMatch[1] })
         });
-        const json = await r.json();
+        const data = await res.json().catch(()=> ({}));
         removeTypingIndicator();
-        if (r.ok && json.url) addImage(json.url);
-        else addMessage('이미지 생성 실패: ' + (json.error || 'unknown'), false);
-      } catch (e) {
+        if (res.ok && data.url) {
+          addImage(data.url);
+        } else {
+          addMessage('이미지 생성이 아직 활성화되어 있지 않아요. (IMAGE_MODEL 설정 필요)', false);
+        }
+      } catch (_) {
         removeTypingIndicator();
-        addMessage('이미지 서버 오류', false);
-      } finally {
-        isTyping = false; sendButton.disabled = false;
+        addMessage('이미지 서버 오류가 발생했어요.', false);
       }
       return;
     }
 
-    // 일반 텍스트
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    const start = Date.now();
-    const aiResponse = await getAIResponse(message);
-    const remainingTime = Math.max(1000 - (Date.now() - start), 0);
-    setTimeout(() => {
+    // 2) 가격 명령
+    const priceMatch = raw.match(/^\/price\s+([A-Za-z]{2,10})$/i);
+    if (priceMatch) {
+      const sym = priceMatch[1];
+      showTypingIndicator();
+      try {
+        const info = await fetchPrice(sym);
+        removeTypingIndicator();
+        addMessage(renderPriceCard(info), false);
+      } catch (e) {
+        removeTypingIndicator();
+        addMessage(`가격 조회 실패: ${e.message}`, false);
+      }
+      return;
+    }
+
+    // 3) 일반 대화 → OpenRouter
+    showTypingIndicator();
+    try {
+      const reply = await fetchChat([
+        { role: 'system', content: 'You are Seed AI for TWO4. Reply in the user language (Korean by default). Keep it concise, helpful, with a subtle cyberpunk tone.' },
+        ...messageHistory.slice(-10),
+        { role: 'user', content: raw }
+      ]);
       removeTypingIndicator();
-      addMessage(aiResponse, false);
-      isTyping = false; sendButton.disabled = false; messageInput.focus();
-    }, remainingTime);
+      addMessage(reply, false);
+    } catch (e) {
+      removeTypingIndicator();
+      addMessage('서버와 통신 중 오류가 발생했어요. 잠시 후 다시 시도해줘!', false);
+    }
   }
 
-  // 이벤트 바인딩
+  // ---------------- Send flow ----------------
+  async function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message || isTyping) return;
+
+    addMessage(message, true);
+    messageInput.value = '';
+    messageInput.focus();
+
+    isTyping = true;
+    sendButton.disabled = true;
+
+    const start = Date.now();
+    await handleCommandOrChat(message);
+    const remain = Math.max(500 - (Date.now() - start), 0);
+    setTimeout(() => {
+      isTyping = false;
+      sendButton.disabled = false;
+      messageInput.focus();
+    }, remain);
+  }
+
+  // init events
   sendButton.addEventListener('click', sendMessage);
   messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
-  window.addEventListener('load', () => { messageInput.focus(); });
-  document.querySelector('.input-wrapper').addEventListener('click', () => { messageInput.focus(); });
+  window.addEventListener('load', () => messageInput.focus());
+  document.querySelector('.input-wrapper').addEventListener('click', () => messageInput.focus());
 })();
