@@ -5,33 +5,43 @@
   const chatContainer = document.getElementById('chatContainer');
   const messageInput  = document.getElementById('messageInput');
   const sendButton    = document.getElementById('sendButton');
+   const backButton    = document.getElementById('backButton');
+  const uploadButton  = document.getElementById('uploadButton');
+  const imageInput    = document.getElementById('imageInput');
 
   let isTyping = false;
   let messageHistory = []; // { role, content }
 
   // ---------------- UI helpers ----------------
+    function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
   function addMessage(content, isUser = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+   const body = isUser ? escapeHtml(content).replace(/\n/g, '<br>') : content.replace(/\n/g, '<br>');
     messageDiv.innerHTML = `
       <div class="avatar">${isUser ? 'U' : 'AI'}</div>
-      <div class="message-content">${content}</div>
+      <div class="message-content">${body}</div>
     `;
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
     messageHistory.push({ role: isUser ? 'user' : 'assistant', content });
   }
 
-  function addImage(url, alt = 'AI generated image') {
+  function addImage(url, alt = 'image', isUser = false) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ai';
+    messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
     messageDiv.innerHTML = `
-      <div class="avatar">AI</div>
-      <div class="message-content"><img src="${url}" alt="${alt}" /></div>
+      <div class="avatar">${isUser ? 'U' : 'AI'}</div>
+      <div class="message-content"><img src="${url}" alt="${escapeHtml(alt)}" /></div>
     `;
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
-    messageHistory.push({ role: 'assistant', content: `[image] ${url}` });
+    messageHistory.push({ role: isUser ? 'user' : 'assistant', content: `[image] ${url}` });
   }
 
   function showTypingIndicator() {
@@ -201,6 +211,7 @@
 
     addMessage(message, true);
     messageInput.value = '';
+    messageInput.style.height = 'auto';
     messageInput.focus();
 
     isTyping = true;
@@ -218,9 +229,24 @@
 
   // init events
   sendButton.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keypress', (e) => {
+  messageInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
+    messageInput.addEventListener('input', () => {
+    messageInput.style.height = 'auto';
+    messageInput.style.height = messageInput.scrollHeight + 'px';
+  });
+  uploadButton.addEventListener('click', () => imageInput.click());
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => addImage(e.target.result, file.name, true);
+      reader.readAsDataURL(file);
+      imageInput.value = '';
+    }
+  });
+  backButton.addEventListener('click', () => history.back());
   window.addEventListener('load', () => messageInput.focus());
   document.querySelector('.input-wrapper').addEventListener('click', () => messageInput.focus());
 })();
