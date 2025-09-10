@@ -123,10 +123,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'apps/web/index.html'));
 });
 
-app.get('/ai-chat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'apps/web/ai-chat.html'));
-});
-
 // 존재하지 않는 정적/비HTML 요청은 404 처리
 app.use((req, res, next) => {
   if (req.accepts('html')) return next();
