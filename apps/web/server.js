@@ -1,211 +1,202 @@
-// apps/web/server.js  (ESM)
-import 'dotenv/config';
-import express from 'express';
-import path from 'path';
-import fs from 'fs/promises';
-import { fileURLToPath } from 'url';
+// server.js
+const express = require('express');
+const path = require('path');
+const mongoose = require('mongoose');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);         // -> apps/web
-
-const app  = express();
-// 로컬 기본 3000, Railway/Render 등은 PORT로 들어옴
+const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 
-// ------------------------------------------------------------------
-// Static
-// ------------------------------------------------------------------
-app.use(express.static(__dirname));
-app.use('/media', express.static(path.join(__dirname, '..', 'media')));
+// ==============================
+// 📌 정적 파일 서빙
+// ==============================
+app.use(express.static(path.join(__dirname, 'apps/web')));
+app.use('/media', express.static(path.join(__dirname, 'apps/web/media')));
+app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai')));
+
+// JSON 파서
 app.use(express.json({ limit: '2mb' }));
 
-// ------------------------------------------------------------------
-// Small utils
-// ------------------------------------------------------------------
-function setCorsAndCache(res){
+function setCorsAndCache(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
-}
-const mask = (s) => (s ? `${s.slice(0,6)}...${s.slice(-4)}` : 'MISSING');
-
-console.log('[ENV] OPENROUTER_API_KEY =', mask(process.env.OPENROUTER_API_KEY));
-console.log('[ENV] ADMIN_TOKEN        =', mask(process.env.ADMIN_TOKEN));
-
-function assertAuth(req, res) {
-  // 개발 단계: ADMIN_TOKEN이 비어있으면 프리패스, 있으면 검증
-  if (!process.env.ADMIN_TOKEN) return true;
-  const ok = req.headers['x-admin-token'] === process.env.ADMIN_TOKEN;
-  if (!ok) res.status(401).json({ error:'unauthorized' });
-  return ok;
+  res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 }
 
-// apps/web 아래만 허용 (경로 이탈 방지)
-const ROOT = __dirname;
-function safePath(relPath) {
-  if (!relPath) throw new Error('path required');
-  let p = String(relPath).replace(/^[/\\]+/, '');
-  // 사용자가 실수로 apps/web/ 접두어를 넣어도 정상화
-  if (p.startsWith('apps/web/')) p = p.slice('apps/web/'.length);
-  const abs = path.join(ROOT, p);
-  if (!abs.startsWith(ROOT)) throw new Error('path out of bounds');
-  return abs;
+// ==============================
+// 📌 초고속 시세 집계 (Binance + Bybit + OKX)
+// ==============================
+const FAST_TTL = 5_000; // 5초 캐시
+const fastCache = new Map();
+
+function getCache(k) {
+  const v = fastCache.get(k);
+  return v && (Date.now() - v.t < FAST_TTL) ? v.data : null;
 }
+function setCache(k, data) { fastCache.set(k, { t: Date.now(), data }); }
 
-// ------------------------------------------------------------------
-// Health
-// ------------------------------------------------------------------
-app.get('/api/health', (_req, res) => {
-  res.json({ ok:true, app:'two4-cosmos', at: Date.now() });
-});
-
-// ------------------------------------------------------------------
-// CoinGecko proxy (데모/PRO 키 모두 지원)
-// ------------------------------------------------------------------
-const CG_PRO  = process.env.X_CG_PRO_API_KEY || '';
-const CG_DEMO = process.env.COINGECKO_API_KEY
-             || process.env.CG_API_KEY
-             || process.env.X_CG_DEMO_API_KEY
-             || '';
-
-const cgHeaders = { 'User-Agent': 'two4-cosmos/1.0' };
-if (CG_PRO)         cgHeaders['x-cg-pro-api-key']   = CG_PRO;
-else if (CG_DEMO)   cgHeaders['x-cg-demo-api-key']  = CG_DEMO;
-
-async function proxyFetch(url, headers = {}){
+const fetchJson = async (url, headers = {}, timeoutMs = 1500) => {
   const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), 10_000);
-  try{
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  try {
     const r = await fetch(url, { headers, signal: ac.signal });
-    const body = await r.text();
     clearTimeout(timer);
-    return { ok:r.ok, status:r.status, body, ct:r.headers.get('content-type') || 'application/json; charset=utf-8' };
-  }catch(e){
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch (e) {
     clearTimeout(timer);
-    return { ok:false, status:502, body: JSON.stringify({ error:'proxy failed', detail:String(e) }), ct:'application/json; charset=utf-8' };
+    throw e;
   }
-}
+};
 
-// /api/coins/markets
-app.get('/api/coins/markets', async (req, res) => {
-  const u = new URL('https://api.coingecko.com/api/v3/coins/markets');
-  for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k, v);
-  if (!u.searchParams.get('vs_currency')) u.searchParams.set('vs_currency', 'usd');
-  if (!u.searchParams.get('order'))       u.searchParams.set('order','market_cap_desc');
-  u.searchParams.set('per_page', String(Math.min(Number(req.query.per_page)||100, 250)));
-  if (!u.searchParams.get('page'))        u.searchParams.set('page','1');
-  if (!u.searchParams.get('sparkline'))   u.searchParams.set('sparkline','true');
-  if (!u.searchParams.get('price_change_percentage')) u.searchParams.set('price_change_percentage', '1h,24h,7d');
+// 거래소별 파서
+const parseBinance = j => Number(j.price);
+const parseBybit   = j => Number(j?.result?.list?.[0]?.lastPrice);
+const parseOKX     = j => Number(j?.data?.[0]?.last);
 
-  const p = await proxyFetch(u, cgHeaders);
-  setCorsAndCache(res);
-  res.type(p.ct).status(p.status).send(p.body);
+// 심볼 매핑
+const mapToExSymbols = (symbol) => ({
+  binance: symbol.toUpperCase(),                        // BTCUSDT
+  bybit:   symbol.toUpperCase(),                        // BTCUSDT
+  okx:     symbol.toUpperCase().replace('USDT','-USDT') // BTC-USDT
 });
 
-// /api/global
-app.get('/api/global', async (_req, res) => {
-  const p = await proxyFetch('https://api.coingecko.com/api/v3/global', cgHeaders);
-  setCorsAndCache(res);
-  res.type(p.ct).status(p.status).send(p.body);
-});
+// GET /api/price/fast?symbol=BTCUSDT
+app.get('/api/price/fast', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || 'BTCUSDT').toUpperCase();
+    const cacheKey = `FAST:${symbol}`;
+    const cached = getCache(cacheKey);
+    if (cached) return res.json({ ...cached, cached: true });
 
-// /api/fng
-app.get('/api/fng', async (req, res) => {
-  const u = new URL('https://api.alternative.me/fng/');
-  u.searchParams.set('limit',  req.query.limit  || '1');
-  u.searchParams.set('format', req.query.format || 'json');
-  const p = await proxyFetch(u, { 'User-Agent': 'two4-cosmos/1.0' });
-  setCorsAndCache(res);
-  res.type(p.ct).status(p.status).send(p.body);
-});
+    const s = mapToExSymbols(symbol);
 
-// ------------------------------------------------------------------
-// FS: open/save
-// ------------------------------------------------------------------
-app.get('/fs/read', async (req, res) => {
-  try{
-    const abs = safePath(req.query.path);
-    const data = await fs.readFile(abs, 'utf8');
-    res.json({ ok:true, path:req.query.path, data });
-  }catch(e){
-    res.status(500).json({ ok:false, error:String(e) });
-  }
-});
+    const candidates = [
+      // Binance
+      (async () => {
+        const j = await fetchJson(`https://api.binance.com/api/v3/ticker/price?symbol=${s.binance}`);
+        return { source: 'binance', price: parseBinance(j) };
+      })(),
+      // Bybit
+      (async () => {
+        const j = await fetchJson(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${s.bybit}`);
+        return { source: 'bybit', price: parseBybit(j) };
+      })(),
+      // OKX
+      (async () => {
+        const j = await fetchJson(`https://www.okx.com/api/v5/market/ticker?instId=${s.okx}`);
+        return { source: 'okx', price: parseOKX(j) };
+      })(),
+    ];
 
-app.post('/fs/save', async (req, res) => {
-  try{
-    if (!assertAuth(req, res)) return;
-    const { path: p, content = '' } = req.body || {};
-    const abs = safePath(p);
-    await fs.writeFile(abs, content, 'utf8');
-    res.json({ ok:true, path:p, bytes: Buffer.byteLength(content,'utf8') });
-  }catch(e){
-    res.status(500).json({ ok:false, error:String(e) });
+    // 가장 먼저 성공하는 값 채택
+    const first = await Promise.any(candidates);
+    if (!isFinite(first.price)) throw new Error('Invalid price');
+
+    setCache(cacheKey, first);
+    return res.json({ ...first, cached: false });
+  } catch (e) {
+    return res.status(502).json({ error: 'all sources failed', detail: String(e) });
   }
 });
 
-// ------------------------------------------------------------------
-// AI via OpenRouter (다양한 모델 선택)
-// ------------------------------------------------------------------
-async function callOpenRouter({ model, prompt, system='You are a helpful coding assistant.' }) {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error('OPENROUTER_API_KEY is not set');
+// ==============================
+// 📌 OpenRouter 프록시 (Chat / Image)
+// ==============================
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const MODEL_ID = process.env.MODEL_ID || 'openrouter/auto';
+const OPENROUTER_SITE_URL  = process.env.OPENROUTER_SITE_URL  || 'https://two4-production.up.railway.app';
+const OPENROUTER_SITE_NAME = process.env.OPENROUTER_SITE_NAME || 'TWO4 Seed AI';
 
-  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      // 정책상 권장 헤더
-      'HTTP-Referer': 'http://localhost:3000',
-      'X-Title': 'two4-studio'
-    },
-    body: JSON.stringify({
-      model: model || 'anthropic/claude-3.5-sonnet',
-      max_tokens: 1024,
-      messages: [
-        { role:'system', content: system },
-        { role:'user',   content: prompt }
-      ]
-    })
-  });
-  if (!r.ok) throw new Error(`OpenRouter ${r.status}: ${await r.text()}`);
-  const j = await r.json();
-  const c = j.choices?.[0]?.message?.content;
-  return (typeof c === 'string') ? c : Array.isArray(c) ? c.map(p=>p.text||'').join('') : String(c ?? '');
-}
+// /api/chat
+app.post('/api/chat', async (req, res) => {
+  try {
+    if (!OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: 'OPENROUTER_API_KEY not set' });
+    }
+    const { messages } = req.body || {};
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'messages is required' });
+    }
 
-app.post('/ai/claude', async (req, res) => {
-  try{
-    if (!assertAuth(req, res)) return;
-    const { prompt = '', system = '', model = '' } = req.body || {};
-    const text = await callOpenRouter({ model, prompt, system });
-    res.json({ ok:true, text });
-  }catch(e){
-    res.status(500).json({ ok:false, error:String(e) });
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': OPENROUTER_SITE_URL,
+        'X-Title': OPENROUTER_SITE_NAME,
+      },
+      body: JSON.stringify({
+        model: MODEL_ID,
+        messages,
+        temperature: 0.7,
+        max_tokens: 800
+      })
+    });
+
+    if (!r.ok) {
+      const t = await r.text().catch(()=> '');
+      console.error('OpenRouter upstream error:', r.status, t);
+      return res.status(502).json({ error: 'openrouter upstream', detail: t });
+    }
+
+    const data = await r.json();
+    const reply = data?.choices?.[0]?.message?.content || '(no content)';
+    res.json({ reply });
+  } catch (e) {
+    console.error('/api/chat error:', e);
+    res.status(500).json({ error: 'server error' });
   }
 });
 
-// ------------------------------------------------------------------
-// Routes
-// ------------------------------------------------------------------
+// /api/image (자리표시자)
+const IMAGE_MODEL = process.env.IMAGE_MODEL || '';
+app.post('/api/image', async (req, res) => {
+  try {
+    const { prompt } = req.body || {};
+    if (!prompt) return res.status(400).json({ error: 'prompt required' });
 
-// 스튜디오 진입: /tidewave → apps/web/menu/tidewave/index.html
-app.get('/tidewave', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'menu', 'tidewave', 'index.html'));
+    if (!OPENROUTER_API_KEY || !IMAGE_MODEL) {
+      return res.status(501).json({ error: 'IMAGE_MODEL not configured. Set IMAGE_MODEL env and implement image call.' });
+    }
+
+    return res.status(501).json({ error: 'image generation not implemented yet' });
+  } catch (e) {
+    console.error('/api/image error:', e);
+    res.status(500).json({ error: 'server error' });
+  }
 });
 
-// 존재하지 않는 정적/비HTML 요청 404
+// ==============================
+// 📌 기본 라우트
+// ==============================
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'apps/web/index.html'));
+});
+
 app.use((req, res, next) => {
   if (req.accepts('html')) return next();
   res.status(404).end();
 });
 
-// SPA fallback (apps/web/index.html)
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'apps/web/index.html')));
 
-// ------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`🚀 Web server listening on ${PORT}`);
-});
+// ==============================
+// 📌 MongoDB 연결
+// ==============================
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is not set');
+  process.exit(1);
+}
+
+mongoose.set('strictQuery', true);
+
+mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    app.listen(PORT, () => console.log(`🚀 Cosmos/Seed server running on ${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connect error:', err.message);
+    process.exit(1);
+  });
