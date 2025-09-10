@@ -1,199 +1,145 @@
-// seed.js - 클라이언트 스크립트 (텍스트/이미지/시세/코인글래스 명령)
-(function () {
-  const chatContainer = document.getElementById('chatContainer');
-  const messageInput  = document.getElementById('messageInput');
-  const sendButton    = document.getElementById('sendButton');
-
-  let isTyping = false;
-  let messageHistory = []; // { role, content }
-
-  function addMessage(content, isUser = false) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-    messageDiv.innerHTML = `
-      <div class="avatar">${isUser ? 'U' : 'AI'}</div>
-      <div class="message-content">${content}</div>
-    `;
-    chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-    messageHistory.push({ role: isUser ? 'user' : 'assistant', content });
-  }
-
-  function addImage(url) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ai';
-    messageDiv.innerHTML = `
-      <div class="avatar">AI</div>
-      <div class="message-content">
-        <img src="${url}" alt="AI generated image">
-      </div>
-    `;
-    chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-    messageHistory.push({ role: 'assistant', content: `[image] ${url}` });
-  }
-
-  function showTypingIndicator() {
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message ai';
-    typingDiv.id = 'typingIndicator';
-    typingDiv.innerHTML = `
-      <div class="avatar">AI</div>
-      <div class="message-content typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>
-    `;
-    chatContainer.appendChild(typingDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }
-  function removeTypingIndicator() {
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) indicator.remove();
-  }
-
-  async function getAIResponse(userMessage) {
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are Seed AI for TWO4. Reply in the user language (Korean by default). Keep it concise, helpful, with a subtle cyberpunk tone.' },
-            ...messageHistory.slice(-10),
-            { role: 'user', content: userMessage }
-          ]
-        })
-      });
-      if (!response.ok) throw new Error('API 요청 실패');
-      const data = await response.json();
-      return data.reply || '응답이 비어있습니다.';
-    } catch (error) {
-      console.error('API 에러:', error);
-      return '서버와 통신 중 오류가 발생했어요. 잠시 후 다시 시도해줘!';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Seed AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      color: #e0e0e0;
+      height: 100vh; display:flex; justify-content:center; align-items:center;
+      padding: 20px; overflow: hidden;
     }
-  }
-
-  async function handleImageCommand(prompt) {
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    try {
-      const res = await fetch('/api/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
-      const data = await res.json();
-      removeTypingIndicator();
-      if (res.ok && data.url) addImage(data.url);
-      else addMessage('이미지 생성 실패: ' + (data.error || 'unknown'), false);
-    } catch (e) {
-      removeTypingIndicator();
-      addMessage('이미지 서버 오류', false);
-    } finally {
-      isTyping = false; sendButton.disabled = false;
+    body::before {
+      content: ''; position:absolute; width:200%; height:200%;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(102,126,234,.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(118,75,162,.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(102,126,234,.05) 0%, transparent 50%);
+      animation: bgFloat 20s ease-in-out infinite;
     }
-  }
+    @keyframes bgFloat { 0%,100% { transform: translate(-10%, -10%) rotate(0) } 50% { transform: translate(10%,10%) rotate(180deg) } }
 
-  async function handleUpbitPrice(market) {
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    try {
-      const res = await fetch(`/api/price/upbit/${encodeURIComponent(market.toUpperCase())}`);
-      const d = await res.json();
-      removeTypingIndicator();
-      if (res.ok) {
-        const price = Number(d.price).toLocaleString();
-        const pct = d.changeRate ? (d.changeRate * 100).toFixed(2) + '%' : '-';
-        addMessage(`${d.market} 현재가: ${price}원 (변동: ${d.change || '-'} / ${pct})`, false);
-      } else addMessage('업비트 시세 조회 실패', false);
-    } catch {
-      removeTypingIndicator(); addMessage('업비트 서버 오류', false);
-    } finally { isTyping = false; sendButton.disabled = false; }
-  }
+    .chat-wrapper{
+      width:100%; max-width:1200px; height:90vh; display:flex; flex-direction:column;
+      background:rgba(15,15,25,.6); backdrop-filter: blur(20px);
+      border-radius:24px; border:1px solid rgba(255,255,255,.1);
+      box-shadow:0 0 40px rgba(102,126,234,.1), inset 0 0 40px rgba(255,255,255,.02), 0 20px 60px rgba(0,0,0,.5);
+      position:relative; overflow:hidden;
+    }
+    .chat-wrapper::before{
+      content:''; position:absolute; inset:-2px; border-radius:24px; padding:2px;
+      background:linear-gradient(45deg, rgba(102,126,234,.6), rgba(118,75,162,.6), rgba(102,126,234,.6), rgba(118,75,162,.6));
+      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude; animation:borderRotate 8s linear infinite; opacity:.8;
+    }
+    @keyframes borderRotate { 0%{ transform:rotate(0) } 100%{ transform:rotate(360deg) } }
 
-  async function handleBinancePrice(symbol) {
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    try {
-      const res = await fetch(`/api/price/binance/${encodeURIComponent(symbol.toUpperCase())}`);
-      const d = await res.json();
-      removeTypingIndicator();
-      if (res.ok) addMessage(`${d.symbol} 현재가: ${d.price}`, false);
-      else addMessage('바이낸스 시세 조회 실패', false);
-    } catch {
-      removeTypingIndicator(); addMessage('바이낸스 서버 오류', false);
-    } finally { isTyping = false; sendButton.disabled = false; }
-  }
+    .header{
+      background:rgba(20,20,35,.5); backdrop-filter: blur(10px);
+      padding:25px 30px; border-bottom:1px solid rgba(102,126,234,.2); position:relative; z-index:10;
+    }
+    .header::after{
+      content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg, transparent, rgba(102,126,234,.8), rgba(118,75,162,.8), transparent);
+      animation:shimmer 3s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0%,100%{ opacity:.5; transform:translateX(-100%) } 50%{ opacity:1; transform:translateX(100%) } }
 
-  async function handleCgOI(symbol = 'BTCUSDT', interval = '4h') {
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    try {
-      const r = await fetch(`/api/cg/oi/agg?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}`);
-      const d = await r.json();
-      removeTypingIndicator();
-      if (r.ok) {
-        const n = d?.data?.length ?? 0;
-        addMessage(`${symbol} OI(집계) ${interval} 캔들: ${n}개`, false);
-      } else addMessage('CoinGlass OI 조회 실패', false);
-    } catch {
-      removeTypingIndicator(); addMessage('서버 오류로 OI 조회 실패', false);
-    } finally { isTyping = false; sendButton.disabled = false; }
-  }
+    .header h1{
+      font-size:28px; font-weight:300; letter-spacing:2px; text-transform:uppercase;
+      background:linear-gradient(135deg, #fff 0%, #667eea 50%, #764ba2 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
 
-  async function handleCgFunding(symbol = 'BTCUSDT', interval = '4h') {
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    try {
-      const r = await fetch(`/api/cg/funding?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}`);
-      const d = await r.json();
-      removeTypingIndicator();
-      if (r.ok) {
-        const last = Array.isArray(d?.data) ? d.data[d.data.length - 1] : null;
-        addMessage(`${symbol} Funding ${interval} 최근: ${last ? JSON.stringify(last) : '데이터 없음'}`, false);
-      } else addMessage('CoinGlass Funding 조회 실패', false);
-    } catch {
-      removeTypingIndicator(); addMessage('서버 오류로 Funding 조회 실패', false);
-    } finally { isTyping = false; sendButton.disabled = false; }
-  }
+    .status{ display:flex; align-items:center; gap:10px; margin-top:10px; font-size:12px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:1px; }
+    .status-dot{ width:6px; height:6px; background:#00ff88; border-radius:50%; box-shadow:0 0 10px #00ff88; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1) } 50%{ opacity:.5; transform:scale(1.5) } }
 
-  async function sendMessage() {
-    const message = messageInput.value.trim();
-    if (!message || isTyping) return;
+    .chat-container{ flex:1; overflow-y:auto; padding:30px; background:rgba(10,10,20,.2); position:relative; }
+    .chat-container::-webkit-scrollbar{ width:4px; } 
+    .chat-container::-webkit-scrollbar-track{ background:rgba(255,255,255,.02) }
+    .chat-container::-webkit-scrollbar-thumb{ background:linear-gradient(to bottom, #667eea, #764ba2); border-radius:2px }
 
-    addMessage(message, true);
-    messageInput.value = '';
-    messageInput.focus();
+    .message{ display:flex; gap:15px; margin-bottom:25px; animation: slideIn .4s ease; }
+    @keyframes slideIn { from{ opacity:0; transform:translateY(20px) } to{ opacity:1; transform:translateY(0) } }
+    .message.user{ flex-direction: row-reverse; }
 
-    // 명령 분기
-    const imgMatch = message.match(/^\/image\s+(.+)/i);
-    if (imgMatch) return handleImageCommand(imgMatch[1]);
+    .avatar{ width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; flex-shrink:0; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.1) }
+    .message.ai .avatar{ background:linear-gradient(135deg, rgba(102,126,234,.3), rgba(118,75,162,.3)); box-shadow:0 0 20px rgba(102,126,234,.3) }
+    .message.user .avatar{ background:rgba(255,255,255,.05) }
 
-    const upbit = message.match(/^\/price\s+((KRW|BTC|USDT)-[A-Z0-9]+)$/i);
-    if (upbit) return handleUpbitPrice(upbit[1]);
+    .message-content{ max-width:70%; padding:15px 20px; border-radius:20px; line-height:1.6; font-size:15px; backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.05); position:relative; overflow:hidden }
+    .message.ai .message-content{ background:rgba(102,126,234,.1); box-shadow:0 4px 20px rgba(102,126,234,.1), inset 0 0 20px rgba(255,255,255,.02) }
+    .message.user .message-content{ background:rgba(255,255,255,.05); box-shadow:0 4px 20px rgba(0,0,0,.2), inset 0 0 20px rgba(255,255,255,.02) }
+    .message-content img{ max-width:100%; border-radius:12px; display:block }
 
-    const binance = message.match(/^\/price\s+([A-Z0-9]{6,12})$/i);
-    if (binance) return handleBinancePrice(binance[1]);
+    .typing-indicator{ display:flex; gap:4px; padding:15px }
+    .typing-dot{ width:8px; height:8px; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:50%; animation: typing 1.4s infinite }
+    .typing-dot:nth-child(2){ animation-delay:.2s } .typing-dot:nth-child(3){ animation-delay:.4s }
+    @keyframes typing { 0%,60%,100%{ transform:translateY(0); opacity:.4 } 30%{ transform:translateY(-15px); opacity:1 } }
 
-    const oi = message.match(/^\/oi(?:\s+([A-Z0-9]+))?(?:\s+(\d+[mhd]))?$/i);
-    if (oi) return handleCgOI((oi[1] || 'BTCUSDT').toUpperCase(), oi[2] || '4h');
+    .input-container{ background:rgba(20,20,35,.5); backdrop-filter: blur(10px); border-top:1px solid rgba(102,126,234,.2); padding:25px 30px; position:relative }
+    .input-container::before{
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg, transparent, rgba(102,126,234,.8), rgba(118,75,162,.8), transparent);
+      animation:shimmer 3s ease-in-out infinite reverse;
+    }
 
-    const fr = message.match(/^\/funding(?:\s+([A-Z0-9]+))?(?:\s+(\d+[mhd]))?$/i);
-    if (fr) return handleCgFunding((fr[1] || 'BTCUSDT').toUpperCase(), fr[2] || '4h');
+    .input-wrapper{ display:flex; gap:12px; align-items:center; background:rgba(10,10,20,.3); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:8px 8px 8px 20px; transition: all .4s cubic-bezier(.4,0,.2,1); position:relative; overflow:hidden }
+    .input-wrapper::before{
+      content:''; position:absolute; inset:0; border-radius:16px; padding:1px;
+      background:linear-gradient(135deg, transparent, rgba(102,126,234,.3), transparent);
+      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude; opacity:0; transition:opacity .4s ease;
+    }
+    .input-wrapper:focus-within::before{ opacity:1 }
+    .input-wrapper:focus-within{
+      background:rgba(10,10,20,.5); border-color:rgba(102,126,234,.2);
+      box-shadow:0 0 20px rgba(102,126,234,.1), inset 0 0 20px rgba(102,126,234,.02)
+    }
 
-    // 일반 텍스트 흐름
-    isTyping = true; sendButton.disabled = true; showTypingIndicator();
-    const start = Date.now();
-    const aiResponse = await getAIResponse(message);
-    const remainingTime = Math.max(1000 - (Date.now() - start), 0);
-    setTimeout(() => {
-      removeTypingIndicator();
-      addMessage(aiResponse, false);
-      isTyping = false; sendButton.disabled = false; messageInput.focus();
-    }, remainingTime);
-  }
+    .input-field{ flex:1; background:none; border:none; outline:none; color:rgba(255,255,255,.9); font-size:15px; padding:8px 0; font-family:inherit }
+    .input-field::placeholder{ color:rgba(255,255,255,.3) }
+    .send-button{ width:40px; height:40px; border-radius:12px; background:transparent; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .4s cubic-bezier(.4,0,.2,1); color:rgba(255,255,255,.15); position:relative; font-size:20px }
+    .send-button:hover{ color:rgba(102,126,234,.6); transform:scale(1.1) }
+    .send-button:active{ transform:scale(.95); color:rgba(118,75,162,.7) }
+    .send-button:disabled{ opacity:.2; cursor:not-allowed }
 
-  sendButton.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  });
-  window.addEventListener('load', () => { messageInput.focus(); });
-  document.querySelector('.input-wrapper').addEventListener('click', () => { messageInput.focus(); });
-})();
+    @media (max-width:768px){ .chat-wrapper{ height:100vh; max-width:100%; border-radius:0 } .message-content{ max-width:85% } }
+  </style>
+
+  <!-- 분리된 JS -->
+  <script src="/ai/seed.js" defer></script>
+</head>
+<body>
+  <div class="chat-wrapper">
+    <div class="header">
+      <h1>Seed AI</h1>
+      <div class="status">
+        <span class="status-dot"></span>
+        <span>Connected</span>
+      </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+      <div class="message ai">
+        <div class="avatar">AI</div>
+        <div class="message-content">
+          안녕하세요! <b>Seed AI</b>입니다. 텍스트는 그대로, 이미지는 <code>/image 우주 고양이</code>처럼 요청해보세요.
+        </div>
+      </div>
+    </div>
+
+    <div class="input-container">
+      <div class="input-wrapper">
+        <input type="text" class="input-field" id="messageInput" placeholder="메시지를 입력하세요..." autocomplete="off"/>
+        <button class="send-button" id="sendButton" type="button">▶</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
