@@ -1,19 +1,10 @@
 // server.js
 const express = require('express');
 const path = require('path');
-const http = require('http');
 const mongoose = require('mongoose');               // ⬅️ 추가
-const setupAIChatSocket = require('./apps/api/utils/socket');
 
 const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
-const server = http.createServer(app);
-const io = require('socket.io')(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
 
 // 정적 파일 서빙 (apps/web 폴더)
 app.use(express.static(path.join(__dirname, 'apps/web')));
@@ -171,9 +162,7 @@ mongoose.connect(MONGODB_URI, {
 })
 .then(() => {
   console.log('✅ MongoDB connected');
-  // Socket.io 설정 (DB 연결 이후)
-  setupAIChatSocket(io);
-  server.listen(PORT, () => console.log(`🚀 Cosmos server on ${PORT}`));
+   app.listen(PORT, () => console.log(`🚀 Cosmos server on ${PORT}`));
 })
 .catch(err => {
   console.error('❌ MongoDB connect error:', err.message);
