@@ -61,6 +61,13 @@ async function pmap(arr, limit, fn) {
   return out;
 }
 
+// 롱% 계산: ratio = long/short → long% = ratio/(1+ratio)*100
+const longPct = r => {
+  const x = Number(r);
+  if (!isFinite(x)) return null;
+  return (x / (1 + x)) * 100;
+};
+
 async function proxyFetch(url, headers = {}) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 8000);
@@ -335,6 +342,52 @@ app.get('/api/binance/markets', async (req, res) => {
   } catch (e) {
     console.error('/api/binance/markets error:', e);
     res.status(502).json({ error: 'binance adapter failed', detail: String(e) });
+  }
+});
+
+// 롱/숏 비율: 전체 계정(Global)
+app.get('/api/binance/ls/global', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || 'BTCUSDT').toUpperCase();
+    const key = `LSG:${symbol}`;
+    const c = hit2(key, 60 * 1000);
+    if (c) {
+      setCorsAndCache(res);
+      return res.json(JSON.parse(c.body));
+    }
+    const url = `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${symbol}&period=5m&limit=288`;
+    const arr = await bfetch(url);
+    const last = longPct(arr.at(-1)?.longShortRatio);
+    const avg = longPct(arr.reduce((s, a) => s + Number(a.longShortRatio || 0), 0) / arr.length);
+    const out = { symbol, long_pct_last: last, long_pct_avg24: avg };
+    setCorsAndCache(res);
+    res.json(out);
+    keep(key, { ok: true, body: JSON.stringify(out), ct: 'application/json' });
+  } catch {
+    res.status(502).json({ error: 'global L/S fetch fail' });
+  }
+});
+
+// 롱/숏 비율: 상위 트레이더(Top Trader)
+app.get('/api/binance/ls/top', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || 'BTCUSDT').toUpperCase();
+    const key = `LST:${symbol}`;
+    const c = hit2(key, 60 * 1000);
+    if (c) {
+      setCorsAndCache(res);
+      return res.json(JSON.parse(c.body));
+    }
+    const url = `https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol=${symbol}&period=5m&limit=288`;
+    const arr = await bfetch(url);
+    const last = longPct(arr.at(-1)?.longShortRatio);
+    const avg = longPct(arr.reduce((s, a) => s + Number(a.longShortRatio || 0), 0) / arr.length);
+    const out = { symbol, long_pct_last: last, long_pct_avg24: avg };
+    setCorsAndCache(res);
+    res.json(out);
+    keep(key, { ok: true, body: JSON.stringify(out), ct: 'application/json' });
+  } catch {
+    res.status(502).json({ error: 'top L/S fetch fail' });
   }
 });
 
