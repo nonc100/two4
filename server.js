@@ -31,6 +31,25 @@ const TTL_MS = 60_000;
 const hit  = key => { const v = cache.get(key); return v && (Date.now() - v.t < TTL_MS) ? v : null; };
 const keep = (key, payload) => { if (payload.ok) cache.set(key, { ...payload, t: Date.now() }); };
 
+// === ADD: TTL-override hit() & limited concurrency map ===
+const hit2 = (key, ttlMs) => {
+  const v = cache.get(key);
+  return v && (Date.now() - v.t < (ttlMs || TTL_MS)) ? v : null;
+};
+async function pmap(arr, limit, fn) {
+  const out = new Array(arr.length);
+  let i = 0;
+  async function worker() {
+    while (i < arr.length) {
+      const idx = i++;
+      out[idx] = await fn(arr[idx], idx);
+    }
+  }
+  const n = Math.min(limit, Math.max(arr.length, 1));
+  await Promise.all(Array.from({length: n}, worker));
+  return out;
+}
+
 async function proxyFetch(url, headers = {}) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 8000);
@@ -111,7 +130,7 @@ function downsample(arr, target = 100) {
 }
 async function binanceSpark7dCloses(pair) {
   const key = `BF:spark:${pair}`;
-  const cached = hit(key);
+  const cached = hit2(key, 10 * 60 * 1000); // 10분 캐시
   if (cached) return JSON.parse(cached.body);
 
   const u = new URL(BINANCE_CONT);
@@ -131,7 +150,7 @@ async function binanceSpark7dCloses(pair) {
 // --- ADD: Futures Open Interest (per symbol) with cache ---
 async function binanceOpenInterest(symbol /* e.g., 'BTCUSDT' */) {
   const key = `BF:oi:${symbol}`;
-  const cached = hit(key);
+  const cached = hit2(key, 60 * 1000); // 60초 캐시
   if (cached) return JSON.parse(cached.body);
 
   const data = await bfetch(`${BINANCE_FAPI}/openInterest?symbol=${symbol}`);
@@ -209,13 +228,24 @@ app.get('/api/binance/markets', async (req, res) => {
     // 2) 24h 통계 배치
     const stats = await binanceTicker24Batch(symbols);
 
-    // 3) 7D 스파클라인(15m) + OI 병렬
+    // 3) 7D 스파크 + OI (헤비필드 안전모드)
     const pairs = slice.map(s => `${s.base}${s.quote}`);
-    const [sparks, ois] = await Promise.all([
-      Promise.all(pairs.map(p => binanceSpark7dCloses(p))),
-      Promise.all(symbols.map(sym => binanceOpenInterest(sym)))
-    ]);
+ 
+    // 상위 N개만 헤비필드 계산 (기본 20, 쿼리로 조절 가능)
+    const HEAVY_N = Math.max(0, Math.min(Number(req.query.heavy_n) || 20, slice.length));
 
+    // 동시성 제한: 스파크 2, OI 3
+    const sparks = await pmap(
+      pairs.map((p, i) => i < HEAVY_N ? p : null),
+      2,
+      async (p) => p ? await binanceSpark7dCloses(p) : []
+    );
+    const ois = await pmap(
+      symbols.map((sym, i) => i < HEAVY_N ? sym : null),
+      3,
+      async (sym) => sym ? await binanceOpenInterest(sym) : 0
+    );
+    
     // 4) CG 호환 매핑 + OI
     const rows = stats.map((it, idx) => {
       const base = slice[idx]?.base || it.symbol?.replace(/USDT$/, '');
