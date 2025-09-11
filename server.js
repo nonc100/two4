@@ -128,6 +128,18 @@ async function binanceSpark7dCloses(pair) {
   return spark;
 }
 
+// --- ADD: Futures Open Interest (per symbol) with cache ---
+async function binanceOpenInterest(symbol /* e.g., 'BTCUSDT' */) {
+  const key = `BF:oi:${symbol}`;
+  const cached = hit(key);
+  if (cached) return JSON.parse(cached.body);
+
+  const data = await bfetch(`${BINANCE_FAPI}/openInterest?symbol=${symbol}`);
+  const oi = parseFloat(data?.openInterest ?? '0');
+  keep(key, { ok:true, body: JSON.stringify(oi), ct:'application/json' });
+  return oi;
+}
+
 // ✅ Binance 버전 /api/coins/markets (source=binance 일 때만 처리)
 app.get('/api/coins/markets', async (req, res, next) => {
   if ((req.query.source || '').toLowerCase() !== 'binance') return next();
@@ -173,6 +185,57 @@ app.get('/api/coins/markets', async (req, res, next) => {
     res.json(rows);
   } catch (e) {
     console.error('binance markets error:', e);
+    res.status(502).json({ error: 'binance adapter failed', detail: String(e) });
+  }
+});
+
+// --- ADD: Binance markets alias (CG-like schema with OI) ---
+// NOTE: keep ABOVE SPA catch-all routes
+app.get('/api/binance/markets', async (req, res) => {
+  try {
+    setCorsAndCache(res);
+
+    // paging
+    const limit = Math.min(Number(req.query.per_page) || 50, 250);
+    const page  = Math.max(Number(req.query.page) || 1, 1);
+    const offset = (page - 1) * limit;
+
+    // 1) USDT-M 선물 심볼 리스트
+    const list = await binanceFuturesSymbolsUSDT();
+    const slice = list.slice(offset, offset + limit);
+    const symbols = slice.map(s => s.symbol);
+    if (symbols.length === 0) return res.type('application/json').status(200).send('[]');
+
+    // 2) 24h 통계 배치
+    const stats = await binanceTicker24Batch(symbols);
+
+    // 3) 7D 스파클라인(15m) + OI 병렬
+    const pairs = slice.map(s => `${s.base}${s.quote}`);
+    const [sparks, ois] = await Promise.all([
+      Promise.all(pairs.map(p => binanceSpark7dCloses(p))),
+      Promise.all(symbols.map(sym => binanceOpenInterest(sym)))
+    ]);
+
+    // 4) CG 호환 매핑 + OI
+    const rows = stats.map((it, idx) => {
+      const base = slice[idx]?.base || it.symbol?.replace(/USDT$/, '');
+      return {
+        id: (base || '').toLowerCase(),
+        symbol: (base || '').toLowerCase(),
+        name: base || '',
+        image: { small: `/icons/${(base||'').toLowerCase()}.svg` }, // 있으면 사용
+        current_price: parseFloat(it.lastPrice),
+        total_volume: parseFloat(it.quoteVolume),
+        market_cap: null, // 필요 시 별도 근사 가능
+        price_change_percentage_24h: parseFloat(it.priceChangePercent),
+        sparkline_in_7d: { price: sparks[idx] || [] },
+        open_interest: ois[idx] ?? 0
+      };
+    });
+
+    res.type('application/json').status(200).send(JSON.stringify(rows));
+  } catch (e) {
+    console.error('/api/binance/markets error:', e);
     res.status(502).json({ error: 'binance adapter failed', detail: String(e) });
   }
 });
@@ -371,72 +434,6 @@ app.get('/api/holidays', async (req, res) => {
   setCorsAndCache(res);
   res.type(payload.ct).status(payload.status).send(payload.body);
   keep(key, payload);
-});
-
-// =======================================================
-/** ✅ OpenRouter (채팅) **/
-// =======================================================
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL_ID = process.env.MODEL_ID || 'openrouter/auto';
-const OPENROUTER_SITE_URL  = process.env.OPENROUTER_SITE_URL  || 'https://two4-production.up.railway.app';
-const OPENROUTER_SITE_NAME = process.env.OPENROUTER_SITE_NAME || 'TWO4 Seed AI';
-
-// 텍스트 채팅 — POST /api/chat
-app.post('/api/chat', async (req, res) => {
-  try {
-    if (!OPENROUTER_API_KEY) return res.status(500).json({ error: 'OPENROUTER_API_KEY not set' });
-    const { messages } = req.body || {};
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: 'messages is required' });
-    }
-
-    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': OPENROUTER_SITE_URL,
-        'X-Title': OPENROUTER_SITE_NAME,
-      },
-      body: JSON.stringify({
-        model: MODEL_ID,
-        messages,
-        temperature: 0.7,
-        max_tokens: 800
-      })
-    });
-
-    if (!r.ok) {
-      const t = await r.text().catch(()=> '');
-      console.error('OpenRouter upstream error:', r.status, t);
-      return res.status(502).json({ error: 'openrouter upstream', detail: t });
-    }
-
-    const data = await r.json();
-    const reply = data?.choices?.[0]?.message?.content || '(no content)';
-    res.json({ reply });
-  } catch (e) {
-    console.error('/api/chat error:', e);
-    res.status(500).json({ error: 'server error' });
-  }
-});
-
-// 이미지 생성 자리표시자 — POST /api/image
-const IMAGE_MODEL = process.env.IMAGE_MODEL || '';
-app.post('/api/image', async (req, res) => {
-  try {
-    const { prompt } = req.body || {};
-    if (!prompt) return res.status(400).json({ error: 'prompt required' });
-
-    if (!OPENROUTER_API_KEY || !IMAGE_MODEL) {
-      return res.status(501).json({ error: 'IMAGE_MODEL not configured. Set IMAGE_MODEL env and implement image call.' });
-    }
-
-    return res.status(501).json({ error: 'image generation not implemented yet' });
-  } catch (e) {
-    console.error('/api/image error:', e);
-    res.status(500).json({ error: 'server error' });
-  }
 });
 
 // ==============================
