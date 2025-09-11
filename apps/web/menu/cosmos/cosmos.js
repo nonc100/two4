@@ -379,14 +379,7 @@ async function initHub(){
       html:`<div style="font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:2px;color:#00ffff;text-shadow:0 0 10px currentColor">Bitcoin Market Cap</div>
             <div style="margin-top:12px;font-size:24px;font-weight:700">${btc?fmtMoney(btc.market_cap):'—'}</div>`
     },
-    {
-      badge:"USDT", 
-      title:"Tether Market Cap", 
-      centerTop: usdt?fmtMoney(usdt.market_cap):"—", 
-      centerSub:"USDT MCAP", 
-      html:`<div style="font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:2px;color:#00ffff;text-shadow:0 0 10px currentColor">Tether Market Cap</div>
-            <div style="margin-top:12px;font-size:24px;font-weight:700">${usdt?fmtMoney(usdt.market_cap):'—'}</div>`
-    },
+      whaleSec,
     {
       badge:"BTC DOM", 
       title:"Bitcoin Dominance", 
