@@ -1,6 +1,7 @@
 // server.js
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const Parser = require('rss-parser');               // RSS (네이버/구글 트렌드)
 const parser = new Parser();
@@ -11,6 +12,16 @@ const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 // ==============================
 // 정적 파일 서빙
 // ==============================
+const ICON_DIR = path.join(__dirname, 'apps/web/icons');
+app.use('/icons', express.static(ICON_DIR, {
+  fallthrough: false,
+  setHeaders(res){
+    res.type('image/svg+xml');
+    res.setHeader('Cache-Control','public, max-age=86400');
+  }
+}));
+const FALLBACK_ICON = '/media/coin.svg';
+
 app.use(express.static(path.join(__dirname, 'apps/web')));
 app.use('/media', express.static(path.join(__dirname, 'apps/web/media')));
 app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai'))); // seed.html 등
@@ -159,6 +170,40 @@ async function binanceOpenInterest(symbol /* e.g., 'BTCUSDT' */) {
   return oi;
 }
 
+// --- ADD: Open Interest % change helper ---
+async function binanceOIChangePct(symbol){            // 60s 캐시
+  const key = `BF:oipct:${symbol}`;
+  const cached = hit2(key, 60*1000);
+  if (cached) return JSON.parse(cached.body);
+
+  const url = `https://fapi.binance.com/futures/data/openInterestHist?symbol=${symbol}&period=5m&limit=300`;
+  const arr = await bfetch(url);
+  const n = arr.length;
+  const last = parseFloat(arr[n-1]?.sumOpenInterest ?? 'NaN');
+  const h1   = parseFloat(arr[n-12]?.sumOpenInterest ?? 'NaN');    // 5m*12
+  const d1   = parseFloat(arr[n-288]?.sumOpenInterest ?? 'NaN');   // 5m*288
+  const pct = (a,b)=> (isFinite(a)&&isFinite(b)&&b!==0) ? ((a-b)/b*100) : null;
+  const out = { oi_1h_pct: pct(last,h1), oi_24h_pct: pct(last,d1) };
+
+  keep(key, { ok:true, body: JSON.stringify(out), ct:'application/json' });
+  return out;
+}
+
+// 10분 캐시: CG top 250 market cap -> { SYMBOL: market_cap }
+async function cgMarketCapMap(){
+  const key = 'CG:capmap';
+  const cached = hit2(key, 10*60*1000);
+  if (cached) return JSON.parse(cached.body);
+
+  const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1';
+  const payload = await proxyFetch(url, cgHeaders);
+  const rows = JSON.parse(payload.body || '[]');
+  const map = {};
+  rows.forEach(r => { map[(r.symbol||'').toUpperCase()] = r.market_cap ?? null; });
+  keep(key, { ok:true, body: JSON.stringify(map), ct:'application/json' });
+  return map;
+}
+
 // ✅ Binance 버전 /api/coins/markets (source=binance 일 때만 처리)
 app.get('/api/coins/markets', async (req, res, next) => {
   if ((req.query.source || '').toLowerCase() !== 'binance') return next();
@@ -223,7 +268,10 @@ app.get('/api/binance/markets', async (req, res) => {
     const slice = list.slice(offset, offset + limit);
     const symbols = slice.map(s => s.symbol);
     if (symbols.length === 0) return res.type('application/json').status(200).send('[]');
-    
+
+    // 시가총액 맵 준비 (Top 250)
+    const capMap = await cgMarketCapMap();
+
     // 2) 24h 통계 (주의: 응답 순서 미보장)
     const statsArr = await binanceTicker24Batch(symbols);
     const statsMap = new Map(statsArr.map(o => [o.symbol, o])); // symbol -> stat
@@ -234,7 +282,7 @@ app.get('/api/binance/markets', async (req, res) => {
     // 상위 N개만 헤비 필드(스파크/OI) 계산 (기본 20)
     const HEAVY_N = Math.max(0, Math.min(Number(req.query.heavy_n) || 20, slice.length));
 
-    // 동시성 제한 유틸(pmap)과 hit2/TTL은 이전 메시지대로 추가되어 있다고 가정
+    // 동시성 제한 유틸(pmap)
     const sparksArr = await pmap(
       pairs.map((p, i) => i < HEAVY_N ? p : null),
       2,
@@ -245,48 +293,41 @@ app.get('/api/binance/markets', async (req, res) => {
       3,
       async (sym) => sym ? await binanceOpenInterest(sym) : 0
     );
-    
-    // 배열 -> map (pair/symbol 기준)
+        const oiPctArr = await pmap(
+      symbols.map((sym, i) => i < HEAVY_N ? sym : null),
+      2,
+      async (sym)=> sym ? await binanceOIChangePct(sym) : { oi_1h_pct:null, oi_24h_pct:null }
+    );
+
+    // 배열 -> map (pair 기준)
     const sparkMap = new Map();
     pairs.forEach((p, i) => sparkMap.set(p, sparksArr[i] || []));
-    const oiMap = new Map();
-    symbols.forEach((sym, i) => oiMap.set(sym, oiArr[i] ?? 0));
-
-    // 퍼센트 계산 헬퍼
-    const pct = (cur, prev) => {
-      const a = Number(cur), b = Number(prev);
-      if (!isFinite(a) || !isFinite(b) || b === 0) return null;
-      return ((a - b) / b) * 100;
-    };
-
-    // 4) CG 호환 매핑 (+ 1h%/7d% + image 문자열 + OI)
-    const rows = slice.map((s) => {
-      const stat = statsMap.get(s.symbol) || {};
-      const pair = `${s.base}${s.quote}`;
+ 
+   // 4) CG 호환 매핑 (+ 시가총액 + OI%)
+    const rows = slice.map((s, idx) => {
+      const stat  = statsMap.get(s.symbol) || {};
+      const pair  = `${s.base}${s.quote}`;
       const spark = sparkMap.get(pair) || [];
-      const last = parseFloat(stat.lastPrice ?? '0');
-
-      // 1h%: 15m 4개 전과 비교, 7d%: 첫 값과 비교
-      const lastClose = spark.length ? spark[spark.length - 1] : null;
-      const close1hAgo = spark.length >= 5 ? spark[spark.length - 5] : null;
-      const close7dAgo = spark.length > 0 ? spark[0] : null;
-
-      const p1h = (lastClose != null && close1hAgo != null) ? pct(lastClose, close1hAgo) : null;
-      const p7d = (lastClose != null && close7dAgo != null) ? pct(lastClose, close7dAgo) : null;
-
+      const lastClose = spark.at(-1);
+      const close1hAgo = spark.length>=5 ? spark[spark.length-5] : null;
+      const close7dAgo = spark[0] ?? null;
+      const pct = (a,b)=> (isFinite(a)&&isFinite(b)&&b!==0) ? ((a-b)/b*100) : null;
+      
       return {
         id: s.base.toLowerCase(),
         symbol: s.base.toLowerCase(),
         name: s.base,
-        image: `/icons/${s.base.toLowerCase()}.svg`,                 // 문자열로 내려줌
-        current_price: last,
+        image: `/icons/${s.base.toLowerCase()}.svg`,
+        current_price: parseFloat(stat.lastPrice ?? '0'),
         total_volume: parseFloat(stat.quoteVolume ?? '0'),
-        market_cap: null,                                            // (원하면 추후 근사치 추가)
-        price_change_percentage_1h: p1h,                             // ✅ 추가
+        market_cap: capMap[s.base.toUpperCase()] ?? null,
+        price_change_percentage_1h: pct(lastClose, close1hAgo),
         price_change_percentage_24h: parseFloat(stat.priceChangePercent ?? '0'),
-        price_change_percentage_7d: p7d,                             // ✅ 추가
+        price_change_percentage_7d: pct(lastClose, close7dAgo),
         sparkline_in_7d: { price: spark },
-        open_interest: oiMap.get(s.symbol) || 0
+        open_interest: oiArr[idx] ?? 0,
+        open_interest_1h_change_pct:  oiPctArr[idx]?.oi_1h_pct ?? null,
+        open_interest_24h_change_pct: oiPctArr[idx]?.oi_24h_pct ?? null
       };
     });
 
