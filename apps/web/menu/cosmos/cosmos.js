@@ -228,24 +228,21 @@ function gaugeHTML(val){
 }
 
 function whaleDualDonutHTML(gPct, tPct){
-  const clamp = (n)=>Math.max(0, Math.min(100, Number(n)||0));
+  const clamp = n => Math.max(0, Math.min(100, Number(n)||0));
   const G = clamp(gPct), T = clamp(tPct);
-  const R1=60, R2=44, C=80, CIRC = 2*Math.PI;
-
-  const dash = (r,p)=>`${(CIRC*r*p/100).toFixed(1)} ${(CIRC*r*(1-p/100)).toFixed(1)}`;
+   const C=80, R1=60, R2=44, TAU=2*Math.PI;
+  const dash = (r,p)=>`${(TAU*r*p/100).toFixed(1)} ${(TAU*r*(1-p/100)).toFixed(1)}`;
   return `
-  <svg viewBox="0 0 160 160" style="width:220px;height:220px">
-    <!-- base rings -->
-    <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="rgba(0,255,255,.15)" stroke-width="10"/>
-    <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="rgba(255,77,255,.12)" stroke-width="10"/>
-    <!-- value rings (start at -90deg) -->
-    <g transform="rotate(-90 ${C} ${C})">
-      <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="#00ffff" stroke-width="10"
-              stroke-linecap="round" stroke-dasharray="${dash(R1,G)}"/>
-      <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="#ff66cc" stroke-width="10"
-              stroke-linecap="round" stroke-dasharray="${dash(R2,T)}"/>
-    </g>
-  </svg>`;
+    <svg viewBox="0 0 160 160" style="width:200px;height:200px">
+      <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="rgba(0,255,255,.15)" stroke-width="10"/>
+      <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="rgba(255,102,204,.12)" stroke-width="10"/>
+      <g transform="rotate(-90 ${C} ${C})">
+        <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="#00ffff" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="${dash(R1,G)}"/>
+        <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="#ff66cc" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="${dash(R2,T)}"/>
+      </g>
+    </svg>`;
 }
 
 function buildHub(sections){
@@ -287,7 +284,7 @@ function buildHub(sections){
       hubSub.textContent=s.centerSub;
       hubTitle.textContent=s.title;
       hubBody.innerHTML=s.html;
-      hubBig.style.fontSize = s.smallCenter ? '20px' : '';
+      hubBig.style.fontSize = s.smallCenter ? '16px' : '';
       hubBig.style.whiteSpace = s.smallCenter ? 'nowrap' : '';
     };
     
@@ -342,39 +339,39 @@ async function initHub(){
   const dAvg  = (isFinite(topLS?.long_pct_avg24) && isFinite(globalLS?.long_pct_avg24))
                 ? (topLS.long_pct_avg24 - globalLS.long_pct_avg24) : null;
 
+     const pct = v => isFinite(v) ? v.toFixed(1)+'%' : '—';
+  const pp  = v => isFinite(v) ? ((v>=0?'+':'')+v.toFixed(1)+'pp') : '—';
+
   const whaleSec = {
     badge: "W-GAP",
     title: "Whale Gap",
     centerTop: (isFinite(gLast)&&isFinite(tLast)) ? `G ${gLast.toFixed(1)}% | T ${tLast.toFixed(1)}%` : "—",
     centerSub: (isFinite(dNow)&&isFinite(dAvg))
-      ? `Δ ${(dNow>=0?'+':'')}${dNow.toFixed(1)}pp · 24h ${(dAvg>=0?'+':'')}${dAvg.toFixed(1)}pp`
-      : "NO DATA",
+               ? `Δ ${(dNow>=0?'+':'')}${dNow.toFixed(1)}pp · 24h ${(dAvg>=0?'+':'')}${dAvg.toFixed(1)}pp`
+               : "NO DATA",
     smallCenter: true,
     html: `
-    <div class="wg-info" style="display:flex;flex-direction:column;gap:8px;font-family:'Orbitron',monospace;font-size:13px;line-height:1.4">
-      <div><b>G:</b> ${isFinite(gLast)?gLast.toFixed(1)+'%':'—'} ·
-           <b>T:</b> ${isFinite(tLast)?tLast.toFixed(1)+'%':'—'} |
-           <b>Gap Δ:</b> ${isFinite(dNow)?((dNow>=0?'+':'')+dNow.toFixed(1)+'pp'):'—'}
-           <span style="opacity:.75">— |Δ|가 클수록 포지셔닝 괴리 ↑</span>
+        <div style="display:flex;gap:18px;align-items:center">
+      <div class="wgap-svg">
+        ${ (isFinite(gLast)&&isFinite(tLast)) ? whaleDualDonutHTML(gLast, tLast)
+                                              : "<div style='color:#8b95a7'>No data</div>" }
       </div>
-
-      <div style="margin-top:4px">
-        <b>Outer ring:</b> Global Long/Short Account Ratio <span style="opacity:.8">(전체 계정 롱 %)</span><br>
-        <b>Inner ring:</b> Top Trader Long/Short Position Ratio <span style="opacity:.8">(상위 트레이더 롱 %)</span>
-      </div>
-
-      <div style="margin-top:6px; opacity:.85">
-        <b>주의:</b> 단독 시그널로 확정적 판단 금지 → Funding / Premium, OI 변화와 함께 보조지표로 사용
-      </div>
-
-      <hr style="border:0;border-top:1px solid rgba(255,255,255,.12);margin:8px 0">
-
-      <div>
-        <b>EN:</b> G ${isFinite(gLast)?gLast.toFixed(1)+'%':'—'} · T ${isFinite(tLast)?tLast.toFixed(1)+'%':'—'}
-        | Gap Δ ${isFinite(dNow)?((dNow>=0?'+':'')+dNow.toFixed(1)+'pp'):'—'}
-        — Larger |Δ| = stronger divergence<br>
-        <b>Outer ring:</b> Global L/S (Global long %) · <b>Inner ring:</b> Top L/S (Top-trader long %)<br>
-        <b>Note:</b> Not a standalone signal; use with Funding/Premium & OI changes.
+      <div class="wgap-text" style="display:flex;flex-direction:column;gap:8px;font-family:'Orbitron',monospace">
+        <div><b>G:</b> ${pct(gLast)} · <b>T:</b> ${pct(tLast)} | <b>Gap Δ:</b> ${pp(dNow)}
+            <span style="opacity:.75">— |Δ|가 클수록 포지셔닝 괴리 ↑</span></div>
+        <div>
+          <b>Outer ring:</b> Global Long/Short Account Ratio <span style="opacity:.8">(전체 계정 롱 %)</span><br>
+          <b>Inner ring:</b> Top Trader Long/Short Position Ratio <span style="opacity:.8">(상위 트레이더 롱 %)</span>
+        </div>
+        <div style="opacity:.85">
+          <b>주의:</b> 단독 시그널로 확정적 판단 금지 → Funding / Premium, OI 변화와 함께 보조지표로 사용
+        </div>
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,.12);margin:6px 0">
+        <div>
+          <b>EN:</b> G ${pct(gLast)} · T ${pct(tLast)} | Gap Δ ${pp(dNow)} — Larger |Δ| = stronger divergence<br>
+          <b>Outer ring:</b> Global L/S (Global long %) · <b>Inner ring:</b> Top L/S (Top-trader long %)<br>
+          <b>Note:</b> Not a standalone signal; use with Funding/Premium & OI changes.
+        </div>
       </div>
     </div>`
   };
