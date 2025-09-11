@@ -382,6 +382,7 @@ function rowHTML(c, i){
     <td class="num hide-m">${fmtPct(p7d)}</td>
     <td class="num hide-m">${fmtMoney(c.market_cap)}</td>
     <td class="num hide-m">${fmtMoney(c.total_volume)}</td>
+    <td class="num">${fmtMoney(c.open_interest)}</td>
     <td class="spark"><canvas width="140" height="32" data-spark-id="${c.id}"></canvas></td>
   </tr>`;
 }
@@ -399,7 +400,8 @@ function applyFilterSort(){
     change24h: c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h ?? 0,
     change7d: c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d ?? 0,
     market_cap: c.market_cap ?? -1,
-    volume: c.total_volume ?? -1
+    volume: c.total_volume ?? -1,
+    oi: c.open_interest ?? -1
   })[k];
   
   arr.sort((a,b)=>{
