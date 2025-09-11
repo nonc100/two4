@@ -400,7 +400,7 @@ app.get('/api/binance/flow', async (req, res) => {
     const cached = hit2(key, 60 * 1000); // 60s
     if (cached) return res.json(JSON.parse(cached.body));
 
-    const url = `https://fapi.binance.com/futures/data/takerBuySellVol?symbol=${symbol}&period=${period}&limit=288`;
+    const url = `https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=${symbol}&period=${period}&limit=288`;
     const arr = await bfetch(url); // [{buyVol, sellVol, ...} x 288]
 
     const ratioPct = a => {
