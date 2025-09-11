@@ -46,6 +46,138 @@ async function proxyFetch(url, headers = {}) {
 }
 
 // =======================================================
+// ✅ Binance Futures 어댑터 (CoinGecko-호환 포맷으로 반환)
+// =======================================================
+const BINANCE_FAPI = 'https://fapi.binance.com/fapi/v1';
+const BINANCE_CONT = 'https://fapi.binance.com/fapi/v1/continuousKlines';
+const BINANCE_API_KEY = process.env.BINANCE_API_KEY || '';
+
+async function bfetch(url) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 8000);
+  try {
+    const r = await fetch(url, {
+      headers: BINANCE_API_KEY ? { 'X-MBX-APIKEY': BINANCE_API_KEY } : {},
+      signal: ac.signal
+    });
+    const body = await r.json();
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`${r.status} ${JSON.stringify(body)}`);
+    return body;
+  } catch (e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+// 선물 심볼 목록 (무기한/USDT/거래중만)
+async function binanceFuturesSymbolsUSDT() {
+  const key = 'BF:exchangeInfoUSDT';
+  const cached = hit(key);
+  if (cached) return JSON.parse(cached.body);
+
+  const info = await bfetch(`${BINANCE_FAPI}/exchangeInfo`);
+  const symbols = (info.symbols || [])
+    .filter(s =>
+      s.status === 'TRADING' &&
+      s.contractType === 'PERPETUAL' &&
+      s.quoteAsset === 'USDT'
+    )
+    .map(s => ({ symbol: s.symbol, base: s.baseAsset, quote: s.quoteAsset }));
+  keep(key, { ok:true, body: JSON.stringify(symbols), ct:'application/json' });
+  return symbols;
+}
+
+// 24h 통계 배치
+async function binanceTicker24Batch(symbols) {
+  // symbols는 ["BTCUSDT","ETHUSDT",...] 배열
+  const chunkKey = `BF:ticker24:${symbols.slice(0,50).join(',')}`;
+  const cached = hit(chunkKey);
+  if (cached) return JSON.parse(cached.body);
+
+  const arr = encodeURIComponent(JSON.stringify(symbols));
+  const data = await bfetch(`${BINANCE_FAPI}/ticker/24hr?symbols=${arr}`);
+  keep(chunkKey, { ok:true, body: JSON.stringify(data), ct:'application/json' });
+  return data; // [{symbol,lastPrice,priceChangePercent,quoteVolume,...}]
+}
+
+// 7D 스파크라인 (15m * 7d = 672포인트 → 다운샘플)
+function downsample(arr, target = 100) {
+  if (arr.length <= target) return arr;
+  const step = arr.length / target;
+  const out = [];
+  for (let i = 0; i < target; i++) out.push(arr[Math.floor(i*step)]);
+  return out;
+}
+async function binanceSpark7dCloses(pair) {
+  const key = `BF:spark:${pair}`;
+  const cached = hit(key);
+  if (cached) return JSON.parse(cached.body);
+
+  const u = new URL(BINANCE_CONT);
+  u.searchParams.set('pair', pair);
+  u.searchParams.set('contractType', 'PERPETUAL');
+  u.searchParams.set('interval', '15m');
+  u.searchParams.set('limit', '672');
+
+  const kl = await bfetch(u.toString());
+  const closes = kl.map(c => parseFloat(c[4])); // close
+  const spark = downsample(closes, 100);
+
+  keep(key, { ok:true, body: JSON.stringify(spark), ct:'application/json' });
+  return spark;
+}
+
+// ✅ Binance 버전 /api/coins/markets (source=binance 일 때만 처리)
+app.get('/api/coins/markets', async (req, res, next) => {
+  if ((req.query.source || '').toLowerCase() !== 'binance') return next();
+
+  try {
+    setCorsAndCache(res);
+
+    // 페이징
+    const limit = Math.min(Number(req.query.per_page) || 50, 250);
+    const page  = Math.max(Number(req.query.page) || 1, 1);
+    const offset = (page - 1) * limit;
+
+    // 1) 선물 USDT 심볼
+    const list = await binanceFuturesSymbolsUSDT();
+    const slice = list.slice(offset, offset + limit);
+    const symbols = slice.map(s => s.symbol);
+
+    if (symbols.length === 0) return res.json([]);
+
+    // 2) 24h 통계 배치 호출
+    const stats = await binanceTicker24Batch(symbols);
+
+    // 3) 7D 스파크 (병렬)
+    const pairs = slice.map(s => `${s.base}${s.quote}`);
+    const sparks = await Promise.all(pairs.map(p => binanceSpark7dCloses(p)));
+
+    // 4) 코인게코 호환 매핑
+    const rows = stats.map((it, idx) => {
+      const base = slice[idx]?.base || it.symbol?.replace(/USDT$/,'');
+      return {
+        id: base?.toLowerCase() || '',
+        symbol: base?.toLowerCase() || '',
+        name: base || '',
+        current_price: parseFloat(it.lastPrice),
+        price_change_percentage_24h: parseFloat(it.priceChangePercent),
+        total_volume: parseFloat(it.quoteVolume),
+        market_cap: null, // Binance엔 없음(원하면 CG에서 병합 캐시)
+        sparkline_in_7d: { price: sparks[idx] || [] },
+        image: { small: `/icons/${(base||'').toLowerCase()}.svg` } // 로컬 아이콘 권장
+      };
+    });
+
+    res.json(rows);
+  } catch (e) {
+    console.error('binance markets error:', e);
+    res.status(502).json({ error: 'binance adapter failed', detail: String(e) });
+  }
+});
+
+// =======================================================
 // ✅ CoinGecko 프록시 (COSMOS 등 암호화폐 시세용)
 // =======================================================
 const CG_PRO  = process.env.X_CG_PRO_API_KEY || '';
@@ -57,6 +189,7 @@ else if (CG_DEMO) cgHeaders['x-cg-demo-api-key'] = CG_DEMO;
 // 1) 마켓 리스트
 // 예: /api/coins/markets?vs_currency=usd&ids=cosmos&per_page=50&page=1&sparkline=true
 app.get('/api/coins/markets', async (req, res) => {
+  // 위의 Binance 미들웨어에서 걸러지지 않았다면(=source≠binance), CoinGecko로 프록시
   const u = new URL('https://api.coingecko.com/api/v3/coins/markets');
   for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
   if (!u.searchParams.get('vs_currency')) u.searchParams.set('vs_currency','usd');
