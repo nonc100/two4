@@ -376,8 +376,7 @@ function rowHTML(c, i){
     <td class="sticky-rank num">${c.market_cap_rank ?? (i + 1)}</td>
     <td class="sticky-name">
       <div class="mkt-name">
-        <img src="${c.image || `/icons/${sym.toLowerCase()}.svg`}" alt="${sym}"
-             onerror="this.onerror=null; this.src='/media/coin.svg';">
+        <img src="/api/icon/${(c.symbol||'').toLowerCase()}" alt="${(c.symbol||'').toUpperCase()}">
         <div class="symbol-box"><span class="symbol-name">${sym}</span></div>
         <span class="full">${displayName}</span>
       </div>
