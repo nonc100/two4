@@ -249,10 +249,12 @@ function whaleDualDonutHTML(gPct, tPct){
 }
 
 function buildHub(sections){
-  const svg=$("#hubSvg"); 
-  if(!svg) return; 
+  const svg=$("#hubSvg");
+  if(!svg) return;
   svg.innerHTML="";
   
+  const hubBig=$("#hubBig"), hubSub=$("#hubSub"), hubTitle=$("#hubTitle"), hubBody=$("#hubBody");
+   
   const cx=500,cy=500,rI=260,rO=470, TAU=Math.PI*2, seg=TAU/sections.length, start=-Math.PI/2;
   
   sections.forEach((s,i)=>{
@@ -279,12 +281,14 @@ function buildHub(sections){
     svg.appendChild(label);
     
     const act=()=>{
-      svg.querySelectorAll(".seg").forEach(e=>e.classList.remove("active")); 
+      svg.querySelectorAll(".seg").forEach(e=>e.classList.remove("active"));
       path.classList.add("active");
-      $("#hubBig").textContent=s.centerTop; 
-      $("#hubSub").textContent=s.centerSub;
-      $("#hubTitle").textContent=s.title; 
-      $("#hubBody").innerHTML=s.html;
+      hubBig.textContent=s.centerTop;
+      hubSub.textContent=s.centerSub;
+      hubTitle.textContent=s.title;
+      hubBody.innerHTML=s.html;
+      hubBig.style.fontSize = s.smallCenter ? '20px' : '';
+      hubBig.style.whiteSpace = s.smallCenter ? 'nowrap' : '';
     };
     
     path.addEventListener("click", act); 
@@ -345,8 +349,34 @@ async function initHub(){
     centerSub: (isFinite(dNow)&&isFinite(dAvg))
       ? `Δ ${(dNow>=0?'+':'')}${dNow.toFixed(1)}pp · 24h ${(dAvg>=0?'+':'')}${dAvg.toFixed(1)}pp`
       : "NO DATA",
-    html: (isFinite(gLast)&&isFinite(tLast)) ? whaleDualDonutHTML(gLast, tLast)
-         : "<div style='color:#8b95a7'>No data</div>"
+    smallCenter: true,
+    html: `
+    <div class="wg-info" style="display:flex;flex-direction:column;gap:8px;font-family:'Orbitron',monospace;font-size:13px;line-height:1.4">
+      <div><b>G:</b> ${isFinite(gLast)?gLast.toFixed(1)+'%':'—'} ·
+           <b>T:</b> ${isFinite(tLast)?tLast.toFixed(1)+'%':'—'} |
+           <b>Gap Δ:</b> ${isFinite(dNow)?((dNow>=0?'+':'')+dNow.toFixed(1)+'pp'):'—'}
+           <span style="opacity:.75">— |Δ|가 클수록 포지셔닝 괴리 ↑</span>
+      </div>
+
+      <div style="margin-top:4px">
+        <b>Outer ring:</b> Global Long/Short Account Ratio <span style="opacity:.8">(전체 계정 롱 %)</span><br>
+        <b>Inner ring:</b> Top Trader Long/Short Position Ratio <span style="opacity:.8">(상위 트레이더 롱 %)</span>
+      </div>
+
+      <div style="margin-top:6px; opacity:.85">
+        <b>주의:</b> 단독 시그널로 확정적 판단 금지 → Funding / Premium, OI 변화와 함께 보조지표로 사용
+      </div>
+
+      <hr style="border:0;border-top:1px solid rgba(255,255,255,.12);margin:8px 0">
+
+      <div>
+        <b>EN:</b> G ${isFinite(gLast)?gLast.toFixed(1)+'%':'—'} · T ${isFinite(tLast)?tLast.toFixed(1)+'%':'—'}
+        | Gap Δ ${isFinite(dNow)?((dNow>=0?'+':'')+dNow.toFixed(1)+'pp'):'—'}
+        — Larger |Δ| = stronger divergence<br>
+        <b>Outer ring:</b> Global L/S (Global long %) · <b>Inner ring:</b> Top L/S (Top-trader long %)<br>
+        <b>Note:</b> Not a standalone signal; use with Funding/Premium & OI changes.
+      </div>
+    </div>`
   };
    
   const secs=[
