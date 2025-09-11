@@ -391,6 +391,35 @@ app.get('/api/binance/ls/top', async (req, res) => {
   }
 });
 
+// /api/binance/flow?symbol=BTCUSDT&period=5m
+app.get('/api/binance/flow', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || 'BTCUSDT').toUpperCase();
+    const period = req.query.period || '5m'; // 5m/15m/1h etc.
+    const key = `FLOW:${symbol}:${period}`;
+    const cached = hit2(key, 60 * 1000); // 60s
+    if (cached) return res.json(JSON.parse(cached.body));
+
+    const url = `https://fapi.binance.com/futures/data/takerBuySellVol?symbol=${symbol}&period=${period}&limit=288`;
+    const arr = await bfetch(url); // [{buyVol, sellVol, ...} x 288]
+
+    const ratioPct = a => {
+      const buy = a.reduce((s, x) => s + Number(x.buyVol || 0), 0);
+      const sell = a.reduce((s, x) => s + Number(x.sellVol || 0), 0);
+      return (buy / (buy + sell)) * 100;
+    };
+
+    const r24 = ratioPct(arr);           // 최근 24h 평균
+    const r1h = ratioPct(arr.slice(-12)); // 5m*12 = 1h 평균
+    const out = { symbol, ratio_1h: r1h, ratio_24h: r24, delta_pp: r1h - r24 };
+
+    keep(key, { ok: true, body: JSON.stringify(out), ct: 'application/json' });
+    res.json(out);
+  } catch (e) {
+    res.status(502).json({ error: 'flow fetch fail' });
+  }
+});
+
 // =======================================================
 // ✅ CoinGecko 프록시 (COSMOS 등 암호화폐 시세용)
 // =======================================================
