@@ -534,6 +534,50 @@ app.get('/api/holidays', async (req, res) => {
   keep(key, payload);
 });
 
+// 아이콘: 로컬 있으면 그거, 없으면 코인게코 썸네일로 7일 캐시 리다이렉트
+app.get('/api/icon/:sym', async (req, res) => {
+  try {
+    const sym = (req.params.sym || '').toLowerCase();
+    const local = path.join(ICON_DIR, `${sym}.svg`);
+
+    // 1) 로컬 svg 있으면 그걸로
+    if (fs.existsSync(local)) {
+      res.type('image/svg+xml');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.sendFile(local);
+    }
+
+    // 2) 캐시된 리다이렉트 URL 있으면 바로 사용(7일)
+    const key = `ICON_URL:${sym.toUpperCase()}`;
+    const cached = hit2(key, 7 * 24 * 60 * 60 * 1000);
+    if (cached) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.redirect(302, cached.body); // body=URL
+    }
+
+    // 3) 코인게코 검색 → 같은 심볼 찾기 → thumb URL
+    const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(sym)}`;
+    const payload = await proxyFetch(url, { 'User-Agent': 'two4-cosmos/1.0' });
+    let img = null;
+    if (payload.ok) {
+      const j = JSON.parse(payload.body || '{}');
+      const hit = (j.coins || []).find(c => (c.symbol || '').toLowerCase() === sym);
+      img = hit?.thumb || hit?.large || hit?.small || null;
+    }
+
+    if (img) {
+      keep(key, { ok: true, body: img, ct: 'text/plain' }); // URL 캐시
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.redirect(302, img);
+    }
+
+    // 4) 마지막 폴백
+    return res.redirect(302, FALLBACK_ICON);
+  } catch {
+    return res.redirect(302, FALLBACK_ICON);
+  }
+});
+
 // ==============================
 // 기본 라우트 & SPA
 // ==============================
