@@ -227,6 +227,27 @@ function gaugeHTML(val){
   </div>`;
 }
 
+function whaleDualDonutHTML(gPct, tPct){
+  const clamp = (n)=>Math.max(0, Math.min(100, Number(n)||0));
+  const G = clamp(gPct), T = clamp(tPct);
+  const R1=60, R2=44, C=80, CIRC = 2*Math.PI;
+
+  const dash = (r,p)=>`${(CIRC*r*p/100).toFixed(1)} ${(CIRC*r*(1-p/100)).toFixed(1)}`;
+  return `
+  <svg viewBox="0 0 160 160" style="width:220px;height:220px">
+    <!-- base rings -->
+    <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="rgba(0,255,255,.15)" stroke-width="10"/>
+    <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="rgba(255,77,255,.12)" stroke-width="10"/>
+    <!-- value rings (start at -90deg) -->
+    <g transform="rotate(-90 ${C} ${C})">
+      <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="#00ffff" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="${dash(R1,G)}"/>
+      <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="#ff66cc" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="${dash(R2,T)}"/>
+    </g>
+  </svg>`;
+}
+
 function buildHub(sections){
   const svg=$("#hubSvg"); 
   if(!svg) return; 
@@ -282,7 +303,12 @@ async function initHub(){
     return;
   }
   
-  const [global,fng]=await Promise.all([fetchGlobal(),fetchFNG()]);
+  const [global, fng, globalLS, topLS] = await Promise.all([
+    fetchGlobal(),
+    fetchFNG(),
+    fetch('/api/binance/ls/global').then(r=>r.json()).catch(()=>null),
+    fetch('/api/binance/ls/top').then(r=>r.json()).catch(()=>null)
+  ]);
   
   const listTop=(by,n=10)=> mkts.slice().sort((a,b)=> (b[by]??0)-(a[by]??0)).slice(0,n);
   
@@ -301,11 +327,28 @@ async function initHub(){
     </div>`;
   }).join("")+`</div>`;
   
-  const byId=Object.fromEntries(mkts.map(m=>[m.id,m])); 
-  const btc=byId.bitcoin||null, usdt=byId.tether||null;
+  const byId=Object.fromEntries(mkts.map(m=>[m.id,m]));
+  const btc=byId.bitcoin||null;
   const dom = global?.data?.market_cap_percentage?.btc ?? null;
   const f = Number(fng?.data?.[0]?.value ?? NaN);
-  
+
+  const gLast = globalLS?.long_pct_last;
+  const tLast = topLS?.long_pct_last;
+  const dNow  = (isFinite(tLast) && isFinite(gLast)) ? (tLast - gLast) : null;
+  const dAvg  = (isFinite(topLS?.long_pct_avg24) && isFinite(globalLS?.long_pct_avg24))
+                ? (topLS.long_pct_avg24 - globalLS.long_pct_avg24) : null;
+
+  const whaleSec = {
+    badge: "W-GAP",
+    title: "Whale Gap",
+    centerTop: (isFinite(gLast)&&isFinite(tLast)) ? `G ${gLast.toFixed(1)}% | T ${tLast.toFixed(1)}%` : "—",
+    centerSub: (isFinite(dNow)&&isFinite(dAvg))
+      ? `Δ ${(dNow>=0?'+':'')}${dNow.toFixed(1)}pp · 24h ${(dAvg>=0?'+':'')}${dAvg.toFixed(1)}pp`
+      : "NO DATA",
+    html: (isFinite(gLast)&&isFinite(tLast)) ? whaleDualDonutHTML(gLast, tLast)
+         : "<div style='color:#8b95a7'>No data</div>"
+  };
+   
   const secs=[
     {
       badge:"VOL", 
