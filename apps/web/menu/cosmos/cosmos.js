@@ -245,6 +245,27 @@ function whaleDualDonutHTML(gPct, tPct){
     </svg>`;
 }
 
+// Flow Pulse: 바깥=1h(라임), 안쪽=24h(그린)
+function flowDualDonutHTML(r1hPct, r24hPct){
+  const clamp = n => Math.max(0, Math.min(100, Number(n)||0));
+  const A = clamp(r1hPct), B = clamp(r24hPct);
+  const C=80, R1=60, R2=44, TAU=2*Math.PI;
+  const dash = (r,p)=>`${(TAU*r*p/100).toFixed(1)} ${(TAU*r*(1-p/100)).toFixed(1)}`;
+  const LIME  = '#00ffaa';  // 1h
+  const GREEN = '#00e676';  // 24h
+  return `
+    <svg viewBox="0 0 160 160" style="width:200px;height:200px">
+      <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="rgba(0,255,170,.15)" stroke-width="10"/>
+      <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="rgba(0,230,118,.12)" stroke-width="10"/>
+      <g transform="rotate(-90 ${C} ${C})">
+        <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="${LIME}"  stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="${dash(R1,A)}"/>
+        <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="${GREEN}" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="${dash(R2,B)}"/>
+      </g>
+    </svg>`;
+}
+
 function buildHub(sections){
   const svg=$("#hubSvg");
   if(!svg) return;
@@ -310,7 +331,14 @@ async function initHub(){
     fetch('/api/binance/ls/global').then(r=>r.json()).catch(()=>null),
     fetch('/api/binance/ls/top').then(r=>r.json()).catch(()=>null)
   ]);
-  
+
+  const flow = await fetch('/api/binance/flow?symbol=BTCUSDT&period=5m')
+    .then(r=>r.json()).catch(()=>null);
+
+  const r1h = flow?.ratio_1h;
+  const r24 = flow?.ratio_24h;
+  const dpp = (isFinite(r1h) && isFinite(r24)) ? (r1h - r24) : null;
+
   const listTop=(by,n=10)=> mkts.slice().sort((a,b)=> (b[by]??0)-(a[by]??0)).slice(0,n);
   
   const toList=(arr,kind)=>`<div style="display:flex;flex-direction:column;gap:8px">`+arr.map((c,i)=>{
@@ -375,6 +403,34 @@ async function initHub(){
     </div>`
   };
    
+  const flowSec = {
+    badge: "FLOW",
+    title: "Flow Pulse",
+    centerTop: (isFinite(r1h)&&isFinite(r24)) ? `1h ${r1h.toFixed(1)}% | 24h ${r24.toFixed(1)}%` : "—",
+    centerSub:  isFinite(dpp) ? `Δ ${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp` : "NO DATA",
+    smallCenter: true,
+    html: (isFinite(r1h)&&isFinite(r24)) ? `
+    <div class="wgap-wrap" style="display:flex;gap:18px;align-items:center">
+      <div class="wgap-svg">${flowDualDonutHTML(r1h, r24)}</div>
+      <div class="wgap-text" style="flex:1;min-width:0;font-family:'Orbitron',monospace">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <span class="chip" style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80;"><i class="dot"></i> 1h avg <b>${r1h.toFixed(1)}%</b></span>
+          <span class="chip" style="color:#00e676;text-shadow:0 0 10px #00e67680;"><i class="dot"></i> 24h avg <b>${r24.toFixed(1)}%</b></span>
+          <span class="chip" style="color:#33ff99;text-shadow:0 0 10px #33ff9980;"><i class="dot"></i> Δ <b>${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp</b> <span style="opacity:.6">(1h−24h)</span></span>
+        </div>
+        <hr class="hr-grad" style="border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);margin:8px 0;">
+        <div style="color:rgba(255,255,255,.75)">
+          <b style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80">Outer ring</b>: 1h 평균 Taker Buy %<br>
+          <b style="color:#00e676;text-shadow:0 0 10px #00e67680">Inner ring</b>: 24h 평균 Taker Buy %
+        </div>
+        <div style="color:rgba(255,255,255,.6);margin-top:8px">
+          <b style="color:#33ff99;text-shadow:0 0 10px #33ff9980">Note</b>: 단독 판단 금지 — Whale Gap, Funding/Basis, OI와 함께 참고
+        </div>
+      </div>
+    </div>
+  ` : "<div style='color:#8b95a7'>No data</div>"
+  };
+
   const secs=[
     {
       badge:"VOL", 
@@ -416,8 +472,14 @@ async function initHub(){
     },
   ];
   
+  const iBTC = secs.findIndex(s=>s.badge==='BTC MC');
+  const iUSDT = secs.findIndex(s=>s.badge==='USDT');
+  if (iBTC >= 0) secs[iBTC] = flowSec;
+  else if (iUSDT >= 0) secs[iUSDT] = flowSec;
+  else secs.push(flowSec);
+
   buildHub(secs);
-  $("#hubBig").textContent="COSMOS"; 
+  $("#hubBig").textContent="COSMOS";
   $("#hubSub").textContent="ONLINE";
 }
 
