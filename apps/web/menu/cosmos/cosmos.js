@@ -136,7 +136,7 @@ const StarField=(()=>{
    ========================= */
 // 1) markets
 async function fetchMarkets(page=1, per=250){
-  const base = "/api/coins/markets";
+  const base = "/binance/markets";
   const q = `vs_currency=usd&order=market_cap_desc&per_page=${per}&page=${page}&sparkline=true&price_change_percentage=1h,24h,7d`;
   try{
     const r = await fetch(`${base}?${q}`);
