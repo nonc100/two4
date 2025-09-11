@@ -208,8 +208,7 @@ app.get('/api/coins/markets', async (req, res, next) => {
   }
 });
 
-// --- ADD: Binance markets alias (CG-like schema with OI) ---
-// NOTE: keep ABOVE SPA catch-all routes
+// --- REPLACE: /api/binance/markets handler ---
 app.get('/api/binance/markets', async (req, res) => {
   try {
     setCorsAndCache(res);
@@ -220,46 +219,74 @@ app.get('/api/binance/markets', async (req, res) => {
     const offset = (page - 1) * limit;
 
     // 1) USDT-M 선물 심볼 리스트
-    const list = await binanceFuturesSymbolsUSDT();
+    const list = await binanceFuturesSymbolsUSDT(); // [{symbol:'BTCUSDT', base:'BTC', quote:'USDT'}, ...]
     const slice = list.slice(offset, offset + limit);
     const symbols = slice.map(s => s.symbol);
     if (symbols.length === 0) return res.type('application/json').status(200).send('[]');
+    
+    // 2) 24h 통계 (주의: 응답 순서 미보장)
+    const statsArr = await binanceTicker24Batch(symbols);
+    const statsMap = new Map(statsArr.map(o => [o.symbol, o])); // symbol -> stat
 
-    // 2) 24h 통계 배치
-    const stats = await binanceTicker24Batch(symbols);
-
-    // 3) 7D 스파크 + OI (헤비필드 안전모드)
+    // 3) 7D 스파크/OI (안전모드: 동시성 제한 + 캐시 사용 전제)
     const pairs = slice.map(s => `${s.base}${s.quote}`);
- 
-    // 상위 N개만 헤비필드 계산 (기본 20, 쿼리로 조절 가능)
+    
+    // 상위 N개만 헤비 필드(스파크/OI) 계산 (기본 20)
     const HEAVY_N = Math.max(0, Math.min(Number(req.query.heavy_n) || 20, slice.length));
 
-    // 동시성 제한: 스파크 2, OI 3
-    const sparks = await pmap(
+    // 동시성 제한 유틸(pmap)과 hit2/TTL은 이전 메시지대로 추가되어 있다고 가정
+    const sparksArr = await pmap(
       pairs.map((p, i) => i < HEAVY_N ? p : null),
       2,
       async (p) => p ? await binanceSpark7dCloses(p) : []
     );
-    const ois = await pmap(
+    const oiArr = await pmap(
       symbols.map((sym, i) => i < HEAVY_N ? sym : null),
       3,
       async (sym) => sym ? await binanceOpenInterest(sym) : 0
     );
     
-    // 4) CG 호환 매핑 + OI
-    const rows = stats.map((it, idx) => {
-      const base = slice[idx]?.base || it.symbol?.replace(/USDT$/, '');
+    // 배열 -> map (pair/symbol 기준)
+    const sparkMap = new Map();
+    pairs.forEach((p, i) => sparkMap.set(p, sparksArr[i] || []));
+    const oiMap = new Map();
+    symbols.forEach((sym, i) => oiMap.set(sym, oiArr[i] ?? 0));
+
+    // 퍼센트 계산 헬퍼
+    const pct = (cur, prev) => {
+      const a = Number(cur), b = Number(prev);
+      if (!isFinite(a) || !isFinite(b) || b === 0) return null;
+      return ((a - b) / b) * 100;
+    };
+
+    // 4) CG 호환 매핑 (+ 1h%/7d% + image 문자열 + OI)
+    const rows = slice.map((s) => {
+      const stat = statsMap.get(s.symbol) || {};
+      const pair = `${s.base}${s.quote}`;
+      const spark = sparkMap.get(pair) || [];
+      const last = parseFloat(stat.lastPrice ?? '0');
+
+      // 1h%: 15m 4개 전과 비교, 7d%: 첫 값과 비교
+      const lastClose = spark.length ? spark[spark.length - 1] : null;
+      const close1hAgo = spark.length >= 5 ? spark[spark.length - 5] : null;
+      const close7dAgo = spark.length > 0 ? spark[0] : null;
+
+      const p1h = (lastClose != null && close1hAgo != null) ? pct(lastClose, close1hAgo) : null;
+      const p7d = (lastClose != null && close7dAgo != null) ? pct(lastClose, close7dAgo) : null;
+
       return {
-        id: (base || '').toLowerCase(),
-        symbol: (base || '').toLowerCase(),
-        name: base || '',
-        image: { small: `/icons/${(base||'').toLowerCase()}.svg` }, // 있으면 사용
-        current_price: parseFloat(it.lastPrice),
-        total_volume: parseFloat(it.quoteVolume),
-        market_cap: null, // 필요 시 별도 근사 가능
-        price_change_percentage_24h: parseFloat(it.priceChangePercent),
-        sparkline_in_7d: { price: sparks[idx] || [] },
-        open_interest: ois[idx] ?? 0
+        id: s.base.toLowerCase(),
+        symbol: s.base.toLowerCase(),
+        name: s.base,
+        image: `/icons/${s.base.toLowerCase()}.svg`,                 // 문자열로 내려줌
+        current_price: last,
+        total_volume: parseFloat(stat.quoteVolume ?? '0'),
+        market_cap: null,                                            // (원하면 추후 근사치 추가)
+        price_change_percentage_1h: p1h,                             // ✅ 추가
+        price_change_percentage_24h: parseFloat(stat.priceChangePercent ?? '0'),
+        price_change_percentage_7d: p7d,                             // ✅ 추가
+        sparkline_in_7d: { price: spark },
+        open_interest: oiMap.get(s.symbol) || 0
       };
     });
 
