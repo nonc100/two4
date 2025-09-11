@@ -353,8 +353,7 @@ async function initHub(){
     html: `
         <div style="display:flex;gap:18px;align-items:center">
       <div class="wgap-svg">
-        ${ (isFinite(gLast)&&isFinite(tLast)) ? whaleDualDonutHTML(gLast, tLast)
-                                              : "<div style='color:#8b95a7'>No data</div>" }
+        ${whaleDualDonutHTML(gLast, tLast)}
       </div>
       <div class="wgap-text" style="display:flex;flex-direction:column;gap:8px;font-family:'Orbitron',monospace">
         <div><b>G:</b> ${pct(gLast)} · <b>T:</b> ${pct(tLast)} | <b>Gap Δ:</b> ${pp(dNow)}
