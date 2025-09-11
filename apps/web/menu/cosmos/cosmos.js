@@ -24,6 +24,10 @@ const fmtPct =n=>{
   return `<span class="pct ${s}">${t}</span>`;
 };
 
+// 심볼 -> 풀네임 (없으면 심볼 그대로)
+const NAME_MAP = { BTC:'Bitcoin', ETH:'Ethereum', BCH:'Bitcoin Cash', XRP:'XRP', LTC:'Litecoin', TRX:'TRON', ADA:'Cardano', DOGE:'Dogecoin', SOL:'Solana', DOT:'Polkadot', AVAX:'Avalanche', LINK:'Chainlink', XLM:'Stellar', ETC:'Ethereum Classic', BNB:'BNB', ATOM:'Cosmos', MATIC:'Polygon', SHIB:'Shiba Inu', TON:'Toncoin', NEAR:'NEAR Protocol', APT:'Aptos', SUI:'Sui', ARB:'Arbitrum', OP:'Optimism', FIL:'Filecoin', ICP:'Internet Computer', UNI:'Uniswap', AAVE:'Aave', MKR:'Maker', INJ:'Injective', KAS:'Kaspa', RUNE:'THORChain' };
+const nameFor = sym => NAME_MAP[(sym||'').toUpperCase()] || (sym || '');
+
 /* ---- State ---- */
 const state={
   all:[], filtered:[],
@@ -364,6 +368,7 @@ function rowHTML(c, i){
   const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
 
   const sym  = (c.symbol || '').toUpperCase();      // 예: BTC
+  const displayName = (c.name && c.name.toUpperCase() !== sym) ? c.name : nameFor(sym);
   const pair = sym ? sym + 'USDT' : '';             // 예: BTCUSDT
 
   return `
@@ -371,9 +376,10 @@ function rowHTML(c, i){
     <td class="sticky-rank num">${c.market_cap_rank ?? (i + 1)}</td>
     <td class="sticky-name">
       <div class="mkt-name">
-        <img src="${c.image}" alt="${c.symbol}">
+        <img src="${c.image || `/icons/${sym.toLowerCase()}.svg`}" alt="${sym}"
+             onerror="this.onerror=null; this.src='/media/coin.svg';">
         <div class="symbol-box"><span class="symbol-name">${sym}</span></div>
-        <span class="full">${c.name ?? ''}</span>
+        <span class="full">${displayName}</span>
       </div>
     </td>
     <td class="num">${fmtPrice(c.current_price)}</td>
