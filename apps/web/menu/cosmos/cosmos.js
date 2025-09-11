@@ -24,6 +24,15 @@ const fmtPct =n=>{
   return `<span class="pct ${s}">${t}</span>`;
 };
 
+/* ---- 안전 fetch helper ---- */
+async function safeJson(url){
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    return await r.json();
+  }catch{ return null; }
+}
+
 // 심볼 -> 풀네임 (없으면 심볼 그대로)
 const NAME_MAP = { BTC:'Bitcoin', ETH:'Ethereum', BCH:'Bitcoin Cash', XRP:'XRP', LTC:'Litecoin', TRX:'TRON', ADA:'Cardano', DOGE:'Dogecoin', SOL:'Solana', DOT:'Polkadot', AVAX:'Avalanche', LINK:'Chainlink', XLM:'Stellar', ETC:'Ethereum Classic', BNB:'BNB', ATOM:'Cosmos', MATIC:'Polygon', SHIB:'Shiba Inu', TON:'Toncoin', NEAR:'NEAR Protocol', APT:'Aptos', SUI:'Sui', ARB:'Arbitrum', OP:'Optimism', FIL:'Filecoin', ICP:'Internet Computer', UNI:'Uniswap', AAVE:'Aave', MKR:'Maker', INJ:'Injective', KAS:'Kaspa', RUNE:'THORChain' };
 const nameFor = sym => NAME_MAP[(sym||'').toUpperCase()] || (sym || '');
@@ -266,6 +275,29 @@ function flowDualDonutHTML(r1hPct, r24hPct){
     </svg>`;
 }
 
+function flowInfoHTML(r1h, r24, dpp){
+  return `
+    <div class="wgap-wrap" style="display:flex;gap:18px;align-items:center">
+      <div class="wgap-svg">${flowDualDonutHTML(r1h, r24)}</div>
+      <div class="wgap-text" style="flex:1;min-width:0;font-family:'Orbitron',monospace">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <span class="chip" style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80;"><i class="dot"></i> 1h avg <b>${r1h.toFixed(1)}%</b></span>
+          <span class="chip" style="color:#00e676;text-shadow:0 0 10px #00e67680;"><i class="dot"></i> 24h avg <b>${r24.toFixed(1)}%</b></span>
+          <span class="chip" style="color:#33ff99;text-shadow:0 0 10px #33ff9980;"><i class="dot"></i> Δ <b>${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp</b> <span style="opacity:.6">(1h−24h)</span></span>
+        </div>
+        <hr class="hr-grad" style="border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);margin:8px 0;">
+        <div style="color:rgba(255,255,255,.75)">
+          <b style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80">Outer ring</b>: 1h 평균 Taker Buy %<br>
+          <b style="color:#00e676;text-shadow:0 0 10px #00e67680">Inner ring</b>: 24h 평균 Taker Buy %
+        </div>
+        <div style="color:rgba(255,255,255,.6);margin-top:8px">
+          <b style="color:#33ff99;text-shadow:0 0 10px #33ff9980">Note</b>: 단독 판단 금지 — Whale Gap, Funding/Basis, OI와 함께 참고
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function buildHub(sections){
   const svg=$("#hubSvg");
   if(!svg) return;
@@ -332,12 +364,12 @@ async function initHub(){
     fetch('/api/binance/ls/top').then(r=>r.json()).catch(()=>null)
   ]);
 
-  const flow = await fetch('/api/binance/flow?symbol=BTCUSDT&period=5m')
-    .then(r=>r.json()).catch(()=>null);
+  const flow = await safeJson('/api/binance/flow?symbol=BTCUSDT&period=5m');
 
-  const r1h = flow?.ratio_1h;
-  const r24 = flow?.ratio_24h;
-  const dpp = (isFinite(r1h) && isFinite(r24)) ? (r1h - r24) : null;
+  const r1h = Number(flow?.ratio_1h);
+  const r24 = Number(flow?.ratio_24h);
+  const dpp = Number(flow?.delta_pp);
+  const hasFlow = Number.isFinite(r1h) && Number.isFinite(r24);
 
   const listTop=(by,n=10)=> mkts.slice().sort((a,b)=> (b[by]??0)-(a[by]??0)).slice(0,n);
   
@@ -406,29 +438,12 @@ async function initHub(){
   const flowSec = {
     badge: "FLOW",
     title: "Flow Pulse",
-    centerTop: (isFinite(r1h)&&isFinite(r24)) ? `1h ${r1h.toFixed(1)}% | 24h ${r24.toFixed(1)}%` : "—",
-    centerSub:  isFinite(dpp) ? `Δ ${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp` : "NO DATA",
+    centerTop: hasFlow ? `1h ${r1h.toFixed(1)}% | 24h ${r24.toFixed(1)}%` : "—",
+    centerSub:  Number.isFinite(dpp) ? `Δ ${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp` : "NO DATA",
     smallCenter: true,
-    html: (isFinite(r1h)&&isFinite(r24)) ? `
-    <div class="wgap-wrap" style="display:flex;gap:18px;align-items:center">
-      <div class="wgap-svg">${flowDualDonutHTML(r1h, r24)}</div>
-      <div class="wgap-text" style="flex:1;min-width:0;font-family:'Orbitron',monospace">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <span class="chip" style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80;"><i class="dot"></i> 1h avg <b>${r1h.toFixed(1)}%</b></span>
-          <span class="chip" style="color:#00e676;text-shadow:0 0 10px #00e67680;"><i class="dot"></i> 24h avg <b>${r24.toFixed(1)}%</b></span>
-          <span class="chip" style="color:#33ff99;text-shadow:0 0 10px #33ff9980;"><i class="dot"></i> Δ <b>${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp</b> <span style="opacity:.6">(1h−24h)</span></span>
-        </div>
-        <hr class="hr-grad" style="border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);margin:8px 0;">
-        <div style="color:rgba(255,255,255,.75)">
-          <b style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80">Outer ring</b>: 1h 평균 Taker Buy %<br>
-          <b style="color:#00e676;text-shadow:0 0 10px #00e67680">Inner ring</b>: 24h 평균 Taker Buy %
-        </div>
-        <div style="color:rgba(255,255,255,.6);margin-top:8px">
-          <b style="color:#33ff99;text-shadow:0 0 10px #33ff9980">Note</b>: 단독 판단 금지 — Whale Gap, Funding/Basis, OI와 함께 참고
-        </div>
-      </div>
-    </div>
-  ` : "<div style='color:#8b95a7'>No data</div>"
+     html: hasFlow
+      ? flowInfoHTML(r1h, r24, dpp)   // ← 우리가 만든 라임/그린/민트 설명 함수
+      : "<div style='color:#8b95a7'>No data (Flow API)</div>"
   };
 
   const secs=[
