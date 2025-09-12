@@ -1,5 +1,5 @@
 // apps/web/ai/seed.js
-// 아바타 없이 말풍선 좌/우 정렬. /price, /image 명령 지원 + OpenRouter 채팅
+// 말풍선 좌/우 정렬 + 메타표현(*…*) + 설정/토글 + /price, /image 명령 + OpenRouter 채팅
 
 (function () {
   const chatContainer = document.getElementById('chatContainer');
@@ -17,20 +17,20 @@
   const escapeHtml = (txt='') =>
     txt.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  // *...* -> <span class="action">...</span>
+  // *...* → <span class="action">...</span>
   function renderActions(html) {
     return html.replace(/\*([^\*\n]{1,200})\*/g, (_m, g1) => `<span class="action">${g1.trim()}</span>`);
   }
 
-  // 식상 표현 보정용 작은 사전
+  // 식상 표현 치환(선택)
   const clichéMap = {
-    '웃는다': '피식 웃음을 흘리며 눈길을 살짝 돌린다',
-    '미소짓는다': '입매를 풀며 숨처럼 가벼운 미소를 흘린다',
-    '끄덕인다': '짧게 고개를 숙이되 눈빛은 여전히 반짝인다',
-    '한숨 쉰다': '숨을 들이켜다 조심스레 내보낸다',
+    '웃는다': '피식 웃음을 흘리며 시선을 비껴 준다',
+    '미소짓는다': '입매를 느슨히 풀며 가벼운 미소를 흘린다',
+    '끄덕인다': '짧게 고개를 숙이되 눈빛은 또렷하다',
+    '한숨 쉰다': '숨을 들이켰다가 조심히 내쉰다',
   };
   function deCliché(text) {
-    return text.replace(/\*([^*]{1,120})\*/g, (m, inner) => {
+    return text.replace(/\*([^*]{1,140})\*/g, (m, inner) => {
       let s = inner.trim();
       for (const [k,v] of Object.entries(clichéMap)) {
         if (s === k || s.includes(k)) { s = s.replace(k, v); break; }
@@ -39,7 +39,7 @@
     });
   }
 
-  // 모델 출력 보정
+  // /me, (), [] → *…* 로 통일
   function normalizeActionsForAI(text, useFilter){
     let t = text;
     t = t.replace(/(?:^|\n)\s*\/me\s+([^\n]+)/gi, (_m,g)=>`*${g.trim()}*`);
@@ -49,11 +49,11 @@
     return t;
   }
 
-  // -------- settings (localStorage) --------
+  // ---------- settings (localStorage) ----------
   const JOY_PRESET = {
     name:'조이', age:'19', gender:'여성', world:'네온시티',
-    persona:`밝고 발랄한 막내 톤. 직설적이되 과하지 않음. 장난스럽지만 중요한 순간엔 톤을 낮춰 진지해진다.
-메타표현은 소설 지문처럼 *...* 한두 번만 사용. 감각(빛/소리/촉감) 비유를 가볍게 섞는다.`,
+    persona:`밝고 발랄한 막내 톤. 솔직하지만 과하지 않음. 장난스러우나 필요할 땐 진지하게 톤을 낮춘다.
+메타표현은 소설 지문처럼 *...* 한두 번만. 감각(빛/소리/촉감) 비유를 가볍게 섞는다.`,
     rpOn:true, clichéFilter:true
   };
 
@@ -65,6 +65,7 @@
   function savePrefs(p){ localStorage.setItem('seed_prefs', JSON.stringify(p)); }
   let prefs = loadPrefs();
 
+  // ---------- UI 메시지 ----------
   const addMessage = (content, isUser=false) => {
     const wrap = document.createElement('div');
     wrap.className = `message ${isUser ? 'user' : 'ai'}`;
@@ -115,24 +116,12 @@
     return j.reply || '(no content)';
   }
 
+  // CoinGecko 프록시 사용 (/api/coins/markets)
   const coinIdMap = {
     BTC:'bitcoin', ETH:'ethereum', SOL:'solana', XRP:'ripple', BNB:'binancecoin',
     ADA:'cardano', DOGE:'dogecoin', AVAX:'avalanche-2', TRX:'tron',
     TON:'the-open-network', MATIC:'matic-network', DOT:'polkadot'
   };
-
-  const _pxHit = new Map();
-  async function fetchBinancePrice(sym){
-    const now = Date.now();
-    const key = sym.toUpperCase();
-    if (_pxHit.has(key) && now - _pxHit.get(key) < 1200) {
-      await new Promise(r=>setTimeout(r, 1200 - (now - _pxHit.get(key))));
-    }
-    _pxHit.set(key, Date.now());
-    const r = await fetch(`/api/binance/price?symbol=${key}USDT`);
-    if (!r.ok) throw new Error('가격 요청 실패');
-    return r.json();
-  }
 
   async function fetchPrice(symRaw){
     const sym = String(symRaw||'').trim().toUpperCase();
@@ -170,7 +159,10 @@
     if(mImg){
       showTyping();
       try{
-        const r = await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:mImg[1]})});
+        const r = await fetch('/api/image',{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({prompt:mImg[1]})
+        });
         const j = await r.json().catch(()=>({}));
         hideTyping();
         if(r.ok && j.url) addImage(j.url);
@@ -261,7 +253,7 @@ ${personaBlock}`;
     imageInput.value = '';
   });
 
-  // ---- SETTINGS ----
+  // ---- SETTINGS (모달 동적 주입) ----
   function ensureSettingsDOM() {
     let modal = document.getElementById('settingsModal');
     if (!modal) {
@@ -338,17 +330,32 @@ ${personaBlock}`;
     }
   });
 
-  // Roleplay 토글 버튼
+  // Roleplay 토글
+  function syncRpToggleText(){ if (rpToggle) rpToggle.textContent = prefs.rpOn ? 'Roleplay ON' : 'Roleplay OFF'; }
+  syncRpToggleText();
   rpToggle?.addEventListener('click', ()=>{
     prefs.rpOn = !prefs.rpOn; savePrefs(prefs);
-    rpToggle.textContent = prefs.rpOn ? 'Roleplay ON' : 'Roleplay OFF';
+    syncRpToggleText();
     addMessage(`*역할극 모드가 ${prefs.rpOn ? '활성화' : '비활성화'} 되었다.*`, false);
   });
 
-  // *…* 버튼
+  // *…* 삽입 버튼
   document.getElementById('actionButton')?.addEventListener('click', () => {
     const el = messageInput;
-    const s = el.selectionStart, e = el.selectionEnd;
-    const txt = el.value;
+    const s = el.selectionStart ?? 0, e = el.selectionEnd ?? 0;
+    const txt = el.value ?? '';
     if (s !== e) {
-      el.value = txt.slice(0,s) + '*' + txt.slice
+      el.value = txt.slice(0,s) + '*' + txt.slice(s,e) + '*' + txt.slice(e);
+      el.selectionStart = s; el.selectionEnd = e + 2;
+    } else {
+      el.value = txt.slice(0,s) + '**' + txt.slice(s);
+      el.selectionStart = el.selectionEnd = s + 1; // 가운데 커서
+    }
+    el.dispatchEvent(new Event('input'));
+    el.focus();
+  });
+
+  // 포커스 편의
+  window.addEventListener('load', ()=> messageInput?.focus());
+  document.querySelector('.input-wrapper')?.addEventListener('click', ()=> messageInput?.focus());
+})();
