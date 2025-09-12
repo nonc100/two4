@@ -355,6 +355,33 @@ app.get('/api/binance/markets', async (req, res) => {
   }
 });
 
+// GET /api/binance/price?symbol=BTCUSDT
+app.get('/api/binance/price', async (req, res) => {
+  try {
+    const symbol = (req.query.symbol || 'BTCUSDT').toUpperCase();
+    const key = `BN:PX:${symbol}`;
+    const cached = hit2(key, 2000); // 2s 캐시로 429 완화
+    if (cached) { setCorsAndCache(res); return res.type('application/json').send(cached.body); }
+
+    // 가벼운 재시도(최대 2회)
+    let lastErr = null, data = null;
+    for (let i=0;i<2;i++){
+      try{
+        data = await bfetch(`${BINANCE_FAPI}/ticker/price?symbol=${encodeURIComponent(symbol)}`);
+        break;
+      }catch(e){ lastErr = e; await new Promise(r=>setTimeout(r, 150*(i+1))); }
+    }
+    if (!data) throw lastErr || new Error('binance price fail');
+
+    const body = JSON.stringify({ symbol: data.symbol, price: Number(data.price) });
+    keep(key, { ok:true, body, ct:'application/json' });
+    setCorsAndCache(res);
+    res.type('application/json').send(body);
+  } catch(e){
+    res.status(502).json({ error:'binance price error' });
+  }
+});
+
 // 롱/숏 비율: 전체 계정(Global)
 app.get('/api/binance/ls/global', async (req, res) => {
   try {
