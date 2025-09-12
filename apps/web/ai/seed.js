@@ -235,9 +235,7 @@ ${personaBlock}`;
 
   // ---------- events ----------
   sendButton.addEventListener('click', sendMessage);
-  messageInput.addEventListener('keydown', (e)=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
-  });
+  // 엔터키 자동전송 제거 - 이제 엔터는 줄바꿈만 가능
   messageInput.addEventListener('input', ()=>{
     messageInput.style.height='auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, window.innerHeight*0.3) + 'px';
@@ -262,24 +260,28 @@ ${personaBlock}`;
         <div class="settings-card">
           <h3>Seed 설정</h3>
           <div class="settings-grid">
-            <label>이름<input id="st_name" placeholder="예: 씨드"/></label>
-            <label>나이<input id="st_age" placeholder="예: 19"/></label>
-            <label>성별
-              <select id="st_gender">
-                <option value="">미지정</option><option>여성</option><option>남성</option><option>기타</option>
-              </select>
-            </label>
-            <label>세계관<input id="st_world" placeholder="예: 네온시티/현대/학교"/></label>
-            <label style="grid-column:1/-1">성격(설명)
+            <div class="settings-row">
+              <label>이름<input id="st_name" placeholder="예: 씨드"/></label>
+              <label>나이<input id="st_age" placeholder="예: 19"/></label>
+            </div>
+            <div class="settings-row">
+              <label>성별
+                <select id="st_gender">
+                  <option value="">미지정</option><option>여성</option><option>남성</option><option>기타</option>
+                </select>
+              </label>
+              <label>세계관<input id="st_world" placeholder="예: 네온시티"/></label>
+            </div>
+            <label>성격 및 말투
               <textarea id="st_persona" rows="3" placeholder="말투/습관/분위기 등"></textarea>
             </label>
-          </div>
-          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
-            <label class="tag"><input id="st_rp" type="checkbox"/> 역할극/메타표현 허용</label>
-            <label class="tag"><input id="st_clichefilter" type="checkbox" checked/> 식상표현 필터</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <label class="tag"><input id="st_rp" type="checkbox"/> 역할극 모드</label>
+              <label class="tag"><input id="st_clichefilter" type="checkbox" checked/> 식상표현 필터</label>
+            </div>
           </div>
           <div class="settings-actions">
-            <button id="st_reset" class="btn">기본값</button>
+            <button id="st_reset" class="btn">초기화</button>
             <button id="st_close" class="btn">닫기</button>
             <button id="st_save" class="btn btn-send">저장</button>
           </div>
