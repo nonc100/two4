@@ -9,6 +9,7 @@ let messagesCol = null; // MongoDB optional
 router.get('/_probe', (req, res) => {
   res.json({ ok: true, mounted: true });
 });
+
 // Mongo 연결 (옵션)
 async function getMongo() {
   if (!process.env.MONGODB_URI) return null;
