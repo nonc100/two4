@@ -29,6 +29,16 @@ app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai'))); // seed.htm
 // JSON 파서
 app.use(express.json({ limit: '2mb' }));
 
+// [SEED AI] Seed 라우터 마운트 (+ 마운트 확인 로그 & 프로브)
+try {
+  const aiRouter = require('./apps/web/ai/server.js');
+  app.use('/api', aiRouter);
+  console.log('✅ Seed AI router mounted at /api');
+  app.get('/api/_probe', (_req, res) => res.json({ ok: true, mounted: true }));
+} catch (e) {
+  console.error('❌ Failed to mount Seed AI router:', e.message);
+}
+
 function setCorsAndCache(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
@@ -300,7 +310,7 @@ app.get('/api/binance/markets', async (req, res) => {
       3,
       async (sym) => sym ? await binanceOpenInterest(sym) : 0
     );
-        const oiPctArr = await pmap(
+    const oiPctArr = await pmap(
       symbols.map((sym, i) => i < HEAVY_N ? sym : null),
       2,
       async (sym)=> sym ? await binanceOIChangePct(sym) : { oi_1h_pct:null, oi_24h_pct:null }
@@ -310,7 +320,7 @@ app.get('/api/binance/markets', async (req, res) => {
     const sparkMap = new Map();
     pairs.forEach((p, i) => sparkMap.set(p, sparksArr[i] || []));
  
-   // 4) CG 호환 매핑 (+ 시가총액 + OI%)
+    // 4) CG 호환 매핑 (+ 시가총액 + OI%)
     const rows = slice.map((s, idx) => {
       const stat  = statsMap.get(s.symbol) || {};
       const pair  = `${s.base}${s.quote}`;
