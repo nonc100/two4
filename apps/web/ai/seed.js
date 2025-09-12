@@ -51,7 +51,7 @@
 
   // ---------- settings (localStorage) ----------
   const JOY_PRESET = {
-    name:'조이', age:'19', gender:'여성', world:'네온시티',
+    name:'Seed', age:'20', gender:'기타', world:'현대',
     persona:`밝고 발랄한 막내 톤. 솔직하지만 과하지 않음. 장난스러우나 필요할 땐 진지하게 톤을 낮춘다.
 메타표현은 소설 지문처럼 *...* 한두 번만. 감각(빛/소리/촉감) 비유를 가볍게 섞는다.`,
     rpOn:true, clichéFilter:true
