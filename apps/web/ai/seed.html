@@ -165,6 +165,8 @@
       background:linear-gradient(135deg, rgba(102,126,234,.25), rgba(118,75,162,.25));
     }
 
+        .em-act{ color:#ffd479; font-style:italic; white-space:pre-wrap }
+
     /* mobile tweaks */
     @media (max-width: 768px){
       .header{padding:14px 16px 10px}
@@ -179,7 +181,14 @@
   <div class="chat-wrapper">
     <div class="header">
       <div class="title">SEED AI</div>
-      <div class="status"><span class="status-dot"></span> Connected</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label class="status" style="gap:6px;cursor:pointer">
+          <input id="rpToggle" type="checkbox" style="accent-color:#7c8cff" />
+          Roleplay
+        </label>
+        <button id="openSettings" class="btn" type="button" title="설정">⚙️</button>
+        <div class="status"><span class="status-dot"></span> Connected</div>
+      </div>
     </div>
 
     <div id="chatContainer" class="chat-container">
@@ -191,11 +200,34 @@
     </div>
 
     <div class="input-container">
-      <div class="input-wrapper">
+      <div class="input-wrapper
+                <button id="actionWrapButton" class="btn" type="button" title="*로 감싸기">*</button>
         <button id="uploadButton" class="btn" type="button" title="이미지 업로드">📎</button>
         <textarea id="messageInput" class="input-field" rows="1" placeholder="메시지를 입력하세요..." autocomplete="off"></textarea>
         <button id="sendButton" class="btn btn-send" type="button" title="전송">▶</button>
         <input id="imageInput" type="file" accept="image/*" style="display:none" />
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);align-items:center;justify-content:center;z-index:50">
+    <div style="width:min(560px,92%);background:rgba(20,20,35,.9);border:1px solid var(--ring);border-radius:16px;padding:16px 18px;color:var(--ink)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:800">설정</div>
+        <button id="closeSettings" class="btn" type="button">✖</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label>이름<input id="setName" class="input-field" style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px"></label>
+        <label>나이<input id="setAge" class="input-field" style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px"></label>
+        <label>성별<input id="setGender" class="input-field" style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px"></label>
+        <label>세계관<input id="setWorld" class="input-field" style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px"></label>
+        <label style="grid-column:1 / -1">성격
+          <textarea id="setPersona" rows="3" class="input-field" style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px"></textarea>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="saveSettings" class="btn btn-send" type="button">저장</button>
       </div>
     </div>
   </div>
