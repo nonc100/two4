@@ -7,7 +7,6 @@
   const sendButton    = document.getElementById('sendButton');
   const uploadButton  = document.getElementById('uploadButton');
   const imageInput    = document.getElementById('imageInput');
-  const actionWrapButton = document.getElementById('actionWrapButton');
   const rpToggle = document.getElementById('rpToggle');
   const openSettings = document.getElementById('openSettings');
   const settingsModal = document.getElementById('settingsModal');
@@ -21,9 +20,21 @@
   const escapeHtml = (txt='') =>
     txt.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-   const DEFAULT_PERSONA = `너는 순수하고 귀여운 느낌의 살짝 댕청한 민폐 반말남.
-말끝을 가볍게 늘이거나 “엥?”, “뭐지?” 같은 반응을 잘 쓰고, 장난끼가 조금 있다.
-다만 정보는 정확하고 간결하게 준다.`;
+  // *…* 를 <span class="action">…</span> 으로 변환 (별표 숨김)
+  function renderActions(html) {
+    // 이미 이스케이프/BR 처리된 HTML에 적용한다고 가정
+    return html.replace(/\*([^\*\n]{1,200})\*/g, (_m, g1) =>
+      `<span class="action">${g1.trim()}</span>`);
+  }
+
+  // 모델이 () [] /me 표기를 쓰면 *…* 로 보정 (RP ON일 때만)
+  function normalizeActionsForAI(text) {
+    let t = text;
+    t = t.replace(/(?:^|\n)\s*\/me\s+([^\n]+)/gi, (_m,g)=>`*${g.trim()}*`);
+    t = t.replace(/[\(\[]([^\(\)\[\]\n]{1,40})[\)\]]/g, (_m,g)=>`*${g.trim()}*`);
+    t = t.replace(/\*{3,}/g,'**');
+    return t;
+  }
 
   function loadPrefs(){
     const p = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
@@ -41,23 +52,16 @@
 
   let prefs = loadPrefs();
 
-  function renderActions(html){
-    // *...* → <span class="em-act">...</span>
-    return html.replace(/\*(.+?)\*/g, (_m, g1)=> `<span class="em-act">${escapeHtml(g1)}</span>`);
-  }
-
   const addMessage = (content, isUser=false) => {
     const wrap = document.createElement('div');
     wrap.className = `message ${isUser ? 'user' : 'ai'}`;
 
-    let body;
-    if (isUser) {
-      const safe = escapeHtml(content).replace(/\n/g,'<br>');
-      body = renderActions(safe);
-    } else {
-      // AI 쪽은 기존 그대로(모델이 *을 쓸 수도 있으니 렌더만)
-      body = content.replace(/\n/g,'<br>');
-    }
+ const prefs = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
+    const rpOn  = !!prefs.rpOn;
+    let text = content;
+    if (!isUser && rpOn) text = normalizeActionsForAI(text);
+    let body = escapeHtml(text).replace(/\n/g,'<br>');
+    body = renderActions(body);
 
     wrap.innerHTML = `<div class="bubble">${body}</div>`;
     chatContainer.appendChild(wrap);
@@ -137,30 +141,7 @@
       <div style="opacity:.82;margin-top:4px">24h 고가 ${fmt.money(x.high24h)} · 저가 ${fmt.money(x.low24h)} · 시총 ${fmt.money(x.mc)}</div>
     </div>`;
 
-  function buildSystemPrompt(){
-    const st = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
-    const rpOn = !!st.rpOn;
-
-    const base = DEFAULT_PERSONA;
-    if (!rpOn) {
-      return `You are Seed AI for TWO4. Reply in the user language (Korean by default). Keep it concise, helpful.`;
-    }
-
-    const parts = [];
-    if (st.name)   parts.push(`이름: ${st.name}`);
-    if (st.age)    parts.push(`나이: ${st.age}`);
-    if (st.gender) parts.push(`성별: ${st.gender}`);
-    if (st.world)  parts.push(`세계관: ${st.world}`);
-    const userPersona = st.persona ? `\n추가 성격: ${st.persona}` : '';
-
-    return [
-      `${base}${userPersona}`,
-      `역할극/상황극을 허용. 사용자 지시가 있으면 적극적으로 연기하되, 유해/금지 콘텐츠는 거절.`,
-      `말투 가이드: 짧고 간결, 반말 위주. 과한 장문 금지.`,
-      parts.length? `설정 프로필 → ${parts.join(', ')}` : ''
-    ].filter(Boolean).join('\n');
-  }
-
+  
   // ---------- router ----------
   async function handleInput(raw){
     // /image
@@ -196,8 +177,16 @@
     // 일반 채팅
     showTyping();
     try{
+      const prefs = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
+      const rpOn  = !!prefs.rpOn;
+      const system = rpOn
+        ? `You are Seed AI for TWO4. Reply in Korean by default.
+           Roleplay is enabled. Use *asterisks* to mark your own actions or non-verbal reactions
+           (e.g., *고개를 끄덕인다*). Use at most 1–2 times per message. Do not wrap factual text.`
+        : `You are Seed AI for TWO4. Reply in Korean by default. Be concise and helpful.
+           If you ever describe your own action, wrap it with *…* once.`;      
       const reply = await fetchChat([
-        { role:'system', content: buildSystemPrompt() },
+        { role:'system', content: system },
         ...messageHistory.slice(-10),
         { role:'user', content: raw }
       ]);
@@ -268,14 +257,20 @@
   });
   rpToggle.addEventListener('change', ()=> savePrefs({ rpOn: rpToggle.checked }));
 
-  actionWrapButton.addEventListener('click', ()=>{
+  // 선택 영역을 *…* 로 감싸기 (없으면 커서에 삽입)
+  document.getElementById('actionButton')?.addEventListener('click', () => {
     const el = messageInput;
     const s = el.selectionStart, e = el.selectionEnd;
-    const v = el.value;
-    const selected = v.slice(s,e) || '행동을 텍스트로';
-    el.value = v.slice(0,s) + '*' + selected + '*' + v.slice(e);
+    const txt = el.value;
+    if (s !== e) {
+      el.value = txt.slice(0,s) + '*' + txt.slice(s,e) + '*' + txt.slice(e);
+      el.selectionStart = s; el.selectionEnd = e + 2;
+    } else {
+      el.value = txt.slice(0,s) + '**' + txt.slice(s);
+      el.selectionStart = el.selectionEnd = s + 1; // 가운데에 커서
+    }
+    el.dispatchEvent(new Event('input'));
     el.focus();
-    el.selectionStart = s+1; el.selectionEnd = s+selected.length+1;
   });
 
   window.addEventListener('load', ()=> messageInput.focus());
