@@ -1,4 +1,7 @@
 // app/web/ai/server.js
+router.get('/_probe', (req, res) => {
+  res.json({ ok: true, mounted: true });
+});
 const router = require('express').Router();
 const fetch = require('node-fetch'); // v2
 const cookieParser = require('cookie-parser');
