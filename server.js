@@ -29,6 +29,9 @@ app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai'))); // seed.htm
 // JSON 파서
 app.use(express.json({ limit: '2mb' }));
 
+const aiRouter = require('./apps/web/ai/server.js');
+app.use('/api', aiRouter);
+
 function setCorsAndCache(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
