@@ -200,7 +200,7 @@
     showTyping();
     try{
       const personaBlock =
-`이름:${prefs.name||'조이'} / 나이:${prefs.age||'19'} / 성별:${prefs.gender||'미지정'} / 세계관:${prefs.world||'네온시티'}
+`이름:${prefs.name||'씨드'} / 나이:${prefs.age||'20'} / 성별:${prefs.gender||'미지정'} / 세계관:${prefs.world||'네온시티'}
 성격:${prefs.persona||JOY_PRESET.persona}`;
       const metaRules = prefs.rpOn
         ? `메타표현 사용 규칙:
