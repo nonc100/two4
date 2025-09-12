@@ -31,7 +31,7 @@ app.use(express.json({ limit: '2mb' }));
 
 // [SEED AI] Seed 라우터 마운트 (+ 마운트 확인 로그 & 프로브)
 try {
-  const aiRouter = require('./apps/web/ai/server.js');
+  const aiRouter = require('./apps/web/ai/server.cjs');
   app.use('/api', aiRouter);
   console.log('✅ Seed AI router mounted at /api');
   app.get('/api/_probe', (_req, res) => res.json({ ok: true, mounted: true }));
