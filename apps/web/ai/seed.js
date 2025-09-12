@@ -8,7 +8,6 @@
   const uploadButton  = document.getElementById('uploadButton');
   const imageInput    = document.getElementById('imageInput');
   const settingsBtn   = document.getElementById('settingsBtn');
-  const modal         = document.getElementById('settingsModal');
 
   let isTyping = false;
   let messageHistory = []; // { role, content }
@@ -263,36 +262,92 @@ ${personaBlock}`;
     imageInput.value = '';
   });
 
-  // ------ settings modal wiring ------
-  function fillForm(){
-    document.getElementById('st_name').value   = prefs.name||'';
-    document.getElementById('st_age').value    = prefs.age||'';
-    document.getElementById('st_gender').value = prefs.gender||'';
-    document.getElementById('st_world').value  = prefs.world||'';
-    document.getElementById('st_persona').value= prefs.persona||'';
-    document.getElementById('st_rp').checked   = !!prefs.rpOn;
-    document.getElementById('st_clichefilter').checked = !!prefs.clichéFilter;
-  }
-  function readForm(){
-    prefs = {
-      ...prefs,
-      name: document.getElementById('st_name').value.trim(),
-      age: document.getElementById('st_age').value.trim(),
-      gender: document.getElementById('st_gender').value,
-      world: document.getElementById('st_world').value.trim(),
-      persona: document.getElementById('st_persona').value.trim(),
-      rpOn: document.getElementById('st_rp').checked,
-      clichéFilter: document.getElementById('st_clichefilter').checked,
-    };
-  }
-  settingsBtn?.addEventListener('click', ()=>{ fillForm(); modal.style.display='flex'; });
-  document.getElementById('st_close')?.addEventListener('click', ()=> modal.style.display='none');
-  document.getElementById('st_reset')?.addEventListener('click', ()=>{ prefs = { ...JOY_PRESET }; savePrefs(prefs); fillForm(); });
-  document.getElementById('st_save')?.addEventListener('click', ()=>{
-    readForm(); savePrefs(prefs); modal.style.display='none';
-    addMessage('*설정이 적용되었다. 대화 톤이 미묘하게 달라진다*', false);
-  });
-  modal?.addEventListener('click', (e)=>{ if(e.target===modal) modal.style.display='none'; });
+    // ---- SETTINGS SAFE HELPERS (replace old fillForm/readForm + handlers) ----
+    function ensureSettingsDOM() {
+      let modal = document.getElementById('settingsModal');
+      if (!modal) {
+        // 모달이 없다면 동적으로 주입
+        const html = `
+        <div id="settingsModal" class="settings-modal" style="display:none">
+          <div class="settings-card">
+            <h3>Seed 설정</h3>
+            <div class="settings-grid">
+              <label>이름<input id="st_name" placeholder="예: 조이"/></label>
+              <label>나이<input id="st_age" placeholder="예: 19"/></label>
+              <label>성별
+                <select id="st_gender">
+                  <option value="">미지정</option><option>여성</option><option>남성</option><option>기타</option>
+                </select>
+              </label>
+              <label>세계관<input id="st_world" placeholder="예: 네온시티/현대/학교"/></label>
+              <label style="grid-column:1/-1">성격(설명)
+                <textarea id="st_persona" rows="3" placeholder="말투/습관/분위기 등"></textarea>
+              </label>
+            </div>
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+              <label class="tag"><input id="st_rp" type="checkbox"/> 역할극/메타표현 허용</label>
+              <label class="tag"><input id="st_clichefilter" type="checkbox" checked/> 식상표현 필터</label>
+            </div>
+            <div class="settings-actions">
+              <button id="st_reset" class="btn">기본값</button>
+              <button id="st_close" class="btn">닫기</button>
+              <button id="st_save" class="btn btn-send">저장</button>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+      }
+      return document.getElementById('settingsModal');
+    }
+
+    function qs(id){ return document.getElementById(id); }
+
+    function fillForm(){
+      // 폼이 없으면 생성 후 진행
+      ensureSettingsDOM();
+      if (!qs('st_name')) return; // 그래도 없으면 그냥 패스 (에러 방지)
+
+      qs('st_name').value    = prefs.name || '';
+      qs('st_age').value     = prefs.age || '';
+      if (qs('st_gender'))   qs('st_gender').value  = prefs.gender || '';
+      qs('st_world').value   = prefs.world || '';
+      qs('st_persona').value = prefs.persona || '';
+      if (qs('st_rp'))       qs('st_rp').checked    = !!prefs.rpOn;
+      if (qs('st_clichefilter')) qs('st_clichefilter').checked = !!prefs.clichéFilter;
+    }
+
+    function readForm(){
+      // 폼이 없으면 스킵
+      if (!qs('st_name')) return;
+      prefs = {
+        ...prefs,
+        name: qs('st_name').value.trim(),
+        age: qs('st_age').value.trim(),
+        gender: (qs('st_gender')?.value) || '',
+        world: qs('st_world').value.trim(),
+        persona: qs('st_persona').value.trim(),
+        rpOn: !!qs('st_rp')?.checked,
+        clichéFilter: !!qs('st_clichefilter')?.checked,
+      };
+    }
+
+    settingsBtn?.addEventListener('click', ()=>{
+      const modal = ensureSettingsDOM();
+      fillForm();
+      modal.style.display = 'flex';
+
+      // 버튼 이벤트 바인딩(중복 바인딩 방지 위해 한 번만)
+      if (!modal.dataset.bound) {
+        modal.dataset.bound = '1';
+        modal.addEventListener('click',(e)=>{ if(e.target===modal) modal.style.display='none'; });
+        qs('st_close')?.addEventListener('click', ()=> modal.style.display='none');
+        qs('st_reset')?.addEventListener('click', ()=>{ prefs = { ...JOY_PRESET }; savePrefs(prefs); fillForm(); });
+        qs('st_save')?.addEventListener('click', ()=>{
+          readForm(); savePrefs(prefs); modal.style.display='none';
+          addMessage('*설정이 적용되었다. 대화 톤이 미묘하게 달라진다*', false);
+        });
+      }
+    });
 
   // 선택 영역을 *…* 로 감싸기 (없으면 커서에 삽입)
   document.getElementById('actionButton')?.addEventListener('click', () => {
