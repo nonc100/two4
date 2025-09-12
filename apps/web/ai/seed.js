@@ -272,7 +272,7 @@ ${personaBlock}`;
           <div class="settings-card">
             <h3>Seed 설정</h3>
             <div class="settings-grid">
-              <label>이름<input id="st_name" placeholder="예: 조이"/></label>
+              <label>이름<input id="st_name" placeholder="예: 씨드"/></label>
               <label>나이<input id="st_age" placeholder="예: 19"/></label>
               <label>성별
                 <select id="st_gender">
