@@ -165,8 +165,6 @@
       background:linear-gradient(135deg, rgba(102,126,234,.25), rgba(118,75,162,.25));
     }
 
-        .em-act{ color:#ffd479; font-style:italic; white-space:pre-wrap }
-
     /* mobile tweaks */
     @media (max-width: 768px){
       .header{padding:14px 16px 10px}
@@ -174,6 +172,15 @@
       .chat-container{padding:18px 14px 24px}
       .bubble{max-width:86%}
     }
+  </style>
+   <style>
+  /* *…* 를 span으로 바꿔서 별표는 숨기고 색만 강조 */
+  .action {
+    color:#9ad0ff;
+    font-style:italic;
+    opacity:.95;
+  }
+  .action::before, .action::after { content:'' }
   </style>
   <script src="/ai/seed.js" defer></script>
 </head>
@@ -199,15 +206,15 @@
       </div>
     </div>
 
-    <div class="input-container">
-      <div class="input-wrapper
-                <button id="actionWrapButton" class="btn" type="button" title="*로 감싸기">*</button>
-        <button id="uploadButton" class="btn" type="button" title="이미지 업로드">📎</button>
-        <textarea id="messageInput" class="input-field" rows="1" placeholder="메시지를 입력하세요..." autocomplete="off"></textarea>
-        <button id="sendButton" class="btn btn-send" type="button" title="전송">▶</button>
-        <input id="imageInput" type="file" accept="image/*" style="display:none" />
+      <div class="input-container">
+        <div class="input-wrapper">
+          <button id="uploadButton" class="btn" type="button" title="이미지 업로드">📎</button>
+          <button id="actionButton" class="btn" type="button" title="행동 모션(*…*)">✶</button>
+          <textarea id="messageInput" class="input-field" rows="1" placeholder="메시지를 입력하세요..." autocomplete="off"></textarea>
+          <button id="sendButton" class="btn btn-send" type="button" title="전송">▶</button>
+          <input id="imageInput" type="file" accept="image/*" style="display:none" />
+        </div>
       </div>
-    </div>
   </div>
   
   <!-- Settings Modal -->
