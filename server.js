@@ -673,11 +673,27 @@ app.get('/api/icon/:sym', async (req, res) => {
 // ==============================
 // 기본 라우트 & SPA
 // ==============================
+
+// 메인 페이지
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'apps/web/index.html'));
 });
-app.use((req, res, next) => { if (req.accepts('html')) return next(); res.status(404).end(); });
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'apps/web/index.html')));
+
+// SPA fallback: 오직 "비-API" GET 요청만 index.html 반환
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  if (req.method !== 'GET') return next();
+  if (!req.accepts('html')) return next();
+  return res.sendFile(path.join(__dirname, 'apps/web/index.html'));
+});
+
+// 여기까지 못 잡힌 건 404로
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not Found' });
+  }
+  return res.status(404).end();
+});
 
 // ==============================
 // MongoDB 연결 + 서버 시작
