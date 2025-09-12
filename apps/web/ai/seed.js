@@ -7,7 +7,13 @@
   const sendButton    = document.getElementById('sendButton');
   const uploadButton  = document.getElementById('uploadButton');
   const imageInput    = document.getElementById('imageInput');
-
+  const actionWrapButton = document.getElementById('actionWrapButton');
+  const rpToggle = document.getElementById('rpToggle');
+  const openSettings = document.getElementById('openSettings');
+  const settingsModal = document.getElementById('settingsModal');
+  const closeSettings = document.getElementById('closeSettings');
+  const saveSettings = document.getElementById('saveSettings');
+  
   let isTyping = false;
   let messageHistory = []; // { role, content }
 
@@ -15,10 +21,44 @@
   const escapeHtml = (txt='') =>
     txt.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+   const DEFAULT_PERSONA = `너는 순수하고 귀여운 느낌의 살짝 댕청한 민폐 반말남.
+말끝을 가볍게 늘이거나 “엥?”, “뭐지?” 같은 반응을 잘 쓰고, 장난끼가 조금 있다.
+다만 정보는 정확하고 간결하게 준다.`;
+
+  function loadPrefs(){
+    const p = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
+    rpToggle.checked = !!p.rpOn;
+    return {
+      name: p.name||'', age: p.age||'', gender: p.gender||'',
+      world: p.world||'', persona: p.persona||''
+    };
+  }
+  function savePrefs(part){
+    const prev = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
+    const next = { ...prev, ...part };
+    localStorage.setItem('seed_prefs', JSON.stringify(next));
+  }
+
+  let prefs = loadPrefs();
+
+  function renderActions(html){
+    // *...* → <span class="em-act">...</span>
+    return html.replace(/\*(.+?)\*/g, (_m, g1)=> `<span class="em-act">${escapeHtml(g1)}</span>`);
+  }
+
   const addMessage = (content, isUser=false) => {
     const wrap = document.createElement('div');
     wrap.className = `message ${isUser ? 'user' : 'ai'}`;
-    const body = isUser ? escapeHtml(content).replace(/\n/g,'<br>') : content.replace(/\n/g,'<br>');
+
+    let body;
+    if (isUser) {
+      const safe = escapeHtml(content).replace(/\n/g,'<br>');
+      body = renderActions(safe);
+    } else {
+      // AI 쪽은 기존 그대로(모델이 *을 쓸 수도 있으니 렌더만)
+      body = content.replace(/\n/g,'<br>');
+    }
+
     wrap.innerHTML = `<div class="bubble">${body}</div>`;
     chatContainer.appendChild(wrap);
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -97,6 +137,30 @@
       <div style="opacity:.82;margin-top:4px">24h 고가 ${fmt.money(x.high24h)} · 저가 ${fmt.money(x.low24h)} · 시총 ${fmt.money(x.mc)}</div>
     </div>`;
 
+  function buildSystemPrompt(){
+    const st = JSON.parse(localStorage.getItem('seed_prefs')||'{}');
+    const rpOn = !!st.rpOn;
+
+    const base = DEFAULT_PERSONA;
+    if (!rpOn) {
+      return `You are Seed AI for TWO4. Reply in the user language (Korean by default). Keep it concise, helpful.`;
+    }
+
+    const parts = [];
+    if (st.name)   parts.push(`이름: ${st.name}`);
+    if (st.age)    parts.push(`나이: ${st.age}`);
+    if (st.gender) parts.push(`성별: ${st.gender}`);
+    if (st.world)  parts.push(`세계관: ${st.world}`);
+    const userPersona = st.persona ? `\n추가 성격: ${st.persona}` : '';
+
+    return [
+      `${base}${userPersona}`,
+      `역할극/상황극을 허용. 사용자 지시가 있으면 적극적으로 연기하되, 유해/금지 콘텐츠는 거절.`,
+      `말투 가이드: 짧고 간결, 반말 위주. 과한 장문 금지.`,
+      parts.length? `설정 프로필 → ${parts.join(', ')}` : ''
+    ].filter(Boolean).join('\n');
+  }
+
   // ---------- router ----------
   async function handleInput(raw){
     // /image
@@ -133,7 +197,7 @@
     showTyping();
     try{
       const reply = await fetchChat([
-        { role:'system', content:'You are Seed AI for TWO4. Reply in the user language (Korean by default). Keep it concise, helpful, with a subtle cyberpunk tone.' },
+        { role:'system', content: buildSystemPrompt() },
         ...messageHistory.slice(-10),
         { role:'user', content: raw }
       ]);
@@ -178,6 +242,40 @@
     reader.onload = e => addImage(e.target.result, f.name, true);
     reader.readAsDataURL(f);
     imageInput.value = '';
+  });
+
+    openSettings.addEventListener('click', ()=>{
+    prefs = loadPrefs();
+    document.getElementById('setName').value   = prefs.name;
+    document.getElementById('setAge').value    = prefs.age;
+    document.getElementById('setGender').value = prefs.gender;
+    document.getElementById('setWorld').value  = prefs.world;
+    document.getElementById('setPersona').value= prefs.persona;
+    settingsModal.style.display = 'flex';
+  });
+  closeSettings.addEventListener('click', ()=> settingsModal.style.display='none');
+  saveSettings.addEventListener('click', ()=>{
+    savePrefs({
+      name:   document.getElementById('setName').value.trim(),
+      age:    document.getElementById('setAge').value.trim(),
+      gender: document.getElementById('setGender').value.trim(),
+      world:  document.getElementById('setWorld').value.trim(),
+      persona:document.getElementById('setPersona').value.trim(),
+      rpOn:   rpToggle.checked
+    });
+    settingsModal.style.display='none';
+    addMessage('설정 저장 완료! 역할극 토글이 켜져 있으면 다음 대화부터 반영돼.', false);
+  });
+  rpToggle.addEventListener('change', ()=> savePrefs({ rpOn: rpToggle.checked }));
+
+  actionWrapButton.addEventListener('click', ()=>{
+    const el = messageInput;
+    const s = el.selectionStart, e = el.selectionEnd;
+    const v = el.value;
+    const selected = v.slice(s,e) || '행동을 텍스트로';
+    el.value = v.slice(0,s) + '*' + selected + '*' + v.slice(e);
+    el.focus();
+    el.selectionStart = s+1; el.selectionEnd = s+selected.length+1;
   });
 
   window.addEventListener('load', ()=> messageInput.focus());
