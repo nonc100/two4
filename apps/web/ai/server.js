@@ -1,7 +1,4 @@
-// app/web/ai/server.js
-router.get('/_probe', (req, res) => {
-  res.json({ ok: true, mounted: true });
-});
+// apps/web/ai/server.cjs
 const router = require('express').Router();
 const fetch = require('node-fetch'); // v2
 const cookieParser = require('cookie-parser');
@@ -9,6 +6,9 @@ const { MongoClient } = require('mongodb');
 
 let messagesCol = null; // MongoDB optional
 
+router.get('/_probe', (req, res) => {
+  res.json({ ok: true, mounted: true });
+});
 // Mongo 연결 (옵션)
 async function getMongo() {
   if (!process.env.MONGODB_URI) return null;
