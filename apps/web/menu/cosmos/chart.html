@@ -269,45 +269,22 @@ function syncToggles(){
 document.getElementById('btnFit').onclick = ()=> chart.timeScale().fitContent();
 document.getElementById('btnReset').onclick = ()=> { chart.timeScale().setVisibleRange({from:undefined,to:undefined}); chart.timeScale().fitContent(); };
 
-/* 변환기 */
-function normTs(t){ return t > 1e12 ? Math.floor(t/1000) : t; }
-const toCandle = k => ({ time: normTs(k[0]), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:+k[5] });
-const toVolume = k => ({ time: normTs(k[0]), value:+k[5], color:(+k[4] >= +k[1]) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' });
-
 // --- TF별 간격(초) ---
 const TFSEC = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
-
-// --- 누락 캔들도 채우는 보정 ---
-function buildCandles(rows, tf){
-  const out=[]; if(!rows?.length) return out;
-  const step = TFSEC[tf];
-  let expect = normTs(rows[0][0]);
-  for(let i=0;i<rows.length;i++){
-    const r = rows[i];
-    const real = normTs(r[0]);
-    while(expect < real){
-      const prev = out.at(-1);
-      if(prev){
-        out.push({ time:expect, open:prev.close, high:prev.close, low:prev.close, close:prev.close, volume:0, _filled:true });
-      }
-      expect += step;
-    }
-    out.push({ time:real, open:+r[1], high:+r[2], low:+r[3], close:+r[4], volume:+r[5] });
-    expect = real + step;
-  }
-  return out;
-}
 
 /* 로더 */
 async function loadAll(){
   syncTFUI();
   const [dURL,pURL] = klineURL(SYMBOL, TF);
   const rows = await getJson(dURL,pURL);           // 바이낸스 klines 원본(배열[])
-  const candles = buildCandles(rows, TF);
-  const volumes = candles.map(c => ({ time:c.time, value:c.volume ?? 0, color:(c.close >= c.open) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' }));
-
+  const msInput = Array.isArray(rows?.[0]) && Number(rows[0][0]) > 1e12;
+  const toSec   = t => msInput ? Math.round(Number(t)/1000) : Number(t);
+  rows.sort((a,b)=> Number(a[0]) - Number(b[0]));
+  const candles = rows.map(k => ({ time: toSec(k[0]), open:+k[1], high:+k[2], low:+k[3], close:+k[4] }));
+  const volumes = rows.map(k => ({ time: toSec(k[0]), value:+k[5], color:(+k[4]>=+k[1])?'rgba(34,197,94,.55)':'rgba(239,68,68,.55)' }));
   mainSeries.setData(candles);
   volSeries.setData(volumes);
+  chart.timeScale().fitContent();
 
   // 디버그: 렌더에 넣은 데이터 확인
   console.log('[candles]', TF, candles.length, 'from', new Date(candles[0].time*1000).toISOString(), 'to', new Date(candles.at(-1).time*1000).toISOString());
@@ -358,11 +335,9 @@ async function loadAll(){
     const period = (TF.endsWith('m') ? TF : '5m');
     const [od,op] = oiURL(SYMBOL, period, 600);
     const oij = await getJson(od,op);
-    const oiData = oij.map(x=>({ time: Math.floor(new Date(x.timestamp).getTime()/1000), value: +x.sumOpenInterest }));
+    const oiData = oij.map(x=>({ time: Math.round(new Date(x.timestamp).getTime()/1000), value: +x.sumOpenInterest }));
     oiPane.setData(oiData);
   }catch(e){ oiPane.setData([]); }
-
-  chart.timeScale().fitContent();
 }
 syncToggles();
 document.getElementById('symLabel').textContent = SYMBOL;
