@@ -286,25 +286,62 @@ async function loadAll(){
   const [dURL,pURL] = klineURL(SYMBOL, TF, chooseLimit(TF));
   let rows = await getJson(dURL,pURL);           // 바이낸스 klines 원본(배열[])
 
-  // ✅ Kline 시간/포맷 정규화 (여기서 한 번만)
-  // - 원본: [openTime(ms), open, high, low, close, volume, ...]
-  // - 혹시 객체 배열({timestamp, price})가 오면 kline 배열로 변환
-  if (rows?.length && !Array.isArray(rows[0]) && rows[0].timestamp != null) {
-    rows = rows.map(r => [Number(r.timestamp), String(r.price), String(r.price), String(r.price), String(r.price), "0"]);
-  }
-  // openTime 기준 오름차순 정렬
-  rows.sort((a,b)=> Number(a[0]) - Number(b[0]));
+  // === Binance klines 정규화: ms→sec, 경계 스냅, 중복제거, 결측 채움 ===
+  const SEC_OF = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
-  // ms → s (초)로 통일
-  if (Number(rows[0][0]) > 1e12) {                 // 13자리면 ms
-    for (let i=0;i<rows.length;i++) rows[i][0] = Math.floor(Number(rows[i][0]) / 1000);
+  // 1) 응답 형태 통일 (프록시가 {timestamp,price}일 때 배열형으로 맞춤)
+  if (rows?.length) {
+    if (!Array.isArray(rows[0]) && rows[0]?.timestamp != null) {
+      rows = rows.map(r => [Number(r.timestamp), String(r.price), String(r.price), String(r.price), String(r.price), "0"]);
+    }
+    // 시간 오름차순
+    rows.sort((a,b) => Number(a[0]) - Number(b[0]));
+    // 13자리(ms)면 초로 1번만 변환
+    if (Number(rows[0][0]) > 1e12) {
+      for (let i=0;i<rows.length;i++) rows[i][0] = Math.floor(Number(rows[i][0]) / 1000);
+    }
   }
 
-  const candles = rows.map(toCandle);
-  const volumes = rows.map(toVolume);
+  // 2) 간격 경계에 스냅(예: 4h면 모두 00:00/04:00/08:00 … 으로 정렬)
+  const STEP = SEC_OF[TF] ?? 60;
+  const snap = t => Math.floor(Number(t) / STEP) * STEP;
+  const snapMap = new Map(); // t -> [t, open, high, low, close, vol]
+
+  // 같은 버킷(t)에서 최신 값만 남김
+  for (const k of rows) {
+    const t = snap(k[0]);
+    const v = [t, +k[1], +k[2], +k[3], +k[4], +k[5] || 0];
+    snapMap.set(t, v);
+  }
+
+  // 3) 결측 구간 채우기(이전 종가로 OHLC 동일 캔들 생성)
+  const ts = [...snapMap.keys()].sort((a,b)=>a-b);
+  const norm = [];
+  for (let i=0;i<ts.length;i++) {
+    const t = ts[i];
+    const cur = snapMap.get(t);
+    norm.push(cur);
+    if (i+1 < ts.length) {
+      let nxt = ts[i+1];
+      for (let u = t + STEP; u < nxt; u += STEP) {
+        const prevClose = cur[4];
+        norm.push([u, prevClose, prevClose, prevClose, prevClose, 0]);
+      }
+    }
+  }
+
+  // 이후 로직은 norm 사용
+  const rowsNorm = norm;
+
+  const candles = rowsNorm.map(toCandle);
+  const volumes = rowsNorm.map(toVolume);
   mainSeries.setData(candles);
   volSeries.setData(volumes);
   chart.timeScale().fitContent();
+
+  // 디버그: 타임 스텝 확인
+  const steps = [...new Set(candles.slice(1).map((b,i)=>candles[i+1].time - candles[i].time))];
+  console.log('uniq steps:', steps);
 
   // 디버그: 렌더에 넣은 데이터 확인
   console.log('[candles]', TF, candles.length, 'from', new Date(candles[0].time*1000).toISOString(), 'to', new Date(candles.at(-1).time*1000).toISOString());
@@ -323,7 +360,7 @@ async function loadAll(){
   chg.className = 'chg ' + (pct>=0?'up':'down');
 
   // 보조지표 계산은 보정된 타임라인 기준
-  const rtime = rows.map(r => Number(r[0]));
+  const rtime = rowsNorm.map(r => Number(r[0]));
   const closes = candles.map(c=>c.close);
 
   // HMA
