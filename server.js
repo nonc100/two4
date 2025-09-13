@@ -519,20 +519,37 @@ app.get('/api/simple/price', async (req, res) => {
   keep(key, payload);
 });
 
-// 4) 특정 코인 차트
-// 예: /api/coins/cosmos/market_chart?vs_currency=usd&days=7
-app.get('/api/coins/:id/market_chart', async (req, res) => {
-  const u = new URL(`https://api.coingecko.com/api/v3/coins/${req.params.id}/market_chart`);
-  for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
+// Binance spot kline proxy
+// /api/binance/klines?symbol=BTCUSDT&interval=1h&limit=24
+app.get('/api/binance/klines', async (req, res) => {
+  const { symbol, interval, limit } = req.query;
+  if (!symbol || !interval || !limit) {
+    return res.status(400).json({ error: 'symbol, interval, and limit are required' });
+  }
 
-  const key = `CG:${u.toString()}`;
+  const u = new URL('https://api.binance.com/api/v3/klines');
+  u.searchParams.set('symbol', symbol);
+  u.searchParams.set('interval', interval);
+  u.searchParams.set('limit', limit);
+
+  const key = `BINKLINES:${symbol}:${interval}:${limit}`;
   const cached = hit(key);
-  if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
+  if (cached) {
+    setCorsAndCache(res);
+    return res.type(cached.ct).status(cached.status).send(cached.body);
+  }
 
-  const payload = await proxyFetch(u, cgHeaders);
-  setCorsAndCache(res);
-  res.type(payload.ct).status(payload.status).send(payload.body);
-  keep(key, payload);
+  try {
+    const raw = await bfetch(u.toString());
+    const formatted = raw.map(k => ({ timestamp: k[0], price: Number(k[4]) }));
+    const payload = { ok: true, status: 200, body: JSON.stringify(formatted), ct: 'application/json' };
+    setCorsAndCache(res);
+    res.type(payload.ct).status(payload.status).send(payload.body);
+    keep(key, payload);
+  } catch (e) {
+    setCorsAndCache(res);
+    res.status(500).json({ error: 'binance kline failed', detail: String(e) });
+  }
 });
 
 // =======================================================
