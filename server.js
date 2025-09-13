@@ -522,33 +522,43 @@ app.get('/api/simple/price', async (req, res) => {
 // Binance spot kline proxy
 // /api/binance/klines?symbol=BTCUSDT&interval=1h&limit=24
 app.get('/api/binance/klines', async (req, res) => {
-  const { symbol, interval, limit } = req.query;
-  if (!symbol || !interval || !limit) {
-    return res.status(400).json({ error: 'symbol, interval, and limit are required' });
-  }
-
-  const u = new URL('https://api.binance.com/api/v3/klines');
-  u.searchParams.set('symbol', symbol);
-  u.searchParams.set('interval', interval);
-  u.searchParams.set('limit', limit);
-
-  const key = `BINKLINES:${symbol}:${interval}:${limit}`;
-  const cached = hit(key);
-  if (cached) {
-    setCorsAndCache(res);
-    return res.type(cached.ct).status(cached.status).send(cached.body);
-  }
-
   try {
-    const raw = await bfetch(u.toString());
-    const formatted = raw.map(k => ({ timestamp: k[0], price: Number(k[4]) }));
-    const payload = { ok: true, status: 200, body: JSON.stringify(formatted), ct: 'application/json' };
-    setCorsAndCache(res);
-    res.type(payload.ct).status(payload.status).send(payload.body);
-    keep(key, payload);
+    let { symbol, interval, limit, startTime, endTime } = req.query;
+
+    if (!symbol || typeof symbol !== 'string') {
+      return res.status(400).json({ code: -1102, msg: "Mandatory parameter 'symbol' missing or malformed" });
+    }
+    symbol = symbol.toUpperCase();
+
+    const ALLOWED = new Set(['1m','5m','15m','30m','1h','4h','1d','1w']);
+    if (!interval || !ALLOWED.has(interval)) {
+      return res.status(400).json({ code: -1121, msg: 'Invalid interval; allowed: 1m,5m,15m,30m,1h,4h,1d,1w' });
+    }
+
+    let lim = Number(limit) || 500;
+    if (!Number.isFinite(lim) || lim <= 0) lim = 500;
+    lim = Math.min(lim, 1000);
+
+    const params = new URLSearchParams({ symbol, interval, limit: String(lim) });
+    if (startTime) params.set('startTime', String(startTime));
+    if (endTime) params.set('endTime', String(endTime));
+
+    const url = `https://api.binance.com/api/v3/klines?${params.toString()}`;
+    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+    if (!r.ok) {
+      const text = await r.text();
+      let payload;
+      try { payload = JSON.parse(text); } catch { payload = { code: r.status, msg: text || r.statusText }; }
+      return res.status(r.status).json(payload);
+    }
+
+    const data = await r.json();
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=10');
+    return res.status(200).json(data);
   } catch (e) {
-    setCorsAndCache(res);
-    res.status(500).json({ error: 'binance kline failed', detail: String(e) });
+    return res.status(500).json({ code: 500, msg: 'proxy error', detail: String(e?.message || e) });
   }
 });
 
