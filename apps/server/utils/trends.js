@@ -1,4 +1,3 @@
-// @deprecated
 const express = require('express');
 const Parser = require('rss-parser');
 const router = express.Router();
