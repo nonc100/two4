@@ -1135,14 +1135,14 @@
     let chartCanvas=null, chartContext=null, currentData=new Map();
     
     const cryptoConfig=[
-      {id:'bitcoin',name:'BTC',color:'#ff9500',visible:true,basePrice:112154},
-      {id:'ethereum',name:'ETH',color:'#627eea',visible:true,basePrice:3680},
-      {id:'binancecoin',name:'BNB',color:'#f0b90b',visible:true,basePrice:715},
-      {id:'solana',name:'SOL',color:'#9945ff',visible:true,basePrice:185},
-      {id:'cardano',name:'ADA',color:'#0066cc',visible:true,basePrice:1.12},
-      {id:'ripple',name:'XRP',color:'#00d4aa',visible:true,basePrice:5.124},
-      {id:'avalanche-2',name:'AVAX',color:'#e84142',visible:true,basePrice:52},
-      {id:'dogecoin',name:'DOGE',color:'#c2a633',visible:true,basePrice:.384}
+      {id:'bitcoin',symbol:'BTCUSDT',name:'BTC',color:'#ff9500',visible:true,basePrice:112154},
+      {id:'ethereum',symbol:'ETHUSDT',name:'ETH',color:'#627eea',visible:true,basePrice:3680},
+      {id:'binancecoin',symbol:'BNBUSDT',name:'BNB',color:'#f0b90b',visible:true,basePrice:715},
+      {id:'solana',symbol:'SOLUSDT',name:'SOL',color:'#9945ff',visible:true,basePrice:185},
+      {id:'cardano',symbol:'ADAUSDT',name:'ADA',color:'#0066cc',visible:true,basePrice:1.12},
+      {id:'ripple',symbol:'XRPUSDT',name:'XRP',color:'#00d4aa',visible:true,basePrice:5.124},
+      {id:'avalanche-2',symbol:'AVAXUSDT',name:'AVAX',color:'#e84142',visible:true,basePrice:52},
+      {id:'dogecoin',symbol:'DOGEUSDT',name:'DOGE',color:'#c2a633',visible:true,basePrice:.384}
     ];
 
      async function initCosmosChart(){
@@ -1194,11 +1194,12 @@
 
     async function fetchCoinHistory(crypto){
       try{
-        const days=document.getElementById('timeSelector')?.value||'7';
-        const interval=Number(days)<=1?'hourly':'daily';
-        const res=await fetch(`/api/coins/${crypto.id}/market_chart?vs_currency=usd&days=${days}&interval=${interval}`);
+        const days=Number(document.getElementById('timeSelector')?.value||'7');
+        const interval=days<=1?'1h':'1d';
+        const limit=days<=1?24*days:days;
+        const res=await fetch(`/api/binance/klines?symbol=${crypto.symbol}&interval=${interval}&limit=${limit}`);
         const json=await res.json();
-        const data=json.prices.map(p=>({timestamp:p[0],price:p[1]}));
+        const data=json.map(k=>({timestamp:k.timestamp??k[0],price:k.price??k[4]}));
         currentData.set(crypto.id,data);
       }catch(err){
         console.error('fetchCoinHistory',crypto.id,err);
