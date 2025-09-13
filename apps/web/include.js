@@ -1,4 +1,3 @@
-// @deprecated
 // include.js : header.html include + 초기화
 window.addEventListener("DOMContentLoaded", async () => {
   const el = document.querySelector('[include-html]');
