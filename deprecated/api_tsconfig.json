@@ -1,3 +1,4 @@
+// @deprecated
 {
   "compilerOptions": {
     "target": "ES2020",

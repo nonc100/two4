@@ -1,3 +1,4 @@
+<!-- @deprecated -->
 # Web Application
 
 This directory contains the main web app and a Cosmos crypto dashboard under `menu/cosmos`.
