@@ -520,45 +520,39 @@ app.get('/api/simple/price', async (req, res) => {
 });
 
 // Binance spot kline proxy
+// Binance spot kline proxy
 // /api/binance/klines?symbol=BTCUSDT&interval=1h&limit=24
 app.get('/api/binance/klines', async (req, res) => {
   try {
-    let { symbol, interval, limit, startTime, endTime } = req.query;
-
-    if (!symbol || typeof symbol !== 'string') {
-      return res.status(400).json({ code: -1102, msg: "Mandatory parameter 'symbol' missing or malformed" });
-    }
-    symbol = symbol.toUpperCase();
-
-    const ALLOWED = new Set(['1m','5m','15m','30m','1h','4h','1d','1w']);
-    if (!interval || !ALLOWED.has(interval)) {
-      return res.status(400).json({ code: -1121, msg: 'Invalid interval; allowed: 1m,5m,15m,30m,1h,4h,1d,1w' });
+    let { symbol, interval, limit } = req.query;
+    if (!symbol || !interval) {
+      return res.status(400).json({ error: "symbol and interval are required" });
     }
 
-    let lim = Number(limit) || 500;
-    if (!Number.isFinite(lim) || lim <= 0) lim = 500;
-    lim = Math.min(lim, 1000);
+    symbol = String(symbol).toUpperCase();
+    const lim = Math.min(Number(limit) || 500, 1000); // Binance 최대 1000
 
-    const params = new URLSearchParams({ symbol, interval, limit: String(lim) });
-    if (startTime) params.set('startTime', String(startTime));
-    if (endTime) params.set('endTime', String(endTime));
+    const u = new URL('https://api.binance.com/api/v3/klines');
+    u.searchParams.set('symbol', symbol);
+    u.searchParams.set('interval', interval);
+    u.searchParams.set('limit', String(lim));
 
-    const url = `https://api.binance.com/api/v3/klines?${params.toString()}`;
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-
-    if (!r.ok) {
-      const text = await r.text();
-      let payload;
-      try { payload = JSON.parse(text); } catch { payload = { code: r.status, msg: text || r.statusText }; }
-      return res.status(r.status).json(payload);
+    const cacheKey = `BINKLINES:${symbol}:${interval}:${lim}`;
+    const cached = hit(cacheKey);
+    if (cached) {
+      setCorsAndCache(res);
+      return res.type(cached.ct).status(cached.status).send(cached.body);
     }
 
-    const data = await r.json();
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'public, max-age=10');
-    return res.status(200).json(data);
+    // ✅ 원본 포맷 그대로(배열의 배열) 반환 — 변환 금지
+    const raw = await bfetch(u.toString()); // bfetch는 JSON.parse까지 해 준 상태
+    const payload = { ok: true, status: 200, body: JSON.stringify(raw), ct: 'application/json; charset=utf-8' };
+    setCorsAndCache(res);
+    res.type(payload.ct).status(payload.status).send(payload.body);
+    keep(cacheKey, payload);
   } catch (e) {
-    return res.status(500).json({ code: 500, msg: 'proxy error', detail: String(e?.message || e) });
+    setCorsAndCache(res);
+    res.status(500).json({ error: 'binance kline failed', detail: String(e?.message || e) });
   }
 });
 
