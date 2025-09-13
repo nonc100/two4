@@ -92,6 +92,7 @@
 const qs=new URLSearchParams(location.search);
 const idMap={bitcoin:'BTCUSDT',ethereum:'ETHUSDT',ripple:'XRPUSDT'};
 let s=qs.get('sym')||qs.get('symbol');
+if (s) s = s.trim();
 if(!s){
   const id=qs.get('id');
   if(id) s=idMap[id.toLowerCase()]||id;
@@ -110,9 +111,12 @@ function tfLimit(tf){
   if (tf==='1d' || tf==='1w') return 1000;
   return 1000;
 }
-function klineURL(sym,tf,limit){
-  limit = limit ?? tfLimit(tf);
-  const q=`symbol=${sym}&interval=${tf}&limit=${limit}`;
+function klineURL(sym, tf, limit){
+  if (!sym) throw new Error('symbol is required');
+  const symbol = encodeURIComponent(String(sym).toUpperCase());
+  const interval = encodeURIComponent(tf);
+  const lim = limit ?? tfLimit(tf);
+  const q=`symbol=${symbol}&interval=${interval}&limit=${lim}`;
   return [
     `https://api.binance.com/api/v3/klines?${q}`,
     `/api/binance/klines?${q}`
