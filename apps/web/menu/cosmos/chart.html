@@ -296,9 +296,8 @@ async function loadAll(){
   rows.sort((a,b)=> Number(a[0]) - Number(b[0]));
 
   // ms → s (초)로 통일
-  const msInput = Array.isArray(rows?.[0]) && Number(rows[0][0]) > 1e12; // 13자리면 ms
-  if (msInput) {
-    for (let i=0;i<rows.length;i++) rows[i][0] = Math.round(Number(rows[i][0]) / 1000);
+  if (Number(rows[0][0]) > 1e12) {                 // 13자리면 ms
+    for (let i=0;i<rows.length;i++) rows[i][0] = Math.floor(Number(rows[i][0]) / 1000);
   }
 
   const candles = rows.map(toCandle);
