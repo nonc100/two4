@@ -274,16 +274,17 @@ function normTs(t){ return t > 1e12 ? Math.floor(t/1000) : t; }
 const toCandle = k => ({ time: normTs(k[0]), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:+k[5] });
 const toVolume = k => ({ time: normTs(k[0]), value:+k[5], color:(+k[4] >= +k[1]) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' });
 
-// --- 추가: TF별 간격(초) ---
+// --- TF별 간격(초) ---
 const TFSEC = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
-// --- 추가: 결측 캔들 채우기 ---
-function fillMissing(rows, tf){
+// --- 누락 캔들도 채우는 보정 ---
+function buildCandles(rows, tf){
   const out=[]; if(!rows?.length) return out;
   const step = TFSEC[tf];
-  let expect = normTs(rows[0][0]); // sec
+  let expect = normTs(rows[0][0]);
   for(let i=0;i<rows.length;i++){
-    const real = normTs(rows[i][0]);
+    const r = rows[i];
+    const real = normTs(r[0]);
     while(expect < real){
       const prev = out.at(-1);
       if(prev){
@@ -291,7 +292,7 @@ function fillMissing(rows, tf){
       }
       expect += step;
     }
-    out.push(toCandle(rows[i]));
+    out.push({ time:real, open:+r[1], high:+r[2], low:+r[3], close:+r[4], volume:+r[5] });
     expect = real + step;
   }
   return out;
@@ -302,11 +303,18 @@ async function loadAll(){
   syncTFUI();
   const [dURL,pURL] = klineURL(SYMBOL, TF);
   const rows = await getJson(dURL,pURL);           // 바이낸스 klines 원본(배열[])
-  const candles = fillMissing(rows, TF);           // ← 보정된 캔들 (time: sec)
+  const candles = buildCandles(rows, TF);
   const volumes = candles.map(c => ({ time:c.time, value:c.volume ?? 0, color:(c.close >= c.open) ? 'rgba(34,197,94,.55)' : 'rgba(239,68,68,.55)' }));
 
   mainSeries.setData(candles);
   volSeries.setData(volumes);
+
+  // 디버그: 렌더에 넣은 데이터 확인
+  console.log('[candles]', TF, candles.length, 'from', new Date(candles[0].time*1000).toISOString(), 'to', new Date(candles.at(-1).time*1000).toISOString());
+  for(let i=1;i<Math.min(candles.length,50);i++){
+    const d=candles[i].time - candles[i-1].time;
+    if(d !== TFSEC[TF]){ console.warn('STEP MISMATCH at', i, 'Δ', d); break; }
+  }
 
   // 가격/등락 표시
   const last = candles.at(-1), prev = candles.at(-2) || last;
