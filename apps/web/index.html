@@ -410,10 +410,67 @@
       border-bottom:2px solid rgba(139,92,246,.2);
     }
 
-    .chart-controls{ 
-      display:flex; 
-      gap:15px; 
-      align-items:center 
+    .chart-controls{
+      display:flex;
+      gap:15px;
+      align-items:center
+    }
+
+    .chart-range-toggle{
+      display:flex;
+      gap:10px;
+      background:rgba(139,92,246,.12);
+      padding:6px;
+      border-radius:14px;
+      border:1px solid rgba(139,92,246,.25);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    .chart-range-btn{
+      position:relative;
+      border:none;
+      padding:8px 16px;
+      border-radius:10px;
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:600;
+      font-size:13px;
+      letter-spacing:.03em;
+      color:rgba(255,255,255,.78);
+      background:transparent;
+      cursor:pointer;
+      transition:background .25s, color .25s, box-shadow .25s;
+    }
+
+    .chart-range-btn::after{
+      content:'';
+      position:absolute;
+      inset:0;
+      border-radius:inherit;
+      background:linear-gradient(120deg, rgba(139,92,246,.25), rgba(56,189,248,.25));
+      opacity:0;
+      transition:opacity .25s;
+      z-index:-1;
+    }
+
+    .chart-range-btn:hover,
+    .chart-range-btn:focus{
+      color:#fff;
+      outline:none;
+    }
+
+    .chart-range-btn:hover::after,
+    .chart-range-btn:focus::after{
+      opacity:.35;
+    }
+
+    .chart-range-btn.active{
+      color:#fff;
+      background:rgba(139,92,246,.3);
+      box-shadow:0 0 18px rgba(139,92,246,.35);
+    }
+
+    .chart-range-btn.active::after{
+      opacity:.55;
     }
 
     .chart-selector{
@@ -464,12 +521,6 @@
       width:12px;
       height:3px;
       border-radius:2px
-    }
-    .live-price{
-      margin-left:4px;
-      font-family:'Orbitron',monospace;
-      font-size:11px;
-      color:#8b5cf6;
     }
     .price-display{
       color:#8b5cf6;
@@ -799,12 +850,12 @@
         <div class="chart-container">
           <div class="chart-header">
             <div class="chart-controls">
-              <select id="timeSelector" class="chart-selector">
-                <option value="1">1D</option>
-                <option value="7" selected>7D</option>
-                <option value="30">30D</option>
-                <option value="90">90D</option>
-              </select>
+              <div class="chart-range-toggle" id="timeRange">
+                <button type="button" class="chart-range-btn" data-range="1d">1D</button>
+                <button type="button" class="chart-range-btn" data-range="3d">3D</button>
+                <button type="button" class="chart-range-btn active" data-range="7d">7D</button>
+                <button type="button" class="chart-range-btn" data-range="30d">30D</button>
+              </div>
               <select id="chartType" class="chart-selector">
                 <option value="multi" selected>Multi Coins</option>
                 <option value="single">Single Coin</option>
@@ -1156,13 +1207,24 @@
       {id:'DOGE',name:'DOGE',color:'#c2a633',visible:true}
     ];
 
+    const TIME_RANGES={
+      '1d':{interval:'15m',limit:96},
+      '3d':{interval:'30m',limit:144},
+      '7d':{interval:'1h',limit:168},
+      '30d':{interval:'2h',limit:360}
+    };
+
+    let activeRange='7d';
+    let fetchToken=0;
+
      async function initCosmosChart(){
       chartCanvas=document.getElementById('cosmosChart');
       if(!chartCanvas) return;
-      
+
       chartContext=chartCanvas.getContext('2d');
       resizeChart();
       createChartLegend();
+      setupRangeControls();
     document.getElementById('marketCap').textContent='COSMOS Loading...';
       await fetchAllCosmosData();
       await fetchMarketCap();
@@ -1187,7 +1249,7 @@
       cryptoConfig.forEach((c,idx)=>{
         const item=document.createElement('div');
         item.className='legend-item';
-        item.innerHTML=`<div class="legend-color" style="background-color:${c.color}"></div><span>${c.name}</span> <span class="live-price" id="price-${c.id}"></span>`;
+        item.innerHTML=`<div class="legend-color" style="background-color:${c.color}"></div><span>${c.name}</span>`;
         item.addEventListener('click',()=>{
           c.visible=!c.visible;
           item.style.opacity=c.visible?'1':'.35';
@@ -1197,34 +1259,59 @@
       });
     }
 
- async function fetchAllCosmosData(){
-      try{
-        const url = `/api/binance/markets?per_page=100&page=1&heavy_n=30`;
-        const rows = await fetch(url).then(r=>r.json());
-        currentData.clear();
-        cryptoConfig.forEach(c=>{
-          const r = rows.find(x=>x.name===c.name || x.symbol?.toUpperCase()===c.name);
-          if(!r) return;
-          const spark = r.sparkline_in_7d || {};
-          const prices = Array.isArray(spark.price) ? spark.price : [];
-          const timestamps = Array.isArray(spark.timestamps) ? spark.timestamps : [];
-          const pts=[];
-          for(let i=0;i<prices.length;i++){
-            const price=Number(prices[i]);
-            const ts=Number(timestamps[i]);
-            if(!Number.isFinite(price) || !Number.isFinite(ts)) continue;
-            pts.push({timestamp:ts, price});
-          }
-          pts.sort((a,b)=>a.timestamp-b.timestamp);
-          currentData.set(c.id, pts);
-
-          const legendEl=document.getElementById(`price-${c.id}`);
-          if(legendEl) legendEl.textContent=pts.length?formatPrice(pts[pts.length-1].price):'-';
+    function setupRangeControls(){
+      const container=document.getElementById('timeRange');
+      if(!container) return;
+      const buttons=Array.from(container.querySelectorAll('.chart-range-btn'));
+      const syncActive=()=>{
+        buttons.forEach(btn=>{
+          const range=btn.dataset.range;
+          btn.classList.toggle('active', range===activeRange);
         });
-        drawChart();
+      };
+      syncActive();
+      buttons.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const range=btn.dataset.range;
+          if(!range||range===activeRange) return;
+          activeRange=range;
+          syncActive();
+          fetchAllCosmosData();
+        });
+      });
+    }
+
+    async function fetchAllCosmosData(){
+      const range=TIME_RANGES[activeRange]||TIME_RANGES['7d'];
+      const {interval,limit}=range;
+      const token=++fetchToken;
+      const nextData=new Map();
+      const tasks=cryptoConfig.map(async c=>{
+        const symbol=`${c.id.toUpperCase()}USDT`;
+        const endpoint=`/api/binance/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+        try{
+          const res=await fetch(endpoint);
+          if(!res.ok) throw new Error(`HTTP ${res.status}`);
+          const rows=await res.json();
+          const pts=Array.isArray(rows)
+            ? rows.map(row=>({ timestamp:Number(row?.[0]), price:Number(row?.[4]) }))
+                .filter(p=>Number.isFinite(p.timestamp)&&Number.isFinite(p.price))
+            : [];
+          pts.sort((a,b)=>a.timestamp-b.timestamp);
+          nextData.set(c.id, pts);
+        }catch(err){
+          console.error('fetchAllCosmosData', symbol, err);
+          nextData.set(c.id, []);
+        }
+      });
+      try{
+        await Promise.all(tasks);
       }catch(err){
-        console.error('fetchAllCosmosData', err);
+        console.error('fetchAllCosmosData:pending', err);
       }
+      if(token!==fetchToken) return;
+      currentData=nextData;
+      drawChart();
     }
     
     let raf=0;
@@ -1494,7 +1581,6 @@
     });
 
     // 차트 컨트롤 이벤트
-    document.getElementById('timeSelector')?.addEventListener('change',()=>fetchAllCosmosData());
        document.getElementById('chartType')?.addEventListener('change',e=>{
       if(e.target.value==='single'){
         alert('Single Orbit 모드는 곧 출시됩니다!');
