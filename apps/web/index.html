@@ -1138,7 +1138,36 @@
     }
 
     /* ===== COSMOS 차트 엔진 ===== */
+    const currencyFormatters={
+      0:new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0}),
+      2:new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}),
+      4:new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:4,maximumFractionDigits:4})
+    };
+    const timeLabelFormatters={
+      intraday:new Intl.DateTimeFormat('en-US',{hour:'2-digit',minute:'2-digit'}),
+      short:new Intl.DateTimeFormat('en-US',{month:'numeric',day:'numeric',hour:'2-digit'}),
+      long:new Intl.DateTimeFormat('en-US',{month:'numeric',day:'numeric'})
+    };
+    function formatCurrency(value){
+      const n=Number(value);
+      if(!Number.isFinite(n)) return '-';
+      const abs=Math.abs(n);
+      let digits=2;
+      if(abs>=1000) digits=0;
+      else if(abs<1) digits=4;
+      const fmt=currencyFormatters[digits];
+      return fmt?fmt.format(n):`$${n.toFixed(digits)}`;
+    }
+    function formatTimeLabel(ts,span){
+      if(!Number.isFinite(ts)||!Number.isFinite(span)||span<=0) return '';
+      const d=new Date(ts);
+      if(span<=36*60*60*1000) return timeLabelFormatters.intraday.format(d);
+      if(span<=14*24*60*60*1000) return timeLabelFormatters.short.format(d);
+      return timeLabelFormatters.long.format(d);
+    }
+    const chartMargins={left:40,right:80,top:30,bottom:40};
     let chartCanvas=null, chartContext=null, currentData=new Map();
+    let currentTimeframeDays=7;
     
     const cryptoConfig=[
       {id:'BTC',name:'BTC',color:'#ff9500',visible:true},
@@ -1194,15 +1223,44 @@
 
  async function fetchAllCosmosData(){
       try{
-        const url = `/api/binance/markets?per_page=100&page=1&heavy_n=30`;
-        const rows = await fetch(url).then(r=>r.json());
+        const selector=document.getElementById('timeSelector');
+        const days=Number(selector?.value)||7;
+        currentTimeframeDays=days;
+        const params=new URLSearchParams({per_page:'100',page:'1',heavy_n:'30',days:String(days)});
+        const rows=await fetch(`/api/binance/markets?${params.toString()}`).then(r=>r.json());
+        const rowsArray=Array.isArray(rows)?rows:[];
         currentData.clear();
         cryptoConfig.forEach(c=>{
-          const r = rows.find(x=>x.name===c.name || x.symbol?.toUpperCase()===c.name);
-          if(!r) return;
-          const base = r.sparkline_in_7d?.price?.[0] ?? 1;
-          const pts = (r.sparkline_in_7d?.price || []).map((v,i)=>({timestamp:i, price:(v/base - 1)*100}));
-          currentData.set(c.id, pts);
+          const row=rowsArray.find(x=>x.name===c.name || x.symbol?.toUpperCase()===c.name);
+          if(!row) return;
+          const rawPoints=Array.isArray(row.sparkline_in_7d?.points)?row.sparkline_in_7d.points:[];
+          let series=rawPoints
+            .map(pt=>({timestamp:Number(pt.timestamp),price:Number(pt.price)}))
+            .filter(pt=>Number.isFinite(pt.timestamp)&&Number.isFinite(pt.price));
+          if(!series.length){
+            const prices=Array.isArray(row.sparkline_in_7d?.price)?row.sparkline_in_7d.price:[];
+            if(prices.length){
+              const spanMs=days*24*60*60*1000;
+              const startTs=Date.now()-spanMs;
+              const step=prices.length>1?spanMs/(prices.length-1):0;
+              series=prices.map((val,idx)=>({
+                timestamp:startTs+idx*step,
+                price:Number(val)
+              })).filter(pt=>Number.isFinite(pt.timestamp)&&Number.isFinite(pt.price));
+            }
+          }
+          if(!series.length) return;
+          if(series.length===1){
+            const only=series[0];
+            series.push({timestamp:only.timestamp+1000,price:only.price});
+          }
+          series.sort((a,b)=>a.timestamp-b.timestamp);
+          currentData.set(c.id, series);
+          const legendEl=document.getElementById(`price-${c.id}`);
+          const currentPrice=Number(row.current_price);
+          if(legendEl&&Number.isFinite(currentPrice)){
+            legendEl.textContent=formatCurrency(currentPrice);
+          }
         });
         drawChart();
       }catch(err){
@@ -1222,99 +1280,175 @@
     
     function drawChart(){
       if(!chartContext||!chartCanvas) return;
-      
+
       const ctx=chartContext, w=chartCanvas.width, h=chartCanvas.height;
       ctx.clearRect(0,0,w,h);
-      
+
       // 배경 그라데이션
       const bg=ctx.createLinearGradient(0,0,0,h);
       bg.addColorStop(0,'rgba(139, 92, 246, 0.12)');
       bg.addColorStop(.5,'rgba(59, 130, 246, 0.06)');
       bg.addColorStop(1,'rgba(0, 0, 0, 0.4)');
-      ctx.fillStyle=bg; 
+      ctx.fillStyle=bg;
       ctx.fillRect(0,0,w,h);
 
-      drawGrid(ctx,w,h);
+      const visibleSeries=cryptoConfig
+        .map(cfg=>({cfg,data:currentData.get(cfg.id)}))
+        .filter(item=>item.cfg.visible && Array.isArray(item.data) && item.data.length);
 
-      cryptoConfig.forEach(c=>{
-        const d=currentData.get(c.id);
-        if(!d||!c.visible) return;
-        drawSeries(ctx,c,d,w,h);
+      const domain=computeDomain(visibleSeries.map(item=>item.data));
+
+      drawGrid(ctx,w,h,domain);
+
+      visibleSeries.forEach(({cfg,data})=>{
+        drawSeries(ctx,cfg,data,w,h,domain);
       });
     }
-    
-    function drawGrid(ctx,w,h){
-      const m={left:40,right:80,top:30,bottom:40};
-      const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
-      
-      ctx.strokeStyle='rgba(139, 92, 246, 0.18)'; 
-      ctx.lineWidth=.5;
-      
-      // 세로선
-      for(let i=0;i<=12;i++){ 
-        const x=m.left+(i/12)*cw; 
-        ctx.beginPath(); 
-        ctx.moveTo(x,m.top); 
-        ctx.lineTo(x,h-m.bottom); 
-        ctx.stroke() 
+
+    function computeDomain(seriesList){
+      const domain={timeMin:Infinity,timeMax:-Infinity};
+      seriesList.forEach(points=>{
+        if(!Array.isArray(points)||!points.length) return;
+        const first=points[0];
+        const last=points[points.length-1];
+        if(Number.isFinite(first?.timestamp)) domain.timeMin=Math.min(domain.timeMin, first.timestamp);
+        if(Number.isFinite(last?.timestamp)) domain.timeMax=Math.max(domain.timeMax, last.timestamp);
+      });
+      if(!Number.isFinite(domain.timeMin) || !Number.isFinite(domain.timeMax) || domain.timeMax<=domain.timeMin){
+        const now=Date.now();
+        const span=(currentTimeframeDays||7)*24*60*60*1000;
+        domain.timeMin=now-span;
+        domain.timeMax=now;
       }
-      
-      // 가로선
-      for(let i=0;i<=8;i++){ 
-        const y=m.top+(i/8)*ch; 
-        ctx.beginPath(); 
-        ctx.moveTo(m.left,y); 
-        ctx.lineTo(w-m.right,y); 
-        ctx.stroke() 
+      domain.timeSpan=Math.max(1, domain.timeMax-domain.timeMin);
+      return domain;
+    }
+
+    function drawGrid(ctx,w,h,domain){
+      const m=chartMargins;
+      const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
+
+      ctx.save();
+      ctx.strokeStyle='rgba(139, 92, 246, 0.18)';
+      ctx.lineWidth=.5;
+
+      const verticalTicks=6;
+      for(let i=0;i<=verticalTicks;i++){
+        const ratio=verticalTicks===0?0:i/verticalTicks;
+        const x=m.left+ratio*cw;
+        ctx.beginPath();
+        ctx.moveTo(x,m.top);
+        ctx.lineTo(x,h-m.bottom);
+        ctx.stroke();
+      }
+
+      for(let i=0;i<=8;i++){
+        const y=m.top+(i/8)*ch;
+        ctx.beginPath();
+        ctx.moveTo(m.left,y);
+        ctx.lineTo(w-m.right,y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      if(domain && Number.isFinite(domain.timeSpan) && domain.timeSpan>0){
+        ctx.save();
+        const timeMin=domain.timeMin;
+        const span=domain.timeSpan;
+        const labelY=h-m.bottom+6;
+        ctx.font='10px Orbitron, monospace';
+        ctx.fillStyle='rgba(255,255,255,0.65)';
+        ctx.textBaseline='top';
+        for(let i=0;i<=verticalTicks;i++){
+          const ratio=verticalTicks===0?0:i/verticalTicks;
+          const x=m.left+ratio*cw;
+          const ts=timeMin+ratio*span;
+          const label=formatTimeLabel(ts, span);
+          if(!label) continue;
+          if(i===0){
+            ctx.textAlign='left';
+            ctx.fillText(label,m.left,labelY);
+          }else if(i===verticalTicks){
+            ctx.textAlign='right';
+            ctx.fillText(label,w-m.right,labelY);
+          }else{
+            ctx.textAlign='center';
+            ctx.fillText(label,x,labelY);
+          }
+        }
+        ctx.restore();
       }
     }
-    
-    function drawSeries(ctx,crypto,data,w,h){
-      const m={left:40,right:80,top:30,bottom:40};
-      const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
-      const prices=data.map(d=>d.price);
-      const min=Math.min(...prices), max=Math.max(...prices), range=max-min||1;
-      const tr=data[data.length-1].timestamp-data[0].timestamp;
 
-      ctx.strokeStyle=crypto.color; 
-      ctx.lineWidth=2.5; 
-      ctx.lineCap='round'; 
+    function drawSeries(ctx,crypto,data,w,h,domain){
+      const valid=[];
+      (data||[]).forEach(pt=>{
+        if(Number.isFinite(pt?.price) && Number.isFinite(pt?.timestamp)) valid.push(pt);
+      });
+      if(!valid.length) return;
+
+      const m=chartMargins;
+      const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
+      const prices=valid.map(pt=>pt.price);
+      const min=Math.min(...prices);
+      const max=Math.max(...prices);
+      let range=max-min;
+      if(!Number.isFinite(range) || range===0){
+        range=(Math.abs(max)||1)*0.01;
+      }
+
+      const timeMin=Number.isFinite(domain?.timeMin)?domain.timeMin:valid[0].timestamp;
+      const span=Number.isFinite(domain?.timeSpan)&&domain.timeSpan>0
+        ? domain.timeSpan
+        : Math.max(1, valid[valid.length-1].timestamp-valid[0].timestamp);
+
+      ctx.save();
+      ctx.strokeStyle=crypto.color;
+      ctx.lineWidth=2.5;
+      ctx.lineCap='round';
       ctx.lineJoin='round';
-      ctx.shadowColor=crypto.color; 
+      ctx.shadowColor=crypto.color;
       ctx.shadowBlur=6;
-      
+
       ctx.beginPath();
-      data.forEach((p,i)=>{
-        const x=m.left+((p.timestamp-data[0].timestamp)/tr)*cw;
-        const y=m.top+(ch-((p.price-min)/range)*ch);
-        if(i===0) ctx.moveTo(x,y); 
-        else {
-          const prev=data[i-1];
-          const px=m.left+((prev.timestamp-data[0].timestamp)/tr)*cw;
-          const py=m.top+(ch-((prev.price-min)/range)*ch);
-          const cx=(px+x)/2; 
-          ctx.quadraticCurveTo(cx,py,x,y);
+      let prev=null;
+      valid.forEach((p,idx)=>{
+        const rx=span>0?((p.timestamp-timeMin)/span):(valid.length>1?idx/(valid.length-1):0);
+        const clampedX=Math.max(0,Math.min(1,rx));
+        const x=m.left+clampedX*cw;
+        const ry=range?((p.price-min)/range):0.5;
+        const clampedY=Math.max(0,Math.min(1,ry));
+        const y=m.top+(ch-clampedY*ch);
+        if(!prev){
+          ctx.moveTo(x,y);
+          prev={x,y};
+        }else{
+          const cx=(prev.x+x)/2;
+          ctx.quadraticCurveTo(cx,prev.y,x,y);
+          prev={x,y};
         }
       });
       ctx.stroke();
 
-      // 마지막 포인트
-      const last=data[data.length-1];
-      const lx=m.left+((last.timestamp-data[0].timestamp)/tr)*cw;
-      const ly=m.top+(ch-((last.price-min)/range)*ch);
-      
-      ctx.beginPath(); 
-      ctx.arc(lx,ly,4,0,Math.PI*2); 
-      ctx.fillStyle=crypto.color; 
+      const last=valid[valid.length-1];
+      const lastRatio=span>0?((last.timestamp-timeMin)/span):1;
+      const lx=m.left+Math.max(0,Math.min(1,lastRatio))*cw;
+      const lastRy=range?((last.price-min)/range):0.5;
+      const ly=m.top+(ch-Math.max(0,Math.min(1,lastRy))*ch);
+
+      ctx.beginPath();
+      ctx.arc(lx,ly,4,0,Math.PI*2);
+      ctx.fillStyle=crypto.color;
       ctx.fill();
-      
-      ctx.fillStyle=crypto.color; 
-      ctx.font='11px Orbitron, monospace'; 
+
+      ctx.shadowBlur=0;
+      ctx.fillStyle=crypto.color;
+      ctx.font='11px Orbitron, monospace';
       ctx.textAlign='left';
-      ctx.fillText(`${last.price.toFixed(2)}%`, lx+8, ly+3);
-      
-      ctx.shadowBlur=0; 
-      ctx.textAlign='start';
+      ctx.textBaseline='middle';
+      ctx.fillText(formatCurrency(last.price), lx+8, ly);
+
+      ctx.restore();
     }
     
     async function fetchMarketCap(){
@@ -1330,21 +1464,31 @@
 
     function startRealTimeUpdates(){
       setInterval(fetchMarketCap,60000);
-      (async function loop(){
-        for(const c of cryptoConfig){
-          const bnSym=`${c.id.toUpperCase()}USDT`;
-          try{
-            const r=await fetch(`/api/binance/price?symbol=${bnSym}`).then(r=>r.json());
-            const live=Number(r.price);
-            const el=document.getElementById(`price-${c.id}`);
-            if(el&&!Number.isNaN(live)) el.textContent=`$${live.toFixed(2)}`;
-          }catch(e){
-            console.error('livePrice', bnSym, e);
-          }
-          await new Promise(res=>setTimeout(res,1000));
+      let updatingPrices=false;
+
+      const updatePrices=async()=>{
+        if(updatingPrices) return;
+        updatingPrices=true;
+        try{
+          await Promise.all(cryptoConfig.map(async c=>{
+            const bnSym=`${c.id.toUpperCase()}USDT`;
+            try{
+              const r=await fetch(`/api/binance/price?symbol=${bnSym}`).then(r=>r.json());
+              const live=Number(r.price);
+              if(!Number.isFinite(live)) return;
+              const el=document.getElementById(`price-${c.id}`);
+              if(el) el.textContent=formatCurrency(live);
+            }catch(e){
+              console.error('livePrice', bnSym, e);
+            }
+          }));
+        }finally{
+          updatingPrices=false;
         }
-        loop();
-      })();
+      };
+
+      updatePrices();
+      setInterval(updatePrices,15000);
     }
 
     // 초기화

@@ -149,30 +149,89 @@ async function binanceTicker24Batch(symbols) {
 }
 
 // 7D 스파크라인 (15m * 7d = 672포인트 → 다운샘플)
-function downsample(arr, target = 100) {
-  if (arr.length <= target) return arr;
-  const step = arr.length / target;
+function downsample(arr, target = 150) {
+  if (!Array.isArray(arr) || arr.length === 0) return [];
+  if (arr.length <= target) return arr.map(item => item);
+  if (target <= 1) return [arr[arr.length - 1]];
+
   const out = [];
-  for (let i = 0; i < target; i++) out.push(arr[Math.floor(i*step)]);
+  const step = (arr.length - 1) / (target - 1);
+  for (let i = 0; i < target; i++) {
+    const idx = Math.round(i * step);
+    out.push(arr[idx]);
+  }
+  out[out.length - 1] = arr[arr.length - 1];
   return out;
 }
-async function binanceSpark7dCloses(pair) {
-  const key = `BF:spark:${pair}`;
+
+const KLINE_INTERVAL_TABLE = [
+  { maxDays: 2, interval: '5m', ms: 5 * 60 * 1000 },
+  { maxDays: 7, interval: '15m', ms: 15 * 60 * 1000 },
+  { maxDays: 30, interval: '1h', ms: 60 * 60 * 1000 },
+  { maxDays: 90, interval: '4h', ms: 4 * 60 * 60 * 1000 },
+  { maxDays: 180, interval: '6h', ms: 6 * 60 * 60 * 1000 },
+  { maxDays: Infinity, interval: '1d', ms: 24 * 60 * 60 * 1000 },
+];
+
+function resolveKlineConfig(days) {
+  const n = Number(days);
+  const clamped = Number.isFinite(n) ? Math.max(1, Math.min(n, 365)) : 7;
+  const cfg = KLINE_INTERVAL_TABLE.find(item => clamped <= item.maxDays) || KLINE_INTERVAL_TABLE[KLINE_INTERVAL_TABLE.length - 1];
+  return { ...cfg, days: clamped };
+}
+
+async function binanceSparkND(pair, days = 7) {
+  const { interval, ms, days: safeDays } = resolveKlineConfig(days);
+  const approxCandles = Math.ceil((safeDays * 24 * 60 * 60 * 1000) / ms) + 5;
+  const limit = Math.min(Math.max(approxCandles, 50), 1500);
+  const key = `BF:spark:${pair}:${interval}:${safeDays}:${limit}`;
   const cached = hit2(key, 10 * 60 * 1000); // 10분 캐시
   if (cached) return JSON.parse(cached.body);
 
   const u = new URL(BINANCE_CONT);
   u.searchParams.set('pair', pair);
   u.searchParams.set('contractType', 'PERPETUAL');
-  u.searchParams.set('interval', '15m');
-  u.searchParams.set('limit', '672');
+  u.searchParams.set('interval', interval);
+  u.searchParams.set('limit', String(limit));
 
   const kl = await bfetch(u.toString());
-  const closes = kl.map(c => parseFloat(c[4])); // close
-  const spark = downsample(closes, 100);
+  const points = kl
+    .map(c => ({
+      timestamp: Number(c[0]),
+      price: parseFloat(c[4])
+    }))
+    .filter(p => Number.isFinite(p.timestamp) && Number.isFinite(p.price));
+
+  const lastTs = points.at(-1)?.timestamp ?? Date.now();
+  const cutoff = lastTs - safeDays * 24 * 60 * 60 * 1000;
+  const filtered = points.filter(p => p.timestamp >= cutoff);
+  const series = filtered.length >= 2 ? filtered : points.slice(-limit);
+  const spark = downsample(series, 150);
 
   keep(key, { ok:true, body: JSON.stringify(spark), ct:'application/json' });
   return spark;
+}
+
+function valueAtOffset(points, offsetMs) {
+  if (!Array.isArray(points) || points.length === 0) return null;
+  if (!(offsetMs > 0) || !Number.isFinite(offsetMs)) return null;
+  const last = points.at(-1);
+  if (!last || !Number.isFinite(last.timestamp) || !Number.isFinite(last.price)) return null;
+  const target = last.timestamp - offsetMs;
+  if (!Number.isFinite(target)) return null;
+  for (let i = points.length - 1; i >= 0; i--) {
+    const pt = points[i];
+    if (!pt || !Number.isFinite(pt.timestamp) || !Number.isFinite(pt.price)) continue;
+    if (pt.timestamp <= target) {
+      const delta = last.timestamp - pt.timestamp;
+      if (delta <= offsetMs * 3) {
+        const val = Number(pt.price);
+        return Number.isFinite(val) ? val : null;
+      }
+      return null;
+    }
+  }
+  return null;
 }
 
 // --- ADD: Futures Open Interest (per symbol) with cache ---
@@ -232,6 +291,8 @@ app.get('/api/coins/markets', async (req, res, next) => {
     const limit = Math.min(Number(req.query.per_page) || 50, 250);
     const page  = Math.max(Number(req.query.page) || 1, 1);
     const offset = (page - 1) * limit;
+    const daysRaw = Number(req.query.days);
+    const days = Number.isFinite(daysRaw) ? Math.max(1, Math.min(daysRaw, 365)) : 7;
 
     // 1) 선물 USDT 심볼
     const list = await binanceFuturesSymbolsUSDT();
@@ -243,9 +304,9 @@ app.get('/api/coins/markets', async (req, res, next) => {
     // 2) 24h 통계 배치 호출
     const stats = await binanceTicker24Batch(symbols);
 
-    // 3) 7D 스파크 (병렬)
+    // 3) 스파크 (병렬)
     const pairs = slice.map(s => `${s.base}${s.quote}`);
-    const sparks = await Promise.all(pairs.map(p => binanceSpark7dCloses(p)));
+    const sparks = await Promise.all(pairs.map(p => binanceSparkND(p, days)));
 
     // 4) 코인게코 호환 매핑
     const rows = stats.map((it, idx) => {
@@ -258,7 +319,11 @@ app.get('/api/coins/markets', async (req, res, next) => {
         price_change_percentage_24h: parseFloat(it.priceChangePercent),
         total_volume: parseFloat(it.quoteVolume),
         market_cap: null, // Binance엔 없음(원하면 CG에서 병합 캐시)
-        sparkline_in_7d: { price: sparks[idx] || [] },
+        sparkline_in_7d: {
+          price: (sparks[idx] || []).map(pt => Number(pt.price)),
+          points: sparks[idx] || [],
+          days
+        },
         image: { small: `/icons/${(base||'').toLowerCase()}.svg` } // 로컬 아이콘 권장
       };
     });
@@ -293,9 +358,9 @@ app.get('/api/binance/markets', async (req, res) => {
     const statsArr = await binanceTicker24Batch(symbols);
     const statsMap = new Map(statsArr.map(o => [o.symbol, o])); // symbol -> stat
 
-    // 3) 7D 스파크/OI (안전모드: 동시성 제한 + 캐시 사용 전제)
+    // 3) 스파크/OI (안전모드: 동시성 제한 + 캐시 사용 전제)
     const pairs = slice.map(s => `${s.base}${s.quote}`);
-    
+
     // 상위 N개만 헤비 필드(스파크/OI) 계산 (기본 20)
     const HEAVY_N = Math.max(0, Math.min(Number(req.query.heavy_n) || 20, slice.length));
 
@@ -303,7 +368,7 @@ app.get('/api/binance/markets', async (req, res) => {
     const sparksArr = await pmap(
       pairs.map((p, i) => i < HEAVY_N ? p : null),
       2,
-      async (p) => p ? await binanceSpark7dCloses(p) : []
+      async (p) => p ? await binanceSparkND(p, days) : []
     );
     const oiArr = await pmap(
       symbols.map((sym, i) => i < HEAVY_N ? sym : null),
@@ -324,10 +389,12 @@ app.get('/api/binance/markets', async (req, res) => {
     const rows = slice.map((s, idx) => {
       const stat  = statsMap.get(s.symbol) || {};
       const pair  = `${s.base}${s.quote}`;
-      const spark = sparkMap.get(pair) || [];
-      const lastClose = spark.at(-1);
-      const close1hAgo = spark.length>=5 ? spark[spark.length-5] : null;
-      const close7dAgo = spark[0] ?? null;
+      const sparkPoints = sparkMap.get(pair) || [];
+      const sparkPrices = sparkPoints.map(pt => Number(pt.price));
+      const lastPoint = sparkPoints.at(-1);
+      const lastClose = Number(lastPoint?.price ?? NaN);
+      const close1hAgo = valueAtOffset(sparkPoints, 60 * 60 * 1000);
+      const close7dAgo = valueAtOffset(sparkPoints, 7 * 24 * 60 * 60 * 1000);
       const pct = (a,b)=> (isFinite(a)&&isFinite(b)&&b!==0) ? ((a-b)/b*100) : null;
       
       return {
@@ -341,7 +408,7 @@ app.get('/api/binance/markets', async (req, res) => {
         price_change_percentage_1h: pct(lastClose, close1hAgo),
         price_change_percentage_24h: parseFloat(stat.priceChangePercent ?? '0'),
         price_change_percentage_7d: pct(lastClose, close7dAgo),
-        sparkline_in_7d: { price: spark },
+        sparkline_in_7d: { price: sparkPrices, points: sparkPoints, days },
         open_interest: oiArr[idx] ?? 0,
         open_interest_1h_change_pct:  oiPctArr[idx]?.oi_1h_pct ?? null,
         open_interest_24h_change_pct: oiPctArr[idx]?.oi_24h_pct ?? null
