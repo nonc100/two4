@@ -159,7 +159,21 @@ function downsample(arr, target = 100) {
 async function binanceSpark7dCloses(pair) {
   const key = `BF:spark:${pair}`;
   const cached = hit2(key, 10 * 60 * 1000); // 10분 캐시
-  if (cached) return JSON.parse(cached.body);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached.body);
+      if (Array.isArray(parsed)) {
+        if (parsed.length === 0) return parsed;
+        const first = parsed[0];
+        if (first && typeof first === 'object' && Number.isFinite(first.timestamp) && Number.isFinite(first.price)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // ignore and refetch below
+    }
+    cache.delete(key);
+  }
 
   const u = new URL(BINANCE_CONT);
   u.searchParams.set('pair', pair);
@@ -168,7 +182,9 @@ async function binanceSpark7dCloses(pair) {
   u.searchParams.set('limit', '672');
 
   const kl = await bfetch(u.toString());
-  const closes = kl.map(c => parseFloat(c[4])); // close
+  const closes = kl
+    .map(c => ({ timestamp: Number(c[0]), price: parseFloat(c[4]) }))
+    .filter(p => Number.isFinite(p.timestamp) && Number.isFinite(p.price));
   const spark = downsample(closes, 100);
 
   keep(key, { ok:true, body: JSON.stringify(spark), ct:'application/json' });
@@ -250,6 +266,10 @@ app.get('/api/coins/markets', async (req, res, next) => {
     // 4) 코인게코 호환 매핑
     const rows = stats.map((it, idx) => {
       const base = slice[idx]?.base || it.symbol?.replace(/USDT$/,'');
+      const rawSpark = Array.isArray(sparks[idx]) ? sparks[idx] : [];
+      const sparkPoints = rawSpark.filter(p => p && typeof p === 'object' && Number.isFinite(p.timestamp) && Number.isFinite(p.price));
+      const sparkPrices = sparkPoints.map(p => p.price);
+      const sparkTimes = sparkPoints.map(p => p.timestamp);
       return {
         id: base?.toLowerCase() || '',
         symbol: base?.toLowerCase() || '',
@@ -258,7 +278,7 @@ app.get('/api/coins/markets', async (req, res, next) => {
         price_change_percentage_24h: parseFloat(it.priceChangePercent),
         total_volume: parseFloat(it.quoteVolume),
         market_cap: null, // Binance엔 없음(원하면 CG에서 병합 캐시)
-        sparkline_in_7d: { price: sparks[idx] || [] },
+        sparkline_in_7d: { price: sparkPrices, timestamps: sparkTimes },
         image: { small: `/icons/${(base||'').toLowerCase()}.svg` } // 로컬 아이콘 권장
       };
     });
@@ -324,12 +344,17 @@ app.get('/api/binance/markets', async (req, res) => {
     const rows = slice.map((s, idx) => {
       const stat  = statsMap.get(s.symbol) || {};
       const pair  = `${s.base}${s.quote}`;
-      const spark = sparkMap.get(pair) || [];
-      const lastClose = spark.at(-1);
-      const close1hAgo = spark.length>=5 ? spark[spark.length-5] : null;
-      const close7dAgo = spark[0] ?? null;
+      const rawSpark = sparkMap.get(pair);
+      const sparkPoints = Array.isArray(rawSpark)
+        ? rawSpark.filter(p => p && typeof p === 'object' && Number.isFinite(p.timestamp) && Number.isFinite(p.price))
+        : [];
+      const sparkPrices = sparkPoints.map(p => p.price);
+      const sparkTimes = sparkPoints.map(p => p.timestamp);
+      const lastClose = sparkPrices.at(-1);
+      const close1hAgo = sparkPrices.length>=5 ? sparkPrices[sparkPrices.length-5] : null;
+      const close7dAgo = sparkPrices[0] ?? null;
       const pct = (a,b)=> (isFinite(a)&&isFinite(b)&&b!==0) ? ((a-b)/b*100) : null;
-      
+
       return {
         id: s.base.toLowerCase(),
         symbol: s.base.toLowerCase(),
@@ -341,7 +366,7 @@ app.get('/api/binance/markets', async (req, res) => {
         price_change_percentage_1h: pct(lastClose, close1hAgo),
         price_change_percentage_24h: parseFloat(stat.priceChangePercent ?? '0'),
         price_change_percentage_7d: pct(lastClose, close7dAgo),
-        sparkline_in_7d: { price: spark },
+        sparkline_in_7d: { price: sparkPrices, timestamps: sparkTimes },
         open_interest: oiArr[idx] ?? 0,
         open_interest_1h_change_pct:  oiPctArr[idx]?.oi_1h_pct ?? null,
         open_interest_24h_change_pct: oiPctArr[idx]?.oi_24h_pct ?? null

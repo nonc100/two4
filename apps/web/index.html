@@ -1205,9 +1205,17 @@
         cryptoConfig.forEach(c=>{
           const r = rows.find(x=>x.name===c.name || x.symbol?.toUpperCase()===c.name);
           if(!r) return;
-          const pts = (r.sparkline_in_7d?.price || [])
-            .map((v,i)=>({timestamp:i, price:Number(v)}))
-            .filter(p=>Number.isFinite(p.price));
+          const spark = r.sparkline_in_7d || {};
+          const prices = Array.isArray(spark.price) ? spark.price : [];
+          const timestamps = Array.isArray(spark.timestamps) ? spark.timestamps : [];
+          const pts=[];
+          for(let i=0;i<prices.length;i++){
+            const price=Number(prices[i]);
+            const ts=Number(timestamps[i]);
+            if(!Number.isFinite(price) || !Number.isFinite(ts)) continue;
+            pts.push({timestamp:ts, price});
+          }
+          pts.sort((a,b)=>a.timestamp-b.timestamp);
           currentData.set(c.id, pts);
 
           const legendEl=document.getElementById(`price-${c.id}`);
@@ -1231,32 +1239,52 @@
     
     function drawChart(){
       if(!chartContext||!chartCanvas) return;
-      
+
       const ctx=chartContext, w=chartCanvas.width, h=chartCanvas.height;
       ctx.clearRect(0,0,w,h);
-      
+
+      const visibleSeries=cryptoConfig
+        .filter(c=>c.visible)
+        .map(c=>currentData.get(c.id))
+        .filter(arr=>Array.isArray(arr)&&arr.length);
+
+      let timeRange=null;
+      if(visibleSeries.length){
+        let minTs=Infinity, maxTs=-Infinity;
+        visibleSeries.forEach(arr=>{
+          const first=arr[0]?.timestamp;
+          const last=arr[arr.length-1]?.timestamp;
+          if(Number.isFinite(first) && first<minTs) minTs=first;
+          if(Number.isFinite(last) && last>maxTs) maxTs=last;
+        });
+        if(Number.isFinite(minTs) && Number.isFinite(maxTs)){
+          const span=Math.max(maxTs-minTs,1);
+          timeRange={min:minTs,max:maxTs,span};
+        }
+      }
+
       // 배경 그라데이션
       const bg=ctx.createLinearGradient(0,0,0,h);
       bg.addColorStop(0,'rgba(139, 92, 246, 0.12)');
       bg.addColorStop(.5,'rgba(59, 130, 246, 0.06)');
       bg.addColorStop(1,'rgba(0, 0, 0, 0.4)');
-      ctx.fillStyle=bg; 
+      ctx.fillStyle=bg;
       ctx.fillRect(0,0,w,h);
 
-      drawGrid(ctx,w,h);
+      drawGrid(ctx,w,h,timeRange);
 
       cryptoConfig.forEach(c=>{
         const d=currentData.get(c.id);
-        if(!d||!c.visible) return;
-        drawSeries(ctx,c,d,w,h);
+        if(!d||!d.length||!c.visible) return;
+        drawSeries(ctx,c,d,w,h,timeRange);
       });
     }
-    
-    function drawGrid(ctx,w,h){
+
+    function drawGrid(ctx,w,h,timeRange){
       const m={left:40,right:80,top:30,bottom:40};
       const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
-      
-      ctx.strokeStyle='rgba(139, 92, 246, 0.18)'; 
+
+      ctx.strokeStyle='rgba(139, 92, 246, 0.18)';
       ctx.lineWidth=.5;
       
       // 세로선
@@ -1271,39 +1299,69 @@
       // 가로선
       for(let i=0;i<=8;i++){ 
         const y=m.top+(i/8)*ch; 
-        ctx.beginPath(); 
-        ctx.moveTo(m.left,y); 
-        ctx.lineTo(w-m.right,y); 
-        ctx.stroke() 
+        ctx.beginPath();
+        ctx.moveTo(m.left,y);
+        ctx.lineTo(w-m.right,y);
+        ctx.stroke()
+      }
+
+      if(timeRange){
+        const {min,span}=timeRange;
+        const labelCount=6;
+        ctx.fillStyle='rgba(226, 232, 240, 0.75)';
+        ctx.font='11px Orbitron, monospace';
+        ctx.textAlign='center';
+        for(let i=0;i<=labelCount;i++){
+          const ratio=i/labelCount;
+          const x=m.left+ratio*cw;
+          const ts=min+ratio*span;
+          const label=formatDateLabel(ts,span);
+          ctx.fillText(label,x,h-m.bottom+16);
+        }
+        ctx.textAlign='start';
       }
     }
-    
-    function drawSeries(ctx,crypto,data,w,h){
+
+    function formatDateLabel(ts,span){
+      const d=new Date(ts);
+      const mm=String(d.getMonth()+1).padStart(2,'0');
+      const dd=String(d.getDate()).padStart(2,'0');
+      const hh=String(d.getHours()).padStart(2,'0');
+      const mi=String(d.getMinutes()).padStart(2,'0');
+      const daySpan=span/(24*60*60*1000);
+      if(daySpan>2) return `${mm}/${dd}`;
+      return `${mm}/${dd} ${hh}:${mi}`;
+    }
+
+    function drawSeries(ctx,crypto,data,w,h,timeRange){
       const m={left:40,right:80,top:30,bottom:40};
       const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
       if(!data.length) return;
 
       const prices=data.map(d=>d.price);
       const min=Math.min(...prices), max=Math.max(...prices), range=max-min||1;
-      const tr=(data[data.length-1].timestamp-data[0].timestamp)||1;
+      const baseTs=Number.isFinite(timeRange?.min)?timeRange.min:data[0].timestamp;
+      const timeSpan=timeRange?.span ?? ((data[data.length-1].timestamp-data[0].timestamp)||1);
+      const span=Math.max(timeSpan,1);
+      const getX=ts=>m.left+((ts-baseTs)/span)*cw;
 
-      ctx.strokeStyle=crypto.color; 
-      ctx.lineWidth=2.5; 
-      ctx.lineCap='round'; 
+      ctx.strokeStyle=crypto.color;
+      ctx.lineWidth=2.5;
+      ctx.lineCap='round';
       ctx.lineJoin='round';
       ctx.shadowColor=crypto.color; 
       ctx.shadowBlur=6;
       
       ctx.beginPath();
       data.forEach((p,i)=>{
-        const x=m.left+((p.timestamp-data[0].timestamp)/tr)*cw;
+        const x=getX(p.timestamp);
         const y=m.top+(ch-((p.price-min)/range)*ch);
-        if(i===0) ctx.moveTo(x,y); 
+        if(i===0) ctx.moveTo(x,y);
         else {
           const prev=data[i-1];
-          const px=m.left+((prev.timestamp-data[0].timestamp)/tr)*cw;
+          const px=getX(prev.timestamp);
           const py=m.top+(ch-((prev.price-min)/range)*ch);
-          const cx=(px+x)/2; 
+          const cx=(px+x)/2;
           ctx.quadraticCurveTo(cx,py,x,y);
         }
       });
@@ -1311,7 +1369,7 @@
 
       // 마지막 포인트
       const last=data[data.length-1];
-      const lx=m.left+((last.timestamp-data[0].timestamp)/tr)*cw;
+      const lx=getX(last.timestamp);
       const ly=m.top+(ch-((last.price-min)/range)*ch);
       
       ctx.beginPath(); 
