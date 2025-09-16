@@ -1398,22 +1398,91 @@
     }
 
     function startRealTimeUpdates(){
-      setInterval(fetchMarketCap,60000);
-      (async function loop(){
-        for(const c of cryptoConfig){
-          const bnSym=`${c.id.toUpperCase()}USDT`;
-          try{
-            const r=await fetch(`/api/binance/price?symbol=${bnSym}`).then(r=>r.json());
-            const live=Number(r.price);
-            const el=document.getElementById(`price-${c.id}`);
-            if(el) el.textContent=Number.isFinite(live)?formatPrice(live):'-';
-          }catch(e){
-            console.error('livePrice', bnSym, e);
-          }
-          await new Promise(res=>setTimeout(res,1000));
+      const symbolMap=new Map(cryptoConfig.map(c=>[c.id.toUpperCase()+'USDT',c.id]));
+      const applyPriceUpdates=updates=>{
+        if(!Array.isArray(updates)) return;
+        updates.forEach(item=>{
+          if(!item) return;
+          const symbol=(item.symbol||'').toUpperCase();
+          const base=(item.base||'').toUpperCase();
+          const targetId=base||symbolMap.get(symbol)||null;
+          if(!targetId) return;
+          const el=document.getElementById(`price-${targetId}`);
+          if(!el) return;
+          const price=Number(item.price);
+          el.textContent=Number.isFinite(price)?formatPrice(price):'-';
+        });
+      };
+
+      let pollingTimer=null;
+      let pollingInFlight=false;
+      const priceRefreshMs=Math.max(cryptoConfig.length*750,4000);
+
+      const fetchAllPrices=async()=>{
+        if(pollingInFlight) return;
+        pollingInFlight=true;
+        try{
+          const tasks=cryptoConfig.map(c=>{
+            const bnSym=`${c.id.toUpperCase()}USDT`;
+            return fetch(`/api/binance/price?symbol=${bnSym}`)
+              .then(res=>{ if(!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
+              .then(data=>({
+                symbol:(data.symbol||bnSym).toUpperCase(),
+                base:(data.symbol||bnSym).replace(/USDT$/,'').toUpperCase(),
+                price:Number(data.price)
+              }))
+              .catch(err=>{
+                console.error('livePrice', bnSym, err);
+                return { symbol:bnSym, base:bnSym.replace(/USDT$/,'').toUpperCase(), price:NaN };
+              });
+          });
+          const results=await Promise.all(tasks);
+          applyPriceUpdates(results);
+        }finally{
+          pollingInFlight=false;
         }
-        loop();
-      })();
+      };
+
+      const startPolling=()=>{
+        if(pollingTimer) clearInterval(pollingTimer);
+        fetchAllPrices();
+        pollingTimer=setInterval(fetchAllPrices,priceRefreshMs);
+      };
+
+      const startPriceStream=()=>{
+        if(!('EventSource' in window)) return false;
+        const symbols=Array.from(symbolMap.keys()).join(',');
+        if(!symbols) return false;
+        try{
+          const es=new EventSource(`/api/binance/prices/stream?symbols=${symbols}&interval=${priceRefreshMs}`);
+          es.addEventListener('message',evt=>{
+            if(!evt.data) return;
+            try{
+              const payload=JSON.parse(evt.data);
+              if(payload&&Array.isArray(payload.prices)) applyPriceUpdates(payload.prices);
+            }catch(parseErr){
+              console.error('price stream parse', parseErr);
+            }
+          });
+          es.addEventListener('warn',evt=>{
+            console.warn('price stream warning', evt.data);
+          });
+          es.addEventListener('error',()=>{
+            if(es.readyState===EventSource.CLOSED){
+              console.warn('price stream closed, falling back to polling');
+              es.close();
+              startPolling();
+            }
+          });
+          return true;
+        }catch(err){
+          console.warn('price stream init failed', err);
+          return false;
+        }
+      };
+
+      setInterval(fetchMarketCap,60000);
+      if(!startPriceStream()) startPolling();
     }
 
     // 초기화
