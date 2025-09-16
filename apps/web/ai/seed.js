@@ -235,7 +235,28 @@ ${personaBlock}`;
 
   // ---------- events ----------
   sendButton.addEventListener('click', sendMessage);
-  // 엔터키 자동전송 제거 - 이제 엔터는 줄바꿈만 가능
+
+  function canSubmitWithEnter(){
+    const landscape = window.innerWidth > window.innerHeight;
+    let pointerFine = true;
+    if (window.matchMedia) {
+      try {
+        pointerFine = window.matchMedia('(pointer: fine)').matches;
+      } catch (_) {
+        pointerFine = true;
+      }
+    }
+    return landscape && pointerFine;
+  }
+
+  messageInput.addEventListener('keydown', (ev)=>{
+    if(ev.key === 'Enter' && !ev.shiftKey){
+      if(!canSubmitWithEnter()) return;
+      ev.preventDefault();
+      sendMessage();
+    }
+  });
+
   messageInput.addEventListener('input', ()=>{
     messageInput.style.height='auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, window.innerHeight*0.3) + 'px';
