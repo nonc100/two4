@@ -4,6 +4,76 @@ const fetch = require('node-fetch'); // v2
 const cookieParser = require('cookie-parser');
 const { MongoClient } = require('mongodb');
 
+// ---- Fast price cache (Binance + Bybit + OKX) ----
+const FAST_CACHE_TTL = 5_000; // 5초
+const fastCache = new Map(); // key: symbol -> { t, data }
+
+const getFastCache = (symbol) => {
+  if (!symbol) return null;
+  const entry = fastCache.get(symbol);
+  if (!entry) return null;
+  if (Date.now() - entry.t > FAST_CACHE_TTL) {
+    fastCache.delete(symbol);
+    return null;
+  }
+  return entry.data;
+};
+
+const setFastCache = (symbol, data) => {
+  if (!symbol || !data) return;
+  fastCache.set(symbol, { t: Date.now(), data });
+};
+
+async function fetchJson(url, headers = {}, timeoutMs = 1500) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { headers, signal: ac.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const parseBinance = (payload) => Number(payload?.price);
+const parseBybit = (payload) => Number(payload?.result?.list?.[0]?.lastPrice);
+const parseOKX = (payload) => Number(payload?.data?.[0]?.last);
+
+const mapToExchangeSymbols = (symbol) => ({
+  binance: symbol,
+  bybit: symbol,
+  okx: symbol.replace('USDT', '-USDT')
+});
+
+async function promiseAnyCompat(tasks) {
+  if (typeof Promise.any === 'function') {
+    return Promise.any(tasks);
+  }
+
+  return new Promise((resolve, reject) => {
+    if (!tasks.length) {
+      reject(new Error('No tasks provided'));
+      return;
+    }
+    let rejected = 0;
+    const errors = [];
+    tasks.forEach((task, idx) => {
+      Promise.resolve(task)
+        .then(resolve)
+        .catch((err) => {
+          errors[idx] = err;
+          rejected += 1;
+          if (rejected === tasks.length) {
+            const aggregate = new Error('All promises were rejected');
+            aggregate.errors = errors;
+            reject(aggregate);
+          }
+        });
+    });
+  });
+}
+
 let messagesCol = null; // MongoDB optional
 
 router.get('/_probe', (req, res) => {
@@ -81,6 +151,51 @@ router.post('/chat', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server error' });
+  }
+});
+
+// GET /api/price/fast?symbol=BTCUSDT
+router.get('/price/fast', async (req, res) => {
+  try {
+    const symbol = String(req.query.symbol || 'BTCUSDT').toUpperCase();
+    if (!symbol || !/^([A-Z0-9]{2,20})$/.test(symbol)) {
+      return res.status(400).json({ error: 'invalid symbol' });
+    }
+
+    const cached = getFastCache(symbol);
+    if (cached) {
+      return res.json({ ...cached, cached: true });
+    }
+
+    const mapped = mapToExchangeSymbols(symbol);
+    const tasks = [
+      (async () => {
+        const payload = await fetchJson(`https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(mapped.binance)}`);
+        const price = parseBinance(payload);
+        if (!Number.isFinite(price)) throw new Error('Invalid price from Binance');
+        return { source: 'binance', price, pair: symbol };
+      })(),
+      (async () => {
+        const payload = await fetchJson(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${encodeURIComponent(mapped.bybit)}`);
+        const price = parseBybit(payload);
+        if (!Number.isFinite(price)) throw new Error('Invalid price from Bybit');
+        return { source: 'bybit', price, pair: symbol };
+      })(),
+      (async () => {
+        const payload = await fetchJson(`https://www.okx.com/api/v5/market/ticker?instId=${encodeURIComponent(mapped.okx)}`);
+        const price = parseOKX(payload);
+        if (!Number.isFinite(price)) throw new Error('Invalid price from OKX');
+        return { source: 'okx', price, pair: symbol };
+      })()
+    ];
+
+    const first = await promiseAnyCompat(tasks);
+    setFastCache(symbol, first);
+    return res.json({ ...first, cached: false });
+  } catch (err) {
+    console.error('/api/price/fast error:', err);
+    const detail = err?.errors?.map((e) => e && e.message).filter(Boolean).join('; ');
+    return res.status(502).json({ error: 'all sources failed', detail: detail || String(err) });
   }
 });
 
