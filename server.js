@@ -382,6 +382,77 @@ app.get('/api/binance/price', async (req, res) => {
   }
 });
 
+// SSE: 다중 심볼 실시간 가격 스트림
+app.get('/api/binance/prices/stream', (req, res) => {
+  const rawParam = req.query.symbols;
+  const raw = Array.isArray(rawParam) ? rawParam.join(',') : (rawParam || '');
+  const symbols = raw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  if (!symbols.length) {
+    return res.status(400).json({ error: 'symbols query required' });
+  }
+
+  const requestedInterval = Number(req.query.interval) || 4000;
+  const intervalMs = Math.max(2000, Math.min(15000, requestedInterval));
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  let closed = false;
+  let sending = false;
+  let timer = null;
+  let keepAlive = null;
+
+  const cleanup = () => {
+    if (closed) return;
+    closed = true;
+    if (timer) clearInterval(timer);
+    if (keepAlive) clearInterval(keepAlive);
+    try { res.end(); } catch {}
+  };
+
+  req.on('close', cleanup);
+
+  const writeSafe = chunk => {
+    if (closed) return;
+    try {
+      res.write(chunk);
+    } catch (err) {
+      console.error('/api/binance/prices/stream write error:', err);
+      cleanup();
+    }
+  };
+
+  const pushUpdate = async () => {
+    if (closed || sending) return;
+    sending = true;
+    try {
+      const arr = encodeURIComponent(JSON.stringify(symbols));
+      const data = await bfetch(`${BINANCE_FAPI}/ticker/price?symbols=${arr}`);
+      const payload = Array.isArray(data)
+        ? data.map(item => ({
+            symbol: item.symbol,
+            base: typeof item.symbol === 'string' ? item.symbol.replace(/USDT$/i, '') : '',
+            price: Number(item.price)
+          }))
+        : [];
+      writeSafe(`data: ${JSON.stringify({ ts: Date.now(), prices: payload })}\n\n`);
+    } catch (err) {
+      console.error('/api/binance/prices/stream upstream error:', err);
+      writeSafe(`event: warn\ndata: ${JSON.stringify({ message: 'upstream error' })}\n\n`);
+    } finally {
+      sending = false;
+    }
+  };
+
+  keepAlive = setInterval(() => writeSafe(':\n\n'), 20000);
+  timer = setInterval(pushUpdate, intervalMs);
+  pushUpdate();
+});
+
 // 롱/숏 비율: 전체 계정(Global)
 app.get('/api/binance/ls/global', async (req, res) => {
   try {
