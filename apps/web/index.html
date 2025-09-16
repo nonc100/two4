@@ -1139,6 +1139,11 @@
 
     /* ===== COSMOS 차트 엔진 ===== */
     let chartCanvas=null, chartContext=null, currentData=new Map();
+
+    function formatPrice(value){
+      if(!Number.isFinite(value)) return '-';
+      return `$${value.toFixed(2)}`;
+    }
     
     const cryptoConfig=[
       {id:'BTC',name:'BTC',color:'#ff9500',visible:true},
@@ -1200,9 +1205,13 @@
         cryptoConfig.forEach(c=>{
           const r = rows.find(x=>x.name===c.name || x.symbol?.toUpperCase()===c.name);
           if(!r) return;
-          const base = r.sparkline_in_7d?.price?.[0] ?? 1;
-          const pts = (r.sparkline_in_7d?.price || []).map((v,i)=>({timestamp:i, price:(v/base - 1)*100}));
+          const pts = (r.sparkline_in_7d?.price || [])
+            .map((v,i)=>({timestamp:i, price:Number(v)}))
+            .filter(p=>Number.isFinite(p.price));
           currentData.set(c.id, pts);
+
+          const legendEl=document.getElementById(`price-${c.id}`);
+          if(legendEl) legendEl.textContent=pts.length?formatPrice(pts[pts.length-1].price):'-';
         });
         drawChart();
       }catch(err){
@@ -1272,9 +1281,11 @@
     function drawSeries(ctx,crypto,data,w,h){
       const m={left:40,right:80,top:30,bottom:40};
       const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
+      if(!data.length) return;
+
       const prices=data.map(d=>d.price);
       const min=Math.min(...prices), max=Math.max(...prices), range=max-min||1;
-      const tr=data[data.length-1].timestamp-data[0].timestamp;
+      const tr=(data[data.length-1].timestamp-data[0].timestamp)||1;
 
       ctx.strokeStyle=crypto.color; 
       ctx.lineWidth=2.5; 
@@ -1311,7 +1322,7 @@
       ctx.fillStyle=crypto.color; 
       ctx.font='11px Orbitron, monospace'; 
       ctx.textAlign='left';
-      ctx.fillText(`${last.price.toFixed(2)}%`, lx+8, ly+3);
+      ctx.fillText(formatPrice(last.price), lx+8, ly+3);
       
       ctx.shadowBlur=0; 
       ctx.textAlign='start';
@@ -1337,7 +1348,7 @@
             const r=await fetch(`/api/binance/price?symbol=${bnSym}`).then(r=>r.json());
             const live=Number(r.price);
             const el=document.getElementById(`price-${c.id}`);
-            if(el&&!Number.isNaN(live)) el.textContent=`$${live.toFixed(2)}`;
+            if(el) el.textContent=Number.isFinite(live)?formatPrice(live):'-';
           }catch(e){
             console.error('livePrice', bnSym, e);
           }
