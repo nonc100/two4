@@ -319,19 +319,43 @@ app.get('/api/binance/markets', async (req, res) => {
     // 상위 N개만 헤비 필드(스파크/OI) 계산 (기본 20)
     const HEAVY_N = Math.max(0, Math.min(Number(req.query.heavy_n) || 20, slice.length));
 
+    // 시가총액(우선) / 24h 거래대금(보조) 기반으로 상위 심볼 선정
+    let heavySet = new Set();
+    if (HEAVY_N > 0) {
+      const scored = slice.map((s, idx) => {
+        const capEntry = capMap[s.base.toUpperCase()];
+        const stat = statsMap.get(s.symbol);
+        const capScore = (typeof capEntry === 'number' && Number.isFinite(capEntry)) ? capEntry : NaN;
+        const volScore = Number(stat?.quoteVolume);
+        const score = Number.isFinite(capScore)
+          ? capScore
+          : (Number.isFinite(volScore) ? volScore : -1);
+        return { idx, score };
+      });
+
+      scored.sort((a, b) => {
+        if (a.score === b.score) return a.idx - b.idx;
+        const as = Number.isFinite(a.score) ? a.score : -1;
+        const bs = Number.isFinite(b.score) ? b.score : -1;
+        return bs - as;
+      });
+
+      heavySet = new Set(scored.slice(0, HEAVY_N).map(it => it.idx));
+    }
+
     // 동시성 제한 유틸(pmap)
     const sparksArr = await pmap(
-      pairs.map((p, i) => i < HEAVY_N ? p : null),
+      pairs.map((p, i) => heavySet.has(i) ? p : null),
       2,
       async (p) => p ? await binanceSpark7dCloses(p) : []
     );
     const oiArr = await pmap(
-      symbols.map((sym, i) => i < HEAVY_N ? sym : null),
+      symbols.map((sym, i) => heavySet.has(i) ? sym : null),
       3,
       async (sym) => sym ? await binanceOpenInterest(sym) : 0
     );
     const oiPctArr = await pmap(
-      symbols.map((sym, i) => i < HEAVY_N ? sym : null),
+      symbols.map((sym, i) => heavySet.has(i) ? sym : null),
       2,
       async (sym)=> sym ? await binanceOIChangePct(sym) : { oi_1h_pct:null, oi_24h_pct:null }
     );
