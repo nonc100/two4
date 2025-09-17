@@ -5,6 +5,7 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const Parser = require('rss-parser');               // RSS (네이버/구글 트렌드)
 const parser = new Parser();
+const createNewsKoRouter = require('./routes/news-ko');
 
 const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
@@ -51,6 +52,9 @@ const cache = new Map();
 const TTL_MS = 60_000;
 const hit  = key => { const v = cache.get(key); return v && (Date.now() - v.t < TTL_MS) ? v : null; };
 const keep = (key, payload) => { if (payload.ok) cache.set(key, { ...payload, t: Date.now() }); };
+
+const newsKoRouter = createNewsKoRouter({ hit, keep, setCorsAndCache });
+app.use('/api/news-ko', newsKoRouter);
 
 // === ADD: TTL-override hit() & limited concurrency map ===
 const hit2 = (key, ttlMs) => {
