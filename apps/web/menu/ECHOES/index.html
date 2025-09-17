@@ -130,13 +130,22 @@
         }
         
         .nav-logo {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--accent-color);
+            display: inline-flex;
+            align-items: center;
             text-decoration: none;
-            letter-spacing: 1px;
-            transition: color 0.3s ease;
+        }
+
+        .nav-logo img {
+            height: 40px;
+            width: auto;
+            filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.4));
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        .nav-logo:hover img,
+        .nav-logo:focus img {
+            transform: translateY(-1px);
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.6));
         }
         
         .nav-menu {
@@ -840,17 +849,19 @@
     
     <nav class="nav-header">
         <div class="nav-container">
-            <a href="/" class="nav-logo">TWO.4</a>
-            
+            <a href="https://two4.ai" class="nav-logo" aria-label="TWO.4 home">
+                <img src="/media/logo.png" alt="TWO.4 logo">
+            </a>
+
             <div class="nav-left">
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="/crypto-market" data-tooltip="마켓">Crypto Market</a></li>
-                    <li><a href="/orbits" data-tooltip="지표, 신호">Orbits</a></li>
-                    <li><a href="/method" data-tooltip="기법">Method</a></li>
-                    <li><a href="/psyche" data-tooltip="심법">Psyche</a></li>
+                    <li><a href="/menu/cosmos/" data-tooltip="마켓">Crypto Market</a></li>
+                    <li><a href="/menu/orbits.html" data-tooltip="지표, 신호">Orbits</a></li>
+                    <li><a href="/menu/method.html" data-tooltip="기법">Method</a></li>
+                    <li><a href="/menu/psyche.html" data-tooltip="심법">Psyche</a></li>
                     <li><a href="/menu/ECHOES/" class="active" data-tooltip="뉴스, 관찰기록">Echoes</a></li>
-                    <li><a href="/constellation" data-tooltip="커뮤니티">Constellation</a></li>
-                    <li><a href="/portal" data-tooltip="로그인/로그아웃">Portal</a></li>
+                    <li><a href="/menu/constellation.html" data-tooltip="커뮤니티">Constellation</a></li>
+                    <li><a href="/menu/portal.html" data-tooltip="로그인/로그아웃">Portal</a></li>
                 </ul>
                 
                 <div class="search-box">
