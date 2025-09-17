@@ -4,6 +4,45 @@ const NEWS_ENDPOINT = 'https://newsdata.io/api/1/news';
 const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 const SUMMARY_ARTICLE_LIMIT = 6;
 const FETCH_TIMEOUT_MS = Number(process.env.NEWS_API_TIMEOUT_MS || 10000);
+const Parser = require('rss-parser');
+const FALLBACK_RSS_TIMEOUT_MS = Number(process.env.NEWS_RSS_TIMEOUT_MS || Math.min(FETCH_TIMEOUT_MS, 8000));
+const FALLBACK_RSS_FEEDS = [
+  { url: 'https://www.coindeskkorea.com/rss/allArticle.xml', name: '코인데스크코리아' },
+  { url: 'https://www.tokenpost.kr/rss', name: '토큰포스트' },
+  { url: 'https://www.blockmedia.co.kr/feed', name: '블록미디어' }
+];
+const FALLBACK_DEFAULT_QUERY = [
+  '크립토',
+  '암호화폐',
+  '가상화폐',
+  '비트코인',
+  '이더리움',
+  '블록체인',
+  '코인',
+  '디지털 자산',
+  '스테이블코인',
+  'web3',
+  'defi',
+  'crypto',
+  'cryptocurrency',
+  'bitcoin',
+  'ethereum',
+  'blockchain',
+  'digital asset',
+  'stablecoin',
+  'token',
+  'nft'
+].join(' OR ');
+
+const rssParser = new Parser({
+  timeout: FALLBACK_RSS_TIMEOUT_MS,
+  requestOptions: {
+    timeout: FALLBACK_RSS_TIMEOUT_MS,
+    headers: {
+      'User-Agent': process.env.NEWS_FALLBACK_USER_AGENT || 'two4.app-news-fallback/1.0'
+    }
+  }
+});
 
 function parseBoolean(value, defaultValue = false) {
   if (value === undefined || value === null) return defaultValue;
@@ -137,6 +176,131 @@ function parseSummaryContent(content) {
     }
   }
   return [];
+}
+
+function extractSourceFromItem(item) {
+  if (!item) return '';
+  if (typeof item.source === 'string') return item.source;
+  if (item.source && typeof item.source === 'object') {
+    if (typeof item.source.title === 'string') return item.source.title;
+    if (typeof item.source._ === 'string') return item.source._;
+  }
+  if (typeof item.creator === 'string') return item.creator;
+  if (typeof item.author === 'string') return item.author;
+  return '';
+}
+
+function extractImageFromItem(item) {
+  if (!item) return null;
+  if (item.enclosure && item.enclosure.url) return item.enclosure.url;
+  if (Array.isArray(item.enclosures) && item.enclosures.length > 0) {
+    const first = item.enclosures.find((entry) => entry && entry.url);
+    if (first && first.url) return first.url;
+  }
+  const mediaContent = item['media:content'] || item['media:thumbnail'];
+  if (Array.isArray(mediaContent)) {
+    const firstMedia = mediaContent.find((entry) => entry && (entry.url || (entry.$ && entry.$.url)));
+    if (firstMedia) return firstMedia.url || (firstMedia.$ && firstMedia.$.url) || null;
+  } else if (mediaContent) {
+    if (typeof mediaContent.url === 'string') return mediaContent.url;
+    if (mediaContent.$ && typeof mediaContent.$.url === 'string') return mediaContent.$.url;
+  }
+  return null;
+}
+
+function mapFallbackItem(item, index, feed) {
+  const id = item.guid || item.id || item.link || `${feed.name || 'rss'}-${index}`;
+  const title = sanitizeText(item.title);
+  const description = sanitizeText(item.contentSnippet || item.content || item.summary);
+  const { iso: publishedAt, timestamp } = parseDate(item.isoDate || item.pubDate);
+
+  return {
+    id,
+    title: title || '제목 없음',
+    description,
+    summary: description,
+    link: item.link || null,
+    source: sanitizeText(extractSourceFromItem(item) || feed.name || feed.url || 'RSS'),
+    categories: normalizeArray(item.categories),
+    keywords: normalizeArray(item.categories),
+    imageUrl: extractImageFromItem(item),
+    language: 'ko',
+    country: ['kr'],
+    rawPubDate: item.pubDate || item.isoDate || null,
+    publishedAt,
+    publishedTimestamp: timestamp
+  };
+}
+
+function extractKeywordsFromQuery(query) {
+  if (!query) return FALLBACK_DEFAULT_QUERY.split(' OR ');
+  if (Array.isArray(query)) {
+    return query
+      .map((entry) => sanitizeText(entry))
+      .filter(Boolean);
+  }
+  const normalized = sanitizeText(String(query));
+  if (!normalized) return FALLBACK_DEFAULT_QUERY.split(' OR ');
+  const parts = normalized
+    .split(/\s+OR\s+/i)
+    .map((part) => sanitizeText(part))
+    .filter(Boolean);
+  return parts.length > 0 ? parts : FALLBACK_DEFAULT_QUERY.split(' OR ');
+}
+
+async function fetchFallbackArticles({ limit = 8, query, fastify }) {
+  const articles = [];
+  await Promise.all(
+    FALLBACK_RSS_FEEDS.map(async (feed) => {
+      try {
+        const feedData = await rssParser.parseURL(feed.url);
+        const items = Array.isArray(feedData?.items) ? feedData.items : [];
+        items.slice(0, limit * 2).forEach((item, index) => {
+          articles.push(mapFallbackItem(item, index, feed));
+        });
+      } catch (error) {
+        fastify?.log?.warn({ err: error, feed: feed.url }, 'Fallback RSS feed fetch failed');
+      }
+    })
+  );
+
+  if (articles.length === 0) {
+    return [];
+  }
+
+  const seen = new Set();
+  const deduped = [];
+  for (const article of articles) {
+    const key = article.link || article.id;
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    deduped.push(article);
+  }
+
+  deduped.sort((a, b) => {
+    const aTs = typeof a.publishedTimestamp === 'number' ? a.publishedTimestamp : 0;
+    const bTs = typeof b.publishedTimestamp === 'number' ? b.publishedTimestamp : 0;
+    return bTs - aTs;
+  });
+
+  const keywords = extractKeywordsFromQuery(query)
+    .map((keyword) => keyword.toLowerCase())
+    .filter(Boolean);
+  const filtered = keywords.length
+    ? deduped.filter((article) => {
+        const bucket = [article.title, article.summary, article.description]
+          .filter(Boolean)
+          .map((value) => String(value).toLowerCase())
+          .join(' ');
+        return bucket && keywords.some((keyword) => bucket.includes(keyword));
+      })
+    : deduped;
+  const selected = filtered.length > 0 ? filtered : deduped;
+
+  return selected.slice(0, limit).map((article) => ({
+    ...article,
+    summary: article.summary || article.description || ''
+  }));
 }
 
 async function summarizeArticles(articles, fastify) {
@@ -288,6 +452,39 @@ module.exports = async function newsKoPlugin(fastify) {
       };
     } catch (error) {
       fastify.log.error({ err: error }, 'Failed to fetch Korean news');
+      try {
+        const fallbackArticles = await fetchFallbackArticles({ limit: perPage, query: q, fastify });
+        if (fallbackArticles.length > 0) {
+          const fallbackMeta = {
+            fetchedAt: new Date().toISOString(),
+            totalResults: fallbackArticles.length,
+            nextPage: null,
+            query: {
+              q: q || null,
+              category: category || null,
+              country: selectedCountry,
+              page: page || null,
+              limit: perPage,
+              summarize: false
+            },
+            fallback: {
+              used: true,
+              provider: 'rss',
+              sources: FALLBACK_RSS_FEEDS.map((feed) => feed.name || feed.url)
+            }
+          };
+
+          reply.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+          return {
+            ok: true,
+            provider: 'rss-fallback',
+            meta: fallbackMeta,
+            articles: fallbackArticles
+          };
+        }
+      } catch (fallbackError) {
+        fastify.log.warn({ err: fallbackError }, 'Fallback RSS fetch for Korean news failed');
+      }
       const statusCode = Number.isInteger(error.statusCode) ? error.statusCode : 502;
       reply.code(statusCode);
       return {
