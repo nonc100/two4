@@ -1,5 +1,49 @@
 (() => {
   const API_ENDPOINT = '/api/news-ko';
+  const CRYPTO_QUERY = [
+    '크립토',
+    '암호화폐',
+    '가상화폐',
+    '비트코인',
+    '이더리움',
+    '블록체인',
+    '코인',
+    '디지털 자산',
+    '스테이블코인',
+    'web3',
+    'defi',
+    'crypto',
+    'cryptocurrency',
+    'bitcoin',
+    'ethereum',
+    'blockchain',
+    'digital asset',
+    'stablecoin',
+    'token',
+    'nft'
+  ].join(' OR ');
+  const CRYPTO_KEYWORDS = [
+    '크립토',
+    '암호화폐',
+    '가상화폐',
+    '비트코인',
+    '이더리움',
+    '블록체인',
+    '코인',
+    '디지털 자산',
+    '스테이블코인',
+    'web3',
+    'defi',
+    'crypto',
+    'cryptocurrency',
+    'bitcoin',
+    'ethereum',
+    'blockchain',
+    'digital asset',
+    'stablecoin',
+    'token',
+    'nft'
+  ].map((keyword) => keyword.toLowerCase());
   const grid = document.getElementById('newsGrid');
   const headlines = document.querySelector('.headlines');
   const sectionTitle = document.querySelector('.section-title');
@@ -60,6 +104,26 @@
     if (Array.isArray(value)) return value;
     if (!value) return [];
     return [value];
+  }
+
+  function containsCryptoKeyword(value) {
+    if (!value) return false;
+    const normalized = String(value).toLowerCase();
+    if (!normalized) return false;
+    return CRYPTO_KEYWORDS.some((keyword) => normalized.includes(keyword));
+  }
+
+  function isCryptoArticle(article) {
+    if (!article) return false;
+
+    const textFields = [article.title, article.summary, article.description];
+    if (textFields.some((field) => containsCryptoKeyword(field))) {
+      return true;
+    }
+
+    const categories = ensureArray(article.categories);
+    const keywords = ensureArray(article.keywords);
+    return [...categories, ...keywords].some((entry) => containsCryptoKeyword(entry));
   }
 
   function createNewsCard(article) {
@@ -201,37 +265,75 @@
     sectionTitle.textContent = `${baseText} · ${formatted} 업데이트`;
   }
 
+  async function fetchNews(params) {
+    const response = await fetch(`${API_ENDPOINT}?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Unexpected status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    if (!payload || payload.ok === false) {
+      const detail = (payload && (payload.detail || payload.error)) || 'Unknown error';
+      throw new Error(`Upstream returned an error: ${detail}`);
+    }
+
+    return payload;
+  }
+
   async function loadNews() {
     if (!grid) return;
 
     renderLoading();
 
-    const params = new URLSearchParams();
-    params.set('summarize', '1');
-    params.set('country', 'kr');
-    params.set('limit', '8');
+    const baseParams = new URLSearchParams();
+    baseParams.set('summarize', '1');
+    baseParams.set('country', 'kr');
+    baseParams.set('limit', '8');
+
+    const cryptoParams = new URLSearchParams(baseParams);
+    cryptoParams.set('q', CRYPTO_QUERY);
+
+    let payload;
+    let usedCryptoQuery = true;
 
     try {
-      const response = await fetch(`${API_ENDPOINT}?${params.toString()}`, {
-        headers: {
-          Accept: 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Unexpected status ${response.status}`);
-      }
-
-      const payload = await response.json();
-      const articles = Array.isArray(payload.articles) ? payload.articles : [];
-
-      renderArticles(articles);
-      updateHeadlines(articles);
-      updateSectionTitle(payload.meta || payload);
+      payload = await fetchNews(cryptoParams);
     } catch (error) {
-      console.error('Failed to load /api/news-ko', error);
-      renderError('실시간 뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      usedCryptoQuery = false;
+      console.warn('Falling back to general news feed for Echoes', error);
+      try {
+        payload = await fetchNews(baseParams);
+      } catch (fallbackError) {
+        console.error('Failed to load /api/news-ko', fallbackError);
+        renderError('실시간 뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
     }
+
+    let articles = Array.isArray(payload.articles) ? payload.articles : [];
+    let cryptoArticles = articles.filter((article) => isCryptoArticle(article));
+
+    if (usedCryptoQuery && cryptoArticles.length === 0) {
+      try {
+        const fallbackPayload = await fetchNews(baseParams);
+        articles = Array.isArray(fallbackPayload.articles) ? fallbackPayload.articles : [];
+        cryptoArticles = articles.filter((article) => isCryptoArticle(article));
+        if (fallbackPayload.meta) {
+          payload.meta = fallbackPayload.meta;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch fallback news after empty crypto result', error);
+      }
+    }
+
+    renderArticles(cryptoArticles);
+    updateHeadlines(cryptoArticles);
+    updateSectionTitle(payload.meta || payload);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
