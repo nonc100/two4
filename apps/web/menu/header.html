@@ -1,9 +1,15 @@
 <!-- header.html : 공통 헤더 (로고 + Z 아이콘 + 메뉴 오버레이) -->
 <style>
   .two4-header{position:fixed;top:16px;left:16px;right:16px;z-index:2000;
-    display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+    display:flex;align-items:center;justify-content:space-between;gap:28px;pointer-events:none}
   .two4-header a,.two4-header button,.two4-header div{pointer-events:auto}
   .two4-logo{height:42px;display:block;filter:drop-shadow(0 0 6px rgba(0,255,255,.4))}
+  .two4-nav{display:flex;align-items:center;gap:24px}
+  .two4-nav-links{display:flex;align-items:center;gap:18px;list-style:none;margin:0;padding:0;
+    font-family:'Orbitron',sans-serif;text-transform:uppercase;letter-spacing:.08em}
+  .two4-nav-links a{color:rgba(188,248,255,.9);font-size:.75rem;font-weight:600;text-decoration:none;
+    transition:color .2s ease,text-shadow .2s ease}
+  .two4-nav-links a:hover,.two4-nav-links a:focus{color:#fff;text-shadow:0 0 8px rgba(0,255,255,.6)}
 
   .menu-btn{background:transparent;border:none;cursor:pointer;position:relative;
     width:60px;height:60px;display:flex;align-items:center;justify-content:center}
@@ -64,16 +70,30 @@
     background: linear-gradient(to bottom, #0a0015 0%, #150020 40%, #1d0030 100%) !important;
     color:#e7ffff !important;
   }
+  @media(max-width:1024px){
+    .two4-nav-links{display:none}
+    .two4-nav{gap:0}
+  }
 </style>
 
 <div class="two4-header">
-  <a href="/index.html"><img src="../media/logo.png" alt="Two.4" class="two4-logo"></a>
-  <button class="menu-btn" id="menuToggle" aria-label="메뉴 열기">
-    <div class="star-rays">
-      <div class="ray ray1"></div><div class="ray ray2"></div>
-      <div class="ray ray3"></div><div class="ray ray4"></div>
-    </div>
-    <div class="star-glow"></div>
+  <a href="https://two4.ai" aria-label="TWO.4 home"><img src="/media/logo.png" alt="TWO.4 logo" class="two4-logo"></a>
+  <div class="two4-nav">
+    <ul class="two4-nav-links">
+      <li><a href="/menu/cosmos/">Crypto Market</a></li>
+      <li><a href="/menu/orbits.html">Orbits</a></li>
+      <li><a href="/menu/method.html">Method</a></li>
+      <li><a href="/menu/psyche.html">Psyche</a></li>
+      <li><a href="/menu/ECHOES/">Echoes</a></li>
+      <li><a href="/menu/constellation.html">Constellation</a></li>
+      <li><a href="/menu/portal.html">Portal</a></li>
+    </ul>
+    <button class="menu-btn" id="menuToggle" aria-label="메뉴 열기">
+      <div class="star-rays">
+        <div class="ray ray1"></div><div class="ray ray2"></div>
+        <div class="ray ray3"></div><div class="ray ray4"></div>
+      </div>
+      <div class="star-glow"></div>
     <div class="sparkle-dot sparkle1"></div>
     <div class="sparkle-dot sparkle2"></div>
     <div class="sparkle-dot sparkle3"></div>
@@ -90,7 +110,8 @@
       <path d="M 15 15 L 45 15 L 45 20 L 25 40 L 45 40 L 45 45 L 15 45 L 15 40 L 35 20 L 15 20 Z" class="z-letter"/>
     </svg>
     <span class="tooltip">cosmos / chart >>> 차트</span>
-  </button>
+    </button>
+  </div>
 </div>
 
 <div class="menu-overlay" id="menuOverlay" aria-hidden="true">

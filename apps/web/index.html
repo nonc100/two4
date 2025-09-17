@@ -140,7 +140,38 @@
       position:fixed;
       top:20px; right:24px;
       z-index:1200;
-      display:flex; align-items:center; gap:20px;
+      display:flex; align-items:center; gap:28px;
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:20px;
+      list-style:none;
+      margin:0;
+      padding:0;
+      font-family:'Orbitron',sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+
+    .nav-links a{
+      color:rgba(188,248,255,.9);
+      font-size:.78rem;
+      font-weight:600;
+      text-decoration:none;
+      transition:color .2s ease, text-shadow .2s ease;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus{
+      color:#ffffff;
+      text-shadow:0 0 8px rgba(0,255,255,.6);
+    }
+
+    @media (max-width:1024px){
+      .nav-links{display:none}
+      .nav{gap:20px}
     }
 
     .menu-btn {
@@ -779,13 +810,21 @@
   <div id="app">
 
   <!-- Logo -->
-  <a href="/" class="brand-logo" aria-label="TWO.4 home">
-<img src="/media/logo.png" alt="TWO.4" />
-
+  <a href="https://two4.ai" class="brand-logo" aria-label="TWO.4 home">
+    <img src="/media/logo.png" alt="TWO.4 logo" />
   </a>
 
   <!-- Nav -->
   <nav class="nav">
+    <ul class="nav-links">
+      <li><a href="/menu/cosmos/">Crypto Market</a></li>
+      <li><a href="/menu/orbits.html">Orbits</a></li>
+      <li><a href="/menu/method.html">Method</a></li>
+      <li><a href="/menu/psyche.html">Psyche</a></li>
+      <li><a href="/menu/ECHOES/">Echoes</a></li>
+      <li><a href="/menu/constellation.html">Constellation</a></li>
+      <li><a href="/menu/portal.html">Portal</a></li>
+    </ul>
     <div class="menu-btn" id="menuButton" aria-label="Open menu">
       <div class="star-rays">
         <div class="ray ray1"></div>
