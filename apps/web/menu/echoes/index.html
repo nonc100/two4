@@ -509,6 +509,24 @@
             display: grid;
             gap: 20px;
         }
+
+        .news-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 16px;
+            color: var(--text-secondary);
+            background: rgba(18, 18, 35, 0.6);
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+        }
+
+        .news-error {
+            border-style: solid;
+            color: #ff9c9c;
+            background: rgba(255, 70, 70, 0.08);
+        }
         
         .news-card {
             background: var(--card-bg);
@@ -859,7 +877,7 @@
                     <li><a href="/menu/orbits.html" data-tooltip="지표, 신호">Orbits</a></li>
                     <li><a href="/menu/method.html" data-tooltip="기법">Method</a></li>
                     <li><a href="/menu/psyche.html" data-tooltip="심법">Psyche</a></li>
-                    <li><a href="/menu/ECHOES/" class="active" data-tooltip="뉴스, 관찰기록">Echoes</a></li>
+                    <li><a href="/menu/echoes/" class="active" data-tooltip="뉴스, 관찰기록">Echoes</a></li>
                     <li><a href="/menu/constellation.html" data-tooltip="커뮤니티">Constellation</a></li>
                     <li><a href="/menu/portal.html" data-tooltip="로그인/로그아웃">Portal</a></li>
                 </ul>
@@ -1202,5 +1220,6 @@
             setInterval(updatePrices, 10000);
         });
     </script>
+    <script defer src="/menu/echoes/echoes.js"></script>
 </body>
 </html>
