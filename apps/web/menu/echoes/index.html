@@ -540,6 +540,10 @@
             gap: 25px;
             align-items: start;
         }
+
+        .news-card.news-card--no-image {
+            grid-template-columns: 1fr;
+        }
         
         .news-card:hover {
             transform: translateY(-2px);
@@ -708,19 +712,51 @@
             padding: 8px 0;
             border-bottom: 1px solid var(--border-color);
         }
-        
+
         .price-item:last-child {
             border-bottom: none;
         }
-        
+
+        .price-item.status {
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .price-item--up .crypto-price {
+            color: #34d399;
+        }
+
+        .price-item--down .crypto-price {
+            color: #f87171;
+        }
+
+        .price-item--flat .crypto-price {
+            color: var(--text-secondary);
+        }
+
         .crypto-name {
             font-weight: 500;
             color: var(--text-primary);
         }
-        
+
         .crypto-price {
             color: var(--accent-color);
             font-weight: 500;
+        }
+
+        .trend-item {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .trend-item:hover .crypto-name {
+            color: var(--accent-color);
+        }
+
+        .trend-item .crypto-price {
+            color: var(--text-secondary);
+            font-weight: 400;
         }
         
         @media (max-width: 1200px) {
@@ -932,108 +968,22 @@
             <main class="news-section">
                 <h2 class="section-title">Intelligence Feed</h2>
                 <div class="news-grid" id="newsGrid">
-                    <article class="news-card">
-                        <div class="news-content">
-                            <div class="news-meta">
-                                <span class="news-category">Bitcoin</span>
-                                <span class="news-time">2 Hours Ago</span>
-                            </div>
-                            <h3 class="news-title">Bitcoin Surge: Institutional Giants Trigger $2.1B ETF Explosion</h3>
-                            <p class="news-summary">Wall Street titans are reshaping the cryptocurrency landscape as record-breaking institutional flows drive Bitcoin to unprecedented heights, signaling a seismic shift in digital asset adoption.</p>
-                            <a href="#" class="news-link">Deep Dive Analysis</a>
-                        </div>
-                        <div class="news-image"></div>
-                    </article>
-                    
-                    <article class="news-card">
-                        <div class="news-content">
-                            <div class="news-meta">
-                                <span class="news-category">Ethereum</span>
-                                <span class="news-time">4 Hours Ago</span>
-                            </div>
-                            <h3 class="news-title">Ethereum's Layer 2 Revolution: Breaking the Million TPS Barrier</h3>
-                            <p class="news-summary">The Ethereum ecosystem reaches a critical inflection point as Layer 2 solutions achieve breakthrough scalability, processing over one million transactions per second while maintaining decentralization.</p>
-                            <a href="#" class="news-link">Technical Breakdown</a>
-                        </div>
-                        <div class="news-image"></div>
-                    </article>
-                    
-                    <article class="news-card">
-                        <div class="news-content">
-                            <div class="news-meta">
-                                <span class="news-category">DeFi</span>
-                                <span class="news-time">6 Hours Ago</span>
-                            </div>
-                            <h3 class="news-title">Zero-Fee Trading Era: DeFi Protocol Disrupts Traditional Finance</h3>
-                            <p class="news-summary">A groundbreaking decentralized exchange protocol eliminates all trading fees while maintaining institutional-grade liquidity and security, potentially triggering the next DeFi summer.</p>
-                            <a href="#" class="news-link">Protocol Analysis</a>
-                        </div>
-                        <div class="news-image"></div>
-                    </article>
-                    
-                    <article class="news-card">
-                        <div class="news-content">
-                            <div class="news-meta">
-                                <span class="news-category">Regulation</span>
-                                <span class="news-time">8 Hours Ago</span>
-                            </div>
-                            <h3 class="news-title">Global Crypto Consensus: Regulatory Framework Unifies Markets</h3>
-                            <p class="news-summary">International regulatory bodies achieve historic consensus on comprehensive cryptocurrency oversight framework, bringing unprecedented clarity and legitimacy to global digital asset markets.</p>
-                            <a href="#" class="news-link">Regulatory Impact</a>
-                        </div>
-                        <div class="news-image">
-                            <img src="https://via.placeholder.com/160x120/8a2be2/ffffff?text=NEWS" alt="News Image">
-                        </div>
-                    </article>
+                    <p class="news-empty">뉴스를 불러오는 중입니다…</p>
                 </div>
             </main>
-            
+
             <aside class="sidebar">
                 <div class="widget">
                     <h3 class="widget-title">Live Prices</h3>
-                    <div class="price-list">
-                        <div class="price-item">
-                            <span class="crypto-name">BTC</span>
-                            <span class="crypto-price">$67,234</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">ETH</span>
-                            <span class="crypto-price">$3,456</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">ADA</span>
-                            <span class="crypto-price">$0.89</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">DOT</span>
-                            <span class="crypto-price">$12.34</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">SOL</span>
-                            <span class="crypto-price">$156.78</span>
-                        </div>
+                    <div class="price-list" data-refresh-interval="60000">
+                        <div class="price-item status">가격 정보를 불러오는 중입니다…</div>
                     </div>
                 </div>
-                
+
                 <div class="widget">
                     <h3 class="widget-title">Trending Now</h3>
-                    <div class="trend-list">
-                        <div class="price-item">
-                            <span class="crypto-name">#AI Tokens</span>
-                            <span class="crypto-price">↗ Hot</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">#Layer2</span>
-                            <span class="crypto-price">↗ Rising</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">#GameFi</span>
-                            <span class="crypto-price">→ Stable</span>
-                        </div>
-                        <div class="price-item">
-                            <span class="crypto-name">#NFTs</span>
-                            <span class="crypto-price">↗ Growing</span>
-                        </div>
+                    <div class="trend-list" data-refresh-interval="300000">
+                        <div class="price-item status">트렌드를 불러오는 중입니다…</div>
                     </div>
                 </div>
             </aside>
@@ -1185,30 +1135,6 @@
             });
         }
         
-        function updatePrices() {
-            const prices = document.querySelectorAll('.crypto-price');
-            prices.forEach(price => {
-                const text = price.textContent.trim();
-                if (!text.includes('$')) return;
-                
-                if (!price.dataset.precision) {
-                    const decimals = (text.split('.')[1] || '').replace(/[^0-9]/g, '').length;
-                    price.dataset.precision = String(Math.min(decimals, 4));
-                }
-                
-                const precision = Number(price.dataset.precision || '0');
-                const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
-                if (Number.isNaN(numeric)) return;
-                
-                const change = (Math.random() - 0.5) * 0.02;
-                const newPrice = numeric * (1 + change);
-                price.textContent = '$' + newPrice.toLocaleString(undefined, {
-                    minimumFractionDigits: precision,
-                    maximumFractionDigits: precision
-                });
-            });
-        }
-        
         document.addEventListener('DOMContentLoaded', () => {
             createStars();
             initializeNewsCards();
@@ -1216,8 +1142,6 @@
             initializeSearch();
             initializeThemeToggle();
             initializeNotifications();
-            updatePrices();
-            setInterval(updatePrices, 10000);
         });
     </script>
     <script defer src="/menu/echoes/echoes.js"></script>
