@@ -1,5 +1,49 @@
 (() => {
   const API_ENDPOINT = '/api/news-ko';
+  const CRYPTO_QUERY = [
+    '크립토',
+    '암호화폐',
+    '가상화폐',
+    '비트코인',
+    '이더리움',
+    '블록체인',
+    '코인',
+    '디지털 자산',
+    '스테이블코인',
+    'web3',
+    'defi',
+    'crypto',
+    'cryptocurrency',
+    'bitcoin',
+    'ethereum',
+    'blockchain',
+    'digital asset',
+    'stablecoin',
+    'token',
+    'nft'
+  ].join(' OR ');
+  const CRYPTO_KEYWORDS = [
+    '크립토',
+    '암호화폐',
+    '가상화폐',
+    '비트코인',
+    '이더리움',
+    '블록체인',
+    '코인',
+    '디지털 자산',
+    '스테이블코인',
+    'web3',
+    'defi',
+    'crypto',
+    'cryptocurrency',
+    'bitcoin',
+    'ethereum',
+    'blockchain',
+    'digital asset',
+    'stablecoin',
+    'token',
+    'nft'
+  ].map((keyword) => keyword.toLowerCase());
   const grid = document.getElementById('newsGrid');
   const headlines = document.querySelector('.headlines');
   const sectionTitle = document.querySelector('.section-title');
@@ -60,6 +104,26 @@
     if (Array.isArray(value)) return value;
     if (!value) return [];
     return [value];
+  }
+
+  function containsCryptoKeyword(value) {
+    if (!value) return false;
+    const normalized = String(value).toLowerCase();
+    if (!normalized) return false;
+    return CRYPTO_KEYWORDS.some((keyword) => normalized.includes(keyword));
+  }
+
+  function isCryptoArticle(article) {
+    if (!article) return false;
+
+    const textFields = [article.title, article.summary, article.description];
+    if (textFields.some((field) => containsCryptoKeyword(field))) {
+      return true;
+    }
+
+    const categories = ensureArray(article.categories);
+    const keywords = ensureArray(article.keywords);
+    return [...categories, ...keywords].some((entry) => containsCryptoKeyword(entry));
   }
 
   function createNewsCard(article) {
@@ -210,6 +274,7 @@
     params.set('summarize', '1');
     params.set('country', 'kr');
     params.set('limit', '8');
+    params.set('q', CRYPTO_QUERY);
 
     try {
       const response = await fetch(`${API_ENDPOINT}?${params.toString()}`, {
@@ -225,8 +290,10 @@
       const payload = await response.json();
       const articles = Array.isArray(payload.articles) ? payload.articles : [];
 
-      renderArticles(articles);
-      updateHeadlines(articles);
+      const cryptoArticles = articles.filter((article) => isCryptoArticle(article));
+
+      renderArticles(cryptoArticles);
+      updateHeadlines(cryptoArticles);
       updateSectionTitle(payload.meta || payload);
     } catch (error) {
       console.error('Failed to load /api/news-ko', error);
