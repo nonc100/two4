@@ -1,5 +1,7 @@
 (() => {
   const API_ENDPOINT = '/api/news-ko';
+  const PRICE_ENDPOINT = '/api/coins/markets';
+  const TREND_ENDPOINT = '/api/trends';
   const CRYPTO_QUERY = [
     '크립토',
     '암호화폐',
@@ -47,6 +49,8 @@
   const grid = document.getElementById('newsGrid');
   const headlines = document.querySelector('.headlines');
   const sectionTitle = document.querySelector('.section-title');
+  const priceList = document.querySelector('.price-list');
+  const trendList = document.querySelector('.trend-list');
 
   function toBoolean(value) {
     if (typeof value === 'boolean') return value;
@@ -80,6 +84,23 @@
       month: 'short',
       day: 'numeric'
     });
+  }
+
+  function cleanText(value, fallback = '') {
+    if (!value) return fallback;
+    const normalized = String(value).replace(/\s+/g, ' ').trim();
+    if (!normalized) return fallback;
+    if (normalized.toLowerCase() === '[object object]') return fallback;
+    return normalized;
+  }
+
+  function isValidImageUrl(value) {
+    if (!value) return false;
+    const normalized = String(value).trim();
+    if (!normalized) return false;
+    const lowered = normalized.toLowerCase();
+    if (lowered === 'null' || lowered === 'undefined') return false;
+    return true;
   }
 
   function renderLoading() {
@@ -151,11 +172,14 @@
 
     const title = document.createElement('h3');
     title.className = 'news-title';
-    title.textContent = article.title || '제목을 불러오지 못했습니다';
+    title.textContent = cleanText(article.title, '제목을 불러오지 못했습니다');
 
     const summary = document.createElement('p');
     summary.className = 'news-summary';
-    summary.textContent = article.summary || article.description || '요약을 불러오지 못했습니다. 원문을 확인해 주세요.';
+    summary.textContent = cleanText(
+      article.summary || article.description,
+      '요약을 불러오지 못했습니다. 원문을 확인해 주세요.'
+    );
 
     const link = document.createElement('a');
     link.className = 'news-link';
@@ -174,18 +198,27 @@
     content.appendChild(summary);
     content.appendChild(link);
 
-    const imageWrapper = document.createElement('div');
-    imageWrapper.className = 'news-image';
-    if (article.imageUrl) {
+    const hasImage = isValidImageUrl(article.imageUrl);
+    if (hasImage) {
+      const imageWrapper = document.createElement('div');
+      imageWrapper.className = 'news-image';
       const img = document.createElement('img');
       img.loading = 'lazy';
       img.src = article.imageUrl;
       img.alt = article.title ? `${article.title} 관련 이미지` : '뉴스 이미지';
+      img.addEventListener('error', () => {
+        card.classList.add('news-card--no-image');
+        if (imageWrapper.parentNode) {
+          imageWrapper.parentNode.removeChild(imageWrapper);
+        }
+      });
       imageWrapper.appendChild(img);
+      card.appendChild(content);
+      card.appendChild(imageWrapper);
+    } else {
+      card.appendChild(content);
+      card.classList.add('news-card--no-image');
     }
-
-    card.appendChild(content);
-    card.appendChild(imageWrapper);
 
     return card;
   }
@@ -210,6 +243,158 @@
 
     if (typeof window.initializeNewsCards === 'function') {
       window.initializeNewsCards();
+    }
+  }
+
+  function formatPrice(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '-';
+    const abs = Math.abs(num);
+    let maximumFractionDigits = 2;
+    if (abs < 1) maximumFractionDigits = 4;
+    if (abs < 0.01) maximumFractionDigits = 6;
+    return '$' + num.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits
+    });
+  }
+
+  function setListState(container, message, state = 'idle') {
+    if (!container) return;
+    container.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'price-item status';
+    row.dataset.state = state;
+    row.textContent = message;
+    container.appendChild(row);
+  }
+
+  function renderPrices(entries) {
+    if (!priceList) return;
+    priceList.innerHTML = '';
+
+    if (!entries || entries.length === 0) {
+      setListState(priceList, '표시할 가격 정보가 없습니다.', 'empty');
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    entries.forEach((entry) => {
+      const item = document.createElement('div');
+      const change = Number(entry.price_change_percentage_24h);
+      let directionClass = 'price-item--flat';
+      if (Number.isFinite(change)) {
+        if (change > 0) directionClass = 'price-item--up';
+        else if (change < 0) directionClass = 'price-item--down';
+      }
+      item.className = `price-item ${directionClass}`;
+
+      const name = document.createElement('span');
+      name.className = 'crypto-name';
+      name.textContent = (entry.symbol || entry.name || '').toString().toUpperCase() || 'N/A';
+
+      const price = document.createElement('span');
+      price.className = 'crypto-price';
+      const priceText = formatPrice(entry.current_price);
+      if (Number.isFinite(change)) {
+        const changeText = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+        price.textContent = `${priceText} (${changeText})`;
+      } else {
+        price.textContent = priceText;
+      }
+
+      item.appendChild(name);
+      item.appendChild(price);
+      fragment.appendChild(item);
+    });
+
+    priceList.appendChild(fragment);
+  }
+
+  function renderTrends(items) {
+    if (!trendList) return;
+    trendList.innerHTML = '';
+
+    if (!items || items.length === 0) {
+      setListState(trendList, '트렌드를 불러오지 못했습니다.', 'empty');
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    items.forEach((item, index) => {
+      const hasLink = Boolean(item.link);
+      const row = document.createElement(hasLink ? 'a' : 'div');
+      row.className = 'price-item trend-item';
+      if (hasLink) {
+        row.href = item.link;
+        row.target = '_blank';
+        row.rel = 'noopener noreferrer';
+      }
+
+      const name = document.createElement('span');
+      name.className = 'crypto-name';
+      const baseTitle = cleanText(item.title, '제목 없음');
+      const displayTitle = baseTitle.includes(' - ')
+        ? baseTitle.split(' - ')[0]
+        : baseTitle;
+      name.textContent = `${index + 1}. ${displayTitle}`;
+
+      const time = document.createElement('span');
+      time.className = 'crypto-price';
+      time.textContent = formatRelativeTime(item.pubDate || item.publishedAt || item.isoDate);
+
+      row.appendChild(name);
+      row.appendChild(time);
+      fragment.appendChild(row);
+    });
+
+    trendList.appendChild(fragment);
+  }
+
+  async function loadLivePrices() {
+    if (!priceList) return;
+    setListState(priceList, '가격 정보를 불러오는 중입니다…', 'loading');
+
+    const params = new URLSearchParams({
+      source: 'binance',
+      per_page: '5',
+      heavy_n: '0'
+    });
+
+    try {
+      const response = await fetch(`${PRICE_ENDPOINT}?${params.toString()}`, {
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(`Unexpected status ${response.status}`);
+      }
+      const payload = await response.json();
+      const entries = Array.isArray(payload) ? payload.slice(0, 5) : [];
+      renderPrices(entries);
+    } catch (error) {
+      console.error('Failed to load live prices', error);
+      setListState(priceList, '가격 정보를 불러오지 못했습니다.', 'error');
+    }
+  }
+
+  async function loadTrendingNow() {
+    if (!trendList) return;
+    setListState(trendList, '트렌드를 불러오는 중입니다…', 'loading');
+
+    try {
+      const response = await fetch(TREND_ENDPOINT, {
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(`Unexpected status ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      renderTrends(items.slice(0, 5));
+    } catch (error) {
+      console.error('Failed to load /api/trends', error);
+      setListState(trendList, '트렌드 정보를 불러오지 못했습니다.', 'error');
     }
   }
 
@@ -304,11 +489,27 @@
   document.addEventListener('DOMContentLoaded', () => {
     const autoRefresh = toBoolean(grid && grid.dataset.autorefresh);
     loadNews();
+    loadLivePrices();
+    loadTrendingNow();
 
     if (autoRefresh) {
       const interval = Number(grid.dataset.refreshInterval || 300000);
       if (!Number.isNaN(interval) && interval > 0) {
         setInterval(loadNews, interval);
+      }
+    }
+
+    if (priceList) {
+      const refreshMs = Number(priceList.dataset.refreshInterval || 60000);
+      if (!Number.isNaN(refreshMs) && refreshMs > 0) {
+        setInterval(loadLivePrices, refreshMs);
+      }
+    }
+
+    if (trendList) {
+      const refreshMs = Number(trendList.dataset.refreshInterval || 300000);
+      if (!Number.isNaN(refreshMs) && refreshMs > 0) {
+        setInterval(loadTrendingNow, refreshMs);
       }
     }
   });
