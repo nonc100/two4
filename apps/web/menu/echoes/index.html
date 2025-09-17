@@ -692,6 +692,43 @@
             min-height: 100%;
         }
 
+        .calendar-edit-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .calendar-edit-toggle {
+            align-self: flex-end;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(138, 43, 226, 0.35);
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.25), rgba(72, 61, 139, 0.55));
+            color: var(--text-primary);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .calendar-edit-toggle:hover,
+        .calendar-edit-toggle:focus-visible {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.4), rgba(72, 61, 139, 0.75));
+            border-color: rgba(138, 43, 226, 0.65);
+            box-shadow: 0 14px 28px rgba(138, 43, 226, 0.32);
+        }
+
+        .calendar-edit-toggle.collapsed {
+            background: rgba(138, 43, 226, 0.18);
+            border-color: rgba(138, 43, 226, 0.3);
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .calendar-form-container[hidden] {
+            display: none;
+        }
+
         .calendar-form {
             display: flex;
             flex-direction: column;
@@ -1000,6 +1037,25 @@
             border-color: rgba(138, 43, 226, 0.18);
         }
 
+        body.light-mode .calendar-edit-toggle {
+            background: linear-gradient(135deg, rgba(194, 173, 255, 0.45), rgba(255, 255, 255, 0.95));
+            border-color: rgba(138, 43, 226, 0.35);
+            color: #1a1333;
+        }
+
+        body.light-mode .calendar-edit-toggle:hover,
+        body.light-mode .calendar-edit-toggle:focus-visible {
+            background: linear-gradient(135deg, rgba(207, 192, 255, 0.65), rgba(255, 255, 255, 1));
+            border-color: rgba(138, 43, 226, 0.55);
+            color: #140c2f;
+        }
+
+        body.light-mode .calendar-edit-toggle.collapsed {
+            background: rgba(226, 213, 255, 0.6);
+            border-color: rgba(138, 43, 226, 0.3);
+            color: #2c1c57;
+        }
+
         body.light-mode .calendar-form {
             background: rgba(255, 255, 255, 0.92);
             border-color: rgba(138, 43, 226, 0.25);
@@ -1072,6 +1128,12 @@
             .calendar-controls {
                 width: 100%;
                 justify-content: space-between;
+            }
+
+            .calendar-edit-toggle {
+                align-self: stretch;
+                width: 100%;
+                text-align: center;
             }
 
             .calendar-form-row {
@@ -1654,58 +1716,63 @@
                     <div class="calendar-grid" id="calendarGrid"></div>
                     <div class="calendar-events">
                         <div class="calendar-selected-date" id="calendarSelectedDate">일정을 선택하면 상세 정보가 표시됩니다.</div>
-                        <form class="calendar-form" id="calendarEventForm" novalidate>
-                            <input type="hidden" id="calendarEventId" name="id">
-                            <div class="calendar-form-status" id="calendarFormStatus" aria-live="polite"></div>
-                            <div class="calendar-form-error" id="calendarFormError" role="alert" aria-live="assertive" hidden tabindex="-1"></div>
-                            <div class="calendar-form-helper">* 필수 입력 항목</div>
-                            <div class="calendar-form-row">
-                                <div class="calendar-form-group">
-                                    <label for="calendarEventTitle">일정 제목 <span class="required-indicator" aria-hidden="true">*</span></label>
-                                    <input type="text" id="calendarEventTitle" name="title" placeholder="예: Seoul Web3 Summit" autocomplete="off" required>
-                                </div>
-                                <div class="calendar-form-group">
-                                    <label for="calendarEventCategory">카테고리 <span class="required-indicator" aria-hidden="true">*</span></label>
-                                    <select id="calendarEventCategory" name="category" required>
-                                        <option value="">카테고리를 선택하세요</option>
-                                        <option value="컨퍼런스/밋업">컨퍼런스/밋업</option>
-                                        <option value="공개/출시">공개/출시</option>
-                                        <option value="교육/아카데미">교육/아카데미</option>
-                                        <option value="에어드랍/AMA">에어드랍/AMA</option>
-                                        <option value="경제지표">경제지표</option>
-                                        <option value="프로젝트 공시">프로젝트 공시</option>
-                                        <option value="기타">기타</option>
-                                    </select>
-                                </div>
+                        <div class="calendar-edit-section">
+                            <button class="calendar-edit-toggle" type="button" aria-expanded="true" aria-controls="calendarFormContainer">편집·수정 폼 닫기</button>
+                            <div class="calendar-form-container" id="calendarFormContainer">
+                                <form class="calendar-form" id="calendarEventForm" novalidate>
+                                    <input type="hidden" id="calendarEventId" name="id">
+                                    <div class="calendar-form-status" id="calendarFormStatus" aria-live="polite"></div>
+                                    <div class="calendar-form-error" id="calendarFormError" role="alert" aria-live="assertive" hidden tabindex="-1"></div>
+                                    <div class="calendar-form-helper">* 필수 입력 항목</div>
+                                    <div class="calendar-form-row">
+                                        <div class="calendar-form-group">
+                                            <label for="calendarEventTitle">일정 제목 <span class="required-indicator" aria-hidden="true">*</span></label>
+                                            <input type="text" id="calendarEventTitle" name="title" placeholder="예: Seoul Web3 Summit" autocomplete="off" required>
+                                        </div>
+                                        <div class="calendar-form-group">
+                                            <label for="calendarEventCategory">카테고리 <span class="required-indicator" aria-hidden="true">*</span></label>
+                                            <select id="calendarEventCategory" name="category" required>
+                                                <option value="">카테고리를 선택하세요</option>
+                                                <option value="컨퍼런스/밋업">컨퍼런스/밋업</option>
+                                                <option value="공개/출시">공개/출시</option>
+                                                <option value="교육/아카데미">교육/아카데미</option>
+                                                <option value="에어드랍/AMA">에어드랍/AMA</option>
+                                                <option value="경제지표">경제지표</option>
+                                                <option value="프로젝트 공시">프로젝트 공시</option>
+                                                <option value="기타">기타</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="calendar-form-row">
+                                        <div class="calendar-form-group">
+                                            <label for="calendarEventDate">날짜 <span class="required-indicator" aria-hidden="true">*</span></label>
+                                            <input type="date" id="calendarEventDate" name="date" required>
+                                        </div>
+                                        <div class="calendar-form-group">
+                                            <label for="calendarEventTime">시간</label>
+                                            <input type="text" id="calendarEventTime" name="time" placeholder="예: 09:00 - 18:00" autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="calendar-form-group">
+                                        <label for="calendarEventLocation">장소</label>
+                                        <input type="text" id="calendarEventLocation" name="location" placeholder="예: 서울 코엑스" autocomplete="off">
+                                    </div>
+                                    <div class="calendar-form-group">
+                                        <label for="calendarEventDescription">설명</label>
+                                        <textarea id="calendarEventDescription" name="description" placeholder="이 일정에 대해 간략히 적어주세요." rows="3"></textarea>
+                                    </div>
+                                    <div class="calendar-form-group">
+                                        <label for="calendarEventLink">관련 링크</label>
+                                        <input type="url" id="calendarEventLink" name="link" placeholder="https://example.com" inputmode="url" autocomplete="off">
+                                    </div>
+                                    <div class="calendar-form-actions">
+                                        <button type="submit" class="calendar-form-submit">일정 저장</button>
+                                        <button type="button" class="calendar-form-secondary" id="calendarNewBtn">새 일정 작성</button>
+                                        <button type="button" class="calendar-form-delete" id="calendarDeleteBtn" disabled aria-disabled="true">일정 삭제</button>
+                                    </div>
+                                </form>
                             </div>
-                            <div class="calendar-form-row">
-                                <div class="calendar-form-group">
-                                    <label for="calendarEventDate">날짜 <span class="required-indicator" aria-hidden="true">*</span></label>
-                                    <input type="date" id="calendarEventDate" name="date" required>
-                                </div>
-                                <div class="calendar-form-group">
-                                    <label for="calendarEventTime">시간</label>
-                                    <input type="text" id="calendarEventTime" name="time" placeholder="예: 09:00 - 18:00" autocomplete="off">
-                                </div>
-                            </div>
-                            <div class="calendar-form-group">
-                                <label for="calendarEventLocation">장소</label>
-                                <input type="text" id="calendarEventLocation" name="location" placeholder="예: 서울 코엑스" autocomplete="off">
-                            </div>
-                            <div class="calendar-form-group">
-                                <label for="calendarEventDescription">설명</label>
-                                <textarea id="calendarEventDescription" name="description" placeholder="이 일정에 대해 간략히 적어주세요." rows="3"></textarea>
-                            </div>
-                            <div class="calendar-form-group">
-                                <label for="calendarEventLink">관련 링크</label>
-                                <input type="url" id="calendarEventLink" name="link" placeholder="https://example.com" inputmode="url" autocomplete="off">
-                            </div>
-                            <div class="calendar-form-actions">
-                                <button type="submit" class="calendar-form-submit">일정 저장</button>
-                                <button type="button" class="calendar-form-secondary" id="calendarNewBtn">새 일정 작성</button>
-                                <button type="button" class="calendar-form-delete" id="calendarDeleteBtn" disabled aria-disabled="true">일정 삭제</button>
-                            </div>
-                        </form>
+                        </div>
                         <div class="calendar-event-list" id="calendarEventList"></div>
                     </div>
                 </div>
@@ -1892,14 +1959,34 @@
             const deleteButton = document.getElementById('calendarDeleteBtn');
             const errorContainer = document.getElementById('calendarFormError');
             const statusMessage = document.getElementById('calendarFormStatus');
+            const formContainer = document.getElementById('calendarFormContainer');
+            const editToggleButton = document.querySelector('.calendar-edit-toggle');
 
-            if (!formFields.id || !formFields.title || !formFields.category || !formFields.date || !newButton || !deleteButton || !errorContainer || !statusMessage) {
+            if (!formFields.id || !formFields.title || !formFields.category || !formFields.date || !newButton || !deleteButton || !errorContainer || !statusMessage || !formContainer || !editToggleButton) {
                 return;
             }
 
             const STORAGE_KEY = 'echoes-calendar-events';
             const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
             const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+            const editToggleLabels = {
+                open: '편집·수정 폼 닫기',
+                closed: '편집·수정 폼 열기'
+            };
+
+            let isFormOpen = true;
+
+            function setFormVisibility(isOpen, { focusTitle = false } = {}) {
+                isFormOpen = isOpen;
+                formContainer.hidden = !isOpen;
+                editToggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                editToggleButton.classList.toggle('collapsed', !isOpen);
+                editToggleButton.textContent = isOpen ? editToggleLabels.open : editToggleLabels.closed;
+                if (isOpen && focusTitle && formFields.title) {
+                    formFields.title.focus();
+                }
+            }
 
             const state = {
                 events: [],
@@ -2333,6 +2420,7 @@
                     clearForm({ preserveDate: true });
                     return;
                 }
+                setFormVisibility(true, { focusTitle });
                 clearError();
                 form.dataset.mode = 'edit';
                 formFields.id.value = event.id;
@@ -2350,9 +2438,6 @@
                     }
                 });
                 updateDeleteButtonState(true);
-                if (focusTitle) {
-                    formFields.title.focus();
-                }
             }
 
             function handleFormSubmit(event) {
@@ -2522,11 +2607,18 @@
             renderLegend();
             renderCalendar();
 
+            setFormVisibility(true);
+
             panel.querySelectorAll('.calendar-nav-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const direction = button.dataset.direction === 'prev' ? -1 : 1;
                     changeMonth(direction);
                 });
+            });
+
+            editToggleButton.addEventListener('click', () => {
+                const willOpen = !isFormOpen;
+                setFormVisibility(willOpen, { focusTitle: willOpen });
             });
 
             toggleButton.addEventListener('click', () => {
@@ -2565,7 +2657,7 @@
                 state.selectedEventId = null;
                 clearForm({ preserveDate: true });
                 renderCalendar();
-                formFields.title.focus();
+                setFormVisibility(true, { focusTitle: true });
                 announceStatus('새 일정 작성을 시작합니다.');
             });
             deleteButton.addEventListener('click', handleDelete);
