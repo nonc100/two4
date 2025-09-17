@@ -51,6 +51,11 @@
   const sectionTitle = document.querySelector('.section-title');
   const priceList = document.querySelector('.price-list');
   const trendList = document.querySelector('.trend-list');
+  const PRIMARY_PRICE_IDS = ['bitcoin', 'ethereum', 'solana', 'binancecoin', 'ripple'];
+  const PRIMARY_PRICE_SYMBOLS = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP'];
+  const PRIMARY_PRICE_SYMBOL_ORDER = new Map(
+    PRIMARY_PRICE_SYMBOLS.map((symbol, index) => [symbol, index])
+  );
 
   function toBoolean(value) {
     if (typeof value === 'boolean') return value;
@@ -269,6 +274,66 @@
     container.appendChild(row);
   }
 
+  function getSymbol(entry) {
+    if (!entry) return '';
+    const raw =
+      entry.symbol ||
+      entry.ticker ||
+      entry.code ||
+      (typeof entry.id === 'string' && entry.id.length <= 6 ? entry.id : '');
+    return raw ? String(raw).toUpperCase() : '';
+  }
+
+  function getDisplayName(entry) {
+    const symbol = getSymbol(entry);
+    const baseName = cleanText(entry && entry.name, '');
+    if (baseName) {
+      return symbol ? `${baseName} (${symbol})` : baseName;
+    }
+    return symbol || 'N/A';
+  }
+
+  function getPriceChangeValue(entry) {
+    if (!entry) return Number.NaN;
+    const direct = Number(entry.price_change_percentage_24h);
+    if (Number.isFinite(direct)) return direct;
+
+    const inCurrency = entry.price_change_percentage_24h_in_currency;
+    if (typeof inCurrency === 'number') {
+      return inCurrency;
+    }
+    if (typeof inCurrency === 'object' && inCurrency !== null) {
+      const preferredKeys = ['usd', 'usdt', 'krw', 'eur'];
+      for (const key of preferredKeys) {
+        if (key in inCurrency) {
+          const parsed = Number(inCurrency[key]);
+          if (Number.isFinite(parsed)) {
+            return parsed;
+          }
+        }
+      }
+      const firstValue = Object.values(inCurrency)[0];
+      const parsed = Number(firstValue);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+
+    return Number.NaN;
+  }
+
+  function getCurrentPrice(entry) {
+    if (!entry) return undefined;
+    if (entry.current_price != null) return entry.current_price;
+    if (entry.price != null) return entry.price;
+    if (entry.lastPrice != null) return entry.lastPrice;
+    if (entry.quote && typeof entry.quote === 'object') {
+      const usd = entry.quote.usd;
+      if (usd != null) return usd;
+    }
+    return undefined;
+  }
+
   function renderPrices(entries) {
     if (!priceList) return;
     priceList.innerHTML = '';
@@ -278,10 +343,41 @@
       return;
     }
 
+    const orderedEntries = [...entries].sort((a, b) => {
+      const symbolA = getSymbol(a);
+      const symbolB = getSymbol(b);
+      const orderA = PRIMARY_PRICE_SYMBOL_ORDER.has(symbolA)
+        ? PRIMARY_PRICE_SYMBOL_ORDER.get(symbolA)
+        : Number.MAX_SAFE_INTEGER;
+      const orderB = PRIMARY_PRICE_SYMBOL_ORDER.has(symbolB)
+        ? PRIMARY_PRICE_SYMBOL_ORDER.get(symbolB)
+        : Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return symbolA.localeCompare(symbolB);
+    });
+
+    const seen = new Set();
+    const displayEntries = [];
+    for (const entry of orderedEntries) {
+      const symbol = getSymbol(entry);
+      const key = symbol || entry.id || entry.name;
+      if (key && seen.has(key)) continue;
+      if (key) seen.add(key);
+      displayEntries.push(entry);
+      if (displayEntries.length >= 5) break;
+    }
+
+    if (displayEntries.length === 0) {
+      setListState(priceList, '표시할 가격 정보가 없습니다.', 'empty');
+      return;
+    }
+
     const fragment = document.createDocumentFragment();
-    entries.forEach((entry) => {
+    displayEntries.forEach((entry) => {
       const item = document.createElement('div');
-      const change = Number(entry.price_change_percentage_24h);
+      const change = getPriceChangeValue(entry);
       let directionClass = 'price-item--flat';
       if (Number.isFinite(change)) {
         if (change > 0) directionClass = 'price-item--up';
@@ -291,11 +387,11 @@
 
       const name = document.createElement('span');
       name.className = 'crypto-name';
-      name.textContent = (entry.symbol || entry.name || '').toString().toUpperCase() || 'N/A';
+      name.textContent = getDisplayName(entry);
 
       const price = document.createElement('span');
       price.className = 'crypto-price';
-      const priceText = formatPrice(entry.current_price);
+      const priceText = formatPrice(getCurrentPrice(entry));
       if (Number.isFinite(change)) {
         const changeText = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
         price.textContent = `${priceText} (${changeText})`;
@@ -309,6 +405,23 @@
     });
 
     priceList.appendChild(fragment);
+  }
+
+  async function fetchPriceFeed(params) {
+    const response = await fetch(`${PRICE_ENDPOINT}?${params.toString()}`, {
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`Unexpected status ${response.status}`);
+    }
+    return response.json();
+  }
+
+  function normalizePriceEntries(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    if (payload && Array.isArray(payload.items)) return payload.items;
+    return [];
   }
 
   function renderTrends(items) {
@@ -355,22 +468,41 @@
     if (!priceList) return;
     setListState(priceList, '가격 정보를 불러오는 중입니다…', 'loading');
 
-    const params = new URLSearchParams({
+    const primaryParams = new URLSearchParams({
+      vs_currency: 'usd',
+      ids: PRIMARY_PRICE_IDS.join(','),
+      sparkline: 'false',
+      price_change_percentage: '24h'
+    });
+
+    try {
+      const primaryPayload = await fetchPriceFeed(primaryParams);
+      const primaryEntries = normalizePriceEntries(primaryPayload);
+      if (primaryEntries.length > 0) {
+        renderPrices(primaryEntries);
+        return;
+      }
+      throw new Error('Primary feed returned no entries');
+    } catch (error) {
+      console.warn('Primary price feed failed', error);
+    }
+
+    const fallbackParams = new URLSearchParams({
       source: 'binance',
-      per_page: '5',
+      per_page: '60',
       heavy_n: '0'
     });
 
     try {
-      const response = await fetch(`${PRICE_ENDPOINT}?${params.toString()}`, {
-        headers: { Accept: 'application/json' }
-      });
-      if (!response.ok) {
-        throw new Error(`Unexpected status ${response.status}`);
+      const fallbackPayload = await fetchPriceFeed(fallbackParams);
+      const fallbackEntries = normalizePriceEntries(fallbackPayload);
+      const preferredSet = new Set(PRIMARY_PRICE_SYMBOLS);
+      const filtered = fallbackEntries.filter((entry) => preferredSet.has(getSymbol(entry)));
+      const entriesToRender = filtered.length > 0 ? filtered : fallbackEntries.slice(0, 5);
+      if (entriesToRender.length === 0) {
+        throw new Error('Fallback feed returned no entries');
       }
-      const payload = await response.json();
-      const entries = Array.isArray(payload) ? payload.slice(0, 5) : [];
-      renderPrices(entries);
+      renderPrices(entriesToRender);
     } catch (error) {
       console.error('Failed to load live prices', error);
       setListState(priceList, '가격 정보를 불러오지 못했습니다.', 'error');
