@@ -352,14 +352,102 @@
             padding: 60px 0 40px;
             position: relative;
         }
-        
+
+        .header-top {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            padding: 14px 26px;
+            border-radius: 18px;
+            border: 1px solid var(--border-color);
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.08), rgba(64, 224, 208, 0.05));
+            backdrop-filter: blur(12px);
+            box-shadow: 0 18px 40px rgba(5, 6, 12, 0.45);
+            margin-bottom: 28px;
+            position: relative;
+        }
+
         .logo {
             font-family: 'Orbitron', monospace;
             font-size: 3.5rem;
             font-weight: 700;
             color: var(--accent-color);
-            margin-bottom: 15px;
+            margin: 0;
             letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+        .calendar-toggle {
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            background: rgba(12, 14, 20, 0.75);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calendar-toggle::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.18), rgba(64, 224, 208, 0.12));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .calendar-toggle span,
+        .calendar-toggle strong {
+            position: relative;
+            z-index: 1;
+        }
+
+        .calendar-toggle:hover,
+        .calendar-toggle:focus-visible,
+        .calendar-toggle.active {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 25px rgba(138, 43, 226, 0.35);
+        }
+
+        .calendar-toggle:hover::before,
+        .calendar-toggle:focus-visible::before,
+        .calendar-toggle.active::before {
+            opacity: 1;
+        }
+
+        .calendar-toggle::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -38px;
+            left: 50%;
+            transform: translate(-50%, 12px);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            letter-spacing: 0;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 8px 20px rgba(138, 43, 226, 0.2);
+            z-index: 10;
+        }
+
+        .calendar-toggle:hover::after,
+        .calendar-toggle:focus-visible::after {
+            opacity: 1;
+            transform: translate(-50%, 4px);
         }
         
         .tagline {
@@ -412,6 +500,393 @@
             border-right: 8px solid transparent;
             border-bottom: 8px solid var(--border-color);
             z-index: 1001;
+        }
+
+        .calendar-panel {
+            margin: 0 auto 36px;
+            max-width: 1100px;
+            background: rgba(12, 14, 20, 0.75);
+            border: 1px solid var(--border-color);
+            border-radius: 22px;
+            padding: 28px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+            position: relative;
+        }
+
+        .calendar-panel:not(.visible) {
+            display: none;
+        }
+
+        .calendar-panel.visible {
+            animation: calendarFadeIn 0.4s ease;
+        }
+
+        @keyframes calendarFadeIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .calendar-panel-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .calendar-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(8, 10, 16, 0.6);
+            border: 1px solid rgba(138, 43, 226, 0.25);
+            padding: 10px 18px;
+            border-radius: 14px;
+        }
+
+        .calendar-month {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .calendar-nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-nav-btn:hover,
+        .calendar-nav-btn:focus-visible {
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 18px rgba(138, 43, 226, 0.35);
+            outline: none;
+        }
+
+        .calendar-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .calendar-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(138, 43, 226, 0.12);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.2px;
+        }
+
+        .calendar-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            box-shadow: 0 0 12px rgba(138, 43, 226, 0.45);
+        }
+
+        .calendar-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
+            gap: 28px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .calendar-day-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        .calendar-cell {
+            appearance: none;
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            background: rgba(8, 10, 16, 0.65);
+            border-radius: 16px;
+            min-height: 96px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            color: var(--text-primary);
+        }
+
+        .calendar-cell:hover,
+        .calendar-cell:focus-visible {
+            border-color: var(--accent-color);
+            box-shadow: 0 18px 30px rgba(138, 43, 226, 0.28);
+            transform: translateY(-4px);
+            outline: none;
+        }
+
+        .calendar-cell.outside {
+            opacity: 0.35;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .calendar-cell.selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 22px 45px rgba(138, 43, 226, 0.4);
+        }
+
+        .calendar-date-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .calendar-event-indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .calendar-event-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+        }
+
+        .calendar-events {
+            background: rgba(8, 10, 16, 0.55);
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            border-radius: 18px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-height: 100%;
+        }
+
+        .calendar-selected-date {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.6px;
+        }
+
+        .calendar-event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .calendar-event-card {
+            background: rgba(4, 6, 12, 0.65);
+            border-radius: 14px;
+            padding: 18px;
+            border-left: 4px solid var(--accent-color);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .calendar-event-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .calendar-event-category {
+            font-weight: 600;
+            letter-spacing: 0.4px;
+        }
+
+        .calendar-event-title {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 1.05rem;
+            letter-spacing: 0.3px;
+            color: var(--text-primary);
+        }
+
+        .calendar-event-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .calendar-event-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .calendar-event-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .calendar-event-link:hover,
+        .calendar-event-link:focus-visible {
+            text-decoration: underline;
+            outline: none;
+        }
+
+        .calendar-event-empty {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background: rgba(8, 10, 16, 0.6);
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px dashed rgba(138, 43, 226, 0.35);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        body.light-mode .header-top {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.12), rgba(255, 255, 255, 0.95));
+            box-shadow: 0 18px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        body.light-mode .calendar-toggle {
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--text-primary);
+        }
+
+        body.light-mode .calendar-toggle::before {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.16), rgba(64, 224, 208, 0.18));
+        }
+
+        body.light-mode .calendar-toggle::after {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        body.light-mode .calendar-panel {
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.12);
+        }
+
+        body.light-mode .calendar-controls {
+            background: rgba(255, 255, 255, 0.7);
+            border-color: rgba(138, 43, 226, 0.2);
+        }
+
+        body.light-mode .calendar-nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        body.light-mode .calendar-cell {
+            background: rgba(255, 255, 255, 0.78);
+            border-color: rgba(138, 43, 226, 0.2);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        body.light-mode .calendar-cell:hover,
+        body.light-mode .calendar-cell:focus-visible {
+            box-shadow: 0 18px 32px rgba(138, 43, 226, 0.2);
+        }
+
+        body.light-mode .calendar-events {
+            background: rgba(255, 255, 255, 0.78);
+            border-color: rgba(138, 43, 226, 0.18);
+        }
+
+        body.light-mode .calendar-event-card {
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode .calendar-event-empty {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(138, 43, 226, 0.25);
+        }
+
+        @media (max-width: 1100px) {
+            .calendar-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-events {
+                order: 2;
+            }
+
+            .calendar-grid {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                gap: 14px;
+                padding: 18px 22px;
+            }
+
+            .calendar-toggle {
+                width: 100%;
+                text-align: center;
+            }
+
+            .calendar-panel {
+                padding: 22px 18px;
+            }
+
+            .calendar-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .calendar-grid {
+                gap: 8px;
+            }
+
+            .calendar-cell {
+                min-height: 88px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .calendar-grid {
+                gap: 6px;
+            }
+
+            .calendar-day-name {
+                font-size: 0.65rem;
+            }
+
+            .calendar-nav-btn {
+                width: 32px;
+                height: 32px;
+            }
         }
         
         .headlines {
@@ -940,9 +1415,33 @@
     
     <div class="container">
         <header class="header">
-            <h1 class="logo">ECHOES</h1>
+            <div class="header-top">
+                <h1 class="logo">ECHOES</h1>
+                <button class="calendar-toggle" type="button" data-tooltip="달력" aria-expanded="false" aria-controls="calendarPanel">
+                    <span>Calendar</span>
+                </button>
+            </div>
             <p class="tagline" data-kr="최신 크립토 뉴스를 한 곳에서">Latest Crypto News in One Place</p>
-            
+
+            <section class="calendar-panel" id="calendarPanel" aria-hidden="true">
+                <div class="calendar-panel-header">
+                    <div class="calendar-controls">
+                        <button class="calendar-nav-btn" type="button" data-direction="prev" aria-label="이전 달 보기">‹</button>
+                        <div class="calendar-month" id="calendarMonthLabel">2025년 9월</div>
+                        <button class="calendar-nav-btn" type="button" data-direction="next" aria-label="다음 달 보기">›</button>
+                    </div>
+                    <div class="calendar-legend" id="calendarLegend"></div>
+                </div>
+
+                <div class="calendar-layout">
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                    <div class="calendar-events">
+                        <div class="calendar-selected-date" id="calendarSelectedDate">일정을 선택하면 상세 정보가 표시됩니다.</div>
+                        <div class="calendar-event-list" id="calendarEventList"></div>
+                    </div>
+                </div>
+            </section>
+
             <div class="headlines">
                 <div class="headline-item">
                     <div class="headline-category">Bitcoin</div>
@@ -991,6 +1490,400 @@
     </div>
     
     <script>
+        const calendarCategoryMeta = {
+            '컨퍼런스/밋업': { color: '#63e0ff' },
+            '공개/출시': { color: '#ff7ad9' },
+            '교육/아카데미': { color: '#7dffb8' },
+            '에어드랍/AMA': { color: '#ffd166' },
+            '경제지표': { color: '#ffa26b' },
+            '프로젝트 공시': { color: '#c7a5ff' },
+            '기타': { color: '#7aa6ff' }
+        };
+
+        // 페이지 내에서 일정 데이터를 직접 수정할 수 있도록 아래 배열에 정리했습니다.
+        const cryptoCalendarEvents = [
+            {
+                date: '2025-09-02',
+                category: '공개/출시',
+                title: 'Solaria Chain Mainnet Launch',
+                location: '글로벌 온라인 스트리밍',
+                time: '21:00 KST',
+                description: '차세대 레이어1 Solaria Chain의 메인넷 공개 및 로드맵 발표.',
+                link: 'https://example.com/solaria-mainnet'
+            },
+            {
+                date: '2025-09-03',
+                category: '컨퍼런스/밋업',
+                title: 'Seoul Web3 Summit 2025',
+                location: '서울 코엑스 그랜드볼룸',
+                time: '09:00 - 18:00',
+                description: '글로벌 프로젝트와 투자자들이 참여하는 웹3 생태계 전략 컨퍼런스.',
+                link: 'https://example.com/seoul-web3-summit'
+            },
+            {
+                date: '2025-09-05',
+                category: '교육/아카데미',
+                title: 'DeFi 전략 부트캠프',
+                location: '싱가포르 Web3 Hub',
+                time: '13:00 - 17:00',
+                description: '기관 투자자를 위한 디파이 수익 전략 집중 교육 세션.'
+            },
+            {
+                date: '2025-09-09',
+                category: '에어드랍/AMA',
+                title: 'Nebula Protocol AMA & Airdrop',
+                location: 'X Spaces 라이브',
+                time: '21:00 KST',
+                description: '개발팀과의 실시간 질의응답 및 커뮤니티 한정 에어드랍.',
+                link: 'https://example.com/nebula-ama'
+            },
+            {
+                date: '2025-09-12',
+                category: '경제지표',
+                title: '미국 9월 CPI 발표',
+                location: '미국 노동통계국',
+                time: '21:30 KST',
+                description: '미국 소비자물가지수 발표. 비트코인 변동성 주의.',
+                link: 'https://www.bls.gov/'
+            },
+            {
+                date: '2025-09-17',
+                category: '컨퍼런스/밋업',
+                title: 'Startup Village - Seoul',
+                location: '서울 성수동',
+                time: '10:00 - 17:00',
+                description: '웹3 스타트업 데모데이와 투자 네트워킹 세션.',
+                link: 'https://example.com/startup-village'
+            },
+            {
+                date: '2025-09-19',
+                category: '프로젝트 공시',
+                title: 'EtherGate 분기 투명성 리포트',
+                location: '프로젝트 공시 포털',
+                time: '18:00 KST',
+                description: '거버넌스 투표 결과와 재무 현황 업데이트 발표.'
+            },
+            {
+                date: '2025-09-23',
+                category: '공개/출시',
+                title: 'Orion DEX Beta Release',
+                location: '글로벌 베타 프로그램',
+                time: '20:00 KST',
+                description: '크로스체인 유동성 애그리게이터의 베타 버전 공개.',
+                link: 'https://example.com/orion-beta'
+            },
+            {
+                date: '2025-09-26',
+                category: '기타',
+                title: '커뮤니티 해커톤 킥오프',
+                location: '디스코드 라이브',
+                time: '20:30 KST',
+                description: '6주간 진행되는 개발자 커뮤니티 공동 프로젝트 킥오프.',
+                link: 'https://example.com/community-hackathon'
+            }
+        ];
+
+        function hexToRgba(hex, alpha = 0.45) {
+            const sanitized = hex.replace('#', '');
+            if (sanitized.length !== 6) {
+                return `rgba(138, 43, 226, ${alpha})`;
+            }
+            const r = parseInt(sanitized.slice(0, 2), 16);
+            const g = parseInt(sanitized.slice(2, 4), 16);
+            const b = parseInt(sanitized.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function initializeCalendar() {
+            const toggleButton = document.querySelector('.calendar-toggle');
+            const panel = document.getElementById('calendarPanel');
+            const monthLabel = document.getElementById('calendarMonthLabel');
+            const grid = document.getElementById('calendarGrid');
+            const eventList = document.getElementById('calendarEventList');
+            const selectedDateLabel = document.getElementById('calendarSelectedDate');
+            const legendContainer = document.getElementById('calendarLegend');
+
+            if (!toggleButton || !panel || !monthLabel || !grid || !eventList || !selectedDateLabel || !legendContainer) {
+                return;
+            }
+
+            const events = [...cryptoCalendarEvents].sort((a, b) => a.date.localeCompare(b.date));
+            const eventsByDate = events.reduce((acc, event) => {
+                if (!acc[event.date]) {
+                    acc[event.date] = [];
+                }
+                acc[event.date].push(event);
+                return acc;
+            }, {});
+
+            const monthsWithEvents = new Set(events.map(event => event.date.slice(0, 7)));
+            const today = new Date();
+            let currentYear = today.getFullYear();
+            let currentMonth = today.getMonth();
+            const todayKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
+            if (!monthsWithEvents.has(todayKey) && events.length > 0) {
+                const firstEventDate = new Date(events[0].date + 'T00:00:00');
+                currentYear = firstEventDate.getFullYear();
+                currentMonth = firstEventDate.getMonth();
+            }
+
+            let selectedDate = null;
+
+            function renderLegend() {
+                legendContainer.innerHTML = '';
+                Object.entries(calendarCategoryMeta).forEach(([category, meta]) => {
+                    const item = document.createElement('span');
+                    item.className = 'calendar-legend-item';
+                    item.style.background = hexToRgba(meta.color, 0.15);
+                    item.style.borderColor = hexToRgba(meta.color, 0.3);
+
+                    const dot = document.createElement('span');
+                    dot.className = 'calendar-legend-dot';
+                    dot.style.backgroundColor = meta.color;
+                    dot.style.boxShadow = `0 0 12px ${hexToRgba(meta.color, 0.5)}`;
+
+                    item.appendChild(dot);
+                    item.append(category);
+                    legendContainer.appendChild(item);
+                });
+            }
+
+            const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+
+            function formatFullDate(dateObj) {
+                const weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                return `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 (${weekdayNames[dateObj.getDay()]})`;
+            }
+
+            function updateSelectedDateLabel(dateStr) {
+                if (!dateStr) {
+                    selectedDateLabel.textContent = `${currentYear}년 ${currentMonth + 1}월 일정이 없습니다.`;
+                    return;
+                }
+                const dateObj = new Date(dateStr + 'T00:00:00');
+                selectedDateLabel.textContent = `${formatFullDate(dateObj)} 일정`;
+            }
+
+            function renderEventList(dateStr) {
+                eventList.innerHTML = '';
+                updateSelectedDateLabel(dateStr);
+
+                if (!dateStr) {
+                    const empty = document.createElement('div');
+                    empty.className = 'calendar-event-empty';
+                    empty.textContent = '이 달에는 등록된 일정이 없습니다. 필요한 일정을 추가해 보세요.';
+                    eventList.appendChild(empty);
+                    return;
+                }
+
+                const eventsForDay = eventsByDate[dateStr] || [];
+                if (eventsForDay.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'calendar-event-empty';
+                    empty.textContent = '선택한 날짜에 등록된 일정이 없습니다.';
+                    eventList.appendChild(empty);
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                eventsForDay.forEach(event => {
+                    const card = document.createElement('article');
+                    card.className = 'calendar-event-card';
+                    const color = calendarCategoryMeta[event.category]?.color || '#8a2be2';
+                    card.style.borderLeftColor = color;
+
+                    const metaLine = document.createElement('div');
+                    metaLine.className = 'calendar-event-meta';
+
+                    const category = document.createElement('span');
+                    category.className = 'calendar-event-category';
+                    category.style.color = color;
+                    category.textContent = event.category;
+                    metaLine.appendChild(category);
+
+                    if (event.time) {
+                        const time = document.createElement('span');
+                        time.textContent = `🕒 ${event.time}`;
+                        metaLine.appendChild(time);
+                    }
+
+                    const title = document.createElement('h4');
+                    title.className = 'calendar-event-title';
+                    title.textContent = event.title;
+
+                    const desc = document.createElement('p');
+                    desc.className = 'calendar-event-desc';
+                    desc.textContent = event.description || '';
+
+                    const footer = document.createElement('div');
+                    footer.className = 'calendar-event-footer';
+
+                    if (event.location) {
+                        const location = document.createElement('span');
+                        location.textContent = `📍 ${event.location}`;
+                        footer.appendChild(location);
+                    }
+
+                    if (event.link) {
+                        const link = document.createElement('a');
+                        link.href = event.link;
+                        link.target = '_blank';
+                        link.rel = 'noopener';
+                        link.className = 'calendar-event-link';
+                        link.textContent = '자세히 보기';
+                        footer.appendChild(link);
+                    }
+
+                    card.append(metaLine, title);
+                    if (event.description) {
+                        card.appendChild(desc);
+                    }
+                    if (footer.children.length > 0) {
+                        card.appendChild(footer);
+                    }
+                    fragment.appendChild(card);
+                });
+
+                eventList.appendChild(fragment);
+            }
+
+            function buildDayCell(dateObj, isOutsideMonth) {
+                const isoDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                const cell = document.createElement('button');
+                cell.type = 'button';
+                cell.className = 'calendar-cell';
+                cell.dataset.date = isoDate;
+
+                if (isOutsideMonth) {
+                    cell.classList.add('outside');
+                    cell.disabled = true;
+                }
+
+                const number = document.createElement('span');
+                number.className = 'calendar-date-number';
+                number.textContent = dateObj.getDate();
+                cell.appendChild(number);
+
+                const dayEvents = eventsByDate[isoDate];
+                if (dayEvents && dayEvents.length) {
+                    const indicatorWrap = document.createElement('div');
+                    indicatorWrap.className = 'calendar-event-indicators';
+                    const uniqueCategories = Array.from(new Set(dayEvents.map(event => event.category)));
+                    uniqueCategories.slice(0, 4).forEach(category => {
+                        const indicator = document.createElement('span');
+                        indicator.className = 'calendar-event-indicator';
+                        const color = calendarCategoryMeta[category]?.color || '#8a2be2';
+                        indicator.style.backgroundColor = color;
+                        indicator.style.boxShadow = `0 0 12px ${hexToRgba(color, 0.55)}`;
+                        indicatorWrap.appendChild(indicator);
+                    });
+                    cell.appendChild(indicatorWrap);
+                }
+
+                if (!isOutsideMonth) {
+                    if (selectedDate === isoDate) {
+                        cell.classList.add('selected');
+                    }
+
+                    cell.addEventListener('click', () => {
+                        const previouslySelected = panel.querySelector('.calendar-cell.selected');
+                        if (previouslySelected) {
+                            previouslySelected.classList.remove('selected');
+                        }
+                        cell.classList.add('selected');
+                        selectedDate = isoDate;
+                        renderEventList(selectedDate);
+                    });
+                }
+
+                return cell;
+            }
+
+            function renderCalendarView(year, month) {
+                const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+                const eventsThisMonth = events.filter(event => event.date.startsWith(monthKey));
+                if (eventsThisMonth.length > 0) {
+                    if (!selectedDate || !selectedDate.startsWith(monthKey)) {
+                        selectedDate = eventsThisMonth[0].date;
+                    }
+                } else {
+                    selectedDate = null;
+                }
+
+                monthLabel.textContent = `${year}년 ${month + 1}월`;
+                grid.innerHTML = '';
+
+                dayNames.forEach(name => {
+                    const dayNameEl = document.createElement('div');
+                    dayNameEl.className = 'calendar-day-name';
+                    dayNameEl.textContent = name;
+                    grid.appendChild(dayNameEl);
+                });
+
+                const firstDayOfMonth = new Date(year, month, 1);
+                const startOffset = (firstDayOfMonth.getDay() + 6) % 7;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+
+                for (let cellIndex = 0; cellIndex < totalCells; cellIndex++) {
+                    const dayNumber = cellIndex - startOffset + 1;
+                    const currentDate = new Date(year, month, dayNumber);
+                    const isOutsideMonth = currentDate.getMonth() !== month;
+                    const cell = buildDayCell(currentDate, isOutsideMonth);
+                    grid.appendChild(cell);
+                }
+
+                if (selectedDate) {
+                    const selectedCell = grid.querySelector(`.calendar-cell[data-date="${selectedDate}"]`);
+                    if (selectedCell) {
+                        selectedCell.classList.add('selected');
+                    }
+                }
+
+                renderEventList(selectedDate);
+            }
+
+            function changeMonth(delta) {
+                const newDate = new Date(currentYear, currentMonth + delta, 1);
+                currentYear = newDate.getFullYear();
+                currentMonth = newDate.getMonth();
+                renderCalendarView(currentYear, currentMonth);
+            }
+
+            panel.querySelectorAll('.calendar-nav-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const direction = button.dataset.direction === 'prev' ? -1 : 1;
+                    changeMonth(direction);
+                });
+            });
+
+            toggleButton.addEventListener('click', () => {
+                const willOpen = !panel.classList.contains('visible');
+                panel.classList.toggle('visible', willOpen);
+                panel.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+                toggleButton.classList.toggle('active', willOpen);
+                toggleButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+
+                if (willOpen) {
+                    renderCalendarView(currentYear, currentMonth);
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && panel.classList.contains('visible')) {
+                    panel.classList.remove('visible');
+                    panel.setAttribute('aria-hidden', 'true');
+                    toggleButton.classList.remove('active');
+                    toggleButton.setAttribute('aria-expanded', 'false');
+                    toggleButton.focus();
+                }
+            });
+
+            renderLegend();
+            renderCalendarView(currentYear, currentMonth);
+        }
+
         function createStars() {
             const starsContainer = document.getElementById('stars');
             if (!starsContainer) return;
@@ -1138,6 +2031,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             createStars();
             initializeNewsCards();
+            initializeCalendar();
             initializeMobileMenu();
             initializeSearch();
             initializeThemeToggle();
