@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWO.4 - Crypto Intelligence Network</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+        
+        :root {
+            --bg-primary: linear-gradient(135deg, #0a0b0d 0%, #1a1b20 25%, #0d0f14 50%, #161821 75%, #08090c 100%);
+            --text-primary: #e1e5e9;
+            --text-secondary: #a8b2c1;
+            --accent-color: #8a2be2;
+            --card-bg: rgba(20, 22, 28, 0.6);
+            --border-color: rgba(138, 43, 226, 0.3);
+            --border-accent: #8a2be2;
+        }
+        
+        body.light-mode {
+            --bg-primary: linear-gradient(135deg, #ffffeb 0%, #ffffff 25%, #f8f9fa 50%, #ffffff 75%, #ffffeb 100%);
+            --text-primary: #220325;
+            --text-secondary: #4a5568;
+            --accent-color: #8a2be2;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --border-color: rgba(138, 43, 226, 0.3);
+            --border-accent: #8a2be2;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            font-family: 'Exo 2', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        body.light-mode .star {
+            background: #8a2be2;
+            opacity: 0.3;
+        }
+        
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(64, 224, 208, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(64, 224, 208, 0.05) 1px, transparent 1px);
+            background-size: 80px 80px;
+            animation: gridMove 30s linear infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(80px, 80px); }
+        }
+        
+        body.light-mode .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(138, 43, 226, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(138, 43, 226, 0.08) 1px, transparent 1px);
+        }
+        
+        .nav-header {
+            background: linear-gradient(135deg, rgba(10, 11, 13, 0.95), rgba(20, 22, 28, 0.95));
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 12px 0;
+            transition: all 0.3s ease;
+        }
+        
+        body.light-mode .nav-header {
+            background: linear-gradient(135deg, rgba(255, 255, 235, 0.95), rgba(255, 255, 255, 0.95));
+        }
+        
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        .nav-logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            list-style: none;
+        }
+        
+        .nav-menu a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            text-transform: uppercase;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        
+        .nav-menu a:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-menu a.active {
+            color: var(--accent-color);
+            background: var(--card-bg);
+        }
+        
+        .nav-menu a[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            color: var(--accent-color);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            border: 1px solid var(--border-color);
+            z-index: 1000;
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0;
+            text-transform: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-menu a[data-tooltip]:hover::before {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 5px solid var(--border-color);
+            z-index: 1001;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-input {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 35px 8px 12px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            width: 180px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: var(--card-bg);
+            width: 220px;
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--accent-color);
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .floating-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+        }
+        
+        .notification-btn,
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            color: var(--accent-color);
+            padding: 0;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #theme-checkbox,
+        #notification-checkbox {
+            display: none;
+        }
+        
+        .notification-btn:hover,
+        .theme-toggle:hover {
+            transform: translateY(-2px) scale(1.1);
+            background: rgba(138, 43, 226, 0.1);
+        }
+        
+        .theme-toggle::after {
+            content: "🌙";
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        body.light-mode .theme-toggle::after,
+        #theme-checkbox:checked ~ .floating-controls .theme-toggle::after {
+            content: "☀️";
+        }
+        
+        .notification-btn::after {
+            content: "🔔";
+            font-size: 24px;
+        }
+        
+        #notification-checkbox:checked ~ .floating-controls .notification-btn::before {
+            content: "";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #ff4757, #ff3838);
+            border-radius: 50%;
+            border: 2px solid white;
+            animation: pulse 2s infinite;
+            z-index: 10;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 60px 0 40px;
+            position: relative;
+        }
+        
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            opacity: 0.9;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tagline:hover {
+            color: var(--accent-color);
+            opacity: 1;
+        }
+        
+        .tagline[data-kr]:hover::after {
+            content: attr(data-kr);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            color: var(--accent-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            border: 1px solid var(--border-color);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            margin-top: 10px;
+            box-shadow: 0 4px 20px rgba(138, 43, 226, 0.2);
+        }
+        
+        .tagline[data-kr]:hover::before {
+            content: "";
+            position: absolute;
+            top: 90%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid var(--border-color);
+            z-index: 1001;
+        }
+        
+        .headlines {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .headline-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .headline-item:hover {
+            border-color: var(--accent-color);
+            background: var(--card-bg);
+            transform: translateY(-2px);
+        }
+        
+        .headline-category {
+            font-size: 0.75rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .headline-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        
+        .headline-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .news-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.4rem;
+            color: var(--accent-color);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+        
+        .section-title::before {
+            content: "◢";
+            margin-right: 12px;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+        
+        .section-title::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            opacity: 0.3;
+            margin-left: 20px;
+        }
+        
+        .news-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .news-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: 1fr 160px;
+            gap: 25px;
+            align-items: start;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-color);
+            background: var(--card-bg);
+        }
+        
+        .news-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .news-image {
+            width: 160px;
+            height: 120px;
+            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+            font-size: 0.8rem;
+            text-align: center;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            opacity: 0.7;
+        }
+        
+        .news-image::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2340e0d0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>') center/35px no-repeat;
+            opacity: 0.3;
+        }
+        
+        body.light-mode .news-image::before {
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%232d7a70" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>') center/35px no-repeat;
+        }
+        
+        .news-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .news-category {
+            background: linear-gradient(135deg, var(--accent-color), var(--border-accent));
+            opacity: 0.9;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            backdrop-filter: blur(5px);
+        }
+        
+        .news-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            line-height: 1.3;
+            letter-spacing: 0.3px;
+        }
+        
+        .news-summary {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 18px;
+            font-weight: 300;
+        }
+        
+        .news-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .news-link::after {
+            content: "▶";
+            margin-left: 8px;
+            transition: transform 0.3s ease;
+            font-size: 0.7rem;
+        }
+        
+        .news-link:hover {
+            opacity: 0.8;
+        }
+        
+        .news-link:hover::after {
+            transform: translateX(4px);
+        }
+        
+        .news-time {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .widget {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .widget-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            color: var(--accent-color);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .widget-title::before {
+            content: "◢";
+            margin-right: 10px;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+        }
+        
+        .price-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .price-item:last-child {
+            border-bottom: none;
+        }
+        
+        .crypto-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .crypto-price {
+            color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        @media (max-width: 1200px) {
+            .headlines {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .nav-menu {
+                gap: 10px;
+            }
+            
+            .nav-menu a {
+                font-size: 0.8rem;
+                padding: 10px 12px;
+            }
+        }
+        
+        @media (max-width: 968px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(10, 11, 13, 0.98);
+                border-top: 1px solid var(--border-color);
+                flex-direction: column;
+                padding: 20px;
+                gap: 10px;
+                backdrop-filter: blur(20px);
+            }
+            
+            body.light-mode .nav-menu {
+                background: rgba(255, 255, 255, 0.98);
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .nav-menu a {
+                padding: 12px 20px;
+                border-bottom: 1px solid var(--border-color);
+                font-size: 0.9rem;
+            }
+            
+            .nav-menu a:last-child {
+                border-bottom: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .search-input {
+                width: 140px;
+            }
+            
+            .search-input:focus {
+                width: 160px;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .logo {
+                font-size: 2.8rem;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 40px 0 30px;
+            }
+            
+            .headlines {
+                margin-top: 25px;
+            }
+            
+            .headline-item {
+                padding: 15px;
+            }
+            
+            .news-card {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .news-image {
+                width: 100%;
+                height: 140px;
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .floating-controls {
+                bottom: 20px;
+                right: 20px;
+                gap: 12px;
+            }
+            
+            .notification-btn,
+            .theme-toggle {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .notification-btn::after,
+            .theme-toggle::after {
+                font-size: 14px;
+            }
+            
+            .logo {
+                font-size: 2.2rem;
+            }
+            
+            .tagline {
+                font-size: 0.9rem;
+            }
+            
+            .nav-container {
+                padding: 0 15px;
+            }
+            
+            .search-input {
+                width: 120px;
+            }
+            
+            .search-input:focus {
+                width: 140px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <input type="checkbox" id="theme-checkbox">
+    <input type="checkbox" id="notification-checkbox">
+    
+    <nav class="nav-header">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">TWO.4</a>
+            
+            <div class="nav-left">
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="/crypto-market" data-tooltip="마켓">Crypto Market</a></li>
+                    <li><a href="/orbits" data-tooltip="지표, 신호">Orbits</a></li>
+                    <li><a href="/method" data-tooltip="기법">Method</a></li>
+                    <li><a href="/psyche" data-tooltip="심법">Psyche</a></li>
+                    <li><a href="/menu/ECHOES/" class="active" data-tooltip="뉴스, 관찰기록">Echoes</a></li>
+                    <li><a href="/constellation" data-tooltip="커뮤니티">Constellation</a></li>
+                    <li><a href="/portal" data-tooltip="로그인/로그아웃">Portal</a></li>
+                </ul>
+                
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search crypto news...">
+                    <button class="search-btn" type="button">🔍</button>
+                </div>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="mobile-menu-btn" id="mobileMenuBtn" type="button">☰</button>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="stars" id="stars"></div>
+    <div class="cyber-grid"></div>
+    
+    <div class="floating-controls">
+        <label for="notification-checkbox" class="notification-btn" title="알림 설정"></label>
+        <label for="theme-checkbox" class="theme-toggle" title="테마 변경"></label>
+    </div>
+    
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">ECHOES</h1>
+            <p class="tagline" data-kr="최신 크립토 뉴스를 한 곳에서">Latest Crypto News in One Place</p>
+            
+            <div class="headlines">
+                <div class="headline-item">
+                    <div class="headline-category">Bitcoin</div>
+                    <div class="headline-title">Bitcoin ETF Sees Record $2.1B Inflow as Institutional Demand Surges</div>
+                    <div class="headline-time">12 Minutes Ago</div>
+                </div>
+                
+                <div class="headline-item">
+                    <div class="headline-category">Ethereum</div>
+                    <div class="headline-title">Ethereum Layer 2 Solutions Process Over $1M Transactions Per Second</div>
+                    <div class="headline-time">28 Minutes Ago</div>
+                </div>
+                
+                <div class="headline-item">
+                    <div class="headline-category">Market</div>
+                    <div class="headline-title">Global Crypto Market Cap Reaches New High of $3.2 Trillion</div>
+                    <div class="headline-time">45 Minutes Ago</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <main class="news-section">
+                <h2 class="section-title">Intelligence Feed</h2>
+                <div class="news-grid" id="newsGrid">
+                    <article class="news-card">
+                        <div class="news-content">
+                            <div class="news-meta">
+                                <span class="news-category">Bitcoin</span>
+                                <span class="news-time">2 Hours Ago</span>
+                            </div>
+                            <h3 class="news-title">Bitcoin Surge: Institutional Giants Trigger $2.1B ETF Explosion</h3>
+                            <p class="news-summary">Wall Street titans are reshaping the cryptocurrency landscape as record-breaking institutional flows drive Bitcoin to unprecedented heights, signaling a seismic shift in digital asset adoption.</p>
+                            <a href="#" class="news-link">Deep Dive Analysis</a>
+                        </div>
+                        <div class="news-image"></div>
+                    </article>
+                    
+                    <article class="news-card">
+                        <div class="news-content">
+                            <div class="news-meta">
+                                <span class="news-category">Ethereum</span>
+                                <span class="news-time">4 Hours Ago</span>
+                            </div>
+                            <h3 class="news-title">Ethereum's Layer 2 Revolution: Breaking the Million TPS Barrier</h3>
+                            <p class="news-summary">The Ethereum ecosystem reaches a critical inflection point as Layer 2 solutions achieve breakthrough scalability, processing over one million transactions per second while maintaining decentralization.</p>
+                            <a href="#" class="news-link">Technical Breakdown</a>
+                        </div>
+                        <div class="news-image"></div>
+                    </article>
+                    
+                    <article class="news-card">
+                        <div class="news-content">
+                            <div class="news-meta">
+                                <span class="news-category">DeFi</span>
+                                <span class="news-time">6 Hours Ago</span>
+                            </div>
+                            <h3 class="news-title">Zero-Fee Trading Era: DeFi Protocol Disrupts Traditional Finance</h3>
+                            <p class="news-summary">A groundbreaking decentralized exchange protocol eliminates all trading fees while maintaining institutional-grade liquidity and security, potentially triggering the next DeFi summer.</p>
+                            <a href="#" class="news-link">Protocol Analysis</a>
+                        </div>
+                        <div class="news-image"></div>
+                    </article>
+                    
+                    <article class="news-card">
+                        <div class="news-content">
+                            <div class="news-meta">
+                                <span class="news-category">Regulation</span>
+                                <span class="news-time">8 Hours Ago</span>
+                            </div>
+                            <h3 class="news-title">Global Crypto Consensus: Regulatory Framework Unifies Markets</h3>
+                            <p class="news-summary">International regulatory bodies achieve historic consensus on comprehensive cryptocurrency oversight framework, bringing unprecedented clarity and legitimacy to global digital asset markets.</p>
+                            <a href="#" class="news-link">Regulatory Impact</a>
+                        </div>
+                        <div class="news-image">
+                            <img src="https://via.placeholder.com/160x120/8a2be2/ffffff?text=NEWS" alt="News Image">
+                        </div>
+                    </article>
+                </div>
+            </main>
+            
+            <aside class="sidebar">
+                <div class="widget">
+                    <h3 class="widget-title">Live Prices</h3>
+                    <div class="price-list">
+                        <div class="price-item">
+                            <span class="crypto-name">BTC</span>
+                            <span class="crypto-price">$67,234</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">ETH</span>
+                            <span class="crypto-price">$3,456</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">ADA</span>
+                            <span class="crypto-price">$0.89</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">DOT</span>
+                            <span class="crypto-price">$12.34</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">SOL</span>
+                            <span class="crypto-price">$156.78</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="widget">
+                    <h3 class="widget-title">Trending Now</h3>
+                    <div class="trend-list">
+                        <div class="price-item">
+                            <span class="crypto-name">#AI Tokens</span>
+                            <span class="crypto-price">↗ Hot</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">#Layer2</span>
+                            <span class="crypto-price">↗ Rising</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">#GameFi</span>
+                            <span class="crypto-price">→ Stable</span>
+                        </div>
+                        <div class="price-item">
+                            <span class="crypto-name">#NFTs</span>
+                            <span class="crypto-price">↗ Growing</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+    
+    <script>
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            if (!starsContainer) return;
+            
+            const numStars = 100;
+            starsContainer.innerHTML = '';
+            
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        function initializeNewsCards() {
+            const newsCards = document.querySelectorAll('.news-card');
+            newsCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px) scale(1.01)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        }
+        
+        function initializeThemeToggle() {
+            const themeCheckbox = document.getElementById('theme-checkbox');
+            if (!themeCheckbox) return;
+
+            const savedTheme = localStorage.getItem('echoes-theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                themeCheckbox.checked = true;
+            }
+
+            document.body.classList.toggle('light-mode', themeCheckbox.checked);
+
+            themeCheckbox.addEventListener('change', () => {
+                const isLight = themeCheckbox.checked;
+                document.body.classList.toggle('light-mode', isLight);
+                localStorage.setItem('echoes-theme', isLight ? 'light' : 'dark');
+            });
+        }
+
+        function initializeNotifications() {
+            const notificationCheckbox = document.getElementById('notification-checkbox');
+            const notificationBtn = document.querySelector('.notification-btn');
+            if (!notificationCheckbox || !notificationBtn) return;
+
+            const savedState = localStorage.getItem('echoes-notifications');
+            if (savedState === 'true') {
+                notificationCheckbox.checked = true;
+            }
+
+            notificationBtn.classList.toggle('active', notificationCheckbox.checked);
+
+            const syncState = () => {
+                const isActive = notificationCheckbox.checked;
+                notificationBtn.classList.toggle('active', isActive);
+                localStorage.setItem('echoes-notifications', isActive ? 'true' : 'false');
+                showNotification(isActive ? '알림이 활성화되었습니다! 🔔' : '알림이 비활성화되었습니다. 🔕');
+            };
+            
+            notificationCheckbox.addEventListener('change', syncState);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = [
+                'position: fixed',
+                'top: 80px',
+                'right: 20px',
+                'background: var(--card-bg)',
+                'color: var(--text-primary)',
+                'padding: 12px 20px',
+                'border-radius: 8px',
+                'border: 1px solid var(--border-color)',
+                'backdrop-filter: blur(10px)',
+                'z-index: 1000',
+                'font-size: 0.9rem',
+                'box-shadow: 0 4px 20px rgba(0,0,0,0.3)',
+                'transform: translateX(100%)',
+                'transition: transform 0.3s ease'
+            ].join(';');
+            
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            requestAnimationFrame(() => {
+                notification.style.transform = 'translateX(0)';
+            });
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+            }, 3000);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3500);
+        }
+        
+        function initializeMobileMenu() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const navMenu = document.getElementById('navMenu');
+            if (!mobileMenuBtn || !navMenu) return;
+            
+            mobileMenuBtn.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+            
+            document.addEventListener('click', (event) => {
+                if (!navMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                    navMenu.classList.remove('active');
+                }
+            });
+        }
+        
+        function initializeSearch() {
+            const searchInput = document.querySelector('.search-input');
+            const searchBtn = document.querySelector('.search-btn');
+            if (!searchInput || !searchBtn) return;
+            
+            const handleSearch = () => {
+                const query = searchInput.value.trim();
+                if (query) {
+                    console.log('Searching for:', query);
+                    alert('검색 기능: "' + query + '"를 검색합니다.');
+                }
+            };
+            
+            searchBtn.addEventListener('click', handleSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
+        }
+        
+        function updatePrices() {
+            const prices = document.querySelectorAll('.crypto-price');
+            prices.forEach(price => {
+                const text = price.textContent.trim();
+                if (!text.includes('$')) return;
+                
+                if (!price.dataset.precision) {
+                    const decimals = (text.split('.')[1] || '').replace(/[^0-9]/g, '').length;
+                    price.dataset.precision = String(Math.min(decimals, 4));
+                }
+                
+                const precision = Number(price.dataset.precision || '0');
+                const numeric = parseFloat(text.replace(/[^0-9.]/g, ''));
+                if (Number.isNaN(numeric)) return;
+                
+                const change = (Math.random() - 0.5) * 0.02;
+                const newPrice = numeric * (1 + change);
+                price.textContent = '$' + newPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: precision,
+                    maximumFractionDigits: precision
+                });
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            initializeNewsCards();
+            initializeMobileMenu();
+            initializeSearch();
+            initializeThemeToggle();
+            initializeNotifications();
+            updatePrices();
+            setInterval(updatePrices, 10000);
+        });
+    </script>
+</body>
+</html>
