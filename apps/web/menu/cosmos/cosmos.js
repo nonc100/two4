@@ -24,6 +24,13 @@ const fmtPct =n=>{
   return `<span class="pct ${s}">${t}</span>`;
 };
 
+const escapeHtml = str => String(str ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 /* ---- 안전 fetch helper ---- */
 async function safeJson(url){
   try{
@@ -506,7 +513,13 @@ function rowHTML(c, i){
   const p24 = c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h;
   const p7d = c.price_change_percentage_7d_in_currency ?? c.price_change_percentage_7d;
 
-  const sym  = (c.symbol || '').toUpperCase();      // 예: BTC
+  const rawSymbol = (c.symbol || '').trim();
+  const sym  = rawSymbol.toUpperCase();      // 예: BTC
+  const isUrlSymbol = /^https?:\/\//i.test(rawSymbol) || (rawSymbol.includes('.') && rawSymbol.length > 6);
+  const displaySymbol = isUrlSymbol ? rawSymbol : sym;
+  const symbolBoxClass = `symbol-box${isUrlSymbol ? ' long' : ''}`;
+  const symbolNameClass = `symbol-name${isUrlSymbol ? ' long' : ''}`;
+  const safeSymbol = escapeHtml(displaySymbol);
   const displayName = (c.name && c.name.toUpperCase() !== sym) ? c.name : nameFor(sym);
   const pair = sym ? sym + 'USDT' : '';             // 예: BTCUSDT
 
@@ -516,7 +529,7 @@ function rowHTML(c, i){
     <td class="sticky-name">
       <div class="mkt-name">
         <img src="/api/icon/${(c.symbol||'').toLowerCase()}" alt="${(c.symbol||'').toUpperCase()}">
-        <div class="symbol-box"><span class="symbol-name">${sym}</span></div>
+        <div class="${symbolBoxClass}"><span class="${symbolNameClass}" title="${safeSymbol}">${safeSymbol}</span></div>
         <span class="full">${displayName}</span>
       </div>
     </td>
