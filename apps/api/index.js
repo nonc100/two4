@@ -23,6 +23,7 @@ function buildServer(opts = {}) {
   }));
 
   app.register(require('./plugins/news-ko'));
+  app.register(require('./routes/logo-cache'));
 
   return app;
 }

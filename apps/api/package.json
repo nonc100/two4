@@ -9,7 +9,9 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.572.0",
     "@fastify/cors": "^8.4.2",
-    "fastify": "^4.28.0"
+    "fastify": "^4.28.0",
+    "sharp": "^0.33.3"
   }
 }
