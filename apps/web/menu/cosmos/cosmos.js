@@ -31,6 +31,103 @@ const escapeHtml = str => String(str ?? '')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
+const LOGO_CACHE_WIDTH = 28;
+const LOGO_PREWARM_LIMIT = 24;
+const LOGO_FETCH_LOW_START_INDEX = 12;
+const ABSOLUTE_URL_REGEX = /^https?:\/\//i;
+const prewarmedLogoKeys = new Set();
+
+function collectLogoCandidates(coin) {
+  if (!coin || typeof coin !== 'object') return [];
+  const candidates = [];
+  const push = (value) => {
+    if (typeof value !== 'string') return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    candidates.push(trimmed);
+  };
+
+  push(coin.logo);
+  push(coin.logo_url);
+  push(coin.logoUrl);
+  push(coin.logoSrc);
+  push(coin.image);
+  push(coin.image_url);
+  push(coin.imageUrl);
+  push(coin.icon);
+  push(coin.icon_url);
+  push(coin.iconUrl);
+  push(coin.logoURI);
+  if (coin.images && typeof coin.images === 'object') {
+    Object.values(coin.images).forEach(push);
+  }
+  if (coin.image && typeof coin.image === 'object') {
+    const { original, large, small, thumb, icon } = coin.image;
+    push(original);
+    push(large);
+    push(small);
+    push(thumb);
+    push(icon);
+  }
+  if (Array.isArray(coin.logos)) {
+    coin.logos.forEach(push);
+  }
+  return candidates;
+}
+
+function getPreferredLogoUrl(coin) {
+  const candidates = collectLogoCandidates(coin);
+  const seen = new Set();
+  for (const candidate of candidates) {
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
+    if (ABSOLUTE_URL_REGEX.test(candidate)) return candidate;
+  }
+  for (const candidate of seen) {
+    if (candidate.startsWith('/')) return candidate;
+  }
+  return null;
+}
+
+function resolveLogoSource(coin) {
+  const preferred = getPreferredLogoUrl(coin);
+  if (preferred && ABSOLUTE_URL_REGEX.test(preferred)) {
+    return {
+      src: `/api/logo?url=${encodeURIComponent(preferred)}&w=${LOGO_CACHE_WIDTH}`,
+      original: preferred
+    };
+  }
+  if (preferred) {
+    return { src: preferred, original: null };
+  }
+  const symbol = (coin?.symbol || '').toLowerCase();
+  const fallbackSrc = symbol ? `/api/icon/${symbol}` : '/media/logo.png';
+  return {
+    src: fallbackSrc,
+    original: null
+  };
+}
+
+function prewarmLogoCache(coins) {
+  if (!Array.isArray(coins) || !coins.length) return;
+  const items = [];
+  const limit = Math.min(LOGO_PREWARM_LIMIT, coins.length);
+  for (let i = 0; i < limit; i++) {
+    const info = resolveLogoSource(coins[i]);
+    if (!info.original) continue;
+    const key = `${info.original}|${LOGO_CACHE_WIDTH}`;
+    if (prewarmedLogoKeys.has(key)) continue;
+    prewarmedLogoKeys.add(key);
+    items.push({ url: info.original, w: LOGO_CACHE_WIDTH });
+  }
+  if (!items.length) return;
+  fetch('/api/logo/prewarm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items })
+  }).catch(err => console.warn('Logo cache prewarm failed', err));
+}
+
 /* ---- 안전 fetch helper ---- */
 async function safeJson(url){
   try{
@@ -520,6 +617,10 @@ function rowHTML(c, i){
   const symbolBoxClass = `symbol-box${isUrlSymbol ? ' long' : ''}`;
   const symbolNameClass = `symbol-name${isUrlSymbol ? ' long' : ''}`;
   const safeSymbol = escapeHtml(displaySymbol);
+  const logoInfo = resolveLogoSource(c);
+  const safeLogoSrc = escapeHtml(logoInfo.src);
+  const altText = safeSymbol || escapeHtml(sym || rawSymbol || 'Asset');
+  const fetchPriorityAttr = i >= LOGO_FETCH_LOW_START_INDEX ? ' fetchpriority="low"' : '';
   const displayName = (c.name && c.name.toUpperCase() !== sym) ? c.name : nameFor(sym);
   const pair = sym ? sym + 'USDT' : '';             // 예: BTCUSDT
 
@@ -528,7 +629,7 @@ function rowHTML(c, i){
     <td class="sticky-rank num">${c.market_cap_rank ?? (i + 1)}</td>
     <td class="sticky-name">
       <div class="mkt-name">
-        <img src="/api/icon/${(c.symbol||'').toLowerCase()}" alt="${(c.symbol||'').toUpperCase()}">
+        <img src="${safeLogoSrc}" alt="${altText}" width="${LOGO_CACHE_WIDTH}" height="${LOGO_CACHE_WIDTH}" loading="lazy" decoding="async"${fetchPriorityAttr}>
         <div class="${symbolBoxClass}"><span class="${symbolNameClass}" title="${safeSymbol}">${safeSymbol}</span></div>
         <span class="full">${displayName}</span>
       </div>
@@ -702,6 +803,7 @@ async function init(){
   const mkts = await fetchAllMarkets();
   state.all = Array.isArray(mkts)? mkts : [];
   applyFilterSort();
+  prewarmLogoCache(state.all);
 
   // Hub initial render
   await initHub();
@@ -709,10 +811,11 @@ async function init(){
   // Auto refresh every 30s
   setInterval(async ()=>{
     const mkts2 = await fetchAllMarkets();
-    if(Array.isArray(mkts2) && mkts2.length){ 
-      state.all=mkts2; 
-      applyFilterSort(); 
+    if(Array.isArray(mkts2) && mkts2.length){
+      state.all=mkts2;
+      applyFilterSort();
     }
+    prewarmLogoCache(state.all);
     initHub();
   }, 30000);
 }
