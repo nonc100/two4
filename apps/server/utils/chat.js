@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL_ID = process.env.MODEL_ID || 'x-ai/grok-4';
+const MODEL_ID = process.env.MODEL_ID || 'openrouter/auto';
 const OPENROUTER_SITE_URL  = process.env.OPENROUTER_SITE_URL  || 'https://two4-production.up.railway.app';
 const OPENROUTER_SITE_NAME = process.env.OPENROUTER_SITE_NAME || 'TWO4 Seed AI';
 

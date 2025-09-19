@@ -329,7 +329,7 @@ async function summarizeArticles(articles, logger) {
   ];
 
   const body = {
-    model: process.env.OPENROUTER_MODEL || 'x-ai/grok-4',
+    model: process.env.OPENROUTER_MODEL || 'openrouter/auto',
     messages,
     temperature: 0.2,
     max_tokens: 700
