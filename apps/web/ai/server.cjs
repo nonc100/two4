@@ -115,7 +115,7 @@ router.post('/chat', async (req, res) => {
     if (!req.cookies.sid) {
       res.cookie('sid', randomId(), { httpOnly: true, sameSite: 'lax' });
     }
-    const model = process.env.MODEL_ID || 'openrouter/auto';
+    const model = process.env.MODEL_ID || 'x-ai/grok-4';
     const { messages = [], temperature = 0.7, max_tokens = 500 } = req.body || {};
     const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
