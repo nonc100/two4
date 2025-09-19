@@ -381,6 +381,58 @@ async function summarizeArticles(articles, fastify) {
   }
 }
 
+function buildFallbackMeta({ q, category, selectedCountry, page, perPage }) {
+  return {
+    fetchedAt: new Date().toISOString(),
+    totalResults: null,
+    nextPage: null,
+    query: {
+      q: q || null,
+      category: category || null,
+      country: selectedCountry,
+      page: page || null,
+      limit: perPage,
+      summarize: false
+    },
+    fallback: {
+      used: true,
+      provider: 'rss',
+      sources: FALLBACK_RSS_FEEDS.map((feed) => feed.name || feed.url)
+    }
+  };
+}
+
+async function respondWithFallback({ fastify, reply, perPage, q, category, selectedCountry, page, error }) {
+  try {
+    const fallbackArticles = await fetchFallbackArticles({ limit: perPage, query: q, fastify });
+    if (fallbackArticles.length > 0) {
+      const fallbackMeta = buildFallbackMeta({ q, category, selectedCountry, page, perPage });
+      fallbackMeta.totalResults = fallbackArticles.length;
+
+      reply.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+      return {
+        ok: true,
+        provider: 'rss-fallback',
+        meta: fallbackMeta,
+        articles: fallbackArticles
+      };
+    }
+  } catch (fallbackError) {
+    fastify.log.warn({ err: fallbackError }, 'Fallback RSS fetch for Korean news failed');
+  }
+
+  const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 502;
+  if (statusCode) {
+    reply.code(statusCode);
+  }
+
+  return {
+    ok: false,
+    error: 'Failed to retrieve Korean news feed',
+    detail: error?.message || 'Upstream news provider unavailable'
+  };
+}
+
 module.exports = async function newsKoPlugin(fastify) {
   const newsApiKey = process.env.NEWSDATA_API_KEY;
   if (!newsApiKey) {
@@ -388,16 +440,10 @@ module.exports = async function newsKoPlugin(fastify) {
   }
 
   fastify.get('/api/news-ko', async (request, reply) => {
-    if (!newsApiKey) {
-      reply.code(500);
-      return { ok: false, error: 'NEWSDATA_API_KEY is not configured' };
-    }
-
     const { q, category, country, page, summarize, limit } = request.query || {};
     const perPage = Math.min(Math.max(Number(limit) || Number(process.env.NEWS_DEFAULT_LIMIT || 8), 1), 20);
     const selectedCountry = (country || process.env.NEWS_DEFAULT_COUNTRY || 'kr').toLowerCase();
     const url = new URL(NEWS_ENDPOINT);
-    url.searchParams.set('apikey', newsApiKey);
     url.searchParams.set('language', 'ko');
     if (selectedCountry) {
       url.searchParams.set('country', selectedCountry);
@@ -411,6 +457,22 @@ module.exports = async function newsKoPlugin(fastify) {
     if (page) {
       url.searchParams.set('page', String(page));
     }
+
+    if (!newsApiKey) {
+      fastify.log.warn('NEWSDATA_API_KEY is not configured; serving fallback RSS feed');
+      return respondWithFallback({
+        fastify,
+        reply,
+        perPage,
+        q,
+        category,
+        selectedCountry,
+        page,
+        error: Object.assign(new Error('NEWSDATA_API_KEY is not configured'), { statusCode: 500 })
+      });
+    }
+
+    url.searchParams.set('apikey', newsApiKey);
 
     try {
       const upstream = await fetchJsonWithTimeout(url.toString());
@@ -452,46 +514,16 @@ module.exports = async function newsKoPlugin(fastify) {
       };
     } catch (error) {
       fastify.log.error({ err: error }, 'Failed to fetch Korean news');
-      try {
-        const fallbackArticles = await fetchFallbackArticles({ limit: perPage, query: q, fastify });
-        if (fallbackArticles.length > 0) {
-          const fallbackMeta = {
-            fetchedAt: new Date().toISOString(),
-            totalResults: fallbackArticles.length,
-            nextPage: null,
-            query: {
-              q: q || null,
-              category: category || null,
-              country: selectedCountry,
-              page: page || null,
-              limit: perPage,
-              summarize: false
-            },
-            fallback: {
-              used: true,
-              provider: 'rss',
-              sources: FALLBACK_RSS_FEEDS.map((feed) => feed.name || feed.url)
-            }
-          };
-
-          reply.header('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
-          return {
-            ok: true,
-            provider: 'rss-fallback',
-            meta: fallbackMeta,
-            articles: fallbackArticles
-          };
-        }
-      } catch (fallbackError) {
-        fastify.log.warn({ err: fallbackError }, 'Fallback RSS fetch for Korean news failed');
-      }
-      const statusCode = Number.isInteger(error.statusCode) ? error.statusCode : 502;
-      reply.code(statusCode);
-      return {
-        ok: false,
-        error: 'Failed to retrieve Korean news feed',
-        detail: error.message
-      };
+      return respondWithFallback({
+        fastify,
+        reply,
+        perPage,
+        q,
+        category,
+        selectedCountry,
+        page,
+        error
+      });
     }
   });
 };
