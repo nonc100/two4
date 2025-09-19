@@ -9,9 +9,13 @@ const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 // ==============================
 // 📌 정적 파일 서빙
 // ==============================
-app.use(express.static(path.join(__dirname, 'apps/web')));
-app.use('/media', express.static(path.join(__dirname, 'apps/web/media')));
-app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai')));
+// __dirname === <repo>/apps/web, so we can serve the directory directly.
+// 기존에는 path.join(__dirname, 'apps/web') 형태로 잘못 지정되어
+// /apps/web/apps/web/... 경로를 바라보고 있었습니다. 이 때문에 /media/logo.png
+// 와 같은 정적 리소스가 404가 되어 UI에서 로고가 보이지 않았습니다.
+app.use(express.static(__dirname));
+app.use('/media', express.static(path.join(__dirname, 'media')));
+app.use('/ai', express.static(path.join(__dirname, 'ai')));
 
 // JSON 파서
 app.use(express.json({ limit: '2mb' }));
