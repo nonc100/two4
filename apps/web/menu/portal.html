@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PORTAL | Two.4</title>
+  <meta http-equiv="refresh" content="0; url=/menu/auth/login/">
   <style>
     body{margin:0;background:linear-gradient(180deg,#03040a,#0a0713,#120024);color:cyan;
          font-family:system-ui,Segoe UI,Roboto,sans-serif;text-align:center;padding-top:160px}
@@ -12,7 +13,16 @@
 </head>
 <body>
   <div include-html="header.html"></div>
-  <h2 class="page-title">[ PORTAL ] 페이지는 현재 업데이트 진행 중입니다.</h2>
+  <h2 class="page-title">[ PORTAL ] 페이지는 Planet Login으로 이동합니다.<br><a href="/menu/auth/login/">자동으로 이동하지 않으면 여기를 클릭하세요.</a></h2>
+  <script>
+    window.addEventListener('DOMContentLoaded', function(){
+      try {
+        window.location.replace('/menu/auth/login/');
+      } catch (e) {
+        window.location.href = '/menu/auth/login/';
+      }
+    });
+  </script>
   <script src="../include.js"></script>
 </body>
 </html>
