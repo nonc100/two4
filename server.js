@@ -13,15 +13,28 @@ const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 // ==============================
 // 정적 파일 서빙
 // ==============================
-const ICON_DIR = path.join(__dirname, 'apps/web/icons');
-app.use('/icons', express.static(ICON_DIR, {
-  fallthrough: false,
-  setHeaders(res){
-    res.type('image/svg+xml');
-    res.setHeader('Cache-Control','public, max-age=86400');
-  }
-}));
 const FALLBACK_ICON = '/media/coin.svg';
+
+const ICON_DIR = path.join(__dirname, 'apps/web/icons');
+
+app.get('/icons/:sym.svg', async (req, res) => {
+  const raw = String(req.params.sym || '');
+  const sym = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  if (!sym) {
+    return res.redirect(302, FALLBACK_ICON);
+  }
+
+  const file = path.join(ICON_DIR, `${sym}.svg`);
+  try {
+    await fs.promises.access(file, fs.constants.R_OK);
+    res.type('image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(file);
+  } catch {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.redirect(302, `/api/icon/${encodeURIComponent(sym)}`);
+  }
+});
 
 app.use(express.static(path.join(__dirname, 'apps/web')));
 app.use('/media', express.static(path.join(__dirname, 'apps/web/media')));
