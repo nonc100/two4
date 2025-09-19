@@ -690,8 +690,8 @@
 
     /* ========== X-Talk Button ========== */
     .chat-button{
-      position:fixed; 
-      bottom:28px; 
+      position:fixed;
+      bottom:28px;
       right:28px;
       background:linear-gradient(135deg, rgba(139,92,246,.15), rgba(59,130,246,.1));
       color:#fff; 
@@ -725,6 +725,117 @@
     }
     .chat-button:hover::before{
       opacity:1;
+    }
+
+    .chat-modal{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(10,0,30,.82);
+      backdrop-filter:blur(18px);
+      -webkit-backdrop-filter:blur(18px);
+      opacity:0;
+      visibility:hidden;
+      transition:opacity .25s ease, visibility .25s ease;
+      z-index:1400;
+      padding:24px;
+    }
+    .chat-modal.open{
+      opacity:1;
+      visibility:visible;
+    }
+    .chat-modal-card{
+      position:relative;
+      width:min(360px,90vw);
+      padding:32px 28px;
+      border-radius:20px;
+      background:rgba(18,4,40,.95);
+      border:1px solid rgba(139,92,246,.35);
+      box-shadow:0 20px 60px rgba(15,0,40,.55);
+      text-align:center;
+      font-family:'Space Grotesk',sans-serif;
+    }
+    .chat-modal-card h3{
+      font-size:20px;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      color:#e8ddff;
+      margin-bottom:6px;
+    }
+    .chat-modal-subtitle{
+      font-size:13px;
+      color:rgba(200,180,255,.75);
+      letter-spacing:1px;
+      margin-bottom:22px;
+    }
+    .chat-options{
+      display:flex;
+      gap:16px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    .chat-option{
+      flex:1 1 130px;
+      padding:14px 18px;
+      border-radius:14px;
+      border:1px solid rgba(139,92,246,.4);
+      background:rgba(59,130,246,.1);
+      color:#e7ffff;
+      font-weight:600;
+      letter-spacing:1px;
+      cursor:pointer;
+      transition:.25s ease;
+    }
+    .chat-option:hover{
+      transform:translateY(-2px);
+      box-shadow:0 12px 30px rgba(59,130,246,.25);
+    }
+    .chat-option.kakao{
+      background:linear-gradient(135deg,rgba(255,221,0,.15),rgba(255,180,0,.08));
+      color:#ffe066;
+      border-color:rgba(255,196,0,.45);
+    }
+    .chat-option.kakao:hover{
+      box-shadow:0 12px 32px rgba(255,196,0,.3);
+    }
+    .chat-option.zx{
+      background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(190,24,93,.12));
+      color:#ff6b81;
+      border-color:rgba(239,68,68,.45);
+    }
+    .chat-option.zx:hover{
+      box-shadow:0 12px 32px rgba(239,68,68,.35);
+    }
+    .chat-warning{
+      margin-top:20px;
+      font-size:14px;
+      font-weight:700;
+      letter-spacing:1px;
+      color:#ff4d6d;
+      opacity:0;
+      transform:translateY(8px);
+      transition:opacity .2s ease, transform .2s ease;
+      min-height:20px;
+    }
+    .chat-warning.active{
+      opacity:1;
+      transform:translateY(0);
+    }
+    .chat-modal-close{
+      position:absolute;
+      top:12px;
+      right:14px;
+      background:transparent;
+      border:none;
+      color:rgba(231,255,255,.55);
+      font-size:22px;
+      cursor:pointer;
+      transition:color .2s ease;
+    }
+    .chat-modal-close:hover{
+      color:#fff;
     }
     
     /* ========== Seed Container ========== */
@@ -980,6 +1091,18 @@
   </div>
 
   <button class="chat-button" id="chatButton">X-Talk</button>
+  <div class="chat-modal" id="chatModal" aria-hidden="true">
+    <div class="chat-modal-card" role="dialog" aria-modal="true" aria-labelledby="chatModalTitle">
+      <button class="chat-modal-close" id="chatClose" aria-label="닫기">×</button>
+      <h3 id="chatModalTitle">X-Talk Gateway</h3>
+      <p class="chat-modal-subtitle">접속 채널을 선택하세요</p>
+      <div class="chat-options">
+        <button class="chat-option kakao" id="chatKakao" type="button">Kakao</button>
+        <button class="chat-option zx" id="chatZx" type="button">Zx-Agent</button>
+      </div>
+      <p class="chat-warning" id="chatWarning" role="alert" aria-live="assertive"></p>
+    </div>
+  </div>
   <div id="seed-container">
     <canvas id="planet-canvas"></canvas>
     <div class="seed-tooltip">C.518D - Seed Ai</div>
@@ -1164,9 +1287,43 @@
     });
 
     // 하단 채팅 버튼
-    document.getElementById('chatButton')?.addEventListener('click',()=>
-      window.open('https://open.kakao.com/o/gakOu7Og','_blank')
-    );
+    const chatButton=document.getElementById('chatButton');
+    const chatModal=document.getElementById('chatModal');
+    const chatClose=document.getElementById('chatClose');
+    const chatKakao=document.getElementById('chatKakao');
+    const chatZx=document.getElementById('chatZx');
+    const chatWarning=document.getElementById('chatWarning');
+
+    const hideChatModal=()=>{
+      chatModal?.classList.remove('open');
+      chatModal?.setAttribute('aria-hidden','true');
+    };
+
+    const showChatModal=()=>{
+      chatWarning?.classList.remove('active');
+      if(chatWarning) chatWarning.textContent='';
+      chatModal?.classList.add('open');
+      chatModal?.setAttribute('aria-hidden','false');
+    };
+
+    chatButton?.addEventListener('click',showChatModal);
+    chatClose?.addEventListener('click',hideChatModal);
+    chatModal?.addEventListener('click',e=>{
+      if(e.target===chatModal) hideChatModal();
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape'&&chatModal?.classList.contains('open')) hideChatModal();
+    });
+    chatKakao?.addEventListener('click',()=>{
+      window.open('https://open.kakao.com/o/gakOu7Og','_blank','noopener');
+      hideChatModal();
+    });
+    chatZx?.addEventListener('click',()=>{
+      if(chatWarning){
+        chatWarning.textContent='Blacknet access blocked – License not granted';
+        chatWarning.classList.add('active');
+      }
+    });
 
     /* ===== Infinity Clock ===== */
     const dailyQuotes=[
