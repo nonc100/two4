@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko" class="no-js">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Two.4 • Planet Login</title>
+  <meta name="color-scheme" content="dark" />
+  <style>
+    :root{
+      --bg-deep:#0a0f1c;
+      --bg-deeper:#060910;
+      --violet:#a855f7;
+      --violet-2:#7c3aed;
+      --cyan:#22d3ee;
+      --aqua:#67e8f9;
+      --green:#22ff99;
+      --red:#ff4d4d;
+      --glass:rgba(255,255,255,0.06);
+      --glass-2:rgba(168,85,247,0.12);
+      --grid:rgba(168,85,247,0.15);
+      --ring-shadow:0 0 24px rgba(168,85,247,.35), inset 0 0 24px rgba(168,85,247,.15);
+      --glow:0 0 32px rgba(103,232,249,.35);
+      --text:#e9ecf1;
+      --muted:#8ea6b3;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 600px at 20% -10%, #1a0b3d 0%, transparent 60%),
+        radial-gradient(900px 700px at 80% 120%, #0d1b2a 0%, transparent 60%),
+        linear-gradient(180deg, var(--bg-deep), var(--bg-deeper));
+      overflow:hidden;
+      position:relative;
+    }
+
+    /* Subtle animated grid */
+    body::before{
+      content:"";
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 120px 120px;
+      animation:gridMove 28s linear infinite;
+      pointer-events:none; z-index:0;
+    }
+    @keyframes gridMove{
+      0%{transform:translate(0,0)}
+      100%{transform:translate(120px,120px)}
+    }
+
+    /* Starfield canvas layer (behind everything) */
+    #starfield{
+      position:absolute; inset:0; z-index:0;
+      filter: drop-shadow(0 0 2px rgba(255,255,255,.35));
+    }
+
+    /* Multi neon ring system */
+    .ring{
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      pointer-events:none;
+      mix-blend-mode: screen;
+      box-shadow: var(--ring-shadow);
+    }
+    .ring.outer{
+      width: 720px; height: 720px;
+      border:2px solid rgba(103,232,249,.25);
+      animation:spin 38s linear infinite;
+      filter: blur(0.3px);
+    }
+    .ring.main{
+      width: 560px; height: 560px;
+      border:2px dashed rgba(168,85,247,.55);
+      animation:spinReverse 26s linear infinite;
+      box-shadow:0 0 28px rgba(168,85,247,.25);
+    }
+    .ring.inner{
+      width: 420px; height:420px;
+      border:2px solid rgba(34,211,238,.6);
+      box-shadow:0 0 22px rgba(34,211,238,.35), inset 0 0 18px rgba(34,211,238,.25);
+      animation:breath 6s ease-in-out infinite;
+    }
+    @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    @keyframes spinReverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}
+    @keyframes breath{
+      0%,100%{transform:translate(-50%,-50%) scale(1)}
+      50%{transform:translate(-50%,-50%) scale(1.03)}
+    }
+
+    /* Planetary glass login */
+    .login-planet{
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      width: 520px; height: 520px; border-radius:50%;
+      background: radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,.22), rgba(255,255,255,.06) 40%, rgba(0,0,0,.18) 70%);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(22px) saturate(140%);
+      -webkit-backdrop-filter: blur(22px) saturate(140%);
+      box-shadow:
+        0 30px 100px rgba(168,85,247,.25),
+        inset 0 1px 0 rgba(255,255,255,.18),
+        inset 0 -1px 0 rgba(0,0,0,.3);
+      z-index:5;
+      display:flex; align-items:center; justify-content:center;
+      animation:planetFloat 8s ease-in-out infinite;
+    }
+    @keyframes planetFloat{
+      0%,100%{transform:translate(-50%,-50%) rotate(0) translateZ(0)}
+      25%{transform:translate(-50%,-51%) rotate(1.2deg)}
+      50%{transform:translate(-50%,-49%) rotate(0)}
+      75%{transform:translate(-50%,-52%) rotate(-1.2deg)}
+    }
+    .planet-glare{
+      position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
+      background:
+        conic-gradient(from 180deg at 50% 50%, rgba(168,85,247,.08), transparent 20% 60%, rgba(103,232,249,.08) 80%, rgba(168,85,247,.08));
+      mask-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,.9), transparent 70%);
+      mix-blend-mode: screen;
+    }
+
+    /* Card within planet */
+    .login-card{
+      width:min(84%, 380px);
+      display:flex; flex-direction:column; gap:18px;
+      z-index:6;
+    }
+    .brand{
+      text-align:center; margin-bottom:8px;
+    }
+    .brand .title{
+      font-size:28px; letter-spacing:.32em; font-weight:900;
+      text-transform:uppercase;
+      text-shadow: 0 0 14px rgba(255,255,255,.85);
+      animation:glitch 4s linear infinite;
+    }
+    @keyframes glitch{
+      0%,98%{text-shadow:0 0 14px rgba(255,255,255,.85)}
+      99%{text-shadow: 2px 0 0 #ff00ff, -2px 0 0 #00ffff, 0 0 24px #fff}
+    }
+    .brand .subtitle{
+      margin-top:6px; font-size:12px; letter-spacing:.12em; color:var(--muted);
+      display:flex; gap:8px; align-items:center; justify-content:center;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:11px; padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      box-shadow: var(--glow);
+      text-transform:uppercase; letter-spacing:.1em;
+    }
+
+    /* form */
+    form{display:flex; flex-direction:column; gap:16px; margin-top:8px}
+    .form-group{display:flex; flex-direction:column; gap:10px}
+    .label{
+      font-size:12px; letter-spacing:.12em; color:#dce6ee;
+      text-transform:uppercase;
+    }
+    .input{
+      width:100%; padding:14px 14px 14px 16px; border-radius:10px;
+      color:var(--text);
+      background: rgba(2,12,20,.55);
+      border:1px solid rgba(255,255,255,.16);
+      outline:none;
+      transition: border .25s, box-shadow .25s, background .25s;
+      backdrop-filter: blur(10px);
+    }
+    .input::placeholder{color:#71c9d8}
+    .input:focus{
+      border-color: rgba(168,85,247,.6);
+      box-shadow: 0 0 0 3px rgba(168,85,247,.2), 0 0 22px rgba(168,85,247,.2);
+      background: rgba(10,20,28,.72);
+    }
+    .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .remember{
+      display:flex; align-items:center; gap:10px; font-size:12px; color:#e7eef6;
+      user-select:none;
+    }
+    .checkbox{
+      appearance:none; width:16px; height:16px; border-radius:4px;
+      border:1px solid rgba(168,85,247,.55); background:transparent; position:relative; cursor:pointer;
+    }
+    .checkbox:checked{background:rgba(168,85,247,.9)}
+    .checkbox:checked::after{
+      content:"✓"; position:absolute; inset:-2px auto auto 2px; font-size:12px; color:#0a0f1c; font-weight:900;
+    }
+
+    /* CTA */
+    .btn{
+      width:100%; padding:16px; border-radius:28px;
+      border:2px solid rgba(255,255,255,.28);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--text);
+      cursor:pointer; transition: transform .22s, box-shadow .22s, border .22s, background .22s;
+      backdrop-filter: blur(10px);
+    }
+    .btn:hover{
+      transform: translateY(-2px);
+      box-shadow:0 12px 28px rgba(255,255,255,.15), 0 0 34px rgba(168,85,247,.25);
+      border-color: rgba(255,255,255,.48);
+      background: rgba(255,255,255,.10);
+    }
+    .btn:active{transform: translateY(0)}
+
+    .or{
+      display:flex; align-items:center; gap:12px; margin:4px 0; color:var(--muted); font-size:12px; letter-spacing:.1em;
+    }
+    .or::before,.or::after{content:""; flex:1; height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent)}
+
+    .socials{display:flex; flex-direction:column; gap:14px}
+    .social{
+      width:100%; padding:13px 14px; border-radius:22px; border:1px solid; font-size:13px; letter-spacing:.14em; font-weight:800; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      backdrop-filter: blur(10px); transition: transform .2s, box-shadow .2s, background .2s, border .2s;
+    }
+    .social:hover{transform: translateY(-2px)}
+    .kakao{background: rgba(254,229,0,.10); border-color:#fee500; color:#fee500; box-shadow:0 6px 18px rgba(254,229,0,.25)}
+    .kakao:hover{background: rgba(254,229,0,.18)}
+    .google{background: rgba(219,68,55,.10); border-color:#db4437; color:#db4437; box-shadow:0 6px 18px rgba(219,68,55,.25)}
+    .google:hover{background: rgba(219,68,55,.18)}
+
+    /* Market indicators + price tickers */
+    .price{position:absolute; font-size:10px; font-weight:900; z-index:3; animation:float 5s ease-in-out infinite}
+    .up{color:var(--green); text-shadow:0 0 10px var(--green)}
+    .down{color:var(--red); text-shadow:0 0 10px var(--red)}
+    @keyframes float{0%,100%{opacity:0;transform:translateY(8px)}50%{opacity:1;transform:translateY(-8px)}}
+
+    .market{position:absolute; display:flex; align-items:center; gap:6px; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#e8f4ff; z-index:1; animation:flicker 4s ease-in-out infinite}
+    .dot{width:8px; height:8px; border-radius:50%; box-shadow:0 0 10px currentColor; animation:pulse 2s infinite}
+    .dot.bull{background:var(--green); color:var(--green)}
+    .dot.bear{background:var(--red); color:var(--red)}
+    @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+    @keyframes flicker{0%,100%{opacity:0}50%{opacity:.6}}
+
+    /* Info status bar + Blacknet notice */
+    .status{
+      position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+      display:flex; gap:18px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#a7c2cf; z-index:10;
+    }
+    .s{display:flex; align-items:center; gap:6px}
+    .s .status-dot{width:6px; height:6px; border-radius:50%; background:#22ff99; animation:pulse 2s infinite}
+    .notice{
+      position:absolute; top:14px; left:50%; transform:translateX(-50%);
+      font-size:11px; letter-spacing:.12em; color:#b9cfe0; z-index:10;
+      display:flex; align-items:center; gap:10px;
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      box-shadow: var(--glow);
+    }
+    .notice .warn{display:inline-block; width:8px; height:8px; border-radius:50%; background:#ff9f43; box-shadow:0 0 14px rgba(255,159,67,.65)}
+
+    /* Chart grid lines (subtle) */
+    .grid{position:absolute; inset:0; pointer-events:none; z-index:1}
+    .g{position:absolute; left:0; width:100%; height:1px; background:linear-gradient(90deg, transparent, rgba(168,85,247,.22) 20%, rgba(168,85,247,.22) 80%, transparent)}
+    .g:nth-child(1){top:14%}.g:nth-child(2){top:28%}.g:nth-child(3){top:42%}.g:nth-child(4){top:56%}.g:nth-child(5){top:70%}
+
+    /* a11y focus visible */
+    :focus-visible{outline:2px dashed var(--aqua); outline-offset:4px}
+
+    /* Responsive */
+    @media (max-width: 640px){
+      .ring.outer{width: 520px; height:520px}
+      .ring.main{width: 420px; height:420px}
+      .ring.inner{width: 340px; height:340px}
+      .login-planet{width: 380px; height:380px}
+      .login-card{width: 86%}
+      .brand .title{font-size:22px}
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      *{animation:none !important; transition:none !important}
+    }
+  </style>
+  <script>
+    // progressive enhancement flag
+    document.documentElement.classList.remove('no-js');
+  </script>
+  <script src="./login.js" defer></script>
+</head>
+<body>
+  <!-- starfield canvas -->
+  <canvas id="starfield" aria-hidden="true"></canvas>
+
+  <!-- subtle price ticks -->
+  <div class="price up"   style="top:22%; left:14%; animation-delay:.8s">+2.4%</div>
+  <div class="price down" style="top:70%; right:16%; animation-delay:2.6s">-1.8%</div>
+  <div class="price up"   style="top:40%; left:62%; animation-delay:3.8s">+0.9%</div>
+  <div class="price down" style="bottom:28%; left:28%; animation-delay:5.2s">-3.2%</div>
+
+  <!-- market blips -->
+  <div class="market" style="top:16%; left:10%; animation-delay:0s"><span class="dot bull"></span><span>BTC/USD</span></div>
+  <div class="market" style="top:26%; right:12%; animation-delay:1.8s"><span class="dot bear"></span><span>ETH/USD</span></div>
+  <div class="market" style="top:74%; left:18%; animation-delay:3.2s"><span class="dot bull"></span><span>VOLUME: 127K</span></div>
+  <div class="market" style="bottom:22%; right:22%; animation-delay:4s"><span class="dot bull"></span><span>TREND: BULL</span></div>
+
+  <!-- chart grid -->
+  <div class="grid" aria-hidden="true">
+    <div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div>
+  </div>
+
+  <!-- neon rings -->
+  <div class="ring outer" aria-hidden="true"></div>
+  <div class="ring main"  aria-hidden="true"></div>
+  <div class="ring inner" aria-hidden="true"></div>
+
+  <!-- login planet -->
+  <section class="login-planet" aria-label="Two.4 Login Sphere">
+    <div class="planet-glare" aria-hidden="true"></div>
+    <div class="login-card" role="form" aria-labelledby="loginTitle">
+      <div class="brand">
+        <h1 id="loginTitle" class="title">LOGIN</h1>
+        <div class="subtitle">
+          <span class="badge">Two.4 • Cosmos</span>
+          <span class="badge">Neon Access</span>
+        </div>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="username" class="label">USERNAME</label>
+          <input id="username" class="input" name="username" type="text" placeholder="아이디를 입력하세요" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="password" class="label">PASSWORD</label>
+          <input id="password" class="input" name="password" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password" required />
+        </div>
+
+        <div class="row">
+          <label class="remember">
+            <input id="rememberMe" class="checkbox" type="checkbox" />
+            REMEMBER ME
+          </label>
+          <a href="#" class="label" style="opacity:.75; text-decoration:none">FORGOT?</a>
+        </div>
+
+        <button type="submit" class="btn" id="loginBtn" aria-live="polite">LOGIN</button>
+      </form>
+
+      <div class="or">OR</div>
+      <div class="socials">
+        <button class="social kakao" type="button" id="kakaoBtn">KAKAO</button>
+        <button class="social google" type="button" id="googleBtn">GOOGLE</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- status + notice -->
+  <div class="notice" aria-live="polite">
+    <span class="warn"></span>
+    <span>Blacknet access blocked – License not granted.</span>
+    <span style="opacity:.75">/ 블랙넷 접근이 차단되었습니다 – 라이선스가 부여되지 않았습니다.</span>
+  </div>
+
+  <div class="status">
+    <div class="s"><span class="status-dot"></span><span>DB-ONLINE</span></div>
+    <div class="s"><span class="status-dot" style="background:#ffaa00"></span><span>SECURE</span></div>
+    <div class="s"><span class="status-dot" style="background:#ff6b00"></span><span>MONITORED</span></div>
+  </div>
+</body>
+</html>
