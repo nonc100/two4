@@ -22,6 +22,10 @@
       --glow:0 0 32px rgba(103,232,249,.35);
       --text:#e9ecf1;
       --muted:#8ea6b3;
+      --planet-size: min(68vw, 520px);
+      --ring-outer: min(90vw, 720px);
+      --ring-main: min(75vw, 560px);
+      --ring-inner: min(60vw, 420px);
     }
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%}
@@ -34,6 +38,8 @@
         linear-gradient(180deg, var(--bg-deep), var(--bg-deeper));
       overflow:hidden;
       position:relative;
+      min-height:100vh;
+      padding:clamp(32px, 6vh, 72px) 0;
     }
 
     /* Subtle animated grid */
@@ -68,19 +74,19 @@
       box-shadow: var(--ring-shadow);
     }
     .ring.outer{
-      width: 720px; height: 720px;
+      width: var(--ring-outer); height: var(--ring-outer);
       border:2px solid rgba(103,232,249,.25);
       animation:spin 38s linear infinite;
       filter: blur(0.3px);
     }
     .ring.main{
-      width: 560px; height: 560px;
+      width: var(--ring-main); height: var(--ring-main);
       border:2px dashed rgba(168,85,247,.55);
       animation:spinReverse 26s linear infinite;
       box-shadow:0 0 28px rgba(168,85,247,.25);
     }
     .ring.inner{
-      width: 420px; height:420px;
+      width: var(--ring-inner); height:var(--ring-inner);
       border:2px solid rgba(34,211,238,.6);
       box-shadow:0 0 22px rgba(34,211,238,.35), inset 0 0 18px rgba(34,211,238,.25);
       animation:breath 6s ease-in-out infinite;
@@ -96,7 +102,7 @@
     .login-planet{
       position:absolute; top:50%; left:50%;
       transform:translate(-50%,-50%);
-      width: 520px; height: 520px; border-radius:50%;
+      width: var(--planet-size); height: var(--planet-size); border-radius:50%;
       background: radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,.22), rgba(255,255,255,.06) 40%, rgba(0,0,0,.18) 70%);
       border:1px solid rgba(255,255,255,.12);
       backdrop-filter: blur(22px) saturate(140%);
@@ -125,7 +131,7 @@
 
     /* Card within planet */
     .login-card{
-      width:min(84%, 380px);
+      width:clamp(240px, 68vw, 380px);
       display:flex; flex-direction:column; gap:18px;
       z-index:6;
     }
@@ -265,13 +271,73 @@
     :focus-visible{outline:2px dashed var(--aqua); outline-offset:4px}
 
     /* Responsive */
+    @media (max-width: 1080px){
+      :root{
+        --planet-size: min(62vw, 480px);
+        --ring-outer: min(86vw, 640px);
+        --ring-main: min(72vw, 520px);
+        --ring-inner: min(60vw, 380px);
+      }
+    }
+
+    @media (max-width: 820px){
+      :root{
+        --planet-size: min(70vw, 420px);
+        --ring-outer: min(92vw, 520px);
+        --ring-main: min(84vw, 440px);
+        --ring-inner: min(74vw, 340px);
+      }
+      .brand .title{font-size:24px}
+      .brand .subtitle{font-size:11px; flex-wrap:wrap}
+    }
+
     @media (max-width: 640px){
-      .ring.outer{width: 520px; height:520px}
-      .ring.main{width: 420px; height:420px}
-      .ring.inner{width: 340px; height:340px}
-      .login-planet{width: 380px; height:380px}
-      .login-card{width: 86%}
+      body{overflow:auto; padding:100px 0 140px;}
+      :root{
+        --planet-size: min(82vw, 340px);
+        --ring-outer: min(96vw, 420px);
+        --ring-main: min(88vw, 360px);
+        --ring-inner: min(78vw, 300px);
+      }
+      .login-planet{
+        position:relative;
+        top:auto;
+        left:auto;
+        transform:none;
+        margin:0 auto 32px;
+        animation:none;
+        height:auto;
+        padding:32px 0 36px;
+        border-radius:48px;
+      }
+      .login-card{width:100%; max-width:320px; margin:0 auto; gap:16px;}
+      form{gap:14px}
+      .form-group{gap:8px}
+      .input{padding:12px 12px 12px 14px; font-size:14px}
+      .row{flex-direction:column; align-items:flex-start; gap:8px}
+      .row a{align-self:flex-end; font-size:11px}
+      .socials{gap:12px}
       .brand .title{font-size:22px}
+      .brand .subtitle{gap:6px}
+      .notice{position:static; margin:0 auto 28px; width:min(92vw, 400px); text-align:center; flex-direction:column; gap:6px;}
+      .status{position:static; margin:40px auto 0; flex-direction:column; align-items:center; gap:12px; font-size:10px;}
+      .price,.market{display:none}
+      .ring.outer,.ring.main,.ring.inner{display:none}
+    }
+
+    @media (max-width: 420px){
+      :root{
+        --planet-size: min(88vw, 300px);
+        --ring-outer: min(100vw, 360px);
+        --ring-main: min(92vw, 320px);
+        --ring-inner: min(84vw, 280px);
+      }
+      body{padding:80px 0 120px;}
+      .login-card{max-width:280px;}
+      form{gap:12px}
+      .badge{font-size:10px; padding:5px 8px; letter-spacing:.08em;}
+      .btn{padding:14px; letter-spacing:.18em;}
+      .social{letter-spacing:.12em;}
     }
 
     /* Reduced motion */
