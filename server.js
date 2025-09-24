@@ -44,23 +44,28 @@ app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai'))); // seed.htm
 app.use(express.json({ limit: '2mb' }));
 
 // ==============================
-// METHOD 게시판 파일 스토어
+// ORBITS 게시판 파일 스토어 (legacy METHOD 데이터 마이그레이션 포함)
 // ==============================
-const METHOD_DATA_DIR = path.join(__dirname, 'data');
-const METHOD_POSTS_FILE = path.join(METHOD_DATA_DIR, 'method-posts.json');
+const ORBITS_DATA_DIR = path.join(__dirname, 'data');
+const ORBITS_POSTS_FILE = path.join(ORBITS_DATA_DIR, 'orbits-posts.json');
+const LEGACY_METHOD_POSTS_FILE = path.join(ORBITS_DATA_DIR, 'method-posts.json');
 
-function ensureMethodStore() {
+function ensureOrbitStore() {
   try {
-    fs.mkdirSync(METHOD_DATA_DIR, { recursive: true });
+    fs.mkdirSync(ORBITS_DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('⚠️ Failed to ensure METHOD data directory:', error.message);
+    console.error('⚠️ Failed to ensure ORBITS data directory:', error.message);
   }
 
-  if (!fs.existsSync(METHOD_POSTS_FILE)) {
+  if (!fs.existsSync(ORBITS_POSTS_FILE)) {
     try {
-      fs.writeFileSync(METHOD_POSTS_FILE, JSON.stringify({ posts: [] }, null, 2), 'utf8');
+      if (fs.existsSync(LEGACY_METHOD_POSTS_FILE)) {
+        fs.renameSync(LEGACY_METHOD_POSTS_FILE, ORBITS_POSTS_FILE);
+      } else {
+        fs.writeFileSync(ORBITS_POSTS_FILE, JSON.stringify({ posts: [] }, null, 2), 'utf8');
+      }
     } catch (error) {
-      console.error('⚠️ Failed to initialize METHOD posts store:', error.message);
+      console.error('⚠️ Failed to initialize ORBITS posts store:', error.message);
     }
   }
 }
@@ -94,6 +99,9 @@ function excerptFromHtml(html) {
   return excerptFromText(String(html || '').replace(/<[^>]+>/g, ' '));
 }
 
+const MAX_IMAGE_DATA_URL_LENGTH = 700000;
+const DATA_URL_IMAGE_PATTERN = /^data:image\/(png|jpe?g|gif|webp|avif|svg\+xml);base64,/i;
+
 function normalizeStoredPost(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `legacy-${Date.now().toString(36)}`;
@@ -117,6 +125,7 @@ function normalizeStoredPost(raw) {
     title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled',
     author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : 'Anonymous',
     tags,
+    image: sanitizeImageData(raw.image),
     excerpt: typeof raw.excerpt === 'string' && raw.excerpt.trim() ? raw.excerpt.trim() : excerptFromHtml(contentHtml),
     contentHtml,
     createdAt,
@@ -128,10 +137,10 @@ function normalizeStoredPost(raw) {
   };
 }
 
-function loadMethodPosts() {
-  ensureMethodStore();
+function loadOrbitPosts() {
+  ensureOrbitStore();
   try {
-    const raw = fs.readFileSync(METHOD_POSTS_FILE, 'utf8');
+    const raw = fs.readFileSync(ORBITS_POSTS_FILE, 'utf8');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.posts) ? parsed.posts : [];
@@ -139,19 +148,19 @@ function loadMethodPosts() {
       .map(normalizeStoredPost)
       .filter(Boolean);
   } catch (error) {
-    console.error('⚠️ Failed to load METHOD posts:', error.message);
+    console.error('⚠️ Failed to load ORBITS posts:', error.message);
     return [];
   }
 }
 
-let methodPostsStore = loadMethodPosts();
+let orbitPostsStore = loadOrbitPosts();
 
-function saveMethodPosts() {
-  ensureMethodStore();
+function saveOrbitPosts() {
+  ensureOrbitStore();
   try {
-    fs.writeFileSync(METHOD_POSTS_FILE, JSON.stringify({ posts: methodPostsStore }, null, 2), 'utf8');
+    fs.writeFileSync(ORBITS_POSTS_FILE, JSON.stringify({ posts: orbitPostsStore }, null, 2), 'utf8');
   } catch (error) {
-    console.error('⚠️ Failed to save METHOD posts:', error.message);
+    console.error('⚠️ Failed to save ORBITS posts:', error.message);
   }
 }
 
@@ -190,13 +199,22 @@ function sanitizeTags(input) {
     .map(tag => tag.slice(0, 40));
 }
 
-const methodRouter = express.Router();
+function sanitizeImageData(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (!DATA_URL_IMAGE_PATTERN.test(trimmed)) return '';
+  if (trimmed.length > MAX_IMAGE_DATA_URL_LENGTH) return '';
+  return trimmed;
+}
 
-methodRouter.get('/posts', (_req, res) => {
-  res.json({ ok: true, posts: methodPostsStore, updatedAt: computeUpdatedAt(methodPostsStore) });
+const orbitsRouter = express.Router();
+
+orbitsRouter.get('/posts', (_req, res) => {
+  res.json({ ok: true, posts: orbitPostsStore, updatedAt: computeUpdatedAt(orbitPostsStore) });
 });
 
-methodRouter.post('/posts', (req, res) => {
+orbitsRouter.post('/posts', (req, res) => {
   const payload = req.body || {};
   const title = sanitizeTitle(payload.title);
   const category = sanitizeCategory(payload.category);
@@ -207,8 +225,9 @@ methodRouter.post('/posts', (req, res) => {
   }
 
   const now = new Date();
+  const image = sanitizeImageData(payload.image);
   const newPost = {
-    id: `m-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    id: `o-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     category,
     title,
     author: sanitizeAuthor(payload.author),
@@ -216,32 +235,34 @@ methodRouter.post('/posts', (req, res) => {
     excerpt: excerptFromText(body),
     contentHtml: toContentHtml(body),
     createdAt: now.toISOString(),
+    image: image || undefined,
     stats: { likes: 0, comments: 0, views: 1 }
   };
 
-  methodPostsStore.unshift(newPost);
-  saveMethodPosts();
+  orbitPostsStore.unshift(newPost);
+  saveOrbitPosts();
 
   res.status(201).json({ ok: true, post: newPost, updatedAt: newPost.createdAt });
 });
 
-methodRouter.delete('/posts/:id', (req, res) => {
+orbitsRouter.delete('/posts/:id', (req, res) => {
   const id = String(req.params.id || '').trim();
   if (!id) {
     return res.status(400).json({ ok: false, error: 'INVALID_ID' });
   }
-  const index = methodPostsStore.findIndex(post => post.id === id);
+  const index = orbitPostsStore.findIndex(post => post.id === id);
   if (index === -1) {
     return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
   }
 
-  methodPostsStore.splice(index, 1);
-  saveMethodPosts();
+  orbitPostsStore.splice(index, 1);
+  saveOrbitPosts();
 
-  res.json({ ok: true, removed: id, updatedAt: computeUpdatedAt(methodPostsStore) });
+  res.json({ ok: true, removed: id, updatedAt: computeUpdatedAt(orbitPostsStore) });
 });
 
-app.use('/api/method', methodRouter);
+app.use('/api/orbits', orbitsRouter);
+app.use('/api/method', orbitsRouter);
 
 // [SEED AI] Seed 라우터 마운트 (+ 마운트 확인 로그 & 프로브)
 try {

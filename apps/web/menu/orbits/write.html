@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORBITS 글쓰기 | Two.4</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Exo+2:wght@300;400;600&display=swap');
+
+    :root {
+      --page-bg: radial-gradient(circle at top, #120027 0%, #060010 45%, #020007 100%);
+      --surface-glass: rgba(10, 9, 25, 0.78);
+      --surface-panel: rgba(14, 16, 40, 0.82);
+      --surface-muted: rgba(18, 22, 48, 0.68);
+      --text-primary: #e8f6ff;
+      --text-secondary: rgba(205, 235, 255, 0.78);
+      --text-tertiary: rgba(200, 224, 255, 0.6);
+      --accent: #64d7ff;
+      --accent-strong: #8a2be2;
+      --border-soft: rgba(100, 215, 255, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Exo 2', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: var(--page-bg);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 25% -10%, rgba(116, 69, 255, 0.18), transparent 55%),
+        radial-gradient(circle at 80% 0%, rgba(72, 207, 255, 0.25), transparent 60%),
+        radial-gradient(circle at 50% 100%, rgba(24, 9, 51, 0.55), rgba(1, 2, 12, 0.95));
+      z-index: -2;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 120px 24px 80px;
+      display: grid;
+      gap: 28px;
+    }
+
+    .compose-header {
+      text-align: center;
+      display: grid;
+      gap: 12px;
+    }
+
+    .compose-header__eyebrow {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.26em;
+      font-size: 0.64rem;
+      text-transform: uppercase;
+      color: rgba(151, 211, 255, 0.72);
+    }
+
+    .compose-header__title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      letter-spacing: 0.12em;
+    }
+
+    .compose-header__meta {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    .compose-form {
+      background: var(--surface-panel);
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      padding: 28px;
+      display: grid;
+      gap: 20px;
+      box-shadow: 0 22px 40px rgba(6, 4, 18, 0.55);
+    }
+
+    .form-field {
+      display: grid;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(205, 235, 255, 0.78);
+    }
+
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(100, 215, 255, 0.22);
+      background: rgba(8, 12, 28, 0.75);
+      color: var(--text-primary);
+      font-size: 0.94rem;
+      line-height: 1.5;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(100, 215, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(100, 215, 255, 0.18);
+    }
+
+    .field-hint {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+    }
+
+    .image-uploader {
+      display: grid;
+      gap: 12px;
+    }
+
+    .image-preview {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(100, 215, 255, 0.25);
+      background: rgba(5, 10, 20, 0.6);
+    }
+
+    .image-preview[hidden] {
+      display: none;
+    }
+
+    .image-preview__frame {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(100, 215, 255, 0.2);
+      max-height: 260px;
+    }
+
+    .image-preview__frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-preview__info {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 9px 18px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.9;
+    }
+
+    .btn-primary {
+      background: rgba(100, 215, 255, 0.85);
+      color: #04121f;
+    }
+
+    .btn-primary[disabled] {
+      opacity: 0.6;
+      cursor: progress;
+    }
+
+    .btn-secondary {
+      background: rgba(26, 34, 56, 0.9);
+      color: var(--text-primary);
+      border: 1px solid rgba(100, 215, 255, 0.22);
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding-top: 96px;
+      }
+      .compose-form {
+        padding: 22px;
+        gap: 18px;
+      }
+      .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div include-html="../header.html"></div>
+  <main>
+    <section class="compose-header">
+      <span class="compose-header__eyebrow">Orbits // New Insight</span>
+      <h1 class="compose-header__title">지표 인사이트 작성</h1>
+      <p class="compose-header__meta">간단한 요약과 태그, 필요한 이미지를 첨부해 전략과 시그널을 기록해주세요. 게시 후에는 ORBITS 허브에서 즉시 확인할 수 있습니다.</p>
+    </section>
+
+    <form class="compose-form" id="composeForm">
+      <div class="form-field">
+        <label for="composeTitle">제목</label>
+        <input type="text" id="composeTitle" placeholder="게시글 제목을 입력하세요" maxlength="200" required>
+      </div>
+
+      <div class="form-field">
+        <label for="composeCategory">카테고리</label>
+        <select id="composeCategory" required></select>
+        <p class="field-hint" id="categoryHint"></p>
+      </div>
+
+      <div class="form-field">
+        <label for="composeTags">태그 (쉼표로 구분)</label>
+        <input type="text" id="composeTags" placeholder="예: Volume, Divergence, Momentum" maxlength="240">
+      </div>
+
+      <div class="form-field">
+        <label for="composeContent">내용</label>
+        <textarea id="composeContent" placeholder="전략 개요, 설정 값, 체크 포인트 등을 작성해주세요." required></textarea>
+        <p class="field-hint">줄 바꿈은 엔터 두 번을 사용하면 단락으로 변환됩니다.</p>
+      </div>
+
+      <div class="form-field image-uploader">
+        <label for="composeImage">이미지 업로드 (선택)</label>
+        <input type="file" id="composeImage" accept="image/*">
+        <p class="field-hint">최대 500KB 이미지를 권장합니다. JPG, PNG, WEBP를 지원합니다.</p>
+        <div class="image-preview" id="imagePreview" hidden>
+          <div class="image-preview__frame">
+            <img id="imagePreviewImg" alt="업로드한 이미지 미리보기">
+          </div>
+          <div class="image-preview__info" id="imageInfo"></div>
+          <button type="button" class="btn btn-secondary" id="clearImage">이미지 제거</button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="composeCancel">취소</button>
+        <button type="submit" class="btn btn-primary" id="composeSubmit">게시</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="../../include.js" defer></script>
+  <script type="module" src="./write.js"></script>
+</body>
+</html>
