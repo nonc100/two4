@@ -244,13 +244,31 @@ const StarField=(()=>{
 /* ---- Star slider wiring ---- */
 (function(){
   const r=$("#starRange");
+  const wrapper=document.querySelector('.star-ctl');
+  const valueEl=document.getElementById('starValue');
+  const progressEl=document.querySelector('.star-ctl-progress');
   if(!r) return;
-  const apply=v=>{ 
-    const n=clamp(v/100,0,1); 
-    document.documentElement.style.setProperty("--starVis", String(n)); 
-    StarField.setIntensity(n); 
+  const updateVisuals = pct => {
+    if(valueEl) valueEl.textContent = `${Math.round(pct)}%`;
+    if(progressEl) progressEl.style.width = `${pct}%`;
+  };
+  const apply=v=>{
+    const num = Number(v);
+    const pct = clamp(Number.isFinite(num)?num:0,0,100);
+    const n=pct/100;
+    document.documentElement.style.setProperty("--starVis", String(n));
+    StarField.setIntensity(n);
+    updateVisuals(pct);
   };
   r.addEventListener("input",e=>apply(e.target.value));
+  r.addEventListener("change",e=>apply(e.target.value));
+  r.addEventListener("focus",()=>wrapper?.classList.add('focus'));
+  r.addEventListener("blur",()=>wrapper?.classList.remove('focus'));
+  r.addEventListener("pointerdown",()=>wrapper?.classList.add('focus'));
+  r.addEventListener("pointerup",()=>wrapper?.classList.remove('focus'));
+  r.addEventListener("pointercancel",()=>wrapper?.classList.remove('focus'));
+  r.addEventListener("pointerleave",()=>wrapper?.classList.remove('focus'));
+  apply(r.value);
 })();
 
 /* ---- Mobile navigation toggle ---- */
