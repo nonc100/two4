@@ -101,6 +101,68 @@ function normalizeImage(value) {
   return '';
 }
 
+function normalizeIcon(icon, altFallback = '') {
+  if (!icon) return null;
+
+  if (typeof icon === 'string') {
+    const trimmed = icon.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('data:image/')) {
+      return { type: 'image', src: trimmed, alt: altFallback };
+    }
+    if (/^https?:\/\//i.test(trimmed) || /\.(png|jpe?g|gif|webp|svg)$/i.test(trimmed)) {
+      return { type: 'image', src: trimmed, alt: altFallback };
+    }
+    return { type: 'text', value: trimmed };
+  }
+
+  if (typeof icon === 'object') {
+    const { type, src, alt, value, text } = icon;
+    const candidateAlt = typeof alt === 'string' && alt.trim() ? alt.trim() : altFallback;
+
+    if (typeof src === 'string' && src.trim()) {
+      if (!type || String(type).toLowerCase() === 'image') {
+        return { type: 'image', src: src.trim(), alt: candidateAlt };
+      }
+    }
+
+    const textValue = typeof value === 'string' && value.trim() ? value.trim() : typeof text === 'string' && text.trim() ? text.trim() : '';
+    if (textValue) {
+      return { type: 'text', value: textValue };
+    }
+  }
+
+  return null;
+}
+
+function renderIconElement(container, icon, options = {}) {
+  if (!container) return 'none';
+
+  const { fallbackText = '', altText = '', imageClass } = options;
+  container.innerHTML = '';
+  if (imageClass) {
+    container.classList.remove(imageClass);
+  }
+
+  const normalized = normalizeIcon(icon, altText);
+  if (normalized?.type === 'image' && normalized.src) {
+    const img = document.createElement('img');
+    img.src = normalized.src;
+    img.alt = normalized.alt || altText || '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    container.appendChild(img);
+    if (imageClass) {
+      container.classList.add(imageClass);
+    }
+    return 'image';
+  }
+
+  const textValue = normalized?.type === 'text' && normalized.value ? normalized.value : fallbackText;
+  container.textContent = textValue;
+  return textValue ? 'text' : 'none';
+}
+
 function normalizePost(post, source = 'remote') {
   if (!post || typeof post !== 'object') return null;
 
@@ -114,7 +176,13 @@ function normalizePost(post, source = 'remote') {
     : typeof post.content === 'string'
       ? post.content
       : '';
-  const hero = typeof post.hero === 'string' && post.hero.trim() ? post.hero.trim() : '';
+  const rawCategory = typeof post.category === 'string' && post.category.trim() ? post.category.trim() : '';
+  const categoryId = rawCategory || forumData.categories[0]?.id ?? 'volume';
+  const category = findCategoryById(categoryId);
+  const rawTitle = typeof post.title === 'string' ? post.title.trim() : '';
+  const title = rawTitle || 'Untitled';
+  const heroAltFallback = rawTitle ? `${rawTitle} 대표 아이콘` : category ? `${category.title} 아이콘` : '전략 아이콘';
+  const hero = normalizeIcon(post.hero, heroAltFallback) ?? normalizeIcon(category?.heroIcon, heroAltFallback);
   const image = normalizeImage(post.image);
   const tags = Array.isArray(post.tags)
     ? post.tags
@@ -126,10 +194,8 @@ function normalizePost(post, source = 'remote') {
 
   return {
     id,
-    category: typeof post.category === 'string' && post.category.trim()
-      ? post.category.trim()
-      : forumData.categories[0]?.id ?? 'volume',
-    title: typeof post.title === 'string' && post.title.trim() ? post.title.trim() : 'Untitled',
+    category: categoryId,
+    title,
     author: typeof post.author === 'string' && post.author.trim() ? post.author.trim() : 'Anonymous',
     hero,
     image,
@@ -264,7 +330,11 @@ function updateCategoryHeader() {
   elements.categoryBadge.textContent = category.badge;
   elements.categoryTitle.textContent = category.title;
   elements.categoryMeta.textContent = category.meta;
-  elements.categoryVisual.textContent = category.heroIcon;
+  renderIconElement(elements.categoryVisual, category.heroIcon, {
+    fallbackText: '🛰️',
+    altText: `${category.title} 아이콘`,
+    imageClass: 'category-hero__visual--image'
+  });
   elements.categoryOverlayTitle.textContent = category.overlayTitle;
   elements.categoryOverlayDesc.textContent = category.overlayDescription;
 }
@@ -314,7 +384,11 @@ function createPostCard(post) {
   } else {
     const fallback = document.createElement('div');
     fallback.className = 'post-card__media-fallback';
-    fallback.textContent = post.hero || category?.heroIcon || '🛰️';
+    renderIconElement(fallback, post.hero || category?.heroIcon, {
+      fallbackText: '🛰️',
+      altText: `${post.title} 대표 아이콘`,
+      imageClass: 'post-card__media-fallback--image'
+    });
     media.appendChild(fallback);
   }
   card.appendChild(media);

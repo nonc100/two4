@@ -12,7 +12,11 @@ export const forumData = {
       label: '거래량',
       badge: 'VOLUME / 거래량',
       meta: '거래량 흐름과 누적 델타로 강도와 다이버전스를 추적합니다.',
-      heroIcon: '📊',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/volume.png',
+        alt: 'Volume Indicators 아이콘'
+      },
       overlayTitle: '거래량 지표',
       overlayDescription: '거래량 기반 데이터로 매수·매도 압력과 추세 강도를 확인합니다.',
       description:
@@ -25,7 +29,11 @@ export const forumData = {
       label: '이동평균',
       badge: 'TREND / 이동평균',
       meta: '평균값 밴드와 적응형 추세 지표로 방향성을 정의합니다.',
-      heroIcon: '📈',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/ma.png',
+        alt: 'Moving Average Indicators 아이콘'
+      },
       overlayTitle: '이동평균 지표',
       overlayDescription: 'EMA, SMA, 적응형 평균을 조합해 다중 타임프레임 추세를 분석합니다.',
       description:
@@ -38,7 +46,11 @@ export const forumData = {
       label: '캔들스틱',
       badge: 'PRICE ACTION / 패턴',
       meta: '캔들 구조, FVG, 오더블록 등을 기반으로 맥락을 읽어냅니다.',
-      heroIcon: '🕯️',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/cp.png',
+        alt: 'Candlestick Patterns 아이콘'
+      },
       overlayTitle: '캔들 패턴 분석',
       overlayDescription: '가격 패턴과 체결 흐름을 결합해 전환 구간과 유동성 영역을 탐지합니다.',
       description:
@@ -51,7 +63,11 @@ export const forumData = {
       label: '미결제약정',
       badge: 'DERIVATIVES / OI',
       meta: '선물/옵션 포지션 변화를 추적해 레버리지 흐름을 확인합니다.',
-      heroIcon: '🧭',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/oi.png',
+        alt: 'Open Interest Analysis 아이콘'
+      },
       overlayTitle: '미결제약정 분석',
       overlayDescription: 'OI, 펀딩비, 베이시스 데이터를 통합해 파생상품 포지션을 추적합니다.',
       description:
@@ -64,7 +80,11 @@ export const forumData = {
       label: '오실레이터',
       badge: 'OSCILLATOR / 사이클',
       meta: '상대적 강도와 과매수/과매도 구간을 정밀 탐지합니다.',
-      heroIcon: '⚡',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/Oscillator.png',
+        alt: 'Oscillator Indicators 아이콘'
+      },
       overlayTitle: '오실레이터 지표',
       overlayDescription: 'RSI, Stochastic 등 범위 기반 지표로 사이클 전환을 포착합니다.',
       description:
@@ -77,7 +97,11 @@ export const forumData = {
       label: '모멘텀',
       badge: 'MOMENTUM / 속도',
       meta: '가격 변화율과 추세의 가속도를 계량화합니다.',
-      heroIcon: '🚀',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/mi.png',
+        alt: 'Momentum Indicators 아이콘'
+      },
       overlayTitle: '모멘텀 지표',
       overlayDescription: 'ROC, CCI, DMI 등 속도 기반 지표로 추세의 힘을 측정합니다.',
       description:
@@ -90,7 +114,11 @@ export const forumData = {
       label: '변동성',
       badge: 'VOLATILITY / 리스크',
       meta: 'ATR, HV, 옵션 IV 지표로 변동성 클러스터를 분석합니다.',
-      heroIcon: '🌊',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/Volatility.png',
+        alt: 'Volatility Indicators 아이콘'
+      },
       overlayTitle: '변동성 지표',
       overlayDescription: '시장 변동성과 분산을 계량화하여 돌파 구간과 리스크를 평가합니다.',
       description:
@@ -103,7 +131,11 @@ export const forumData = {
       label: '기타',
       badge: 'CUSTOM / 실험실',
       meta: '온체인, 거시, AI 기반 실험 지표를 정리합니다.',
-      heroIcon: '🧪',
+      heroIcon: {
+        type: 'image',
+        src: 'icon/Other.png',
+        alt: 'Other Indicators 아이콘'
+      },
       overlayTitle: '커스텀 실험 모듈',
       overlayDescription: '온체인·거시·AI 시그널을 결합한 실험적 지표를 아카이브합니다.',
       description:
@@ -153,7 +185,11 @@ export const forumData = {
     {
       id: 'p-volume-1',
       category: 'volume',
-      hero: '📈',
+      hero: {
+        type: 'image',
+        src: 'icon/volume.png',
+        alt: 'Volume Indicators 아이콘'
+      },
       title: 'OBV + Price Divergence Strategy',
       excerpt:
         'OBV와 가격 다이버전스를 결합해 중기 추세에서 높은 승률을 기록한 전략입니다. 타임프레임별 최적 설정값과 필수 확인 지표를 정리했습니다.',
@@ -181,7 +217,11 @@ export const forumData = {
     {
       id: 'p-moving-1',
       category: 'moving-averages',
-      hero: '📊',
+      hero: {
+        type: 'image',
+        src: 'icon/ma.png',
+        alt: 'Moving Average Indicators 아이콘'
+      },
       title: 'Specter Trend Cloud [ChartPrime]',
       excerpt:
         '이동평균 기반 트렌드 클라우드로 추세와 변곡점을 동시에 감지합니다. 색상 밴드와 알림 로직을 커스터마이즈했습니다.',
@@ -205,7 +245,11 @@ export const forumData = {
     {
       id: 'p-oscillator-1',
       category: 'oscillators',
-      hero: '⚡',
+      hero: {
+        type: 'image',
+        src: 'icon/Oscillator.png',
+        alt: 'Oscillator Indicators 아이콘'
+      },
       title: 'Momentum Shift Oscillator (MSO)',
       excerpt:
         'RSI, ROC, MACD의 장점을 합친 커스텀 오실레이터입니다. 위상 변화와 디버전스를 자동 태깅합니다.',
@@ -253,7 +297,11 @@ export const forumData = {
     {
       id: 'p-other-1',
       category: 'others',
-      hero: '🎯',
+      hero: {
+        type: 'image',
+        src: 'icon/Other.png',
+        alt: 'Other Indicators 아이콘'
+      },
       title: 'Institutional Levels (CNN)',
       excerpt:
         'CNN 기반으로 기관 매물대를 추정하는 실험 지표입니다. 자동화된 구역 감지와 백테스트 로그를 공유합니다.',
@@ -273,7 +321,11 @@ export const forumData = {
     {
       id: 'p-volatility-1',
       category: 'volatility',
-      hero: '🌊',
+      hero: {
+        type: 'image',
+        src: 'icon/Volatility.png',
+        alt: 'Volatility Indicators 아이콘'
+      },
       title: 'Mean Reversion Probability Zones',
       excerpt:
         '평균 회귀 확률을 구간화하여 변동성에 따른 포지션 스케일링 전략을 제공합니다.',

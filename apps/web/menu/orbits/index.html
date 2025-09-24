@@ -418,6 +418,21 @@
       opacity: 0.6;
     }
 
+    .category-hero__visual--image {
+      font-size: 0;
+      padding: 10px;
+    }
+
+    .category-hero__visual--image img {
+      width: 100%;
+      height: 100%;
+      max-width: 64px;
+      max-height: 64px;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 12px 22px rgba(10, 6, 40, 0.55));
+    }
+
     .category-hero__text {
       position: relative;
       z-index: 1;
@@ -614,6 +629,18 @@
       place-items: center;
       font-size: 2.3rem;
       color: rgba(151, 211, 255, 0.85);
+    }
+
+    .post-card__media-fallback--image {
+      font-size: 0;
+    }
+
+    .post-card__media-fallback--image img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 10px 20px rgba(8, 6, 28, 0.55));
     }
 
     .post-card__body {
@@ -1059,7 +1086,9 @@
             </header>
 
             <article class="category-hero" aria-live="polite">
-              <div class="category-hero__visual" id="categoryVisual">📊</div>
+              <div class="category-hero__visual category-hero__visual--image" id="categoryVisual">
+                <img src="./icon/volume.png" alt="Volume Indicators 아이콘" />
+              </div>
               <div class="category-hero__text">
                 <h3 id="categoryOverlayTitle">거래량 지표</h3>
                 <p id="categoryOverlayDesc">거래량 흐름으로 시그널을 확인하고 다이버전스를 포착합니다.</p>
