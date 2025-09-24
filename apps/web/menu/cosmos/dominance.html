@@ -232,6 +232,65 @@
         return { text: `${sign}${v.toFixed(2)}pp`, cls: v > 0 ? 'up' : v < 0 ? 'down' : 'neutral' };
       };
 
+      const toNumber = (value, { allowDate = false } = {}) => {
+        if (value == null) return NaN;
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          if (!trimmed) return NaN;
+          value = trimmed;
+        }
+        const num = Number(value);
+        if (Number.isFinite(num)) return num;
+        if (allowDate) {
+          const date = new Date(value);
+          const time = date.getTime();
+          if (Number.isFinite(time)) return time;
+        }
+        return NaN;
+      };
+
+      function normaliseSeries(series) {
+        if (!Array.isArray(series)) return [];
+        const out = [];
+        for (const point of series) {
+          let rawTime;
+          let rawValue;
+          if (Array.isArray(point)) {
+            [rawTime, rawValue] = point;
+          } else if (point && typeof point === 'object') {
+            rawTime = point.time ?? point.timestamp ?? point.t ?? point.time_ms ?? point[0];
+            rawValue = point.value ?? point.v ?? point.dominance ?? point[1];
+          } else {
+            continue;
+          }
+          const time = toNumber(rawTime, { allowDate: true });
+          const value = toNumber(rawValue);
+          if (!Number.isFinite(time) || !Number.isFinite(value)) continue;
+          out.push({ time, value });
+        }
+        return out.sort((a, b) => a.time - b.time);
+      }
+
+      function prepareCoins(rawCoins) {
+        if (!Array.isArray(rawCoins)) return [];
+        const prepared = [];
+        for (const coin of rawCoins) {
+          const series = normaliseSeries(coin?.series);
+          if (!series.length) continue;
+          const first = series[0].value;
+          const last = series[series.length - 1].value;
+          const dominance = Number.isFinite(Number(coin?.dominance)) ? Number(coin.dominance) : last;
+          const change = Number.isFinite(Number(coin?.change)) ? Number(coin.change) : (last - first);
+          prepared.push({
+            ...coin,
+            dominance,
+            change,
+            series
+          });
+        }
+        return prepared.sort((a, b) => (b.dominance ?? 0) - (a.dominance ?? 0));
+      }
+
       function drawSummary(coins){
         summaryEl.innerHTML = '';
         coins.forEach((coin, idx) => {
@@ -316,10 +375,12 @@
         coins.forEach((coin, idx) => {
           const color = colors[idx % colors.length];
           ctx.beginPath();
-          ctx.lineWidth = 2.4;
+          ctx.lineWidth = 2.6;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
           ctx.strokeStyle = color;
           ctx.shadowColor = color;
-          ctx.shadowBlur = 12;
+          ctx.shadowBlur = 14;
           coin.series.forEach((pt, i) => {
             const x = projectX(pt.time);
             const y = projectY(pt.value);
@@ -327,6 +388,17 @@
             else ctx.lineTo(x, y);
           });
           ctx.stroke();
+          const last = coin.series[coin.series.length - 1];
+          if (last) {
+            const x = projectX(last.time);
+            const y = projectY(last.value);
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 18;
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
           ctx.shadowBlur = 0;
         });
 
@@ -349,7 +421,7 @@
           const res = await fetch('/api/dominance/top3?days=30');
           if (!res.ok) throw new Error('dominance fetch failed');
           const data = await res.json();
-          const coins = Array.isArray(data?.coins) ? data.coins.filter(c => Array.isArray(c.series) && c.series.length) : [];
+          const coins = prepareCoins(data?.coins);
           if (!coins.length) throw new Error('데이터가 비어 있습니다.');
           drawSummary(coins);
           drawLegend(coins);
