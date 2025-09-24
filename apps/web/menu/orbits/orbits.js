@@ -22,8 +22,18 @@ function loadOwnPosts() {
   }
 }
 
+function getDefaultCategoryId() {
+  if (Array.isArray(forumData.categories) && forumData.categories.length > 0) {
+    const firstCategory = forumData.categories[0];
+    if (firstCategory && typeof firstCategory.id === 'string' && firstCategory.id.trim()) {
+      return firstCategory.id;
+    }
+  }
+  return 'volume';
+}
+
 const state = {
-  currentCategory: forumData.categories[0]?.id ?? 'volume',
+  currentCategory: getDefaultCategoryId(),
   basePosts: forumData.posts.map(post => normalizePost(post, 'static')).filter(Boolean),
   remotePosts: [],
   descriptions: Object.fromEntries(forumData.categories.map(category => [category.id, category.description])),
@@ -145,7 +155,7 @@ function renderIconElement(container, icon, options = {}) {
   }
 
   const normalized = normalizeIcon(icon, altText);
-  if (normalized?.type === 'image' && normalized.src) {
+  if (normalized && normalized.type === 'image' && normalized.src) {
     const img = document.createElement('img');
     img.src = normalized.src;
     img.alt = normalized.alt || altText || '';
@@ -158,7 +168,7 @@ function renderIconElement(container, icon, options = {}) {
     return 'image';
   }
 
-  const textValue = normalized?.type === 'text' && normalized.value ? normalized.value : fallbackText;
+  const textValue = normalized && normalized.type === 'text' && normalized.value ? normalized.value : fallbackText;
   container.textContent = textValue;
   return textValue ? 'text' : 'none';
 }
@@ -177,12 +187,12 @@ function normalizePost(post, source = 'remote') {
       ? post.content
       : '';
   const rawCategory = typeof post.category === 'string' && post.category.trim() ? post.category.trim() : '';
-  const categoryId = rawCategory || forumData.categories[0]?.id ?? 'volume';
+  const categoryId = rawCategory || getDefaultCategoryId();
   const category = findCategoryById(categoryId);
   const rawTitle = typeof post.title === 'string' ? post.title.trim() : '';
   const title = rawTitle || 'Untitled';
   const heroAltFallback = rawTitle ? `${rawTitle} 대표 아이콘` : category ? `${category.title} 아이콘` : '전략 아이콘';
-  const hero = normalizeIcon(post.hero, heroAltFallback) ?? normalizeIcon(category?.heroIcon, heroAltFallback);
+  const hero = normalizeIcon(post.hero, heroAltFallback) || normalizeIcon(category ? category.heroIcon : null, heroAltFallback);
   const image = normalizeImage(post.image);
   const tags = Array.isArray(post.tags)
     ? post.tags
@@ -218,9 +228,9 @@ function sortPosts(posts) {
   return posts
     .slice()
     .sort((a, b) => {
-      const aTime = Number.isFinite(a?.timestamp) ? a.timestamp : Number.MIN_SAFE_INTEGER;
-      const bTime = Number.isFinite(b?.timestamp) ? b.timestamp : Number.MIN_SAFE_INTEGER;
-      return bTime - aTime;
+      const aTimestamp = a && Number.isFinite(a.timestamp) ? a.timestamp : Number.MIN_SAFE_INTEGER;
+      const bTimestamp = b && Number.isFinite(b.timestamp) ? b.timestamp : Number.MIN_SAFE_INTEGER;
+      return bTimestamp - aTimestamp;
     });
 }
 
@@ -340,7 +350,7 @@ function updateCategoryHeader() {
 }
 
 function updateDescription() {
-  const description = state.descriptions[state.currentCategory] ?? '';
+  const description = state.descriptions[state.currentCategory] || '';
   elements.descriptionContent.innerHTML = description ? `<p>${description}</p>` : '<p>이 카테고리에 대한 설명을 작성해주세요.</p>';
   if (!elements.descriptionEdit.hasAttribute('hidden')) {
     elements.descriptionTextarea.value = description;
@@ -384,7 +394,7 @@ function createPostCard(post) {
   } else {
     const fallback = document.createElement('div');
     fallback.className = 'post-card__media-fallback';
-    renderIconElement(fallback, post.hero || category?.heroIcon, {
+    renderIconElement(fallback, post.hero || (category ? category.heroIcon : null), {
       fallbackText: '🛰️',
       altText: `${post.title} 대표 아이콘`,
       imageClass: 'post-card__media-fallback--image'
@@ -398,7 +408,7 @@ function createPostCard(post) {
 
   const badge = document.createElement('span');
   badge.className = 'post-card__badge';
-  badge.textContent = category?.badge ?? 'ORBITS';
+  badge.textContent = category && category.badge ? category.badge : 'ORBITS';
   body.appendChild(badge);
 
   const title = document.createElement('h3');
@@ -514,11 +524,13 @@ function closePostDetail() {
   state.currentDetailPostId = null;
   elements.detailView.hidden = true;
   elements.boardView.hidden = false;
-  elements.deletePostButton?.setAttribute('hidden', '');
+  if (elements.deletePostButton) {
+    elements.deletePostButton.setAttribute('hidden', '');
+  }
 }
 
 function openDescriptionEditor() {
-  elements.descriptionTextarea.value = state.descriptions[state.currentCategory] ?? '';
+  elements.descriptionTextarea.value = state.descriptions[state.currentCategory] || '';
   elements.descriptionEdit.removeAttribute('hidden');
   elements.descriptionContent.style.display = 'none';
   elements.descriptionTextarea.focus();
@@ -547,7 +559,8 @@ async function fetchRemotePosts() {
   }
   const data = await response.json();
   const posts = Array.isArray(data.posts) ? data.posts.map(item => normalizePost(item, 'remote')).filter(Boolean) : [];
-  return { posts, updatedAt: data.updatedAt ?? null };
+  const updatedAt = data && data.updatedAt ? data.updatedAt : null;
+  return { posts, updatedAt };
 }
 
 async function deleteRemotePost(postId) {
@@ -565,7 +578,7 @@ async function deleteRemotePost(postId) {
     if (response.status === 404) {
       return { ok: false, removed: postId, updatedAt: null };
     }
-    const message = data?.error || 'Failed to delete post';
+    const message = data && data.error ? data.error : 'Failed to delete post';
     throw new Error(message);
   }
   return data;
@@ -616,7 +629,7 @@ async function handleDeletePost(postId, triggerButton) {
     if (state.currentDetailPostId === postId) {
       closePostDetail();
     }
-    const updatedTimestamp = response?.updatedAt || new Date().toISOString();
+    const updatedTimestamp = response && response.updatedAt ? response.updatedAt : new Date().toISOString();
     elements.boardUpdated.textContent = formatUpdatedAt(updatedTimestamp);
   } catch (error) {
     console.error('Failed to delete ORBITS post', error);
@@ -628,20 +641,32 @@ async function handleDeletePost(postId, triggerButton) {
 }
 
 function initializeEvents() {
-  elements.newPostButton?.addEventListener('click', event => {
-    event.preventDefault();
-    closePostDetail();
-    window.location.href = './write.html';
-  });
-  elements.editDescriptionButton?.addEventListener('click', openDescriptionEditor);
-  elements.cancelDescriptionButton?.addEventListener('click', closeDescriptionEditor);
-  elements.saveDescriptionButton?.addEventListener('click', saveDescription);
-  elements.backToBoardButton?.addEventListener('click', closePostDetail);
-  elements.deletePostButton?.addEventListener('click', () => {
-    if (state.currentDetailPostId) {
-      handleDeletePost(state.currentDetailPostId, elements.deletePostButton);
-    }
-  });
+  if (elements.newPostButton) {
+    elements.newPostButton.addEventListener('click', event => {
+      event.preventDefault();
+      closePostDetail();
+      window.location.href = './write.html';
+    });
+  }
+  if (elements.editDescriptionButton) {
+    elements.editDescriptionButton.addEventListener('click', openDescriptionEditor);
+  }
+  if (elements.cancelDescriptionButton) {
+    elements.cancelDescriptionButton.addEventListener('click', closeDescriptionEditor);
+  }
+  if (elements.saveDescriptionButton) {
+    elements.saveDescriptionButton.addEventListener('click', saveDescription);
+  }
+  if (elements.backToBoardButton) {
+    elements.backToBoardButton.addEventListener('click', closePostDetail);
+  }
+  if (elements.deletePostButton) {
+    elements.deletePostButton.addEventListener('click', () => {
+      if (state.currentDetailPostId) {
+        handleDeletePost(state.currentDetailPostId, elements.deletePostButton);
+      }
+    });
+  }
 }
 
 function init() {
