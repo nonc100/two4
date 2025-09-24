@@ -94,66 +94,230 @@
       filter: blur(0.5px);
     }
     
+    /* ---- Global Header (Echoes inspired) ---- */
+    .nav-header {
+      position: sticky;
+      top: 0;
+      z-index: 160;
+      background: linear-gradient(135deg, rgba(10, 15, 26, 0.95), rgba(24, 20, 40, 0.9));
+      border-bottom: 1px solid rgba(0, 255, 255, 0.18);
+      backdrop-filter: blur(26px);
+      box-shadow: 0 12px 32px rgba(5, 10, 20, 0.45);
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+    }
+
+    .nav-logo {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+
+    .nav-logo img {
+      height: 44px;
+      width: auto;
+      filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.5));
+      transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    .nav-logo:hover img,
+    .nav-logo:focus img {
+      transform: translateY(-1px);
+      filter: drop-shadow(0 0 16px rgba(0, 255, 255, 0.7));
+    }
+
+    .nav-menu {
+      list-style: none;
+      display: flex;
+      gap: 6px;
+      padding: 0;
+      margin: 0;
+    }
+
+    .nav-menu::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .nav-menu::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 255, 0.35);
+      border-radius: 999px;
+    }
+
+    .nav-menu::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .nav-menu a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: rgba(182, 202, 235, 0.8);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .nav-menu a::after {
+      content: '';
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 6px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .nav-menu a[data-tooltip]::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 50%;
+      bottom: -32px;
+      transform: translate(-50%, 6px);
+      background: rgba(12, 18, 32, 0.9);
+      color: rgba(182, 202, 235, 0.85);
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(6, 12, 24, 0.35);
+    }
+
+    .nav-menu a:hover,
+    .nav-menu a:focus {
+      color: var(--neon-cyan);
+      border-color: rgba(0, 255, 255, 0.25);
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.12);
+    }
+
+    .nav-menu a:hover::after,
+    .nav-menu a:focus::after {
+      opacity: 1;
+    }
+
+    .nav-menu a:hover::before,
+    .nav-menu a:focus::before {
+      opacity: 1;
+      transform: translate(-50%, -2px);
+    }
+
+    .nav-menu a.active {
+      color: #ffffff;
+      border-color: rgba(0, 255, 255, 0.4);
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.16), rgba(153, 69, 255, 0.16));
+      box-shadow: 0 0 24px rgba(0, 255, 255, 0.18);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: rgba(182, 202, 235, 0.75);
+      font-family: 'Orbitron', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .nav-right span:last-child {
+      color: rgba(0, 255, 255, 0.85);
+      text-shadow: 0 0 12px rgba(0, 255, 255, 0.55);
+    }
+
     /* Cyberpunk Star Controller */
     .star-ctl {
       position: fixed;
-      left: 50%;
-      top: 20px;
-      transform: translateX(-50%);
-      z-index: 100;
+      top: 110px;
+      right: 24px;
+      z-index: 150;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding: 8px 16px;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(153, 69, 255, 0.1));
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
-      border-radius: 50px;
-      box-shadow: 
-        0 0 20px rgba(0, 255, 255, 0.3),
-        inset 0 0 20px rgba(153, 69, 255, 0.1);
+      gap: 10px;
+      padding: 10px 12px 14px;
+      width: 56px;
+      background: linear-gradient(180deg, rgba(0, 255, 255, 0.12), rgba(10, 15, 35, 0.75));
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 10px 24px rgba(6, 12, 24, 0.45);
       font-family: 'Orbitron', monospace;
-      font-size: 11px;
+      font-size: 0.65rem;
       font-weight: 700;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
     }
-    
+
     .star-ctl span {
-      color: var(--neon-cyan);
-      text-shadow: 0 0 10px currentColor;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      color: rgba(0, 255, 255, 0.85);
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.65);
     }
-    
+
     .star-ctl input[type=range] {
-      width: 140px;
-      height: 4px;
-      background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
-      border-radius: 10px;
+      width: 120px;
+      height: 16px;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      background: linear-gradient(90deg, rgba(0, 255, 255, 0.55), rgba(153, 69, 255, 0.45));
+      border-radius: 999px;
       outline: none;
       -webkit-appearance: none;
     }
-    
+
     .star-ctl input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 16px;
       height: 16px;
-      background: var(--neon-cyan);
+      background: rgba(255, 255, 255, 0.95);
       border-radius: 50%;
       cursor: pointer;
-      box-shadow: 0 0 15px var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+      border: 2px solid rgba(0, 255, 255, 0.7);
     }
-    
-    /* Brand Logo with Glow */
-    .brand {
-      position: fixed;
-      right: 20px;
-      top: 20px;
-      z-index: 101;
-      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+
+    .star-ctl input[type=range]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.7);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
     }
-    
-    .brand img {
-      height: 40px;
+
+    .star-ctl input[type=range]::-moz-range-track {
+      background: transparent;
+      border: none;
     }
     
     /* Main Container */
@@ -162,7 +326,7 @@
       z-index: 1;
       max-width: 1400px;
       margin: 0 auto;
-      padding: 120px 20px 80px;
+      padding: 140px 20px 80px;
     }
     
     /* ===== CYBER HUB (3D Donut) ===== */
@@ -656,30 +820,53 @@
       
       /* Adjust main wrapper */
       .wrap {
-        padding: 100px 12px 60px;
+        padding: 120px 12px 60px;
         max-width: 100%;
       }
-      
+
+      .nav-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .nav-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .nav-right {
+        width: 100%;
+        justify-content: space-between;
+        font-size: 0.6rem;
+      }
+
+      .nav-menu {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 6px;
+      }
+
+      .nav-menu a {
+        flex: 0 0 auto;
+        padding: 10px 14px;
+        font-size: 0.8rem;
+      }
+
       /* Star controller - smaller on mobile */
       .star-ctl {
-        top: 10px;
-        padding: 6px 12px;
-        font-size: 10px;
-        gap: 8px;
+        top: 88px;
+        right: 10px;
+        width: 48px;
+        padding: 8px 10px 12px;
+        font-size: 0.58rem;
+        gap: 6px;
       }
-      
+
       .star-ctl input[type=range] {
-        width: 100px;
-      }
-      
-      /* Brand logo - smaller */
-      .brand {
-        right: 12px;
-        top: 10px;
-      }
-      
-      .brand img {
-        height: 28px;
+        width: 90px;
       }
       
       /* Hub adjustments */
@@ -818,7 +1005,32 @@
       .wrap {
         padding: 90px 8px 40px;
       }
-      
+
+      .nav-container {
+        padding: 12px 16px;
+      }
+
+      .nav-right {
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+      }
+
+      .star-ctl {
+        top: 82px;
+        right: 8px;
+        width: 44px;
+        padding: 8px 8px 12px;
+      }
+
+      .star-ctl span {
+        font-size: 0.52rem;
+      }
+
+      .star-ctl input[type=range] {
+        width: 80px;
+      }
+
       /* Even smaller hub on very small screens */
       .hub {
         width: 90vw;
@@ -955,15 +1167,36 @@
 <body>
   <!-- Star Background Canvas -->
   <canvas id="whiteStars"></canvas>
-  
+
+  <!-- Global Navigation -->
+  <nav class="nav-header" aria-label="TWO.4 navigation">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="nav-logo" aria-label="TWO.4 home">
+          <img src="/media/logo.png" alt="TWO.4 logo">
+        </a>
+        <ul class="nav-menu">
+          <li><a href="/menu/cosmos/" class="active" data-tooltip="마켓">Crypto Market</a></li>
+          <li><a href="/menu/orbits.html" data-tooltip="지표·신호">Orbits</a></li>
+          <li><a href="/menu/method.html" data-tooltip="기법">Method</a></li>
+          <li><a href="/menu/psyche.html" data-tooltip="심법">Psyche</a></li>
+          <li><a href="/menu/echoes/" data-tooltip="뉴스·관찰">Echoes</a></li>
+          <li><a href="/menu/tidewave/" data-tooltip="AI 스튜디오">Tidewave</a></li>
+          <li><a href="/menu/auth/login/" data-tooltip="포털">Portal</a></li>
+        </ul>
+      </div>
+      <div class="nav-right">
+        <span>Cosmos Deck</span>
+        <span>Auto refresh 30s</span>
+      </div>
+    </div>
+  </nav>
+
   <!-- Star Controller -->
   <div class="star-ctl" aria-label="Star background controller">
     <span>Stars</span>
     <input id="starRange" type="range" min="0" max="100" value="80" />
   </div>
-  
-  <!-- Brand Logo -->
-  <div class="brand"><img src="/media/logo.png" alt="TWO4"></div>
   
   <div class="wrap">
     <!-- Cyber HUB (3D Donut + Detail panel) -->
