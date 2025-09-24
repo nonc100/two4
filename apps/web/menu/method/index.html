@@ -264,11 +264,63 @@
       position: relative;
     }
 
+    .write-box {
+      align-self: flex-end;
+      margin: 28px clamp(28px, 6vw, 48px) 0;
+      width: 88px;
+      height: 88px;
+      border-radius: 22px;
+      border: 1px solid rgba(138, 43, 226, 0.45);
+      background: linear-gradient(160deg, rgba(36, 18, 54, 0.92), rgba(16, 26, 48, 0.9));
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      cursor: pointer;
+      box-shadow: 0 22px 38px rgba(20, 10, 44, 0.45);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+    }
+
+    .write-box__icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .write-box__text {
+      font-size: 0.68rem;
+    }
+
+    .write-box:hover,
+    .write-box:focus-visible {
+      outline: none;
+      transform: translateY(-4px);
+      border-color: rgba(100, 215, 255, 0.55);
+      box-shadow: 0 26px 44px rgba(18, 12, 46, 0.55);
+    }
+
+    .write-box[aria-expanded="true"] {
+      border-color: rgba(255, 112, 156, 0.65);
+      background: linear-gradient(160deg, rgba(64, 22, 58, 0.92), rgba(22, 20, 44, 0.92));
+    }
+
     .forum-view {
-      padding: 40px clamp(28px, 6vw, 48px) 52px;
       display: flex;
       flex-direction: column;
       gap: 28px;
+    }
+
+    .forum-view--board {
+      padding: 24px clamp(28px, 6vw, 48px) 52px;
+    }
+
+    .forum-view--detail {
+      padding: 40px clamp(28px, 6vw, 48px) 60px;
     }
 
     .forum-view[hidden] {
@@ -315,9 +367,8 @@
     .forum-header__actions {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       align-items: flex-end;
-      min-width: 220px;
     }
 
     .forum-sync {
@@ -325,26 +376,6 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--text-tertiary);
-    }
-
-    .new-post-btn {
-      background: linear-gradient(120deg, rgba(255, 0, 212, 0.9), rgba(100, 215, 255, 0.95));
-      border: none;
-      color: #0a0a1e;
-      font-weight: 700;
-      font-size: 0.92rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border-radius: 999px;
-      padding: 14px 26px;
-      cursor: pointer;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      font-family: 'Orbitron', sans-serif;
-    }
-
-    .new-post-btn:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 18px 32px rgba(120, 45, 160, 0.45);
     }
 
     .category-hero {
@@ -581,7 +612,7 @@
       background: var(--surface-panel);
       border-radius: 20px;
       border: 1px solid rgba(100, 215, 255, 0.16);
-      padding: 24px;
+      padding: 28px;
       display: grid;
       gap: 18px;
       position: relative;
@@ -619,6 +650,7 @@
       font-size: 0.82rem;
       color: var(--text-tertiary);
       letter-spacing: 0.04em;
+      padding-right: 76px;
     }
 
     .post-card__meta strong {
@@ -679,6 +711,35 @@
       gap: 4px;
     }
 
+    .post-card__actions {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .post-card__delete {
+      background: rgba(255, 120, 160, 0.16);
+      border: 1px solid rgba(255, 120, 160, 0.4);
+      color: #ff8fb3;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .post-card__delete:hover,
+    .post-card__delete:focus-visible {
+      outline: none;
+      background: rgba(255, 120, 160, 0.28);
+      border-color: rgba(255, 150, 190, 0.6);
+      transform: translateY(-2px);
+    }
+
     .empty-state {
       text-align: center;
       padding: 60px 20px;
@@ -689,8 +750,14 @@
       font-size: 0.96rem;
     }
 
+    .detail-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
     .back-btn {
-      align-self: flex-start;
       background: rgba(100, 215, 255, 0.12);
       border: 1px solid rgba(100, 215, 255, 0.35);
       color: var(--text-primary);
@@ -702,9 +769,35 @@
       transition: all 0.2s ease;
     }
 
-    .back-btn:hover {
+    .back-btn:hover,
+    .back-btn:focus-visible {
       background: rgba(100, 215, 255, 0.22);
       border-color: rgba(100, 215, 255, 0.5);
+      outline: none;
+    }
+
+    .delete-btn {
+      background: rgba(255, 110, 135, 0.16);
+      border: 1px solid rgba(255, 140, 170, 0.45);
+      color: #ff99b8;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .delete-btn:hover,
+    .delete-btn:focus-visible {
+      outline: none;
+      background: rgba(255, 120, 160, 0.28);
+      border-color: rgba(255, 170, 190, 0.6);
+    }
+
+    .delete-btn[hidden] {
+      display: none;
     }
 
     .post-detail {
@@ -821,11 +914,39 @@
       .forum-sidebar__header {
         grid-column: 1 / -1;
       }
+
+      .write-box {
+        margin: 24px clamp(24px, 6vw, 40px) 0;
+      }
     }
 
     @media (max-width: 720px) {
       main {
         padding: 140px 18px 72px;
+      }
+
+      .write-box {
+        width: 100%;
+        height: 68px;
+        border-radius: 18px;
+        margin: 24px 0 0;
+      }
+
+      .write-box__icon {
+        font-size: 1.4rem;
+      }
+
+      .write-box__text {
+        font-size: 0.62rem;
+        letter-spacing: 0.14em;
+      }
+
+      .forum-view--board {
+        padding: 20px 0 48px;
+      }
+
+      .forum-view--detail {
+        padding: 28px 0 56px;
       }
 
       .forum-header__actions {
@@ -845,6 +966,30 @@
 
       .post-grid {
         grid-template-columns: 1fr;
+      }
+
+      .post-card {
+        padding: 24px;
+      }
+
+      .post-card__meta {
+        padding-right: 0;
+      }
+
+      .post-card__actions {
+        position: static;
+        justify-content: flex-end;
+      }
+
+      .detail-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .back-btn,
+      .delete-btn {
+        width: 100%;
+        text-align: center;
       }
 
       .forum-sidebar {
@@ -898,7 +1043,11 @@
         </aside>
 
         <div class="method-forum__main">
-          <div class="forum-view" id="boardView">
+          <button class="write-box" type="button" id="newPostButton" aria-controls="postForm" aria-expanded="false">
+            <span class="write-box__icon" id="newPostButtonIcon" aria-hidden="true">✎</span>
+            <span class="write-box__text" id="newPostButtonLabel">글쓰기</span>
+          </button>
+          <div class="forum-view forum-view--board" id="boardView">
             <header class="forum-header">
               <div class="forum-header__info">
                 <span class="forum-header__badge" id="categoryBadge">VOLUME / 거래량</span>
@@ -907,7 +1056,6 @@
               </div>
               <div class="forum-header__actions">
                 <p class="forum-sync" id="boardUpdated">Last sync — 준비 중</p>
-                <button class="new-post-btn" type="button" id="newPostButton">+ New Post</button>
               </div>
             </header>
 
@@ -956,15 +1104,18 @@
               </div>
               <div class="form-actions">
                 <button class="btn btn-secondary" type="button" id="cancelPostButton">취소</button>
-                <button class="btn btn-primary" type="submit">게시</button>
+                <button class="btn btn-primary" type="submit" id="submitPostButton">게시</button>
               </div>
             </form>
 
             <div class="post-grid" id="postsList"></div>
           </div>
 
-          <div class="forum-view" id="detailView" hidden>
-            <button class="back-btn" type="button" id="backToBoardButton">← 목록으로</button>
+          <div class="forum-view forum-view--detail" id="detailView" hidden>
+            <div class="detail-toolbar">
+              <button class="back-btn" type="button" id="backToBoardButton">← 목록으로</button>
+              <button class="delete-btn" type="button" id="deletePostButton" hidden>게시글 삭제</button>
+            </div>
             <article class="post-detail" id="postDetail">
               <header class="post-detail__header">
                 <span class="post-detail__category" id="detailCategory">VOLUME</span>

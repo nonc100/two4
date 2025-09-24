@@ -43,6 +43,206 @@ app.use('/ai', express.static(path.join(__dirname, 'apps/web/ai'))); // seed.htm
 // JSON 파서
 app.use(express.json({ limit: '2mb' }));
 
+// ==============================
+// METHOD 게시판 파일 스토어
+// ==============================
+const METHOD_DATA_DIR = path.join(__dirname, 'data');
+const METHOD_POSTS_FILE = path.join(METHOD_DATA_DIR, 'method-posts.json');
+
+function ensureMethodStore() {
+  try {
+    fs.mkdirSync(METHOD_DATA_DIR, { recursive: true });
+  } catch (error) {
+    console.error('⚠️ Failed to ensure METHOD data directory:', error.message);
+  }
+
+  if (!fs.existsSync(METHOD_POSTS_FILE)) {
+    try {
+      fs.writeFileSync(METHOD_POSTS_FILE, JSON.stringify({ posts: [] }, null, 2), 'utf8');
+    } catch (error) {
+      console.error('⚠️ Failed to initialize METHOD posts store:', error.message);
+    }
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function toContentHtml(text) {
+  const clean = String(text || '').trim();
+  if (!clean) return '';
+  return clean
+    .split(/\n{2,}/)
+    .map(block => `<p>${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+    .join('\n');
+}
+
+function excerptFromText(text) {
+  const plain = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!plain) return '';
+  const slice = plain.slice(0, 140);
+  return plain.length > 140 ? `${slice}…` : slice;
+}
+
+function excerptFromHtml(html) {
+  return excerptFromText(String(html || '').replace(/<[^>]+>/g, ' '));
+}
+
+function normalizeStoredPost(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `legacy-${Date.now().toString(36)}`;
+  const createdAt = typeof raw.createdAt === 'string' && !Number.isNaN(Date.parse(raw.createdAt))
+    ? raw.createdAt
+    : new Date().toISOString();
+  const tags = Array.isArray(raw.tags)
+    ? raw.tags
+        .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+        .filter(Boolean)
+        .slice(0, 12)
+    : [];
+  const stats = raw.stats && typeof raw.stats === 'object' ? raw.stats : {};
+  const contentHtml = typeof raw.contentHtml === 'string' && raw.contentHtml.trim()
+    ? raw.contentHtml
+    : toContentHtml(raw.content || '');
+
+  return {
+    id,
+    category: typeof raw.category === 'string' && raw.category.trim() ? raw.category.trim() : 'general',
+    title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled',
+    author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : 'Anonymous',
+    tags,
+    excerpt: typeof raw.excerpt === 'string' && raw.excerpt.trim() ? raw.excerpt.trim() : excerptFromHtml(contentHtml),
+    contentHtml,
+    createdAt,
+    stats: {
+      likes: Number.isFinite(Number(stats.likes)) ? Number(stats.likes) : 0,
+      comments: Number.isFinite(Number(stats.comments)) ? Number(stats.comments) : 0,
+      views: Number.isFinite(Number(stats.views)) ? Number(stats.views) : 0
+    }
+  };
+}
+
+function loadMethodPosts() {
+  ensureMethodStore();
+  try {
+    const raw = fs.readFileSync(METHOD_POSTS_FILE, 'utf8');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.posts) ? parsed.posts : [];
+    return list
+      .map(normalizeStoredPost)
+      .filter(Boolean);
+  } catch (error) {
+    console.error('⚠️ Failed to load METHOD posts:', error.message);
+    return [];
+  }
+}
+
+let methodPostsStore = loadMethodPosts();
+
+function saveMethodPosts() {
+  ensureMethodStore();
+  try {
+    fs.writeFileSync(METHOD_POSTS_FILE, JSON.stringify({ posts: methodPostsStore }, null, 2), 'utf8');
+  } catch (error) {
+    console.error('⚠️ Failed to save METHOD posts:', error.message);
+  }
+}
+
+function computeUpdatedAt(posts) {
+  const latest = posts.reduce((acc, post) => {
+    if (!post?.createdAt) return acc;
+    const ts = Date.parse(post.createdAt);
+    return Number.isNaN(ts) ? acc : Math.max(acc, ts);
+  }, 0);
+  return latest ? new Date(latest).toISOString() : null;
+}
+
+function sanitizeTitle(value) {
+  return String(value || '')
+    .trim()
+    .slice(0, 200);
+}
+
+function sanitizeCategory(value) {
+  return String(value || '')
+    .trim()
+    .slice(0, 120);
+}
+
+function sanitizeAuthor(value) {
+  const clean = String(value || '').trim();
+  return clean ? clean.slice(0, 60) : 'Anonymous';
+}
+
+function sanitizeTags(input) {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+    .filter(Boolean)
+    .slice(0, 12)
+    .map(tag => tag.slice(0, 40));
+}
+
+const methodRouter = express.Router();
+
+methodRouter.get('/posts', (_req, res) => {
+  res.json({ ok: true, posts: methodPostsStore, updatedAt: computeUpdatedAt(methodPostsStore) });
+});
+
+methodRouter.post('/posts', (req, res) => {
+  const payload = req.body || {};
+  const title = sanitizeTitle(payload.title);
+  const category = sanitizeCategory(payload.category);
+  const body = String(payload.content || '').trim();
+
+  if (!title || !category || !body) {
+    return res.status(400).json({ ok: false, error: 'INVALID_PAYLOAD' });
+  }
+
+  const now = new Date();
+  const newPost = {
+    id: `m-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    category,
+    title,
+    author: sanitizeAuthor(payload.author),
+    tags: sanitizeTags(payload.tags),
+    excerpt: excerptFromText(body),
+    contentHtml: toContentHtml(body),
+    createdAt: now.toISOString(),
+    stats: { likes: 0, comments: 0, views: 1 }
+  };
+
+  methodPostsStore.unshift(newPost);
+  saveMethodPosts();
+
+  res.status(201).json({ ok: true, post: newPost, updatedAt: newPost.createdAt });
+});
+
+methodRouter.delete('/posts/:id', (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) {
+    return res.status(400).json({ ok: false, error: 'INVALID_ID' });
+  }
+  const index = methodPostsStore.findIndex(post => post.id === id);
+  if (index === -1) {
+    return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
+  }
+
+  methodPostsStore.splice(index, 1);
+  saveMethodPosts();
+
+  res.json({ ok: true, removed: id, updatedAt: computeUpdatedAt(methodPostsStore) });
+});
+
+app.use('/api/method', methodRouter);
+
 // [SEED AI] Seed 라우터 마운트 (+ 마운트 확인 로그 & 프로브)
 try {
   const aiRouter = require('./apps/web/ai/server.cjs');
