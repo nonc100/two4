@@ -913,6 +913,166 @@ app.get('/api/global', async (_req, res) => {
   keep(key, payload);
 });
 
+app.get('/api/dominance/top3', async (req, res) => {
+  const daysRaw = Number.parseInt(req.query.days, 10);
+  const days = Number.isFinite(daysRaw) ? Math.max(7, Math.min(daysRaw, 120)) : 30;
+  const cacheKey = `DOMTOP3:${days}`;
+  const cached = hit2(cacheKey, 5 * 60 * 1000);
+  if (cached) {
+    setCorsAndCache(res);
+    return res.type(cached.ct).status(cached.status).send(cached.body);
+  }
+
+  try {
+    const listUrl = new URL('https://api.coingecko.com/api/v3/coins/markets');
+    listUrl.searchParams.set('vs_currency', 'usd');
+    listUrl.searchParams.set('order', 'market_cap_desc');
+    listUrl.searchParams.set('per_page', '3');
+    listUrl.searchParams.set('page', '1');
+
+    const topPayload = await proxyFetch(listUrl, cgHeaders);
+    if (!topPayload.ok) {
+      setCorsAndCache(res);
+      return res.type(topPayload.ct).status(topPayload.status).send(topPayload.body);
+    }
+
+    let topCoins = [];
+    try { topCoins = JSON.parse(topPayload.body); } catch (e) { topCoins = []; }
+    if (!Array.isArray(topCoins) || !topCoins.length) {
+      setCorsAndCache(res);
+      return res.status(502).json({ error: 'top coins unavailable' });
+    }
+
+    const ids = topCoins.map(c => c?.id).filter(Boolean);
+    if (!ids.length) {
+      setCorsAndCache(res);
+      return res.status(502).json({ error: 'no ids for dominance' });
+    }
+
+    const globalUrl = `https://api.coingecko.com/api/v3/global/market_cap_chart?vs_currency=usd&days=${days}`;
+    const globalPayload = await proxyFetch(globalUrl, cgHeaders);
+    if (!globalPayload.ok) {
+      setCorsAndCache(res);
+      return res.type(globalPayload.ct).status(globalPayload.status).send(globalPayload.body);
+    }
+
+    let globalData;
+    try { globalData = JSON.parse(globalPayload.body); }
+    catch { globalData = null; }
+
+    const extractGlobalSeries = (obj) => {
+      if (!obj) return [];
+      if (Array.isArray(obj)) return obj;
+      if (Array.isArray(obj.market_cap)) return obj.market_cap;
+      if (Array.isArray(obj.total_market_cap)) return obj.total_market_cap;
+      if (obj.market_cap_chart) {
+        const chart = obj.market_cap_chart;
+        if (Array.isArray(chart.market_cap)) return chart.market_cap;
+        if (Array.isArray(chart.total_market_cap)) return chart.total_market_cap;
+      }
+      if (obj.data) return extractGlobalSeries(obj.data);
+      return [];
+    };
+
+    const totalSeries = extractGlobalSeries(globalData);
+    if (!Array.isArray(totalSeries) || !totalSeries.length) {
+      setCorsAndCache(res);
+      return res.status(502).json({ error: 'global market cap unavailable' });
+    }
+
+    const normalizeTs = (ts) => {
+      const n = Number(ts);
+      if (!Number.isFinite(n)) return null;
+      return Math.round(n / 3_600_000) * 3_600_000; // hourly bucket
+    };
+
+    const totalMap = new Map();
+    for (const entry of totalSeries) {
+      if (!Array.isArray(entry) || entry.length < 2) continue;
+      const ts = normalizeTs(entry[0]);
+      const val = Number(entry[1]);
+      if (!Number.isFinite(ts) || !Number.isFinite(val) || val <= 0) continue;
+      totalMap.set(ts, val);
+    }
+
+    const findTotal = (ts) => {
+      if (totalMap.has(ts)) return totalMap.get(ts);
+      const offsets = [ -3_600_000, 3_600_000, -2 * 3_600_000, 2 * 3_600_000 ];
+      for (const off of offsets) {
+        const v = totalMap.get(ts + off);
+        if (Number.isFinite(v)) return v;
+      }
+      return null;
+    };
+
+    const coinPayloads = await pmap(ids, ids.length, (id) => {
+      const url = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+      return proxyFetch(url, cgHeaders);
+    });
+
+    const coins = [];
+    coinPayloads.forEach((payload, idx) => {
+      if (!payload?.ok) return;
+      let coinData;
+      try { coinData = JSON.parse(payload.body); }
+      catch { coinData = null; }
+      if (!coinData) return;
+
+      const marketCaps = Array.isArray(coinData.market_caps)
+        ? coinData.market_caps
+        : Array.isArray(coinData.data?.market_caps)
+          ? coinData.data.market_caps
+          : [];
+
+      if (!Array.isArray(marketCaps) || !marketCaps.length) return;
+
+      const points = [];
+      for (const entry of marketCaps) {
+        if (!Array.isArray(entry) || entry.length < 2) continue;
+        const ts = normalizeTs(entry[0]);
+        const cap = Number(entry[1]);
+        if (!Number.isFinite(ts) || !Number.isFinite(cap) || cap <= 0) continue;
+        const total = findTotal(ts);
+        if (!Number.isFinite(total) || total <= 0) continue;
+        const pct = (cap / total) * 100;
+        points.push({ time: Math.floor(ts / 1000), value: Number(pct.toFixed(4)) });
+      }
+
+      if (!points.length) return;
+      points.sort((a, b) => a.time - b.time);
+      const first = points[0]?.value;
+      const last = points[points.length - 1]?.value;
+      const change = (Number.isFinite(last) && Number.isFinite(first)) ? (last - first) : null;
+      const meta = topCoins[idx] || {};
+
+      coins.push({
+        id: ids[idx],
+        symbol: (meta.symbol || '').toUpperCase(),
+        name: meta.name || ids[idx],
+        dominance: Number.isFinite(last) ? Number(last.toFixed(2)) : null,
+        change: Number.isFinite(change) ? Number(change.toFixed(2)) : null,
+        series: points
+      });
+    });
+
+    const response = {
+      days,
+      updated_at: Date.now(),
+      coins: coins.sort((a, b) => (b.dominance ?? 0) - (a.dominance ?? 0))
+    };
+
+    const body = JSON.stringify(response);
+    const payload = { ok: true, status: 200, ct: 'application/json; charset=utf-8', body };
+    setCorsAndCache(res);
+    res.type(payload.ct).status(200).send(body);
+    keep(cacheKey, payload);
+  } catch (e) {
+    console.error('dominance/top3 error', e);
+    setCorsAndCache(res);
+    res.status(502).json({ error: 'dominance fetch failed' });
+  }
+});
+
 // 3) 심플 가격
 // 예: /api/simple/price?ids=cosmos,bitcoin&vs_currencies=usd,krw
 app.get('/api/simple/price', async (req, res) => {
