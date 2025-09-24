@@ -11,13 +11,14 @@
       --page-bg: radial-gradient(circle at top, #120027 0%, #060010 45%, #020007 100%);
       --surface-glass: rgba(10, 9, 25, 0.78);
       --surface-panel: rgba(14, 16, 40, 0.68);
+      --surface-panel-strong: rgba(18, 22, 48, 0.82);
       --text-primary: #e8f6ff;
-      --text-secondary: rgba(205, 235, 255, 0.75);
-      --text-tertiary: rgba(200, 224, 255, 0.55);
+      --text-secondary: rgba(205, 235, 255, 0.78);
+      --text-tertiary: rgba(200, 224, 255, 0.58);
       --accent: #64d7ff;
       --accent-strong: #8a2be2;
       --border-soft: rgba(100, 215, 255, 0.35);
-      --border-strong: rgba(138, 43, 226, 0.65);
+      --border-strong: rgba(138, 43, 226, 0.58);
       --card-radius: 24px;
       --shadow-strong: 0 18px 40px rgba(0, 0, 0, 0.45);
     }
@@ -42,8 +43,8 @@
       position: fixed;
       inset: 0;
       background: radial-gradient(circle at 25% -10%, rgba(116, 69, 255, 0.18), transparent 55%),
-                  radial-gradient(circle at 80% 0%, rgba(72, 207, 255, 0.25), transparent 60%),
-                  radial-gradient(circle at 50% 100%, rgba(24, 9, 51, 0.55), rgba(1, 2, 12, 0.95));
+        radial-gradient(circle at 80% 0%, rgba(72, 207, 255, 0.25), transparent 60%),
+        radial-gradient(circle at 50% 100%, rgba(24, 9, 51, 0.55), rgba(1, 2, 12, 0.95));
       z-index: -3;
       filter: blur(0.3px);
     }
@@ -95,7 +96,7 @@
 
     main {
       position: relative;
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
       padding: 160px 28px 96px;
     }
@@ -144,396 +145,681 @@
       line-height: 1.7;
     }
 
-    .notice-board {
+    .method-forum {
       background: var(--surface-glass);
       border-radius: var(--card-radius);
-      border: 1px solid rgba(100, 215, 255, 0.45);
+      border: 1px solid rgba(100, 215, 255, 0.28);
       box-shadow: var(--shadow-strong);
-      backdrop-filter: blur(26px);
-      -webkit-backdrop-filter: blur(26px);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       overflow: hidden;
     }
 
-    .notice-board__header {
-      padding: 32px clamp(20px, 6vw, 48px) 28px;
+    .method-forum__layout {
       display: flex;
-      flex-wrap: wrap;
-      gap: 24px;
-      align-items: flex-start;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(100, 215, 255, 0.2);
+      min-height: 640px;
     }
 
-    .board-title {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .board-title__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(100, 215, 255, 0.5);
-      background: rgba(14, 27, 45, 0.75);
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.72rem;
-      letter-spacing: 0.28em;
-    }
-
-    .board-title__headline {
-      font-family: 'Orbitron', sans-serif;
-      font-size: clamp(1.8rem, 3vw, 2.4rem);
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-
-    .board-title__desc {
-      max-width: 540px;
-      font-size: 0.98rem;
-      color: var(--text-secondary);
-      line-height: 1.7;
-    }
-
-    .board-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      align-items: flex-end;
-      min-width: 220px;
-    }
-
-    .board-updated {
-      font-size: 0.82rem;
-      color: var(--text-tertiary);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .board-filters {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .board-filters button {
+    .forum-sidebar {
+      width: 280px;
+      padding: 40px 28px 44px;
+      background: linear-gradient(180deg, rgba(12, 16, 36, 0.92), rgba(6, 8, 18, 0.88));
+      border-right: 1px solid rgba(100, 215, 255, 0.12);
       position: relative;
-      border: 1px solid rgba(100, 215, 255, 0.45);
-      border-radius: 999px;
-      padding: 9px 18px;
-      font-size: 0.82rem;
-      letter-spacing: 0.08em;
+      overflow-y: auto;
+    }
+
+    .forum-sidebar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 18% 12%, rgba(98, 247, 255, 0.12), transparent 50%);
+      pointer-events: none;
+    }
+
+    .forum-sidebar__header {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .forum-sidebar__eyebrow {
       font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.28em;
+      font-size: 0.7rem;
+      color: rgba(151, 211, 255, 0.66);
       text-transform: uppercase;
-      background: rgba(12, 24, 42, 0.7);
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.25s ease;
     }
 
-    .board-filters button.active,
-    .board-filters button:hover {
-      color: var(--text-primary);
-      border-color: var(--accent);
-      box-shadow: 0 0 18px rgba(100, 215, 255, 0.4);
+    .forum-sidebar__title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.16em;
     }
 
-    .notice-board__body {
+    .category-group {
+      margin-bottom: 28px;
+    }
+
+    .category-group__title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(151, 211, 255, 0.72);
+      margin-bottom: 16px;
+    }
+
+    .category-nav {
+      list-style: none;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
-      gap: clamp(28px, 5vw, 48px);
-      padding: 42px clamp(20px, 6vw, 48px) 46px;
+      gap: 10px;
     }
 
-    .board-section {
+    .category-nav button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid rgba(100, 215, 255, 0.18);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: rgba(10, 12, 28, 0.55);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: border-color 0.28s ease, color 0.28s ease, transform 0.28s ease, background 0.28s ease;
+    }
+
+    .category-nav button::after {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.72rem;
+      color: rgba(151, 211, 255, 0.55);
+      letter-spacing: 0.08em;
+      margin-top: 6px;
+    }
+
+    .category-nav button:hover,
+    .category-nav button:focus {
+      outline: none;
+      border-color: rgba(100, 215, 255, 0.45);
+      color: var(--text-primary);
+      transform: translateX(4px);
+      background: rgba(15, 20, 40, 0.85);
+    }
+
+    .category-nav button.active {
+      border-color: var(--accent-strong);
+      color: var(--text-primary);
+      background: linear-gradient(140deg, rgba(40, 20, 70, 0.85), rgba(18, 30, 54, 0.85));
+      box-shadow: 0 12px 28px rgba(30, 10, 58, 0.55);
+    }
+
+    .method-forum__main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .forum-view {
+      padding: 40px clamp(28px, 6vw, 48px) 52px;
       display: flex;
       flex-direction: column;
       gap: 28px;
     }
 
-    .board-section__title {
+    .forum-view[hidden] {
+      display: none;
+    }
+
+    .forum-header {
       display: flex;
-      align-items: baseline;
-      gap: 16px;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(100, 215, 255, 0.16);
+      padding-bottom: 24px;
+    }
+
+    .forum-header__info {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 520px;
+    }
+
+    .forum-header__badge {
       font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.26em;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.2em;
-      color: rgba(133, 214, 255, 0.85);
-      font-size: 1.05rem;
+      color: rgba(151, 211, 255, 0.7);
     }
 
-    .board-section__title::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(to right, rgba(100, 215, 255, 0.6), transparent);
+    .forum-header__title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: 0.12em;
     }
 
-    .card-grid {
+    .forum-header__meta {
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-size: 0.98rem;
+    }
+
+    .forum-header__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: flex-end;
+      min-width: 220px;
+    }
+
+    .forum-sync {
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+
+    .new-post-btn {
+      background: linear-gradient(120deg, rgba(255, 0, 212, 0.9), rgba(100, 215, 255, 0.95));
+      border: none;
+      color: #0a0a1e;
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: 14px 26px;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .new-post-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 18px 32px rgba(120, 45, 160, 0.45);
+    }
+
+    .category-hero {
       display: grid;
-      gap: 22px;
-    }
-
-    .card-grid[data-columns="2"] {
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    .method-card {
-      background: var(--surface-panel);
+      grid-template-columns: 120px 1fr;
+      gap: 24px;
+      align-items: center;
+      background: linear-gradient(130deg, rgba(28, 20, 64, 0.82), rgba(14, 20, 42, 0.78));
       border-radius: 20px;
-      padding: 24px;
-      border: 1px solid rgba(100, 215, 255, 0.25);
+      border: 1px solid rgba(100, 215, 255, 0.22);
+      padding: 26px;
       position: relative;
       overflow: hidden;
-      transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-      min-height: 180px;
     }
 
-    .method-card::before {
+    .category-hero::after {
       content: "";
       position: absolute;
-      inset: -60% 20% auto -35%;
-      height: 120%;
-      background: radial-gradient(circle at center, rgba(100, 215, 255, 0.35), transparent 70%);
-      opacity: 0;
-      transition: opacity 0.4s ease;
+      inset: 12% -30% -60% 32%;
+      background: radial-gradient(circle at center, rgba(138, 43, 226, 0.45), transparent 70%);
+      opacity: 0.6;
+      pointer-events: none;
     }
 
-    .method-card:hover,
-    .method-card:focus-within {
-      transform: translateY(-6px);
-      border-color: rgba(138, 43, 226, 0.75);
-      box-shadow: 0 24px 38px rgba(27, 8, 56, 0.55);
-    }
-
-    .method-card:hover::before,
-    .method-card:focus-within::before {
-      opacity: 1;
-    }
-
-    .method-card__label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
-      letter-spacing: 0.18em;
-      color: rgba(100, 215, 255, 0.75);
-      text-transform: uppercase;
-    }
-
-    .method-card__title {
-      margin-top: 12px;
-      font-size: 1.18rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-    }
-
-    .method-card__meta {
-      margin-top: 12px;
-      font-size: 0.86rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    .method-card__list {
-      margin-top: 18px;
-      list-style: none;
+    .category-hero__visual {
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
+      background: rgba(12, 20, 48, 0.75);
+      border: 1px solid rgba(100, 215, 255, 0.25);
       display: grid;
-      gap: 6px;
-      font-size: 0.88rem;
-      color: var(--text-secondary);
+      place-items: center;
+      font-size: 2.6rem;
+      position: relative;
+      box-shadow: 0 18px 36px rgba(18, 14, 42, 0.65);
     }
 
-    .method-card__list li {
+    .category-hero__visual::before {
+      content: "";
+      position: absolute;
+      inset: -18px;
+      border-radius: 32px;
+      border: 1px solid rgba(100, 215, 255, 0.18);
+      opacity: 0.6;
+    }
+
+    .category-hero__text {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .category-hero__text h3 {
+      font-size: 1.32rem;
+      letter-spacing: 0.08em;
+    }
+
+    .category-hero__text p {
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-size: 0.96rem;
+      max-width: 560px;
+    }
+
+    .category-description {
+      background: rgba(10, 15, 34, 0.78);
+      border-radius: 18px;
+      border: 1px solid rgba(100, 215, 255, 0.18);
+      padding: 26px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .description-header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .description-header h3 {
+      font-size: 1.08rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .edit-description-btn {
+      background: rgba(100, 215, 255, 0.12);
+      border: 1px solid rgba(100, 215, 255, 0.32);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .edit-description-btn:hover {
+      background: rgba(100, 215, 255, 0.22);
+      border-color: rgba(100, 215, 255, 0.5);
+    }
+
+    .description-content {
+      color: var(--text-secondary);
+      line-height: 1.72;
+      font-size: 0.98rem;
+    }
+
+    .description-edit[hidden] {
+      display: none;
+    }
+
+    .description-edit textarea {
+      width: 100%;
+      min-height: 140px;
+      background: rgba(5, 8, 20, 0.78);
+      border: 1px solid rgba(100, 215, 255, 0.22);
+      border-radius: 12px;
+      color: var(--text-primary);
+      padding: 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .description-edit textarea:focus {
+      outline: none;
+      border-color: rgba(100, 215, 255, 0.5);
+      box-shadow: 0 0 0 3px rgba(100, 215, 255, 0.18);
+    }
+
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.9;
+    }
+
+    .btn-primary {
+      background: rgba(100, 215, 255, 0.85);
+      color: #04121f;
+    }
+
+    .btn-secondary {
+      background: rgba(26, 34, 56, 0.9);
+      color: var(--text-primary);
+      border: 1px solid rgba(100, 215, 255, 0.2);
+    }
+
+    .post-form {
+      background: rgba(10, 14, 30, 0.78);
+      border-radius: 18px;
+      border: 1px solid rgba(100, 215, 255, 0.18);
+      padding: 26px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .post-form[hidden] {
+      display: none;
+    }
+
+    .form-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      font-size: 0.9rem;
+      color: rgba(205, 235, 255, 0.82);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(5, 8, 18, 0.82);
+      border: 1px solid rgba(100, 215, 255, 0.18);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 0.94rem;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: rgba(100, 215, 255, 0.45);
+      box-shadow: 0 0 0 3px rgba(100, 215, 255, 0.18);
+    }
+
+    .form-group textarea {
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
       gap: 12px;
     }
 
-    .method-card__list li::before {
-      content: "✦";
-      color: var(--accent);
-      font-size: 0.78rem;
+    .post-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      margin-top: 6px;
     }
 
-    .method-card__status {
-      margin-top: 20px;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.78rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(100, 215, 255, 0.65);
-    }
-
-    .pulse-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--accent);
-      position: relative;
-      box-shadow: 0 0 12px rgba(100, 215, 255, 0.7);
-    }
-
-    .pulse-dot::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: rgba(100, 215, 255, 0.4);
-      animation: pulse 2.8s ease-out infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.6); opacity: 0.8; }
-      70% { transform: scale(1.8); opacity: 0; }
-      100% { transform: scale(1.8); opacity: 0; }
-    }
-
-    .integration-panel {
-      background: linear-gradient(140deg, rgba(24, 16, 56, 0.92), rgba(19, 20, 45, 0.86));
+    .post-card {
+      background: var(--surface-panel);
       border-radius: 20px;
-      border: 1px solid rgba(138, 43, 226, 0.42);
-      padding: 26px;
+      border: 1px solid rgba(100, 215, 255, 0.16);
+      padding: 24px;
       display: grid;
       gap: 18px;
       position: relative;
       overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
     }
 
-    .integration-panel::after {
+    .post-card::before {
       content: "";
       position: absolute;
-      inset: 20% -20% -40% 30%;
-      background: radial-gradient(circle at center, rgba(138, 43, 226, 0.4), transparent 70%);
-      opacity: 0.7;
-      pointer-events: none;
+      inset: -40% 0 auto 40%;
+      height: 120%;
+      background: radial-gradient(circle at center, rgba(100, 215, 255, 0.28), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
-    .integration-panel__title {
+    .post-card:hover,
+    .post-card:focus-within {
+      transform: translateY(-6px);
+      border-color: rgba(138, 43, 226, 0.55);
+      box-shadow: 0 24px 36px rgba(18, 8, 44, 0.55);
+    }
+
+    .post-card:hover::before,
+    .post-card:focus-within::before {
+      opacity: 1;
+    }
+
+    .post-card__meta {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.04em;
+    }
+
+    .post-card__meta strong {
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    .post-card h3 {
+      font-size: 1.18rem;
+      line-height: 1.5;
+      letter-spacing: 0.04em;
+    }
+
+    .post-card p {
+      color: var(--text-secondary);
+      font-size: 0.94rem;
+      line-height: 1.7;
+    }
+
+    .post-card__footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-top: 1px solid rgba(100, 215, 255, 0.12);
+      padding-top: 14px;
+      font-size: 0.82rem;
+      color: var(--text-tertiary);
+    }
+
+    .post-card__tags {
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
-    .integration-panel__title span {
-      font-family: 'Orbitron', sans-serif;
-      letter-spacing: 0.32em;
-      font-size: 0.7rem;
-      color: rgba(177, 215, 255, 0.66);
-    }
-
-    .integration-panel__title h3 {
-      font-size: 1.28rem;
-      letter-spacing: 0.08em;
-    }
-
-    .integration-status {
-      display: grid;
-      gap: 16px;
-    }
-
-    .integration-status__item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 14px 16px;
-      background: rgba(10, 15, 32, 0.7);
-      border-radius: 16px;
-      border: 1px solid rgba(100, 215, 255, 0.15);
-    }
-
-    .integration-status__item strong {
-      font-size: 0.92rem;
-      letter-spacing: 0.08em;
-    }
-
-    .status-pill {
+    .tag {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 6px 14px;
+      gap: 6px;
+      padding: 4px 10px;
       border-radius: 999px;
-      font-size: 0.72rem;
-      letter-spacing: 0.14em;
+      background: rgba(100, 215, 255, 0.16);
+      color: var(--accent);
+      font-size: 0.74rem;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      border: 1px solid rgba(100, 215, 255, 0.4);
-      color: rgba(204, 234, 255, 0.9);
-      background: rgba(17, 32, 52, 0.78);
     }
 
-    .status-pill[data-status="connected"] {
-      border-color: rgba(0, 212, 155, 0.8);
-      color: rgba(213, 255, 247, 0.92);
-      background: rgba(9, 42, 32, 0.85);
+    .post-card__stats {
+      display: flex;
+      gap: 14px;
     }
 
-    .status-pill[data-status="syncing"] {
-      border-color: rgba(100, 215, 255, 0.8);
-      background: rgba(14, 29, 50, 0.85);
-      color: rgba(214, 240, 255, 0.92);
+    .post-card__stats span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
-    .status-pill[data-status="error"] {
-      border-color: rgba(255, 98, 126, 0.8);
-      background: rgba(54, 14, 26, 0.85);
-      color: rgba(255, 218, 228, 0.92);
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      border: 1px dashed rgba(100, 215, 255, 0.25);
+      border-radius: 18px;
+      background: rgba(8, 12, 24, 0.6);
+      color: var(--text-secondary);
+      font-size: 0.96rem;
     }
 
-    .resource-list {
+    .back-btn {
+      align-self: flex-start;
+      background: rgba(100, 215, 255, 0.12);
+      border: 1px solid rgba(100, 215, 255, 0.35);
+      color: var(--text-primary);
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 0.86rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(100, 215, 255, 0.22);
+      border-color: rgba(100, 215, 255, 0.5);
+    }
+
+    .post-detail {
+      background: var(--surface-panel-strong);
+      border-radius: 20px;
+      border: 1px solid rgba(138, 43, 226, 0.35);
+      padding: 34px;
+      display: grid;
+      gap: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .post-detail::after {
+      content: "";
+      position: absolute;
+      inset: -40% 50% 10% -20%;
+      background: radial-gradient(circle at center, rgba(138, 43, 226, 0.45), transparent 70%);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .post-detail__header {
       display: grid;
       gap: 12px;
-      margin-top: 6px;
+      position: relative;
+      z-index: 1;
     }
 
-    .resource-item {
+    .post-detail__category {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.24em;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: rgba(151, 211, 255, 0.72);
+    }
+
+    .post-detail__title {
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      letter-spacing: 0.08em;
+      line-height: 1.4;
+    }
+
+    .post-detail__info {
       display: flex;
-      align-items: center;
-      gap: 14px;
-      font-size: 0.82rem;
+      flex-wrap: wrap;
+      gap: 18px;
+      font-size: 0.88rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.04em;
+    }
+
+    .post-detail__body {
+      position: relative;
+      z-index: 1;
       color: var(--text-secondary);
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(100, 215, 255, 0.08);
+      line-height: 1.8;
+      font-size: 0.98rem;
+      display: grid;
+      gap: 16px;
     }
 
-    .resource-item:last-child {
-      border-bottom: none;
+    .post-detail__body h3 {
+      font-size: 1.18rem;
+      color: var(--text-primary);
+      letter-spacing: 0.06em;
+      margin-top: 12px;
     }
 
-    .resource-item svg {
-      width: 18px;
-      height: 18px;
-      color: rgba(100, 215, 255, 0.75);
-      flex-shrink: 0;
+    .post-detail__body ul {
+      margin-left: 18px;
+      display: grid;
+      gap: 8px;
     }
 
-    .resource-item a {
-      color: inherit;
-      text-decoration: none;
-      transition: color 0.25s ease;
+    .post-detail__footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+      padding-top: 18px;
+      border-top: 1px solid rgba(100, 215, 255, 0.16);
     }
 
-    .resource-item a:hover,
-    .resource-item a:focus {
-      color: var(--accent);
+    .post-detail__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .post-detail__interactions {
+      display: flex;
+      gap: 16px;
+      font-size: 0.86rem;
+      color: var(--text-tertiary);
     }
 
     @media (max-width: 1080px) {
-      .notice-board__body {
-        grid-template-columns: 1fr;
+      .method-forum__layout {
+        flex-direction: column;
       }
-      .board-controls {
-        align-items: flex-start;
+
+      .forum-sidebar {
         width: 100%;
+        border-right: none;
+        border-bottom: 1px solid rgba(100, 215, 255, 0.16);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 28px;
       }
-      .board-filters {
-        justify-content: flex-start;
+
+      .forum-sidebar__header {
+        grid-column: 1 / -1;
       }
     }
 
@@ -541,17 +827,28 @@
       main {
         padding: 140px 18px 72px;
       }
-      .notice-board {
-        border-radius: 18px;
+
+      .forum-header__actions {
+        width: 100%;
+        align-items: flex-start;
       }
-      .board-title__desc {
-        font-size: 0.9rem;
+
+      .category-hero {
+        grid-template-columns: 1fr;
+        text-align: left;
       }
-      .method-card {
-        padding: 20px;
+
+      .category-hero__visual {
+        width: 84px;
+        height: 84px;
       }
-      .integration-panel {
-        padding: 22px;
+
+      .post-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .forum-sidebar {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -576,68 +873,116 @@
       <span class="hero__eyebrow">Method / Technique Notice Board</span>
       <h1 class="hero__title">METHOD</h1>
       <p class="hero__subtitle">
-        트레이딩 전략을 구성하는 모든 신호와 조합을 한 곳에서 관리합니다. 실시간 데이터베이스와 AWS S3 리소스를
-        연동해 분석 재료, 템플릿, 백테스트 리포트를 지속적으로 업데이트합니다.
+        트레이딩 전략을 구성하는 모든 신호와 조합을 한 곳에서 관리합니다. 지표 스택, 필터 조합, 백테스트 결과를
+        게시판 형태로 정리하여 언제든지 업데이트하고 공유할 수 있습니다.
       </p>
     </section>
 
-    <section class="notice-board" aria-labelledby="method-board">
-      <div class="notice-board__header">
-        <div class="board-title">
-          <span class="board-title__badge">[ notice board ]</span>
-          <h2 id="method-board" class="board-title__headline">Indicators &amp; Combinations</h2>
-          <p class="board-title__desc">
-            인디케이터 스택, 필터 조합, 백테스트 결과를 열람하고 필요한 자료를 바로 호출할 수 있도록 구성했습니다.
-            카테고리를 선택하면 관련 정보와 리소스를 빠르게 탐색할 수 있습니다.
-          </p>
-        </div>
-        <div class="board-controls">
-          <p class="board-updated" id="boardUpdated">Last sync — 준비 중</p>
-          <div class="board-filters" role="tablist" aria-label="Indicator filters">
-            <button type="button" class="active" data-filter="all">All</button>
-            <button type="button" data-filter="volume">Volume</button>
-            <button type="button" data-filter="trend">Moving Avg</button>
-            <button type="button" data-filter="price">Candlesticks</button>
-            <button type="button" data-filter="derivatives">Open Interest</button>
-            <button type="button" data-filter="oscillator">Oscillators</button>
-            <button type="button" data-filter="momentum">Momentum</button>
-            <button type="button" data-filter="volatility">Volatility</button>
-            <button type="button" data-filter="custom">Others</button>
+    <section class="method-forum" aria-labelledby="method-forum">
+      <div class="method-forum__layout">
+        <aside class="forum-sidebar">
+          <div class="forum-sidebar__header">
+            <span class="forum-sidebar__eyebrow">Indicator Library</span>
+            <h2 class="forum-sidebar__title">카테고리</h2>
+          </div>
+
+          <div class="category-group" data-group="indicators">
+            <p class="category-group__title">Indicators</p>
+            <ul class="category-nav" data-group-list="indicators"></ul>
+          </div>
+
+          <div class="category-group" data-group="combinations">
+            <p class="category-group__title">Combinations</p>
+            <ul class="category-nav" data-group-list="combinations"></ul>
+          </div>
+        </aside>
+
+        <div class="method-forum__main">
+          <div class="forum-view" id="boardView">
+            <header class="forum-header">
+              <div class="forum-header__info">
+                <span class="forum-header__badge" id="categoryBadge">VOLUME / 거래량</span>
+                <h2 class="forum-header__title" id="categoryTitle">Volume Indicators</h2>
+                <p class="forum-header__meta" id="categoryMeta">거래량 기반 지표로 시장의 압력과 강도를 읽어냅니다.</p>
+              </div>
+              <div class="forum-header__actions">
+                <p class="forum-sync" id="boardUpdated">Last sync — 준비 중</p>
+                <button class="new-post-btn" type="button" id="newPostButton">+ New Post</button>
+              </div>
+            </header>
+
+            <article class="category-hero" aria-live="polite">
+              <div class="category-hero__visual" id="categoryVisual">📊</div>
+              <div class="category-hero__text">
+                <h3 id="categoryOverlayTitle">거래량 지표</h3>
+                <p id="categoryOverlayDesc">거래량 흐름으로 시그널을 확인하고 다이버전스를 포착합니다.</p>
+              </div>
+            </article>
+
+            <section class="category-description">
+              <div class="description-header">
+                <h3>카테고리 개요</h3>
+                <button class="edit-description-btn" type="button" id="editDescriptionButton">설명 편집</button>
+              </div>
+              <div class="description-content" id="descriptionContent">
+                <p>거래량 기반 지표는 시장의 매수/매도 압력과 추세 강도를 파악하는 핵심 도구입니다. OBV, VWAP, 누적
+                  델타와 같은 시그널을 결합해 주요 전환 구간을 추적합니다.</p>
+              </div>
+              <div class="description-edit" id="descriptionEdit" hidden>
+                <textarea id="descriptionTextarea" placeholder="이 카테고리에 대한 설명을 작성해주세요..."></textarea>
+                <div class="edit-actions">
+                  <button class="btn btn-secondary" type="button" id="cancelDescriptionButton">취소</button>
+                  <button class="btn btn-primary" type="button" id="saveDescriptionButton">저장</button>
+                </div>
+              </div>
+            </section>
+
+            <form class="post-form" id="postForm" hidden>
+              <div class="form-group">
+                <label for="postTitle">제목</label>
+                <input type="text" id="postTitle" placeholder="게시글 제목을 입력하세요...">
+              </div>
+              <div class="form-group">
+                <label for="postCategory">카테고리</label>
+                <select id="postCategory"></select>
+              </div>
+              <div class="form-group">
+                <label for="postContent">내용</label>
+                <textarea id="postContent" placeholder="지표 설정, 전략 인사이트를 공유해주세요..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="postTags">태그 (쉼표로 구분)</label>
+                <input type="text" id="postTags" placeholder="예: OBV, Divergence, Momentum">
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-secondary" type="button" id="cancelPostButton">취소</button>
+                <button class="btn btn-primary" type="submit">게시</button>
+              </div>
+            </form>
+
+            <div class="post-grid" id="postsList"></div>
+          </div>
+
+          <div class="forum-view" id="detailView" hidden>
+            <button class="back-btn" type="button" id="backToBoardButton">← 목록으로</button>
+            <article class="post-detail" id="postDetail">
+              <header class="post-detail__header">
+                <span class="post-detail__category" id="detailCategory">VOLUME</span>
+                <h2 class="post-detail__title" id="detailTitle">제목</h2>
+                <div class="post-detail__info">
+                  <span id="detailAuthor">Author</span>
+                  <span id="detailDate">방금 전</span>
+                  <span id="detailStats">👍 0 · 💬 0 · 👁 0</span>
+                </div>
+              </header>
+              <div class="post-detail__body" id="postDetailContent"></div>
+              <footer class="post-detail__footer">
+                <div class="post-detail__tags" id="postDetailTags"></div>
+                <div class="post-detail__interactions" id="postDetailInteractions"></div>
+              </footer>
+            </article>
           </div>
         </div>
-      </div>
-
-      <div class="notice-board__body">
-        <section class="board-section" aria-labelledby="indicator-section">
-          <h3 id="indicator-section" class="board-section__title">Indicators <small>기본 신호</small></h3>
-          <div class="card-grid" data-columns="2" id="indicatorGrid" role="list"></div>
-        </section>
-
-        <section class="board-section" aria-labelledby="combination-section">
-          <h3 id="combination-section" class="board-section__title">Combinations <small>전략 조합</small></h3>
-          <div class="card-grid" id="combinationGrid" role="list"></div>
-          <div class="integration-panel">
-            <div class="integration-panel__title">
-              <span>integration status</span>
-              <h3>DB &amp; AWS S3 연동 현황</h3>
-              <p class="board-title__desc" style="margin-top:4px;max-width:540px;">
-                실시간 시그널 데이터는 전용 API 데이터베이스에서, 전략 리포트와 리소스는 S3 버킷에서 불러옵니다.
-                연결 상태는 자동으로 모니터링되며 장애 시 알림이 표시됩니다.
-              </p>
-            </div>
-            <div class="integration-status">
-              <div class="integration-status__item" data-integration="db">
-                <strong>Trading DB</strong>
-                <span class="status-pill" data-status="pending">Sync 준비 중</span>
-              </div>
-              <div class="integration-status__item" data-integration="s3">
-                <strong>AWS S3 Resources</strong>
-                <span class="status-pill" data-status="pending">Sync 준비 중</span>
-              </div>
-            </div>
-            <div class="resource-list" id="resourceList" aria-live="polite"></div>
-          </div>
-        </section>
       </div>
     </section>
   </main>
