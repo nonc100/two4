@@ -79,17 +79,33 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function applyInlineFormatting(block) {
+  const escaped = escapeHtml(block);
+  return escaped
+    .replace(/\[b\]([\s\S]*?)\[\/b\]/g, '<strong>$1</strong>')
+    .replace(/\[size=(small|large)\]([\s\S]*?)\[\/size\]/g, (_match, size, content) => {
+      const sizeClass = size === 'small' ? 'content-size-small' : 'content-size-large';
+      return `<span class="${sizeClass}">${content}</span>`;
+    })
+    .replace(/\[size=[^\]]*\]([\s\S]*?)\[\/size\]/g, '$1');
+}
+
 function toContentHtml(text) {
   const clean = String(text || '').trim();
   if (!clean) return '';
   return clean
     .split(/\n{2,}/)
-    .map(block => `<p>${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+    .map(block => `<p>${applyInlineFormatting(block).replace(/\n/g, '<br>')}</p>`)
     .join('\n');
 }
 
 function excerptFromText(text) {
-  const plain = String(text || '').replace(/\s+/g, ' ').trim();
+  const plain = String(text || '')
+    .replace(/\[\/?b\]/g, '')
+    .replace(/\[size=(?:small|large|normal)\]/g, '')
+    .replace(/\[\/size\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!plain) return '';
   const slice = plain.slice(0, 140);
   return plain.length > 140 ? `${slice}…` : slice;
@@ -118,6 +134,20 @@ function normalizeStoredPost(raw) {
   const contentHtml = typeof raw.contentHtml === 'string' && raw.contentHtml.trim()
     ? raw.contentHtml
     : toContentHtml(raw.content || '');
+  const normalizedImages = (() => {
+    const list = sanitizeImageList(raw.images);
+    const primary = sanitizeImageData(raw.image);
+    if (primary) {
+      if (!list.includes(primary)) {
+        list.unshift(primary);
+      } else {
+        const filtered = list.filter(item => item !== primary);
+        list.length = 0;
+        list.push(primary, ...filtered);
+      }
+    }
+    return list;
+  })();
 
   return {
     id,
@@ -125,7 +155,8 @@ function normalizeStoredPost(raw) {
     title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled',
     author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : 'Anonymous',
     tags,
-    image: sanitizeImageData(raw.image),
+    image: normalizedImages[0] || undefined,
+    images: normalizedImages,
     excerpt: typeof raw.excerpt === 'string' && raw.excerpt.trim() ? raw.excerpt.trim() : excerptFromHtml(contentHtml),
     contentHtml,
     createdAt,
@@ -208,6 +239,21 @@ function sanitizeImageData(value) {
   return trimmed;
 }
 
+function sanitizeImageList(value) {
+  const source = Array.isArray(value) ? value : typeof value !== 'undefined' ? [value] : [];
+  const sanitized = [];
+  for (const item of source) {
+    const clean = sanitizeImageData(item);
+    if (clean && !sanitized.includes(clean)) {
+      sanitized.push(clean);
+    }
+    if (sanitized.length >= 10) {
+      break;
+    }
+  }
+  return sanitized;
+}
+
 const orbitsRouter = express.Router();
 
 orbitsRouter.get('/posts', (_req, res) => {
@@ -225,7 +271,12 @@ orbitsRouter.post('/posts', (req, res) => {
   }
 
   const now = new Date();
-  const image = sanitizeImageData(payload.image);
+  const images = sanitizeImageList(payload.images);
+  const fallbackImage = sanitizeImageData(payload.image);
+  if (fallbackImage && !images.includes(fallbackImage)) {
+    images.unshift(fallbackImage);
+  }
+  const primaryImage = images[0];
   const newPost = {
     id: `o-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     category,
@@ -235,7 +286,8 @@ orbitsRouter.post('/posts', (req, res) => {
     excerpt: excerptFromText(body),
     contentHtml: toContentHtml(body),
     createdAt: now.toISOString(),
-    image: image || undefined,
+    image: primaryImage || undefined,
+    images: images.length ? images : undefined,
     stats: { likes: 0, comments: 0, views: 1 }
   };
 

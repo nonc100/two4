@@ -111,6 +111,18 @@ function normalizeImage(value) {
   return '';
 }
 
+function normalizeImages(value) {
+  const list = Array.isArray(value) ? value : typeof value === 'undefined' ? [] : [value];
+  const normalized = [];
+  list.forEach(item => {
+    const clean = normalizeImage(item);
+    if (clean && !normalized.includes(clean)) {
+      normalized.push(clean);
+    }
+  });
+  return normalized;
+}
+
 function normalizeIcon(icon, altFallback = '') {
   if (!icon) return null;
 
@@ -193,7 +205,11 @@ function normalizePost(post, source = 'remote') {
   const title = rawTitle || 'Untitled';
   const heroAltFallback = rawTitle ? `${rawTitle} 대표 아이콘` : category ? `${category.title} 아이콘` : '전략 아이콘';
   const hero = normalizeIcon(post.hero, heroAltFallback) || normalizeIcon(category ? category.heroIcon : null, heroAltFallback);
-  const image = normalizeImage(post.image);
+  const images = normalizeImages(post.images);
+  const primaryImage = normalizeImage(post.image);
+  if (primaryImage && !images.includes(primaryImage)) {
+    images.unshift(primaryImage);
+  }
   const tags = Array.isArray(post.tags)
     ? post.tags
         .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
@@ -208,7 +224,8 @@ function normalizePost(post, source = 'remote') {
     title,
     author: typeof post.author === 'string' && post.author.trim() ? post.author.trim() : 'Anonymous',
     hero,
-    image,
+    image: images[0] || '',
+    images,
     tags,
     stats: {
       likes: Number.isFinite(Number(stats.likes)) ? Number(stats.likes) : 0,
@@ -390,6 +407,8 @@ function createPostCard(post) {
     const img = document.createElement('img');
     img.src = post.image;
     img.alt = `${post.title} 썸네일`;
+    img.loading = 'lazy';
+    img.decoding = 'async';
     media.appendChild(img);
   } else {
     const fallback = document.createElement('div');
@@ -487,11 +506,26 @@ function openPostDetail(postId) {
   elements.detailDate.textContent = formatPostDate(post);
   elements.detailStats.textContent = `👍 ${post.stats.likes} · 💬 ${post.stats.comments} · 👁 ${post.stats.views}`;
   if (elements.detailMedia) {
-    if (post.image) {
-      elements.detailMedia.innerHTML = `<img src="${post.image}" alt="${post.title} 첨부 이미지">`;
+    elements.detailMedia.innerHTML = '';
+    const imageList = Array.isArray(post.images) && post.images.length
+      ? post.images
+      : post.image
+        ? [post.image]
+        : [];
+    if (imageList.length) {
+      imageList.forEach((src, index) => {
+        const item = document.createElement('figure');
+        item.className = 'post-detail__media-item';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = `${post.title} 첨부 이미지 ${imageList.length > 1 ? index + 1 : ''}`.trim();
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        item.appendChild(img);
+        elements.detailMedia.appendChild(item);
+      });
       elements.detailMedia.removeAttribute('hidden');
     } else {
-      elements.detailMedia.innerHTML = '';
       elements.detailMedia.setAttribute('hidden', '');
     }
   }
