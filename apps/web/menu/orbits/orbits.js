@@ -17,7 +17,7 @@ function loadOwnPosts() {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(id => typeof id === 'string');
   } catch (error) {
-    console.error('Failed to load saved ORBITS posts', error);
+    console.error('ORBITS 저장된 게시글을 불러오지 못했습니다.', error);
     return [];
   }
 }
@@ -79,11 +79,11 @@ const groupLists = Array.from(document.querySelectorAll('[data-group-list]')).re
 }, {});
 
 function formatUpdatedAt(timestamp) {
-  if (!timestamp) return 'Last sync — 준비 중';
+  if (!timestamp) return '최근 동기화 — 준비 중';
   try {
     const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return 'Last sync — 준비 중';
-    return `Last sync — ${new Intl.DateTimeFormat('ko-KR', {
+    if (Number.isNaN(date.getTime())) return '최근 동기화 — 준비 중';
+    return `최근 동기화 — ${new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -91,7 +91,7 @@ function formatUpdatedAt(timestamp) {
       minute: '2-digit'
     }).format(date)}`;
   } catch (error) {
-    return 'Last sync — 준비 중';
+    return '최근 동기화 — 준비 중';
   }
 }
 
@@ -109,6 +109,18 @@ function normalizeImage(value) {
   if (trimmed.startsWith('data:image/')) return trimmed;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return '';
+}
+
+function normalizeImages(value) {
+  const list = Array.isArray(value) ? value : typeof value === 'undefined' ? [] : [value];
+  const normalized = [];
+  list.forEach(item => {
+    const clean = normalizeImage(item);
+    if (clean && !normalized.includes(clean)) {
+      normalized.push(clean);
+    }
+  });
+  return normalized;
 }
 
 function normalizeIcon(icon, altFallback = '') {
@@ -190,10 +202,14 @@ function normalizePost(post, source = 'remote') {
   const categoryId = rawCategory || getDefaultCategoryId();
   const category = findCategoryById(categoryId);
   const rawTitle = typeof post.title === 'string' ? post.title.trim() : '';
-  const title = rawTitle || 'Untitled';
+  const title = rawTitle || '제목 없음';
   const heroAltFallback = rawTitle ? `${rawTitle} 대표 아이콘` : category ? `${category.title} 아이콘` : '전략 아이콘';
   const hero = normalizeIcon(post.hero, heroAltFallback) || normalizeIcon(category ? category.heroIcon : null, heroAltFallback);
-  const image = normalizeImage(post.image);
+  const images = normalizeImages(post.images);
+  const primaryImage = normalizeImage(post.image);
+  if (primaryImage && !images.includes(primaryImage)) {
+    images.unshift(primaryImage);
+  }
   const tags = Array.isArray(post.tags)
     ? post.tags
         .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
@@ -208,7 +224,8 @@ function normalizePost(post, source = 'remote') {
     title,
     author: typeof post.author === 'string' && post.author.trim() ? post.author.trim() : 'Anonymous',
     hero,
-    image,
+    image: images[0] || '',
+    images,
     tags,
     stats: {
       likes: Number.isFinite(Number(stats.likes)) ? Number(stats.likes) : 0,
@@ -251,7 +268,7 @@ function saveOwnPosts() {
   try {
     window.localStorage.setItem(OWN_POSTS_STORAGE_KEY, JSON.stringify(state.ownPosts));
   } catch (error) {
-    console.error('Failed to persist ORBITS posts', error);
+    console.error('ORBITS 게시글 정보를 저장하지 못했습니다.', error);
   }
 }
 
@@ -390,6 +407,8 @@ function createPostCard(post) {
     const img = document.createElement('img');
     img.src = post.image;
     img.alt = `${post.title} 썸네일`;
+    img.loading = 'lazy';
+    img.decoding = 'async';
     media.appendChild(img);
   } else {
     const fallback = document.createElement('div');
@@ -487,11 +506,26 @@ function openPostDetail(postId) {
   elements.detailDate.textContent = formatPostDate(post);
   elements.detailStats.textContent = `👍 ${post.stats.likes} · 💬 ${post.stats.comments} · 👁 ${post.stats.views}`;
   if (elements.detailMedia) {
-    if (post.image) {
-      elements.detailMedia.innerHTML = `<img src="${post.image}" alt="${post.title} 첨부 이미지">`;
+    elements.detailMedia.innerHTML = '';
+    const imageList = Array.isArray(post.images) && post.images.length
+      ? post.images
+      : post.image
+        ? [post.image]
+        : [];
+    if (imageList.length) {
+      imageList.forEach((src, index) => {
+        const item = document.createElement('figure');
+        item.className = 'post-detail__media-item';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = `${post.title} 첨부 이미지 ${imageList.length > 1 ? index + 1 : ''}`.trim();
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        item.appendChild(img);
+        elements.detailMedia.appendChild(item);
+      });
       elements.detailMedia.removeAttribute('hidden');
     } else {
-      elements.detailMedia.innerHTML = '';
       elements.detailMedia.setAttribute('hidden', '');
     }
   }
@@ -555,7 +589,7 @@ async function fetchRemotePosts() {
     headers: { Accept: 'application/json' }
   });
   if (!response.ok) {
-    throw new Error(`Failed to load posts (${response.status})`);
+    throw new Error(`게시글을 불러오지 못했습니다 (${response.status})`);
   }
   const data = await response.json();
   const posts = Array.isArray(data.posts) ? data.posts.map(item => normalizePost(item, 'remote')).filter(Boolean) : [];
@@ -578,7 +612,7 @@ async function deleteRemotePost(postId) {
     if (response.status === 404) {
       return { ok: false, removed: postId, updatedAt: null };
     }
-    const message = data && data.error ? data.error : 'Failed to delete post';
+    const message = data && data.error ? data.error : '게시글을 삭제하지 못했습니다.';
     throw new Error(message);
   }
   return data;
@@ -593,7 +627,7 @@ async function loadRemotePosts() {
       elements.boardUpdated.textContent = formatUpdatedAt(updatedAt);
     }
   } catch (error) {
-    console.error('Failed to fetch ORBITS posts', error);
+    console.error('ORBITS 게시글을 가져오는 중 오류가 발생했습니다.', error);
   }
 }
 
@@ -632,7 +666,7 @@ async function handleDeletePost(postId, triggerButton) {
     const updatedTimestamp = response && response.updatedAt ? response.updatedAt : new Date().toISOString();
     elements.boardUpdated.textContent = formatUpdatedAt(updatedTimestamp);
   } catch (error) {
-    console.error('Failed to delete ORBITS post', error);
+    console.error('ORBITS 게시글 삭제 중 오류가 발생했습니다.', error);
     alert('게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
   } finally {
     state.deletingPostId = null;

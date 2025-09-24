@@ -54,7 +54,7 @@ function ensureOrbitStore() {
   try {
     fs.mkdirSync(ORBITS_DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('⚠️ Failed to ensure ORBITS data directory:', error.message);
+    console.error('⚠️ ORBITS 데이터 디렉터리를 생성하지 못했습니다:', error.message);
   }
 
   if (!fs.existsSync(ORBITS_POSTS_FILE)) {
@@ -65,7 +65,7 @@ function ensureOrbitStore() {
         fs.writeFileSync(ORBITS_POSTS_FILE, JSON.stringify({ posts: [] }, null, 2), 'utf8');
       }
     } catch (error) {
-      console.error('⚠️ Failed to initialize ORBITS posts store:', error.message);
+      console.error('⚠️ ORBITS 게시글 저장소를 초기화하지 못했습니다:', error.message);
     }
   }
 }
@@ -79,17 +79,33 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function applyInlineFormatting(block) {
+  const escaped = escapeHtml(block);
+  return escaped
+    .replace(/\[b\]([\s\S]*?)\[\/b\]/g, '<strong>$1</strong>')
+    .replace(/\[size=(small|large)\]([\s\S]*?)\[\/size\]/g, (_match, size, content) => {
+      const sizeClass = size === 'small' ? 'content-size-small' : 'content-size-large';
+      return `<span class="${sizeClass}">${content}</span>`;
+    })
+    .replace(/\[size=[^\]]*\]([\s\S]*?)\[\/size\]/g, '$1');
+}
+
 function toContentHtml(text) {
   const clean = String(text || '').trim();
   if (!clean) return '';
   return clean
     .split(/\n{2,}/)
-    .map(block => `<p>${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+    .map(block => `<p>${applyInlineFormatting(block).replace(/\n/g, '<br>')}</p>`)
     .join('\n');
 }
 
 function excerptFromText(text) {
-  const plain = String(text || '').replace(/\s+/g, ' ').trim();
+  const plain = String(text || '')
+    .replace(/\[\/?b\]/g, '')
+    .replace(/\[size=(?:small|large|normal)\]/g, '')
+    .replace(/\[\/size\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!plain) return '';
   const slice = plain.slice(0, 140);
   return plain.length > 140 ? `${slice}…` : slice;
@@ -118,14 +134,29 @@ function normalizeStoredPost(raw) {
   const contentHtml = typeof raw.contentHtml === 'string' && raw.contentHtml.trim()
     ? raw.contentHtml
     : toContentHtml(raw.content || '');
+  const normalizedImages = (() => {
+    const list = sanitizeImageList(raw.images);
+    const primary = sanitizeImageData(raw.image);
+    if (primary) {
+      if (!list.includes(primary)) {
+        list.unshift(primary);
+      } else {
+        const filtered = list.filter(item => item !== primary);
+        list.length = 0;
+        list.push(primary, ...filtered);
+      }
+    }
+    return list;
+  })();
 
   return {
     id,
     category: typeof raw.category === 'string' && raw.category.trim() ? raw.category.trim() : 'general',
-    title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled',
-    author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : 'Anonymous',
+    title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : '제목 없음',
+    author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : '익명',
     tags,
-    image: sanitizeImageData(raw.image),
+    image: normalizedImages[0] || undefined,
+    images: normalizedImages,
     excerpt: typeof raw.excerpt === 'string' && raw.excerpt.trim() ? raw.excerpt.trim() : excerptFromHtml(contentHtml),
     contentHtml,
     createdAt,
@@ -148,7 +179,7 @@ function loadOrbitPosts() {
       .map(normalizeStoredPost)
       .filter(Boolean);
   } catch (error) {
-    console.error('⚠️ Failed to load ORBITS posts:', error.message);
+    console.error('⚠️ ORBITS 게시글을 불러오지 못했습니다:', error.message);
     return [];
   }
 }
@@ -160,7 +191,7 @@ function saveOrbitPosts() {
   try {
     fs.writeFileSync(ORBITS_POSTS_FILE, JSON.stringify({ posts: orbitPostsStore }, null, 2), 'utf8');
   } catch (error) {
-    console.error('⚠️ Failed to save ORBITS posts:', error.message);
+    console.error('⚠️ ORBITS 게시글을 저장하지 못했습니다:', error.message);
   }
 }
 
@@ -208,6 +239,21 @@ function sanitizeImageData(value) {
   return trimmed;
 }
 
+function sanitizeImageList(value) {
+  const source = Array.isArray(value) ? value : typeof value !== 'undefined' ? [value] : [];
+  const sanitized = [];
+  for (const item of source) {
+    const clean = sanitizeImageData(item);
+    if (clean && !sanitized.includes(clean)) {
+      sanitized.push(clean);
+    }
+    if (sanitized.length >= 10) {
+      break;
+    }
+  }
+  return sanitized;
+}
+
 const orbitsRouter = express.Router();
 
 orbitsRouter.get('/posts', (_req, res) => {
@@ -225,7 +271,12 @@ orbitsRouter.post('/posts', (req, res) => {
   }
 
   const now = new Date();
-  const image = sanitizeImageData(payload.image);
+  const images = sanitizeImageList(payload.images);
+  const fallbackImage = sanitizeImageData(payload.image);
+  if (fallbackImage && !images.includes(fallbackImage)) {
+    images.unshift(fallbackImage);
+  }
+  const primaryImage = images[0];
   const newPost = {
     id: `o-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     category,
@@ -235,7 +286,8 @@ orbitsRouter.post('/posts', (req, res) => {
     excerpt: excerptFromText(body),
     contentHtml: toContentHtml(body),
     createdAt: now.toISOString(),
-    image: image || undefined,
+    image: primaryImage || undefined,
+    images: images.length ? images : undefined,
     stats: { likes: 0, comments: 0, views: 1 }
   };
 
@@ -271,7 +323,7 @@ try {
   console.log('✅ Seed AI router mounted at /api');
   app.get('/api/_probe', (_req, res) => res.json({ ok: true, mounted: true }));
 } catch (e) {
-  console.error('❌ Failed to mount Seed AI router:', e.message);
+  console.error('❌ Seed AI 라우터를 연결하지 못했습니다:', e.message);
 }
 
 function setCorsAndCache(res) {

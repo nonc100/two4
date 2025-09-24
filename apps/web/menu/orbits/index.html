@@ -868,15 +868,20 @@
     }
 
     .post-detail__media {
+      display: grid;
+      gap: 14px;
+    }
+
+    .post-detail__media-item {
       position: relative;
       border-radius: 16px;
       border: 1px solid rgba(100, 215, 255, 0.18);
       overflow: hidden;
       background: rgba(12, 18, 36, 0.8);
-      max-height: 420px;
+      margin: 0;
     }
 
-    .post-detail__media img {
+    .post-detail__media-item img {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -891,6 +896,22 @@
       font-size: 0.9rem;
       display: grid;
       gap: 14px;
+    }
+
+    .post-detail__body .content-size-large {
+      font-size: 1.04rem;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .post-detail__body .content-size-small {
+      font-size: 0.82rem;
+      opacity: 0.92;
+    }
+
+    .post-detail__body strong {
+      color: var(--text-primary);
+      font-weight: 700;
     }
 
     .post-detail__body h3 {
@@ -1048,7 +1069,7 @@
 
   <main>
     <section class="hero">
-      <span class="hero__eyebrow">Orbits / Signal Library</span>
+      <span class="hero__eyebrow">오비츠 / 시그널 라이브러리</span>
       <h1 class="hero__title">ORBITS</h1>
       <p class="hero__subtitle">
         모든 인디케이터 시그널과 조합 전략을 오비츠 허브에서 정리하세요. 카테고리별 소개와 추천 인사이트를 가볍게
@@ -1060,17 +1081,17 @@
       <div class="method-forum__layout">
         <aside class="forum-sidebar">
           <div class="forum-sidebar__header">
-            <span class="forum-sidebar__eyebrow">Indicator Library</span>
+            <span class="forum-sidebar__eyebrow">인디케이터 라이브러리</span>
             <h2 class="forum-sidebar__title">카테고리</h2>
           </div>
 
           <div class="category-group" data-group="indicators">
-            <p class="category-group__title">Indicators</p>
+            <p class="category-group__title">지표</p>
             <ul class="category-nav" data-group-list="indicators"></ul>
           </div>
 
           <div class="category-group" data-group="combinations">
-            <p class="category-group__title">Combinations</p>
+            <p class="category-group__title">조합 전략</p>
             <ul class="category-nav" data-group-list="combinations"></ul>
           </div>
         </aside>
@@ -1084,17 +1105,17 @@
             <header class="forum-header">
               <div class="forum-header__info">
                 <span class="forum-header__badge" id="categoryBadge">VOLUME / 거래량</span>
-                <h2 class="forum-header__title" id="categoryTitle">Volume Indicators</h2>
+                <h2 class="forum-header__title" id="categoryTitle">거래량 지표</h2>
                 <p class="forum-header__meta" id="categoryMeta">거래량 기반 지표로 시장의 압력과 강도를 읽어냅니다.</p>
               </div>
               <div class="forum-header__actions">
-                <p class="forum-sync" id="boardUpdated">Last sync — 준비 중</p>
+                <p class="forum-sync" id="boardUpdated">최근 동기화 — 준비 중</p>
               </div>
             </header>
 
             <article class="category-hero" aria-live="polite">
               <div class="category-hero__visual category-hero__visual--image" id="categoryVisual">
-                <img src="./icon/volume.png" alt="Volume Indicators 아이콘" />
+                <img src="./icon/volume.png" alt="거래량 지표 아이콘" />
               </div>
               <div class="category-hero__text">
                 <h3 id="categoryOverlayTitle">거래량 지표</h3>
@@ -1130,10 +1151,10 @@
             </div>
             <article class="post-detail" id="postDetail">
               <header class="post-detail__header">
-                <span class="post-detail__category" id="detailCategory">VOLUME</span>
+                <span class="post-detail__category" id="detailCategory">거래량</span>
                 <h2 class="post-detail__title" id="detailTitle">제목</h2>
                 <div class="post-detail__info">
-                  <span id="detailAuthor">Author</span>
+                  <span id="detailAuthor">작성자</span>
                   <span id="detailDate">방금 전</span>
                   <span id="detailStats">👍 0 · 💬 0 · 👁 0</span>
                 </div>

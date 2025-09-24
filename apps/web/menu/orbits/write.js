@@ -8,20 +8,23 @@ const elements = {
   content: document.getElementById('composeContent'),
   imageInput: document.getElementById('composeImage'),
   imagePreview: document.getElementById('imagePreview'),
-  imagePreviewImg: document.getElementById('imagePreviewImg'),
+  imagePreviewList: document.getElementById('imagePreviewList'),
   imageInfo: document.getElementById('imageInfo'),
   clearImage: document.getElementById('clearImage'),
   submit: document.getElementById('composeSubmit'),
   cancel: document.getElementById('composeCancel'),
-  categoryHint: document.getElementById('categoryHint')
+  categoryHint: document.getElementById('categoryHint'),
+  formatBold: document.getElementById('formatBold'),
+  formatSize: document.getElementById('formatSize')
 };
 
 const state = {
-  imageDataUrl: '',
+  images: [],
   submitting: false
 };
 
 const MAX_FILE_BYTES = 550 * 1024;
+const MAX_IMAGES = 10;
 
 function hasLocalStorage() {
   try {
@@ -40,7 +43,7 @@ function loadOwnPosts() {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(id => typeof id === 'string');
   } catch (error) {
-    console.error('Failed to read ORBITS own posts', error);
+    console.error('ORBITS 내 게시글을 불러오지 못했습니다.', error);
     return [];
   }
 }
@@ -50,7 +53,7 @@ function saveOwnPosts(ids) {
   try {
     window.localStorage.setItem(OWN_POSTS_STORAGE_KEY, JSON.stringify(ids));
   } catch (error) {
-    console.error('Failed to persist ORBITS own posts', error);
+    console.error('ORBITS 내 게시글을 저장하지 못했습니다.', error);
   }
 }
 
@@ -85,74 +88,205 @@ function updateCategoryHint() {
 }
 
 function clearImagePreview() {
-  state.imageDataUrl = '';
+  state.images = [];
   if (elements.imageInput) {
     elements.imageInput.value = '';
   }
-  if (elements.imagePreview) {
-    elements.imagePreview.hidden = true;
-  }
-  if (elements.imagePreviewImg) {
-    elements.imagePreviewImg.removeAttribute('src');
+  if (elements.imagePreviewList) {
+    elements.imagePreviewList.innerHTML = '';
   }
   if (elements.imageInfo) {
     elements.imageInfo.textContent = '';
   }
+  if (elements.imagePreview) {
+    elements.imagePreview.hidden = true;
+  }
 }
 
-function renderImagePreview(dataUrl, file) {
-  if (!elements.imagePreview || !elements.imagePreviewImg || !elements.imageInfo) return;
-  elements.imagePreviewImg.src = dataUrl;
-  const sizeKb = file ? Math.round(file.size / 1024) : Math.round(dataUrl.length / 1024);
-  const infoParts = [];
-  if (file?.name) infoParts.push(file.name);
-  infoParts.push(`${sizeKb} KB`);
-  elements.imageInfo.textContent = infoParts.join(' · ');
+function renderImagePreview() {
+  if (!elements.imagePreview || !elements.imagePreviewList || !elements.imageInfo) return;
+  elements.imagePreviewList.innerHTML = '';
+  if (!state.images.length) {
+    elements.imagePreview.hidden = true;
+    elements.imageInfo.textContent = '';
+    return;
+  }
+
+  const totalSize = state.images.reduce((sum, image) => sum + image.size, 0);
+  state.images.forEach((image, index) => {
+    const item = document.createElement('div');
+    item.className = 'image-preview__item';
+
+    const frame = document.createElement('div');
+    frame.className = 'image-preview__frame';
+    const img = document.createElement('img');
+    img.src = image.dataUrl;
+    img.alt = image.name ? `${image.name} 미리보기` : '업로드한 이미지 미리보기';
+    frame.appendChild(img);
+    item.appendChild(frame);
+
+    const meta = document.createElement('div');
+    meta.className = 'image-preview__meta';
+    const info = document.createElement('span');
+    info.className = 'image-preview__info';
+    info.textContent = image.name ? `${image.name} · ${Math.round(image.size / 1024)} KB` : `${Math.round(image.size / 1024)} KB`;
+    meta.appendChild(info);
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'image-preview__remove';
+    removeButton.textContent = '제거';
+    removeButton.setAttribute('aria-label', `${image.name || '이미지'} 제거`);
+    removeButton.addEventListener('click', () => {
+      state.images.splice(index, 1);
+      renderImagePreview();
+    });
+    meta.appendChild(removeButton);
+    item.appendChild(meta);
+
+    elements.imagePreviewList.appendChild(item);
+  });
+
+  const summarySize = Math.round(totalSize / 1024);
+  elements.imageInfo.textContent = `${state.images.length}개 이미지 · ${summarySize} KB`;
   elements.imagePreview.hidden = false;
 }
 
-function handleImageChange() {
+async function handleImageChange() {
   if (!elements.imageInput || !elements.imageInput.files?.length) {
-    clearImagePreview();
+    if (elements.imageInput) {
+      elements.imageInput.value = '';
+    }
+    if (!state.images.length) {
+      clearImagePreview();
+    }
     return;
   }
-  const file = elements.imageInput.files[0];
-  if (!file.type.startsWith('image/')) {
-    alert('이미지 파일만 업로드할 수 있습니다.');
-    clearImagePreview();
+
+  const files = Array.from(elements.imageInput.files);
+  const errors = [];
+
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) {
+      errors.push(`${file.name} — 이미지 파일만 업로드할 수 있습니다.`);
+      continue;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      errors.push(`${file.name} — 이미지 크기가 너무 큽니다. 500KB 이하의 이미지를 사용해주세요.`);
+      continue;
+    }
+    if (state.images.length >= MAX_IMAGES) {
+      errors.push(`${file.name} — 이미지는 최대 ${MAX_IMAGES}개까지 첨부할 수 있습니다.`);
+      continue;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      if (dataUrl.length > MAX_IMAGE_DATA_URL_LENGTH) {
+        errors.push(`${file.name} — 이미지 데이터가 너무 큽니다. 해상도를 낮춰 다시 시도해주세요.`);
+        continue;
+      }
+      state.images.push({
+        dataUrl,
+        name: file.name,
+        size: file.size
+      });
+    } catch (error) {
+      errors.push(`${file.name} — 이미지를 읽는 중 오류가 발생했습니다.`);
+    }
+  }
+
+  elements.imageInput.value = '';
+  renderImagePreview();
+
+  if (errors.length) {
+    alert(errors.join('\n'));
+  }
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        reject(new Error('INVALID_RESULT'));
+        return;
+      }
+      if (!result.startsWith('data:image/')) {
+        reject(new Error('INVALID_TYPE'));
+        return;
+      }
+      resolve(result);
+    };
+    reader.onerror = () => reject(new Error('READ_ERROR'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function toggleBold() {
+  if (!elements.content) return;
+  const textarea = elements.content;
+  const { selectionStart, selectionEnd, value } = textarea;
+  if (selectionStart === undefined || selectionEnd === undefined) return;
+  const selected = value.slice(selectionStart, selectionEnd);
+  if (!selected) {
+    alert('굵게 만들 텍스트를 선택해주세요.');
+    textarea.focus();
     return;
   }
-  if (file.size > MAX_FILE_BYTES) {
-    alert('이미지 크기가 너무 큽니다. 500KB 이하의 이미지를 사용해주세요.');
-    clearImagePreview();
+  const isWrapped = /^\s*\[b\][\s\S]*\[\/b\]\s*$/.test(selected);
+  let replacement;
+  if (isWrapped) {
+    replacement = selected.replace(/\[b\]([\s\S]*?)\[\/b\]/g, '$1');
+  } else {
+    const cleanSelected = selected.replace(/\[\/?b\]/g, '');
+    replacement = `[b]${cleanSelected}[/b]`;
+    const newValue = `${value.slice(0, selectionStart)}${replacement}${value.slice(selectionEnd)}`;
+    textarea.value = newValue;
+    const innerStart = selectionStart + 3;
+    const innerEnd = innerStart + cleanSelected.length;
+    textarea.focus();
+    textarea.setSelectionRange(innerStart, innerEnd);
     return;
   }
-  const reader = new FileReader();
-  reader.onload = () => {
-    const result = reader.result;
-    if (typeof result !== 'string') {
-      alert('이미지를 불러오지 못했습니다. 다른 파일을 선택해주세요.');
-      clearImagePreview();
-      return;
-    }
-    if (!result.startsWith('data:image/')) {
-      alert('지원하지 않는 이미지 형식입니다.');
-      clearImagePreview();
-      return;
-    }
-    if (result.length > MAX_IMAGE_DATA_URL_LENGTH) {
-      alert('이미지 데이터가 너무 큽니다. 해상도를 낮춰 다시 시도해주세요.');
-      clearImagePreview();
-      return;
-    }
-    state.imageDataUrl = result;
-    renderImagePreview(result, file);
-  };
-  reader.onerror = () => {
-    alert('이미지를 읽는 중 오류가 발생했습니다. 다시 시도해주세요.');
-    clearImagePreview();
-  };
-  reader.readAsDataURL(file);
+  const newValue = `${value.slice(0, selectionStart)}${replacement}${value.slice(selectionEnd)}`;
+  textarea.value = newValue;
+  const start = selectionStart;
+  const end = start + replacement.length;
+  textarea.focus();
+  textarea.setSelectionRange(start, end);
+}
+
+function applyFontSize(size) {
+  if (!elements.content) return;
+  const textarea = elements.content;
+  const { selectionStart, selectionEnd, value } = textarea;
+  if (selectionStart === undefined || selectionEnd === undefined) return;
+  const selected = value.slice(selectionStart, selectionEnd);
+  if (!selected) {
+    alert('크기를 변경할 텍스트를 선택해주세요.');
+    textarea.focus();
+    return;
+  }
+
+  const cleaned = selected.replace(/\[size=(?:small|large|normal)\]/g, '').replace(/\[\/size\]/g, '');
+  let replacement = cleaned;
+
+  if (size === 'large' || size === 'small') {
+    replacement = `[size=${size}]${cleaned}[/size]`;
+  }
+
+  const newValue = `${value.slice(0, selectionStart)}${replacement}${value.slice(selectionEnd)}`;
+  textarea.value = newValue;
+  let start = selectionStart;
+  let end = start + replacement.length;
+  if (size === 'large' || size === 'small') {
+    const offset = `[size=${size}]`.length;
+    start += offset;
+    end = start + cleaned.length;
+  }
+  textarea.focus();
+  textarea.setSelectionRange(start, end);
 }
 
 async function postOrbitEntry(payload) {
@@ -171,11 +305,11 @@ async function postOrbitEntry(payload) {
     // ignore parsing error to allow generic message below
   }
   if (!response.ok) {
-    const message = data?.error || 'FAILED';
+    const message = data?.error || '요청을 처리하지 못했습니다.';
     throw new Error(message);
   }
   if (!data?.post) {
-    throw new Error('INVALID_RESPONSE');
+    throw new Error('응답 데이터가 올바르지 않습니다.');
   }
   return data;
 }
@@ -203,15 +337,18 @@ async function handleSubmit(event) {
     return;
   }
 
+  const images = state.images.map(image => image.dataUrl).filter(Boolean);
+
   const payload = {
     title,
     category,
     content,
     tags: tags.length ? tags : ['새글'],
-    author: 'You'
+    author: '나'
   };
-  if (state.imageDataUrl) {
-    payload.image = state.imageDataUrl;
+  if (images.length) {
+    payload.images = images;
+    payload.image = images[0];
   }
 
   try {
@@ -226,7 +363,7 @@ async function handleSubmit(event) {
     }
     window.location.href = './';
   } catch (error) {
-    console.error('Failed to submit ORBITS post', error);
+    console.error('ORBITS 게시글 등록 중 오류가 발생했습니다.', error);
     alert('게시글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
   } finally {
     state.submitting = false;
@@ -245,6 +382,16 @@ function init() {
   elements.clearImage?.addEventListener('click', event => {
     event.preventDefault();
     clearImagePreview();
+  });
+  elements.formatBold?.addEventListener('click', event => {
+    event.preventDefault();
+    toggleBold();
+  });
+  elements.formatSize?.addEventListener('change', event => {
+    const value = event.target?.value;
+    if (!value) return;
+    applyFontSize(value === 'reset' ? 'reset' : value);
+    event.target.value = '';
   });
   elements.cancel?.addEventListener('click', event => {
     event.preventDefault();
