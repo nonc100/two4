@@ -3,7 +3,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   const el = document.querySelector('[include-html]');
   if (!el) return;
   try {
-    const res = await fetch('header.html');
+    const includePath = el.getAttribute('include-html') || 'header.html';
+    const res = await fetch(includePath);
     const html = await res.text();
     el.innerHTML = html;
     el.querySelectorAll('script').forEach(old => {
