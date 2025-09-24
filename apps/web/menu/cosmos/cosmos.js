@@ -358,22 +358,24 @@ function whaleDualDonutHTML(gPct, tPct){
     </svg>`;
 }
 
-// Flow Pulse: 바깥=1h(라임), 안쪽=24h(그린)
+// Flow Pulse: 바깥=1h(네온 시안), 안쪽=24h(바이올렛)
+const FLOW_OUTER_COLOR = '#00f5ff';
+const FLOW_INNER_COLOR = '#ff6ad5';
+const FLOW_DELTA_COLOR = '#ffd166';
+
 function flowDualDonutHTML(r1hPct, r24hPct){
   const clamp = n => Math.max(0, Math.min(100, Number(n)||0));
   const A = clamp(r1hPct), B = clamp(r24hPct);
   const C=80, R1=60, R2=44, TAU=2*Math.PI;
   const dash = (r,p)=>`${(TAU*r*p/100).toFixed(1)} ${(TAU*r*(1-p/100)).toFixed(1)}`;
-  const LIME  = '#00ffaa';  // 1h
-  const GREEN = '#00e676';  // 24h
   return `
     <svg viewBox="0 0 160 160" style="width:200px;height:200px">
-      <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="rgba(0,255,170,.15)" stroke-width="10"/>
-      <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="rgba(0,230,118,.12)" stroke-width="10"/>
+      <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="rgba(0,245,255,.18)" stroke-width="10"/>
+      <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="rgba(255,106,213,.15)" stroke-width="10"/>
       <g transform="rotate(-90 ${C} ${C})">
-        <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="${LIME}"  stroke-width="10"
+        <circle cx="${C}" cy="${C}" r="${R1}" fill="none" stroke="${FLOW_OUTER_COLOR}"  stroke-width="10"
                 stroke-linecap="round" stroke-dasharray="${dash(R1,A)}"/>
-        <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="${GREEN}" stroke-width="10"
+        <circle cx="${C}" cy="${C}" r="${R2}" fill="none" stroke="${FLOW_INNER_COLOR}" stroke-width="10"
                 stroke-linecap="round" stroke-dasharray="${dash(R2,B)}"/>
       </g>
     </svg>`;
@@ -385,17 +387,57 @@ function flowInfoHTML(r1h, r24, dpp){
       <div class="wgap-svg">${flowDualDonutHTML(r1h, r24)}</div>
       <div class="wgap-text" style="flex:1;min-width:0;font-family:'Orbitron',monospace">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <span class="chip" style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80;"><i class="dot"></i> 1h avg <b>${r1h.toFixed(1)}%</b></span>
-          <span class="chip" style="color:#00e676;text-shadow:0 0 10px #00e67680;"><i class="dot"></i> 24h avg <b>${r24.toFixed(1)}%</b></span>
-          <span class="chip" style="color:#33ff99;text-shadow:0 0 10px #33ff9980;"><i class="dot"></i> Δ <b>${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp</b> <span style="opacity:.6">(1h−24h)</span></span>
+          <span class="chip" style="color:${FLOW_OUTER_COLOR};text-shadow:0 0 10px ${FLOW_OUTER_COLOR}66;"><i class="dot"></i> 1h avg <b>${r1h.toFixed(1)}%</b></span>
+          <span class="chip" style="color:${FLOW_INNER_COLOR};text-shadow:0 0 10px ${FLOW_INNER_COLOR}66;"><i class="dot"></i> 24h avg <b>${r24.toFixed(1)}%</b></span>
+          <span class="chip" style="color:${FLOW_DELTA_COLOR};text-shadow:0 0 10px ${FLOW_DELTA_COLOR}66;"><i class="dot"></i> Δ <b>${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp</b> <span style="opacity:.6">(1h−24h)</span></span>
         </div>
         <hr class="hr-grad" style="border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);margin:8px 0;">
         <div style="color:rgba(255,255,255,.75)">
-          <b style="color:#00ffaa;text-shadow:0 0 10px #00ffaa80">Outer ring</b>: 1h 평균 Taker Buy %<br>
-          <b style="color:#00e676;text-shadow:0 0 10px #00e67680">Inner ring</b>: 24h 평균 Taker Buy %
+          <b style="color:${FLOW_OUTER_COLOR};text-shadow:0 0 10px ${FLOW_OUTER_COLOR}66">Outer ring</b>: 1h 평균 Taker Buy %<br>
+          <b style="color:${FLOW_INNER_COLOR};text-shadow:0 0 10px ${FLOW_INNER_COLOR}66">Inner ring</b>: 24h 평균 Taker Buy %
         </div>
         <div style="color:rgba(255,255,255,.6);margin-top:8px">
-          <b style="color:#33ff99;text-shadow:0 0 10px #33ff9980">Note</b>: 단독 판단 금지 — Whale Gap, Funding/Basis, OI와 함께 참고
+          <b style="color:${FLOW_DELTA_COLOR};text-shadow:0 0 10px ${FLOW_DELTA_COLOR}66">Note</b>: 단독 판단 금지 — Whale Gap, Funding/Basis, OI와 함께 참고
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function whaleInfoHTML(gLast, tLast, dNow, dAvg){
+  const fmtPctVal = v => Number.isFinite(v) ? v.toFixed(1) + '%' : '—';
+  const fmtPpVal  = v => Number.isFinite(v) ? ((v >= 0 ? '+' : '') + v.toFixed(1) + 'pp') : '—';
+
+  const chips = [];
+  if (Number.isFinite(gLast)) chips.push(`<span class="chip" style="color:#48b9ff;text-shadow:0 0 10px #48b9ff66;"><i class="dot"></i> Global <b>${fmtPctVal(gLast)}</b></span>`);
+  if (Number.isFinite(tLast)) chips.push(`<span class="chip" style="color:#ff7be9;text-shadow:0 0 10px #ff7be966;"><i class="dot"></i> Top <b>${fmtPctVal(tLast)}</b></span>`);
+  if (Number.isFinite(dNow)) chips.push(`<span class="chip" style="color:#ffd166;text-shadow:0 0 10px #ffd16666;"><i class="dot"></i> Δ Now <b>${fmtPpVal(dNow)}</b></span>`);
+  if (Number.isFinite(dAvg)) chips.push(`<span class="chip" style="color:#8be9ff;text-shadow:0 0 10px #8be9ff66;"><i class="dot"></i> 24h Avg <b>${fmtPpVal(dAvg)}</b></span>`);
+
+  if (!chips.length) {
+    return `<div style="color:#8b95a7;font-family:'Orbitron',monospace">No data (Whale Gap)</div>`;
+  }
+
+  const summaryParts = [];
+  if (Number.isFinite(dNow)) summaryParts.push(`Realtime Δ <b>${fmtPpVal(dNow)}</b>`);
+  if (Number.isFinite(dAvg)) summaryParts.push(`24h trend <b>${fmtPpVal(dAvg)}</b>`);
+  const summary = summaryParts.length
+    ? `<div style="color:rgba(255,255,255,.7);font-size:0.85rem;letter-spacing:1px;margin-top:6px">${summaryParts.join(' · ')}</div>`
+    : '';
+
+  return `
+    <div class="wgap-wrap" style="display:flex;gap:18px;align-items:center">
+      <div class="wgap-svg">${whaleDualDonutHTML(gLast, tLast)}</div>
+      <div class="wgap-text" style="flex:1;min-width:0;font-family:'Orbitron',monospace">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">${chips.join('')}</div>
+        ${summary}
+        <hr class="hr-grad" style="border:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);margin:10px 0;">
+        <div style="color:rgba(255,255,255,.75)">
+          <b style="color:#48b9ff;text-shadow:0 0 10px #48b9ff66">Outer ring</b>: Global Long/Short Account Ratio<br>
+          <b style="color:#ff7be9;text-shadow:0 0 10px #ff7be966">Inner ring</b>: Top Trader Long/Short Position Ratio
+        </div>
+        <div style="color:rgba(255,255,255,.58);margin-top:8px">
+          <b style="color:#ffd166;text-shadow:0 0 10px #ffd16666">Guide</b>: Funding · Basis · OI와 교차 확인
         </div>
       </div>
     </div>
@@ -503,40 +545,27 @@ async function initHub(){
   const dAvg  = (isFinite(topLS?.long_pct_avg24) && isFinite(globalLS?.long_pct_avg24))
                 ? (topLS.long_pct_avg24 - globalLS.long_pct_avg24) : null;
 
-     const pct = v => isFinite(v) ? v.toFixed(1)+'%' : '—';
-  const pp  = v => isFinite(v) ? ((v>=0?'+':'')+v.toFixed(1)+'pp') : '—';
+  const fmtPctShort = v => Number.isFinite(v) ? v.toFixed(1) + '%' : '—';
+  const fmtPpShort  = v => Number.isFinite(v) ? ((v >= 0 ? '+' : '') + v.toFixed(1) + 'pp') : '—';
+
+  const whaleHasData = [gLast, tLast, dNow, dAvg].some(Number.isFinite);
+  const whaleCenterTop = (Number.isFinite(gLast) || Number.isFinite(tLast))
+    ? `G ${fmtPctShort(gLast)} | T ${fmtPctShort(tLast)}`
+    : '—';
+  const whaleCenterParts = [];
+  if (Number.isFinite(dNow)) whaleCenterParts.push(`Δ ${fmtPpShort(dNow)}`);
+  if (Number.isFinite(dAvg)) whaleCenterParts.push(`24h ${fmtPpShort(dAvg)}`);
+  const whaleCenterSub = whaleCenterParts.length ? whaleCenterParts.join(' · ') : 'NO DATA';
 
   const whaleSec = {
     badge: "W-GAP",
     title: "Whale Gap",
-    centerTop: (isFinite(gLast)&&isFinite(tLast)) ? `G ${gLast.toFixed(1)}% | T ${tLast.toFixed(1)}%` : "—",
-    centerSub: (isFinite(dNow)&&isFinite(dAvg))
-               ? `Δ ${(dNow>=0?'+':'')}${dNow.toFixed(1)}pp · 24h ${(dAvg>=0?'+':'')}${dAvg.toFixed(1)}pp`
-               : "NO DATA",
+    centerTop: whaleCenterTop,
+    centerSub: whaleCenterSub,
     smallCenter: true,
-    html: `
-        <div style="display:flex;gap:18px;align-items:center">
-      <div class="wgap-svg">
-        ${whaleDualDonutHTML(gLast, tLast)}
-      </div>
-      <div class="wgap-text" style="display:flex;flex-direction:column;gap:8px;font-family:'Orbitron',monospace">
-        <div><b>G:</b> ${pct(gLast)} · <b>T:</b> ${pct(tLast)} | <b>Gap Δ:</b> ${pp(dNow)}
-            <span style="opacity:.75">— |Δ|가 클수록 포지셔닝 괴리 ↑</span></div>
-        <div>
-          <b>Outer ring:</b> Global Long/Short Account Ratio <span style="opacity:.8">(전체 계정 롱 %)</span><br>
-          <b>Inner ring:</b> Top Trader Long/Short Position Ratio <span style="opacity:.8">(상위 트레이더 롱 %)</span>
-        </div>
-        <div style="opacity:.85">
-          <b>주의:</b> 단독 시그널로 확정적 판단 금지 → Funding / Premium, OI 변화와 함께 보조지표로 사용
-        </div>
-        <hr style="border:0;border-top:1px solid rgba(255,255,255,.12);margin:6px 0">
-        <div>
-          <b>EN:</b> G ${pct(gLast)} · T ${pct(tLast)} | Gap Δ ${pp(dNow)} — Larger |Δ| = stronger divergence<br>
-          <b>Outer ring:</b> Global L/S (Global long %) · <b>Inner ring:</b> Top L/S (Top-trader long %)<br>
-          <b>Note:</b> Not a standalone signal; use with Funding/Premium & OI changes.
-        </div>
-      </div>
-    </div>`
+    html: whaleHasData
+      ? whaleInfoHTML(gLast, tLast, dNow, dAvg)
+      : "<div style=\"color:#8b95a7;font-family:'Orbitron',monospace\">No data (Whale Gap)</div>"
   };
    
   const flowSec = {
@@ -546,7 +575,7 @@ async function initHub(){
     centerSub:  Number.isFinite(dpp) ? `Δ ${(dpp>=0?'+':'')}${dpp.toFixed(1)}pp` : "NO DATA",
     smallCenter: true,
      html: hasFlow
-      ? flowInfoHTML(r1h, r24, dpp)   // ← 우리가 만든 라임/그린/민트 설명 함수
+      ? flowInfoHTML(r1h, r24, dpp)   // ← 시안/바이올렛/앰버 톤 설명 블록
       : "<div style='color:#8b95a7'>No data (Flow API)</div>"
   };
 
