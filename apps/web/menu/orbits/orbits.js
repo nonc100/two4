@@ -1,0 +1,581 @@
+import { forumData, ORBITS_POSTS_ENDPOINT, OWN_POSTS_STORAGE_KEY, findCategoryById } from './data.js';
+
+function hasLocalStorage() {
+  try {
+    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+  } catch (error) {
+    return false;
+  }
+}
+
+function loadOwnPosts() {
+  if (!hasLocalStorage()) return [];
+  try {
+    const raw = window.localStorage.getItem(OWN_POSTS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(id => typeof id === 'string');
+  } catch (error) {
+    console.error('Failed to load saved ORBITS posts', error);
+    return [];
+  }
+}
+
+const state = {
+  currentCategory: forumData.categories[0]?.id ?? 'volume',
+  basePosts: forumData.posts.map(post => normalizePost(post, 'static')).filter(Boolean),
+  remotePosts: [],
+  descriptions: Object.fromEntries(forumData.categories.map(category => [category.id, category.description])),
+  ownPosts: loadOwnPosts(),
+  deletingPostId: null,
+  currentDetailPostId: null
+};
+
+const elements = {
+  boardView: document.getElementById('boardView'),
+  detailView: document.getElementById('detailView'),
+  categoryBadge: document.getElementById('categoryBadge'),
+  categoryTitle: document.getElementById('categoryTitle'),
+  categoryMeta: document.getElementById('categoryMeta'),
+  categoryVisual: document.getElementById('categoryVisual'),
+  categoryOverlayTitle: document.getElementById('categoryOverlayTitle'),
+  categoryOverlayDesc: document.getElementById('categoryOverlayDesc'),
+  descriptionContent: document.getElementById('descriptionContent'),
+  descriptionEdit: document.getElementById('descriptionEdit'),
+  descriptionTextarea: document.getElementById('descriptionTextarea'),
+  postsList: document.getElementById('postsList'),
+  newPostButton: document.getElementById('newPostButton'),
+  editDescriptionButton: document.getElementById('editDescriptionButton'),
+  cancelDescriptionButton: document.getElementById('cancelDescriptionButton'),
+  saveDescriptionButton: document.getElementById('saveDescriptionButton'),
+  boardUpdated: document.getElementById('boardUpdated'),
+  backToBoardButton: document.getElementById('backToBoardButton'),
+  detailCategory: document.getElementById('detailCategory'),
+  detailTitle: document.getElementById('detailTitle'),
+  detailAuthor: document.getElementById('detailAuthor'),
+  detailDate: document.getElementById('detailDate'),
+  detailStats: document.getElementById('detailStats'),
+  detailMedia: document.getElementById('postDetailMedia'),
+  postDetailContent: document.getElementById('postDetailContent'),
+  postDetailTags: document.getElementById('postDetailTags'),
+  postDetailInteractions: document.getElementById('postDetailInteractions'),
+  deletePostButton: document.getElementById('deletePostButton')
+};
+
+const groupLists = Array.from(document.querySelectorAll('[data-group-list]')).reduce((acc, element) => {
+  acc[element.dataset.groupList] = element;
+  return acc;
+}, {});
+
+function formatUpdatedAt(timestamp) {
+  if (!timestamp) return 'Last sync — 준비 중';
+  try {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return 'Last sync — 준비 중';
+    return `Last sync — ${new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)}`;
+  } catch (error) {
+    return 'Last sync — 준비 중';
+  }
+}
+
+function createExcerptFromHtml(html) {
+  const text = String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const slice = text.slice(0, 150);
+  return text.length > 150 ? `${slice}…` : slice;
+}
+
+function normalizeImage(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:image/')) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return '';
+}
+
+function normalizePost(post, source = 'remote') {
+  if (!post || typeof post !== 'object') return null;
+
+  const id = typeof post.id === 'string' && post.id.trim() ? post.id.trim() : `temp-${Date.now().toString(36)}`;
+  const createdAt = typeof post.createdAt === 'string' && !Number.isNaN(Date.parse(post.createdAt))
+    ? post.createdAt
+    : null;
+  const timestamp = createdAt ? Date.parse(createdAt) : Number.isFinite(Number(post.timestamp)) ? Number(post.timestamp) : null;
+  const contentHtml = typeof post.contentHtml === 'string'
+    ? post.contentHtml
+    : typeof post.content === 'string'
+      ? post.content
+      : '';
+  const hero = typeof post.hero === 'string' && post.hero.trim() ? post.hero.trim() : '';
+  const image = normalizeImage(post.image);
+  const tags = Array.isArray(post.tags)
+    ? post.tags
+        .map(tag => (typeof tag === 'string' ? tag.trim() : ''))
+        .filter(Boolean)
+        .slice(0, 12)
+    : [];
+  const stats = post.stats && typeof post.stats === 'object' ? post.stats : {};
+
+  return {
+    id,
+    category: typeof post.category === 'string' && post.category.trim()
+      ? post.category.trim()
+      : forumData.categories[0]?.id ?? 'volume',
+    title: typeof post.title === 'string' && post.title.trim() ? post.title.trim() : 'Untitled',
+    author: typeof post.author === 'string' && post.author.trim() ? post.author.trim() : 'Anonymous',
+    hero,
+    image,
+    tags,
+    stats: {
+      likes: Number.isFinite(Number(stats.likes)) ? Number(stats.likes) : 0,
+      comments: Number.isFinite(Number(stats.comments)) ? Number(stats.comments) : 0,
+      views: Number.isFinite(Number(stats.views)) ? Number(stats.views) : 0
+    },
+    excerpt: typeof post.excerpt === 'string' && post.excerpt.trim() ? post.excerpt.trim() : createExcerptFromHtml(contentHtml),
+    contentHtml,
+    createdAt,
+    createdLabel: typeof post.created === 'string' && post.created.trim() ? post.created.trim() : '',
+    timestamp: Number.isFinite(timestamp) ? timestamp : null,
+    source
+  };
+}
+
+function sortPosts(posts) {
+  return posts
+    .slice()
+    .sort((a, b) => {
+      const aTime = Number.isFinite(a?.timestamp) ? a.timestamp : Number.MIN_SAFE_INTEGER;
+      const bTime = Number.isFinite(b?.timestamp) ? b.timestamp : Number.MIN_SAFE_INTEGER;
+      return bTime - aTime;
+    });
+}
+
+function getAllPosts() {
+  return [...state.remotePosts, ...state.basePosts];
+}
+
+function getPostsForCategory(categoryId) {
+  return sortPosts(getAllPosts().filter(post => post.category === categoryId));
+}
+
+function isOwnPost(postId) {
+  return state.ownPosts.includes(postId);
+}
+
+function saveOwnPosts() {
+  if (!hasLocalStorage()) return;
+  try {
+    window.localStorage.setItem(OWN_POSTS_STORAGE_KEY, JSON.stringify(state.ownPosts));
+  } catch (error) {
+    console.error('Failed to persist ORBITS posts', error);
+  }
+}
+
+function addOwnPostId(postId) {
+  if (!postId || isOwnPost(postId)) return;
+  state.ownPosts.push(postId);
+  saveOwnPosts();
+}
+
+function removeOwnPostId(postId) {
+  const index = state.ownPosts.indexOf(postId);
+  if (index === -1) return;
+  state.ownPosts.splice(index, 1);
+  saveOwnPosts();
+}
+
+function formatRelativeTime(timestamp) {
+  if (!Number.isFinite(timestamp)) return null;
+  const now = Date.now();
+  const diff = timestamp - now;
+  const abs = Math.abs(diff);
+  if (abs < 45 * 1000) return '방금 전';
+
+  const units = [
+    { unit: 'year', value: 1000 * 60 * 60 * 24 * 365 },
+    { unit: 'month', value: 1000 * 60 * 60 * 24 * 30 },
+    { unit: 'day', value: 1000 * 60 * 60 * 24 },
+    { unit: 'hour', value: 1000 * 60 * 60 },
+    { unit: 'minute', value: 1000 * 60 }
+  ];
+
+  const formatter = new Intl.RelativeTimeFormat('ko', { numeric: 'auto' });
+  for (const { unit, value } of units) {
+    if (abs >= value || unit === 'minute') {
+      const amount = Math.round(diff / value);
+      return formatter.format(amount, unit);
+    }
+  }
+  return '방금 전';
+}
+
+function formatPostDate(post) {
+  if (!post) return '방금 전';
+  const relative = formatRelativeTime(post.timestamp);
+  if (relative) return relative;
+  return post.createdLabel || '방금 전';
+}
+
+function renderCategories() {
+  forumData.categories.forEach(category => {
+    const list = groupLists[category.group];
+    if (!list) return;
+    const listItem = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = category.title;
+    button.dataset.id = category.id;
+    button.dataset.label = category.label;
+    button.addEventListener('click', () => selectCategory(category.id));
+    listItem.appendChild(button);
+    list.appendChild(listItem);
+  });
+}
+
+function selectCategory(categoryId) {
+  state.currentCategory = categoryId;
+  closePostDetail();
+  if (!elements.descriptionEdit.hasAttribute('hidden')) {
+    closeDescriptionEditor();
+  }
+  updateActiveCategory();
+  updateCategoryHeader();
+  updateDescription();
+  renderPosts();
+}
+
+function updateActiveCategory() {
+  document.querySelectorAll('.category-nav button').forEach(button => {
+    button.classList.toggle('active', button.dataset.id === state.currentCategory);
+  });
+}
+
+function updateCategoryHeader() {
+  const category = forumData.categories.find(item => item.id === state.currentCategory);
+  if (!category) return;
+  elements.categoryBadge.textContent = category.badge;
+  elements.categoryTitle.textContent = category.title;
+  elements.categoryMeta.textContent = category.meta;
+  elements.categoryVisual.textContent = category.heroIcon;
+  elements.categoryOverlayTitle.textContent = category.overlayTitle;
+  elements.categoryOverlayDesc.textContent = category.overlayDescription;
+}
+
+function updateDescription() {
+  const description = state.descriptions[state.currentCategory] ?? '';
+  elements.descriptionContent.innerHTML = description ? `<p>${description}</p>` : '<p>이 카테고리에 대한 설명을 작성해주세요.</p>';
+  if (!elements.descriptionEdit.hasAttribute('hidden')) {
+    elements.descriptionTextarea.value = description;
+  }
+}
+
+function renderPosts() {
+  if (!elements.postsList) return;
+  elements.postsList.innerHTML = '';
+  const posts = getPostsForCategory(state.currentCategory);
+  if (posts.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = '아직 등록된 게시글이 없습니다. 첫 번째 전략을 공유해보세요!';
+    elements.postsList.appendChild(empty);
+    return;
+  }
+  posts.forEach(post => {
+    const card = createPostCard(post);
+    if (card) {
+      elements.postsList.appendChild(card);
+    }
+  });
+}
+
+function createPostCard(post) {
+  if (!post) return null;
+  const category = findCategoryById(post.category);
+  const card = document.createElement('article');
+  card.className = 'post-card';
+  card.tabIndex = 0;
+  card.dataset.postId = post.id;
+
+  const media = document.createElement('div');
+  media.className = 'post-card__media';
+  if (post.image) {
+    const img = document.createElement('img');
+    img.src = post.image;
+    img.alt = `${post.title} 썸네일`;
+    media.appendChild(img);
+  } else {
+    const fallback = document.createElement('div');
+    fallback.className = 'post-card__media-fallback';
+    fallback.textContent = post.hero || category?.heroIcon || '🛰️';
+    media.appendChild(fallback);
+  }
+  card.appendChild(media);
+
+  const body = document.createElement('div');
+  body.className = 'post-card__body';
+
+  const badge = document.createElement('span');
+  badge.className = 'post-card__badge';
+  badge.textContent = category?.badge ?? 'ORBITS';
+  body.appendChild(badge);
+
+  const title = document.createElement('h3');
+  title.className = 'post-card__title';
+  title.textContent = post.title;
+  body.appendChild(title);
+
+  if (post.excerpt) {
+    const excerpt = document.createElement('p');
+    excerpt.className = 'post-card__excerpt';
+    excerpt.textContent = post.excerpt;
+    body.appendChild(excerpt);
+  }
+
+  if (post.tags.length) {
+    const tags = document.createElement('div');
+    tags.className = 'post-card__tags';
+    post.tags.forEach(tag => {
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.textContent = tag;
+      tags.appendChild(span);
+    });
+    body.appendChild(tags);
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'post-card__meta';
+  const author = document.createElement('span');
+  author.textContent = post.author;
+  const time = document.createElement('span');
+  time.textContent = formatPostDate(post);
+  meta.append(author, time);
+  body.appendChild(meta);
+
+  const stats = document.createElement('div');
+  stats.className = 'post-card__stats';
+  stats.innerHTML = `<span>👍 ${post.stats.likes}</span><span>💬 ${post.stats.comments}</span><span>👁 ${post.stats.views}</span>`;
+  body.appendChild(stats);
+
+  card.appendChild(body);
+
+  if (isOwnPost(post.id)) {
+    const actions = document.createElement('div');
+    actions.className = 'post-card__actions';
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'post-card__delete';
+    deleteButton.textContent = '삭제';
+    deleteButton.setAttribute('aria-label', '게시글 삭제');
+    deleteButton.addEventListener('click', event => {
+      event.stopPropagation();
+      handleDeletePost(post.id, deleteButton);
+    });
+    actions.appendChild(deleteButton);
+    card.appendChild(actions);
+  }
+
+  card.addEventListener('click', () => openPostDetail(post.id));
+  card.addEventListener('keypress', event => {
+    if (event.key === 'Enter') {
+      openPostDetail(post.id);
+    }
+  });
+
+  return card;
+}
+
+function openPostDetail(postId) {
+  const post = getAllPosts().find(item => item.id === postId);
+  if (!post) return;
+  const category = findCategoryById(post.category);
+  elements.detailCategory.textContent = category ? category.badge : 'ORBITS';
+  elements.detailTitle.textContent = post.title;
+  elements.detailAuthor.textContent = post.author;
+  elements.detailDate.textContent = formatPostDate(post);
+  elements.detailStats.textContent = `👍 ${post.stats.likes} · 💬 ${post.stats.comments} · 👁 ${post.stats.views}`;
+  if (elements.detailMedia) {
+    if (post.image) {
+      elements.detailMedia.innerHTML = `<img src="${post.image}" alt="${post.title} 첨부 이미지">`;
+      elements.detailMedia.removeAttribute('hidden');
+    } else {
+      elements.detailMedia.innerHTML = '';
+      elements.detailMedia.setAttribute('hidden', '');
+    }
+  }
+  elements.postDetailContent.innerHTML = post.contentHtml || '';
+  elements.postDetailTags.innerHTML = '';
+  post.tags.forEach(tag => {
+    const span = document.createElement('span');
+    span.className = 'tag';
+    span.textContent = tag;
+    elements.postDetailTags.appendChild(span);
+  });
+  elements.postDetailInteractions.innerHTML = `
+    <span>좋아요 ${post.stats.likes}</span>
+    <span>댓글 ${post.stats.comments}</span>
+    <span>조회수 ${post.stats.views}</span>
+  `;
+  state.currentDetailPostId = post.id;
+  if (elements.deletePostButton) {
+    if (isOwnPost(post.id)) {
+      elements.deletePostButton.removeAttribute('hidden');
+    } else {
+      elements.deletePostButton.setAttribute('hidden', '');
+    }
+  }
+  elements.boardView.hidden = true;
+  elements.detailView.hidden = false;
+}
+
+function closePostDetail() {
+  state.currentDetailPostId = null;
+  elements.detailView.hidden = true;
+  elements.boardView.hidden = false;
+  elements.deletePostButton?.setAttribute('hidden', '');
+}
+
+function openDescriptionEditor() {
+  elements.descriptionTextarea.value = state.descriptions[state.currentCategory] ?? '';
+  elements.descriptionEdit.removeAttribute('hidden');
+  elements.descriptionContent.style.display = 'none';
+  elements.descriptionTextarea.focus();
+}
+
+function closeDescriptionEditor() {
+  elements.descriptionEdit.setAttribute('hidden', '');
+  elements.descriptionContent.style.display = '';
+}
+
+function saveDescription() {
+  const value = elements.descriptionTextarea.value.trim();
+  if (value) {
+    state.descriptions[state.currentCategory] = value;
+    elements.descriptionContent.innerHTML = `<p>${value}</p>`;
+  }
+  closeDescriptionEditor();
+}
+
+async function fetchRemotePosts() {
+  const response = await fetch(ORBITS_POSTS_ENDPOINT, {
+    headers: { Accept: 'application/json' }
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to load posts (${response.status})`);
+  }
+  const data = await response.json();
+  const posts = Array.isArray(data.posts) ? data.posts.map(item => normalizePost(item, 'remote')).filter(Boolean) : [];
+  return { posts, updatedAt: data.updatedAt ?? null };
+}
+
+async function deleteRemotePost(postId) {
+  const response = await fetch(`${ORBITS_POSTS_ENDPOINT}/${encodeURIComponent(postId)}`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json' }
+  });
+  let data = null;
+  try {
+    data = await response.json();
+  } catch (error) {
+    // ignore parse error
+  }
+  if (!response.ok) {
+    if (response.status === 404) {
+      return { ok: false, removed: postId, updatedAt: null };
+    }
+    const message = data?.error || 'Failed to delete post';
+    throw new Error(message);
+  }
+  return data;
+}
+
+async function loadRemotePosts() {
+  try {
+    const { posts, updatedAt } = await fetchRemotePosts();
+    state.remotePosts = posts;
+    renderPosts();
+    if (updatedAt) {
+      elements.boardUpdated.textContent = formatUpdatedAt(updatedAt);
+    }
+  } catch (error) {
+    console.error('Failed to fetch ORBITS posts', error);
+  }
+}
+
+function setButtonLoading(button, loadingText) {
+  if (!button) return () => {};
+  const previous = button.textContent;
+  button.disabled = true;
+  button.textContent = loadingText;
+  return () => {
+    button.disabled = false;
+    button.textContent = previous;
+  };
+}
+
+async function handleDeletePost(postId, triggerButton) {
+  if (!isOwnPost(postId) || state.deletingPostId === postId) return;
+  if (!confirm('게시글을 삭제할까요?')) return;
+
+  state.deletingPostId = postId;
+  const restoreFns = [];
+  if (triggerButton) {
+    restoreFns.push(setButtonLoading(triggerButton, '삭제중…'));
+  }
+  if (elements.deletePostButton && state.currentDetailPostId === postId) {
+    restoreFns.push(setButtonLoading(elements.deletePostButton, '삭제중…'));
+  }
+
+  try {
+    const response = await deleteRemotePost(postId);
+    state.remotePosts = state.remotePosts.filter(post => post.id !== postId);
+    removeOwnPostId(postId);
+    renderPosts();
+    if (state.currentDetailPostId === postId) {
+      closePostDetail();
+    }
+    const updatedTimestamp = response?.updatedAt || new Date().toISOString();
+    elements.boardUpdated.textContent = formatUpdatedAt(updatedTimestamp);
+  } catch (error) {
+    console.error('Failed to delete ORBITS post', error);
+    alert('게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  } finally {
+    state.deletingPostId = null;
+    restoreFns.forEach(fn => fn());
+  }
+}
+
+function initializeEvents() {
+  elements.newPostButton?.addEventListener('click', event => {
+    event.preventDefault();
+    closePostDetail();
+    window.location.href = './write.html';
+  });
+  elements.editDescriptionButton?.addEventListener('click', openDescriptionEditor);
+  elements.cancelDescriptionButton?.addEventListener('click', closeDescriptionEditor);
+  elements.saveDescriptionButton?.addEventListener('click', saveDescription);
+  elements.backToBoardButton?.addEventListener('click', closePostDetail);
+  elements.deletePostButton?.addEventListener('click', () => {
+    if (state.currentDetailPostId) {
+      handleDeletePost(state.currentDetailPostId, elements.deletePostButton);
+    }
+  });
+}
+
+function init() {
+  renderCategories();
+  elements.boardUpdated.textContent = formatUpdatedAt(forumData.updatedAt);
+  initializeEvents();
+  selectCategory(state.currentCategory);
+  loadRemotePosts();
+}
+
+init();
