@@ -23,6 +23,11 @@ const fmtPct =n=>{
   const t=(n>=0?'+':'')+n.toFixed(2)+'%';
   return `<span class="pct ${s}">${t}</span>`;
 };
+const fmtPpFull = n => {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return '—';
+  return `${v >= 0 ? '+' : ''}${v.toFixed(2)}pp`;
+};
 
 const escapeHtml = str => String(str ?? '')
   .replace(/&/g, '&amp;')
@@ -246,6 +251,47 @@ const StarField=(()=>{
     StarField.setIntensity(n); 
   };
   r.addEventListener("input",e=>apply(e.target.value));
+})();
+
+/* ---- Mobile navigation toggle ---- */
+(function(){
+  const nav = document.querySelector('.nav-header');
+  const toggle = document.getElementById('navToggle');
+  const menu = document.getElementById('navLinks');
+  if(!nav || !toggle || !menu) return;
+
+  nav.classList.add('js-nav');
+
+  const mq = window.matchMedia('(max-width: 960px)');
+
+  const sync = () => {
+    if (mq.matches) {
+      if (!nav.classList.contains('open')) menu.setAttribute('hidden', '');
+    } else {
+      nav.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      menu.removeAttribute('hidden');
+    }
+  };
+
+  toggle.addEventListener('click', () => {
+    const isOpen = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (isOpen) menu.removeAttribute('hidden');
+    else menu.setAttribute('hidden', '');
+  });
+
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    if (!nav.classList.contains('open')) return;
+    nav.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+    menu.setAttribute('hidden', '');
+  }));
+
+  if (typeof mq.addEventListener === 'function') mq.addEventListener('change', sync);
+  else if (typeof mq.addListener === 'function') mq.addListener(sync);
+  window.addEventListener('resize', sync);
+  sync();
 })();
 
 /* =========================
@@ -517,6 +563,23 @@ async function initHub(){
   const dpp = Number(flow?.delta_pp);
   const hasFlow = Number.isFinite(r1h) && Number.isFinite(r24);
 
+  const dominanceMulti = await safeJson('/api/dominance/top3?days=30');
+  let domDelta30d = null;
+  let domDetailAvailable = false;
+  if (dominanceMulti && Array.isArray(dominanceMulti.coins)) {
+    const btcDom = dominanceMulti.coins.find(c => {
+      const id = (c?.id || '').toLowerCase();
+      const sym = (c?.symbol || '').toLowerCase();
+      return id === 'bitcoin' || sym === 'btc';
+    });
+    if (btcDom?.series?.length) {
+      domDetailAvailable = true;
+      const first = Number(btcDom.series[0]?.value);
+      const last = Number(btcDom.series[btcDom.series.length - 1]?.value);
+      if (Number.isFinite(first) && Number.isFinite(last)) domDelta30d = last - first;
+    }
+  }
+
   const listTop=(by,n=10)=> mkts.slice().sort((a,b)=> (b[by]??0)-(a[by]??0)).slice(0,n);
   
   const toList=(arr,kind)=>`<div style="display:flex;flex-direction:column;gap:8px">`+arr.map((c,i)=>{
@@ -537,6 +600,14 @@ async function initHub(){
   const byId=Object.fromEntries(mkts.map(m=>[m.id,m]));
   const btc=byId.bitcoin||null;
   const dom = global?.data?.market_cap_percentage?.btc ?? null;
+  const domCenterSub = dom!=null ? `30D Δ ${fmtPpFull(domDelta30d)}` : 'DOMINANCE';
+  const domDeltaClass = Number.isFinite(domDelta30d) ? (domDelta30d >= 0 ? 'up' : 'down') : null;
+  const domDeltaHtml = domDeltaClass
+    ? `<span class="pct ${domDeltaClass}" style="font-size:1rem">${(domDelta30d>=0?'+':'')}${domDelta30d.toFixed(2)}pp</span>`
+    : `<span style="opacity:.5">—</span>`;
+  const domDetailLink = domDetailAvailable
+    ? `<a href="/menu/cosmos/dominance.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:8px 14px;border-radius:12px;border:1px solid rgba(0,255,255,0.35);background:rgba(0,255,255,0.06);color:#00ffff;text-decoration:none;font-family:'Orbitron',monospace;font-size:0.72rem;letter-spacing:1.6px;text-transform:uppercase;">Dominance detail<span aria-hidden="true">→</span></a>`
+    : `<div style="margin-top:16px;font-size:0.72rem;color:rgba(255,255,255,0.45);font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:1px;">Detail data unavailable</div>`;
   const f = Number(fng?.data?.[0]?.value ?? NaN);
 
   const gLast = globalLS?.long_pct_last;
@@ -611,12 +682,14 @@ async function initHub(){
     },
       whaleSec,
     {
-      badge:"BTC DOM", 
-      title:"Bitcoin Dominance", 
-      centerTop: dom!=null?dom.toFixed(2)+"%":"—", 
-      centerSub:"DOMINANCE", 
+      badge:"BTC DOM",
+      title:"Bitcoin Dominance",
+      centerTop: dom!=null?dom.toFixed(2)+"%":"—",
+      centerSub: domCenterSub,
       html:`<div style="font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:2px;color:#00ffff;text-shadow:0 0 10px currentColor">Bitcoin Dominance</div>
-            <div style="margin-top:12px;font-size:24px;font-weight:700">${dom!=null?dom.toFixed(2)+"%":"—"}</div>`
+            <div style="margin-top:12px;font-size:24px;font-weight:700">${dom!=null?dom.toFixed(2)+"%":"—"}</div>
+            <div style="margin-top:12px;font-size:0.9rem;color:rgba(255,255,255,0.75);font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;">30D Change ${domDeltaHtml}</div>
+            ${domDetailLink}`
     },
   ];
   

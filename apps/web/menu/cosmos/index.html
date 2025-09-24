@@ -113,12 +113,62 @@
       justify-content: space-between;
       align-items: center;
       gap: 28px;
+      position: relative;
     }
 
     .nav-left {
       display: flex;
       align-items: center;
-      gap: 36px;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .nav-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 255, 255, 0.35);
+      background: linear-gradient(135deg, rgba(10, 18, 32, 0.8), rgba(14, 12, 28, 0.95));
+      cursor: pointer;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .nav-toggle:focus-visible {
+      outline: 2px solid rgba(0, 255, 255, 0.8);
+      outline-offset: 2px;
+    }
+
+    .nav-toggle:hover {
+      border-color: rgba(0, 255, 255, 0.6);
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.35);
+    }
+
+    .nav-toggle span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(188, 248, 255, 0.92);
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .nav-toggle span + span {
+      margin-top: 5px;
+    }
+
+    .nav-header.open .nav-toggle span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .nav-header.open .nav-toggle span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav-header.open .nav-toggle span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
     }
 
     .nav-logo {
@@ -146,6 +196,7 @@
       gap: 6px;
       padding: 0;
       margin: 0;
+      transition: opacity 0.3s ease;
     }
 
     .nav-menu::-webkit-scrollbar {
@@ -253,42 +304,86 @@
       text-shadow: 0 0 12px rgba(0, 255, 255, 0.55);
     }
 
+    @media (max-width: 960px) {
+      .nav-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .nav-left {
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .nav-toggle {
+        display: inline-flex;
+      }
+
+      .nav-menu {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(5, 10, 20, 0.92), rgba(18, 16, 32, 0.92));
+        border: 1px solid rgba(0, 255, 255, 0.22);
+        box-shadow: 0 18px 36px rgba(4, 12, 24, 0.45);
+      }
+
+      .nav-header.js-nav:not(.open) .nav-menu {
+        display: none;
+      }
+
+      .nav-header.js-nav.open .nav-menu {
+        display: flex;
+      }
+
+      .nav-menu a {
+        width: 100%;
+        justify-content: space-between;
+        padding: 12px 14px;
+        font-size: 0.85rem;
+      }
+
+      .nav-right {
+        width: 100%;
+        justify-content: space-between;
+        font-size: 0.66rem;
+      }
+    }
+
     /* Cyberpunk Star Controller */
     .star-ctl {
-      position: fixed;
-      top: 110px;
-      right: 24px;
-      z-index: 150;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px 14px;
-      width: 56px;
-      background: linear-gradient(180deg, rgba(0, 255, 255, 0.12), rgba(10, 15, 35, 0.75));
-      border: 1px solid rgba(0, 255, 255, 0.25);
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: -12px 0 28px auto;
+      padding: 12px 18px;
+      max-width: 100%;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.12), rgba(10, 15, 35, 0.78));
+      border: 1px solid rgba(0, 255, 255, 0.28);
       border-radius: 22px;
       backdrop-filter: blur(18px);
       box-shadow: 0 10px 24px rgba(6, 12, 24, 0.45);
       font-family: 'Orbitron', monospace;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 1.5px;
       text-transform: uppercase;
     }
 
     .star-ctl span {
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      color: rgba(0, 255, 255, 0.85);
-      text-shadow: 0 0 10px rgba(0, 255, 255, 0.65);
+      color: rgba(0, 255, 255, 0.88);
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.55);
     }
 
     .star-ctl input[type=range] {
-      width: 120px;
-      height: 16px;
-      transform: rotate(-90deg);
-      transform-origin: center;
+      width: 200px;
+      height: 8px;
       background: linear-gradient(90deg, rgba(0, 255, 255, 0.55), rgba(153, 69, 255, 0.45));
       border-radius: 999px;
       outline: none;
@@ -824,49 +919,18 @@
         max-width: 100%;
       }
 
-      .nav-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-      }
-
-      .nav-left {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        width: 100%;
-      }
-
-      .nav-right {
-        width: 100%;
-        justify-content: space-between;
-        font-size: 0.6rem;
-      }
-
-      .nav-menu {
-        width: 100%;
-        overflow-x: auto;
-        padding-bottom: 6px;
-      }
-
-      .nav-menu a {
-        flex: 0 0 auto;
-        padding: 10px 14px;
-        font-size: 0.8rem;
-      }
-
       /* Star controller - smaller on mobile */
       .star-ctl {
-        top: 88px;
-        right: 10px;
-        width: 48px;
-        padding: 8px 10px 12px;
-        font-size: 0.58rem;
-        gap: 6px;
+        margin: 6px 0 22px;
+        width: 100%;
+        justify-content: space-between;
+        padding: 14px 16px;
+        font-size: 0.64rem;
       }
 
       .star-ctl input[type=range] {
-        width: 90px;
+        width: 100%;
+        max-width: 260px;
       }
       
       /* Hub adjustments */
@@ -1175,7 +1239,12 @@
         <a href="/" class="nav-logo" aria-label="TWO.4 home">
           <img src="/media/logo.png" alt="TWO.4 logo">
         </a>
-        <ul class="nav-menu">
+        <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="Toggle navigation menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <ul class="nav-menu" id="navLinks">
           <li><a href="/menu/cosmos/" class="active" data-tooltip="마켓">Crypto Market</a></li>
           <li><a href="/menu/orbits.html" data-tooltip="지표·신호">Orbits</a></li>
           <li><a href="/menu/method.html" data-tooltip="기법">Method</a></li>
@@ -1192,13 +1261,13 @@
     </div>
   </nav>
 
-  <!-- Star Controller -->
-  <div class="star-ctl" aria-label="Star background controller">
-    <span>Stars</span>
-    <input id="starRange" type="range" min="0" max="100" value="80" />
-  </div>
-  
   <div class="wrap">
+    <!-- Star Controller -->
+    <div class="star-ctl" aria-label="Star background controller">
+      <span>Stars</span>
+      <input id="starRange" type="range" min="0" max="100" value="80" />
+    </div>
+
     <!-- Cyber HUB (3D Donut + Detail panel) -->
     <section class="hub-wrap">
       <div class="hub">

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cosmos · Market Dominance Detail</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(0,255,255,0.08), transparent 55%),
+                  radial-gradient(circle at 80% 10%, rgba(153,69,255,0.08), transparent 60%),
+                  linear-gradient(180deg, #030712, #050a1c 45%, #090f26 100%);
+      color: #eaf5ff;
+      padding: 28px clamp(16px, 4vw, 48px) 48px;
+    }
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 18px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: rgba(0, 255, 255, 0.9);
+      background: rgba(0, 255, 255, 0.08);
+      border: 1px solid rgba(0, 255, 255, 0.28);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .back-link:hover,
+    .back-link:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(0, 255, 255, 0.25);
+      outline: none;
+    }
+    .title-block {
+      flex: 1;
+      min-width: 240px;
+    }
+    .title-block h1 {
+      margin: 0;
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .title-block p {
+      margin: 6px 0 0;
+      color: rgba(206, 222, 255, 0.72);
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      position: relative;
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(8, 20, 40, 0.92), rgba(12, 18, 42, 0.88));
+      border: 1px solid rgba(0, 255, 255, 0.12);
+      box-shadow: 0 12px 32px rgba(3, 12, 24, 0.45);
+      overflow: hidden;
+    }
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 55%);
+      pointer-events: none;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .card h2 {
+      margin: 0;
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+    .card span.symbol {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: rgba(180, 230, 255, 0.75);
+    }
+    .card .dominance {
+      margin-top: 18px;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ffffff;
+    }
+    .delta {
+      margin-top: 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .delta.up { color: #22d3ee; }
+    .delta.down { color: #fb7185; }
+    .delta.neutral { color: rgba(206, 222, 255, 0.65); }
+    .chart-panel {
+      background: linear-gradient(135deg, rgba(6, 16, 32, 0.92), rgba(10, 18, 40, 0.88));
+      border: 1px solid rgba(0, 255, 255, 0.12);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(3, 12, 24, 0.55);
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .legend {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.6px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      box-shadow: 0 0 12px currentColor;
+    }
+    .meta-info {
+      font-size: 0.8rem;
+      color: rgba(200, 214, 240, 0.68);
+      letter-spacing: 0.6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+    }
+    .error-box {
+      padding: 28px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 99, 132, 0.35);
+      background: rgba(60, 12, 24, 0.55);
+      color: #ff9cae;
+      font-family: 'Orbitron', monospace;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      text-align: center;
+    }
+    @media (max-width: 640px) {
+      body { padding: 20px 14px 36px; }
+      .chart-panel { padding: 18px 16px; }
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top-bar">
+      <a href="/menu/cosmos/" class="back-link">↩︎ Cosmos Deck</a>
+      <div class="title-block">
+        <h1>Top 3 Market Dominance</h1>
+        <p>30일 구간 시총 상위 3종목 도미넌스를 실시간 API로 추적합니다.</p>
+      </div>
+    </header>
+    <section class="summary-grid" id="summary"></section>
+    <section class="chart-panel" aria-labelledby="chartTitle">
+      <h2 id="chartTitle" style="margin:0 0 12px;font-family:'Orbitron',monospace;font-size:1rem;letter-spacing:1.4px;text-transform:uppercase;color:rgba(188,228,255,0.78);">30D Dominance Multi Sparkline</h2>
+      <canvas id="dominanceChart" width="960" height="360" role="img" aria-label="Market dominance multi-line sparkline"></canvas>
+      <div class="legend" id="legend"></div>
+    </section>
+    <div class="meta-info" id="meta"></div>
+  </main>
+  <script>
+    (function(){
+      const colors = ['#00ffff', '#ff66cc', '#ffd166'];
+      const summaryEl = document.getElementById('summary');
+      const legendEl = document.getElementById('legend');
+      const metaEl = document.getElementById('meta');
+      const canvas = document.getElementById('dominanceChart');
+      const ctx = canvas.getContext('2d');
+
+      const fmt = (n, digits = 2) => {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '—';
+        return v.toFixed(digits);
+      };
+
+      const fmtDelta = (n) => {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return { text: '—', cls: 'neutral' };
+        const sign = v >= 0 ? '+' : '';
+        return { text: `${sign}${v.toFixed(2)}pp`, cls: v > 0 ? 'up' : v < 0 ? 'down' : 'neutral' };
+      };
+
+      function drawSummary(coins){
+        summaryEl.innerHTML = '';
+        coins.forEach((coin, idx) => {
+          const delta = fmtDelta(coin.change);
+          const card = document.createElement('article');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="card-header">
+              <h2>${coin.name}</h2>
+              <span class="symbol">${coin.symbol || ''}</span>
+            </div>
+            <div class="dominance">${fmt(coin.dominance)}%</div>
+            <div class="delta ${delta.cls}">30D Δ ${delta.text}</div>
+          `;
+          card.style.borderColor = colors[idx % colors.length] + '33';
+          summaryEl.appendChild(card);
+        });
+      }
+
+      function drawLegend(coins){
+        legendEl.innerHTML = '';
+        coins.forEach((coin, idx) => {
+          const item = document.createElement('span');
+          item.className = 'legend-item';
+          const swatch = document.createElement('span');
+          swatch.className = 'legend-swatch';
+          const color = colors[idx % colors.length];
+          swatch.style.background = color;
+          swatch.style.color = color;
+          item.appendChild(swatch);
+          const label = document.createElement('span');
+          label.textContent = `${coin.name} (${fmt(coin.dominance)}%)`;
+          item.appendChild(label);
+          legendEl.appendChild(item);
+        });
+      }
+
+      function drawChart(coins){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!coins.length) return;
+        const allValues = coins.flatMap(c => c.series.map(p => p.value));
+        const allTimes = coins.flatMap(c => c.series.map(p => p.time));
+        if (!allValues.length || !allTimes.length) return;
+
+        const yMin = Math.min(...allValues);
+        const yMax = Math.max(...allValues);
+        const xMin = Math.min(...allTimes);
+        const xMax = Math.max(...allTimes);
+        const pad = (yMax - yMin) * 0.12 || 1;
+        const min = yMin - pad;
+        const max = yMax + pad;
+        const left = 60;
+        const right = 24;
+        const top = 30;
+        const bottom = 36;
+        const width = canvas.width - left - right;
+        const height = canvas.height - top - bottom;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.18)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
+        for (let i = 0; i <= 4; i++) {
+          const y = top + (height / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(left, y);
+          ctx.lineTo(canvas.width - right, y);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        const projectX = (time) => {
+          if (xMax === xMin) return left + width / 2;
+          return left + ((time - xMin) / (xMax - xMin)) * width;
+        };
+        const projectY = (value) => {
+          if (max === min) return top + height / 2;
+          return top + (1 - (value - min) / (max - min)) * height;
+        };
+
+        coins.forEach((coin, idx) => {
+          const color = colors[idx % colors.length];
+          ctx.beginPath();
+          ctx.lineWidth = 2.4;
+          ctx.strokeStyle = color;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 12;
+          coin.series.forEach((pt, i) => {
+            const x = projectX(pt.time);
+            const y = projectY(pt.value);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        });
+
+        ctx.fillStyle = 'rgba(188, 222, 255, 0.65)';
+        ctx.font = '12px "Orbitron", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${fmt(min, 2)}%`, left + 4, canvas.height - bottom + 14);
+        ctx.fillText(`${fmt(max, 2)}%`, left + 4, top - 6);
+      }
+
+      function renderMeta(data){
+        if (!metaEl) return;
+        const updated = data.updated_at ? new Date(data.updated_at) : null;
+        const formatDate = updated ? updated.toLocaleString('ko-KR', { hour12: false }) : '—';
+        metaEl.innerHTML = `<span>Last synced: ${formatDate}</span><span>Source: CoinGecko Global · Market Cap Chart / Market Chart API</span>`;
+      }
+
+      async function init(){
+        try {
+          const res = await fetch('/api/dominance/top3?days=30');
+          if (!res.ok) throw new Error('dominance fetch failed');
+          const data = await res.json();
+          const coins = Array.isArray(data?.coins) ? data.coins.filter(c => Array.isArray(c.series) && c.series.length) : [];
+          if (!coins.length) throw new Error('데이터가 비어 있습니다.');
+          drawSummary(coins);
+          drawLegend(coins);
+          drawChart(coins);
+          renderMeta(data);
+        } catch (err) {
+          console.error(err);
+          summaryEl.innerHTML = '';
+          legendEl.innerHTML = '';
+          metaEl.innerHTML = '';
+          const box = document.createElement('div');
+          box.className = 'error-box';
+          box.textContent = 'Dominance data load failed – API 응답을 확인해주세요.';
+          canvas.replaceWith(box);
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
