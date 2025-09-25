@@ -29,6 +29,203 @@ const fmtPpFull = n => {
   return `${v >= 0 ? '+' : ''}${v.toFixed(2)}pp`;
 };
 
+const DOMINANCE_COLORS = ['#00ffff', '#ff66cc', '#ffd166'];
+const activeDomSpark = { container: null, coins: null };
+
+function toNumeric(value, { allowDate = false } = {}) {
+  if (value == null) return NaN;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return NaN;
+    value = trimmed;
+  }
+  const num = Number(value);
+  if (Number.isFinite(num)) return num;
+  if (allowDate) {
+    const date = new Date(value);
+    const time = date.getTime();
+    if (Number.isFinite(time)) return time;
+  }
+  return NaN;
+}
+
+function normaliseDominanceSeries(series) {
+  if (!Array.isArray(series)) return [];
+  const out = [];
+  for (const point of series) {
+    let rawTime;
+    let rawValue;
+    if (Array.isArray(point)) {
+      rawTime = point[0];
+      rawValue = point[1];
+    } else if (point && typeof point === 'object') {
+      rawTime = point.time ?? point.timestamp ?? point.t ?? point.time_ms ?? point[0];
+      rawValue = point.value ?? point.v ?? point.dominance ?? point[1];
+    } else {
+      continue;
+    }
+    const time = toNumeric(rawTime, { allowDate: true });
+    const value = toNumeric(rawValue);
+    if (!Number.isFinite(time) || !Number.isFinite(value)) continue;
+    out.push({ time, value });
+  }
+  return out.sort((a, b) => a.time - b.time);
+}
+
+function prepareDominanceCoins(rawCoins) {
+  if (!Array.isArray(rawCoins)) return [];
+  const prepared = [];
+  for (const coin of rawCoins) {
+    const series = normaliseDominanceSeries(coin?.series);
+    if (!series.length) continue;
+    const first = series[0].value;
+    const last = series[series.length - 1].value;
+    const dominanceValue = toNumeric(coin?.dominance);
+    const changeValue = toNumeric(coin?.change);
+    const dominance = Number.isFinite(dominanceValue) ? dominanceValue : last;
+    let change = Number.isFinite(changeValue) ? changeValue : NaN;
+    if (!Number.isFinite(change) && Number.isFinite(first) && Number.isFinite(last)) {
+      change = last - first;
+    }
+    prepared.push({
+      id: coin?.id || '',
+      name: coin?.name || (coin?.id || '').toUpperCase(),
+      symbol: (coin?.symbol || '').toUpperCase(),
+      dominance,
+      change,
+      series
+    });
+  }
+  return prepared
+    .sort((a, b) => {
+      const aDom = Number.isFinite(a.dominance) ? a.dominance : -Infinity;
+      const bDom = Number.isFinite(b.dominance) ? b.dominance : -Infinity;
+      return bDom - aDom;
+    })
+    .slice(0, 3);
+}
+
+function drawDominanceSparkline(container, coins) {
+  if (!container || !Array.isArray(coins) || !coins.length) {
+    activeDomSpark.container = null;
+    activeDomSpark.coins = null;
+    return;
+  }
+  let canvas = container.querySelector('canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+  }
+  const width = Math.max(container.clientWidth || 0, 220);
+  const height = 120;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = 'rgba(5, 10, 24, 0.75)';
+  ctx.fillRect(0, 0, width, height);
+
+  const times = [];
+  const values = [];
+  coins.forEach(coin => {
+    if (!Array.isArray(coin.series)) return;
+    coin.series.forEach(point => {
+      times.push(point.time);
+      values.push(point.value);
+    });
+  });
+  if (!times.length || !values.length) return;
+
+  const minTime = Math.min(...times);
+  const maxTime = Math.max(...times);
+  const minVal = Math.min(...values);
+  const maxVal = Math.max(...values);
+  const timeSpan = maxTime - minTime || 1;
+  const valueRange = maxVal - minVal;
+  const pad = valueRange === 0 ? Math.max(1, Math.abs(maxVal) * 0.05 || 1) : valueRange * 0.1;
+  const vMin = minVal - pad;
+  const vMax = maxVal + pad;
+  const valueSpan = vMax - vMin || 1;
+
+  const leftPad = 12;
+  const rightPad = 12;
+  const topPad = 12;
+  const bottomPad = 12;
+  const innerWidth = width - leftPad - rightPad;
+  const innerHeight = height - topPad - bottomPad;
+  if (innerWidth <= 0 || innerHeight <= 0) return;
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 255, 255, 0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= 4; i++) {
+    const y = topPad + (innerHeight / 4) * i;
+    ctx.moveTo(leftPad, y);
+    ctx.lineTo(leftPad + innerWidth, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  coins.forEach((coin, idx) => {
+    const series = coin.series;
+    if (!Array.isArray(series) || series.length < 2) return;
+    const color = DOMINANCE_COLORS[idx % DOMINANCE_COLORS.length];
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    series.forEach((point, i) => {
+      const x = leftPad + ((point.time - minTime) / timeSpan) * innerWidth;
+      const y = topPad + (1 - ((point.value - vMin) / valueSpan)) * innerHeight;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    const last = series[series.length - 1];
+    if (last) {
+      const x = leftPad + ((last.time - minTime) / timeSpan) * innerWidth;
+      const y = topPad + (1 - ((last.value - vMin) / valueSpan)) * innerHeight;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  ctx.save();
+  const grad = ctx.createLinearGradient(0, topPad, 0, topPad + innerHeight);
+  grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(leftPad, topPad, innerWidth, innerHeight);
+  ctx.restore();
+
+  activeDomSpark.container = container;
+  activeDomSpark.coins = coins;
+}
+
+window.addEventListener('resize', () => {
+  const { container, coins } = activeDomSpark;
+  if (!container || !coins || !document.body.contains(container)) {
+    activeDomSpark.container = null;
+    activeDomSpark.coins = null;
+    return;
+  }
+  drawDominanceSparkline(container, coins);
+});
+
 const escapeHtml = str => String(str ?? '')
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -549,6 +746,11 @@ function buildHub(sections){
       hubBody.innerHTML=s.html;
       hubBig.style.fontSize = s.smallCenter ? '16px' : '';
       hubBig.style.whiteSpace = s.smallCenter ? 'nowrap' : '';
+      activeDomSpark.container = null;
+      activeDomSpark.coins = null;
+      if (typeof s.onActivate === 'function') {
+        requestAnimationFrame(() => s.onActivate(hubBody));
+      }
     };
     
     path.addEventListener("click", act); 
@@ -582,20 +784,38 @@ async function initHub(){
   const hasFlow = Number.isFinite(r1h) && Number.isFinite(r24);
 
   const dominanceMulti = await safeJson('/api/dominance/top3?days=30');
-  let domDelta30d = null;
-  let domDetailAvailable = false;
-  if (dominanceMulti && Array.isArray(dominanceMulti.coins)) {
-    const btcDom = dominanceMulti.coins.find(c => {
-      const id = (c?.id || '').toLowerCase();
-      const sym = (c?.symbol || '').toLowerCase();
-      return id === 'bitcoin' || sym === 'btc';
-    });
-    if (btcDom?.series?.length) {
-      domDetailAvailable = true;
-      const first = Number(btcDom.series[0]?.value);
-      const last = Number(btcDom.series[btcDom.series.length - 1]?.value);
-      if (Number.isFinite(first) && Number.isFinite(last)) domDelta30d = last - first;
-    }
+  const dominanceCoins = prepareDominanceCoins(dominanceMulti?.coins);
+  const btcDomCoin = dominanceCoins.find(c => {
+    const id = (c?.id || '').toLowerCase();
+    const sym = (c?.symbol || '').toUpperCase();
+    return id === 'bitcoin' || sym === 'BTC';
+  }) || null;
+  const domDetailAvailable = dominanceCoins.length > 0;
+  const domDelta30d = Number.isFinite(btcDomCoin?.change) ? btcDomCoin.change : null;
+
+  let domDetailHtml = '<div class="dom-empty">Dominance data unavailable</div>';
+  let domOnActivate;
+  if (domDetailAvailable) {
+    const rowsHtml = dominanceCoins.map((coin, idx) => {
+      const color = DOMINANCE_COLORS[idx % DOMINANCE_COLORS.length];
+      const symbol = (coin.symbol || '').toUpperCase();
+      const displayName = coin.name || symbol || '—';
+      const showSymbol = Boolean(symbol) && symbol !== String(displayName).toUpperCase();
+      const symbolHtml = showSymbol ? ` <span class="dom-symbol">${escapeHtml(symbol)}</span>` : '';
+      const nameLabel = escapeHtml(displayName);
+      const domText = Number.isFinite(coin.dominance) ? `${coin.dominance.toFixed(2)}%` : '—';
+      const delta = Number(coin.change);
+      const deltaClass = Number.isFinite(delta) ? (delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral') : 'neutral';
+      const deltaText = Number.isFinite(delta) ? `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}pp` : '—';
+      return `<div class="dom-row" style="--dom-color:${color}"><span class="dom-dot" aria-hidden="true"></span><span class="dom-name">${nameLabel}${symbolHtml}</span><span class="dom-value">${domText}</span><span class="dom-delta ${deltaClass}">${deltaText}</span></div>`;
+    }).join('');
+    const domDetailLink = `<a class="dom-link" href="/menu/cosmos/dominance.html">Dominance detail<span aria-hidden="true">→</span></a>`;
+    domDetailHtml = `<div class="dom-detail"><div class="dom-rows">${rowsHtml}</div><div class="dom-chart" data-dom-spark><canvas></canvas></div>${domDetailLink}</div>`;
+    domOnActivate = panel => {
+      const target = panel.querySelector('[data-dom-spark]');
+      if (!target) return;
+      requestAnimationFrame(() => drawDominanceSparkline(target, dominanceCoins));
+    };
   }
 
   const listTop=(by,n=10)=> mkts.slice().sort((a,b)=> (b[by]??0)-(a[by]??0)).slice(0,n);
@@ -617,15 +837,18 @@ async function initHub(){
   
   const byId=Object.fromEntries(mkts.map(m=>[m.id,m]));
   const btc=byId.bitcoin||null;
-  const dom = global?.data?.market_cap_percentage?.btc ?? null;
-  const domCenterSub = dom!=null ? `30D Δ ${fmtPpFull(domDelta30d)}` : 'DOMINANCE';
-  const domDeltaClass = Number.isFinite(domDelta30d) ? (domDelta30d >= 0 ? 'up' : 'down') : null;
-  const domDeltaHtml = domDeltaClass
-    ? `<span class="pct ${domDeltaClass}" style="font-size:1rem">${(domDelta30d>=0?'+':'')}${domDelta30d.toFixed(2)}pp</span>`
-    : `<span style="opacity:.5">—</span>`;
-  const domDetailLink = domDetailAvailable
-    ? `<a href="/menu/cosmos/dominance.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:8px 14px;border-radius:12px;border:1px solid rgba(0,255,255,0.35);background:rgba(0,255,255,0.06);color:#00ffff;text-decoration:none;font-family:'Orbitron',monospace;font-size:0.72rem;letter-spacing:1.6px;text-transform:uppercase;">Dominance detail<span aria-hidden="true">→</span></a>`
-    : `<div style="margin-top:16px;font-size:0.72rem;color:rgba(255,255,255,0.45);font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:1px;">Detail data unavailable</div>`;
+  const rawDom = toNumeric(global?.data?.market_cap_percentage?.btc);
+  const dom = Number.isFinite(rawDom)
+    ? rawDom
+    : (Number.isFinite(btcDomCoin?.dominance) ? btcDomCoin.dominance : null);
+  const domCenterSub = Number.isFinite(domDelta30d) ? `30D Δ ${fmtPpFull(domDelta30d)}` : 'DOMINANCE';
+  let domDeltaHtml = `<span style="opacity:.5">—</span>`;
+  if (Number.isFinite(domDelta30d)) {
+    const text = `${domDelta30d >= 0 ? '+' : ''}${domDelta30d.toFixed(2)}pp`;
+    if (domDelta30d > 0) domDeltaHtml = `<span class="pct up" style="font-size:1rem">${text}</span>`;
+    else if (domDelta30d < 0) domDeltaHtml = `<span class="pct down" style="font-size:1rem">${text}</span>`;
+    else domDeltaHtml = `<span style="color:rgba(255,255,255,0.7);font-size:1rem;font-family:'Orbitron',monospace;letter-spacing:1px;">${text}</span>`;
+  }
   const f = Number(fng?.data?.[0]?.value ?? NaN);
 
   const gLast = globalLS?.long_pct_last;
@@ -691,23 +914,24 @@ async function initHub(){
       html: isFinite(f)?gaugeHTML(f):"<div style='color:#8b95a7'>No data available</div>"
     },
     {
-      badge:"BTC MC", 
-      title:"Bitcoin Market Cap", 
-      centerTop: btc?fmtMoney(btc.market_cap):"—", 
-      centerSub:"BTC MCAP", 
+      badge:"BTC MC",
+      title:"Bitcoin Market Cap",
+      centerTop: btc?fmtMoney(btc.market_cap):"—",
+      centerSub:"BTC MCAP",
       html:`<div style="font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:2px;color:#00ffff;text-shadow:0 0 10px currentColor">Bitcoin Market Cap</div>
             <div style="margin-top:12px;font-size:24px;font-weight:700">${btc?fmtMoney(btc.market_cap):'—'}</div>`
     },
       whaleSec,
     {
       badge:"BTC DOM",
-      title:"Bitcoin Dominance",
-      centerTop: dom!=null?dom.toFixed(2)+"%":"—",
+      title:"Market Dominance",
+      centerTop: Number.isFinite(dom)?dom.toFixed(2)+"%":"—",
       centerSub: domCenterSub,
-      html:`<div style="font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:2px;color:#00ffff;text-shadow:0 0 10px currentColor">Bitcoin Dominance</div>
-            <div style="margin-top:12px;font-size:24px;font-weight:700">${dom!=null?dom.toFixed(2)+"%":"—"}</div>
+      html:`<div style="font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:2px;color:#00ffff;text-shadow:0 0 10px currentColor">Market Dominance</div>
+            <div style="margin-top:12px;font-size:24px;font-weight:700">${Number.isFinite(dom)?dom.toFixed(2)+"%":"—"}</div>
             <div style="margin-top:12px;font-size:0.9rem;color:rgba(255,255,255,0.75);font-family:'Orbitron',monospace;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;">30D Change ${domDeltaHtml}</div>
-            ${domDetailLink}`
+            ${domDetailHtml}`,
+      onActivate: domOnActivate
     },
   ];
   
