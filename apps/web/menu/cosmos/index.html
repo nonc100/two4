@@ -83,6 +83,18 @@
     }
     
     a { color: inherit; text-decoration: none; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     
     /* Star Canvas with Glow */
     #whiteStars {
@@ -96,9 +108,12 @@
     
     /* ---- Global Header (Echoes inspired) ---- */
     .nav-header {
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: 160;
+      width: 100%;
       background: linear-gradient(135deg, rgba(10, 15, 26, 0.95), rgba(24, 20, 40, 0.9));
       border-bottom: 1px solid rgba(0, 255, 255, 0.18);
       backdrop-filter: blur(26px);
@@ -207,6 +222,7 @@
     .nav-menu {
       list-style: none;
       display: flex;
+      align-items: center;
       gap: 6px;
       padding: 0;
       margin: 0;
@@ -302,26 +318,9 @@
       box-shadow: 0 0 24px rgba(0, 255, 255, 0.18);
     }
 
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: rgba(182, 202, 235, 0.75);
-      font-family: 'Orbitron', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .nav-right span:last-child {
-      color: rgba(0, 255, 255, 0.85);
-      text-shadow: 0 0 12px rgba(0, 255, 255, 0.55);
-    }
-
     @media (max-width: 960px) {
       .nav-container {
-        flex-direction: column;
-        align-items: stretch;
+        align-items: center;
         gap: 12px;
       }
 
@@ -337,7 +336,10 @@
       }
 
       .nav-menu {
-        width: 100%;
+        position: absolute;
+        top: calc(100% + 12px);
+        left: 20px;
+        right: 20px;
         flex-direction: column;
         gap: 8px;
         padding: 14px;
@@ -345,6 +347,9 @@
         background: linear-gradient(135deg, rgba(5, 10, 20, 0.92), rgba(18, 16, 32, 0.92));
         border: 1px solid rgba(0, 255, 255, 0.22);
         box-shadow: 0 18px 36px rgba(4, 12, 24, 0.45);
+        max-height: min(70vh, 420px);
+        overflow-y: auto;
+        z-index: 10;
       }
 
       .nav-header.js-nav:not(.open) .nav-menu {
@@ -361,160 +366,114 @@
         padding: 12px 14px;
         font-size: 0.85rem;
       }
-
-      .nav-right {
-        width: 100%;
-        justify-content: space-between;
-        font-size: 0.66rem;
-      }
     }
 
     /* Cyberpunk Star Controller */
     .star-ctl {
       display: flex;
       align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-      margin: -12px 0 32px auto;
-      padding: 16px 20px;
-      max-width: 100%;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.14), rgba(10, 15, 35, 0.82));
+      gap: 10px;
+      margin: 16px 0 32px auto;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.12), rgba(10, 15, 35, 0.7));
       border: 1px solid rgba(0, 255, 255, 0.28);
-      border-radius: 24px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 12px 26px rgba(6, 12, 24, 0.48);
-      font-family: 'Orbitron', monospace;
-      text-transform: uppercase;
-      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 24px rgba(6, 12, 24, 0.38);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      width: fit-content;
     }
 
     .star-ctl.focus {
       border-color: rgba(153, 69, 255, 0.55);
-      box-shadow: 0 18px 32px rgba(0, 255, 255, 0.32);
-    }
-
-    .star-ctl-meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      min-width: 0;
-    }
-
-    .star-ctl-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(153, 69, 255, 0.2));
-      border: 1px solid rgba(0, 255, 255, 0.35);
-      color: rgba(0, 255, 255, 0.92);
-      font-size: 1rem;
-      text-shadow: 0 0 12px currentColor;
-      box-shadow: inset 0 0 14px rgba(0, 255, 255, 0.25);
-    }
-
-    .star-ctl-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-
-    .star-ctl-title {
-      font-size: 0.7rem;
-      letter-spacing: 1.6px;
-      color: rgba(0, 255, 255, 0.78);
-    }
-
-    .star-ctl-value {
-      font-size: 0.85rem;
-      letter-spacing: 1.8px;
-      color: #ffffff;
-      text-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+      box-shadow: 0 18px 32px rgba(0, 255, 255, 0.28);
     }
 
     .star-ctl-slider {
       position: relative;
-      flex: 1;
-      min-width: min(260px, 100%);
-      display: flex;
-      align-items: center;
-      padding: 6px 0;
+      width: clamp(120px, 22vw, 180px);
+      height: 18px;
     }
 
     .star-ctl-track {
-      position: relative;
-      flex: 1;
-      height: 8px;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 4px;
+      transform: translateY(-50%);
       border-radius: 999px;
-      background: rgba(0, 255, 255, 0.12);
+      background: rgba(0, 255, 255, 0.22);
       overflow: hidden;
-      box-shadow: inset 0 0 12px rgba(0, 255, 255, 0.25);
     }
 
     .star-ctl-progress {
       position: absolute;
-      inset: 0;
-      width: 0%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(0, 255, 255, 0.65), rgba(153, 69, 255, 0.65));
-      box-shadow: 0 0 18px rgba(0, 255, 255, 0.4);
-      transition: width 0.25s ease;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      background: linear-gradient(90deg, rgba(0, 255, 255, 0.8), rgba(153, 69, 255, 0.8));
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
     }
 
     .star-ctl-slider input[type=range] {
-      position: absolute;
-      inset: -10px 0;
-      width: 100%;
-      height: calc(100% + 20px);
-      background: none;
-      border: none;
-      outline: none;
       -webkit-appearance: none;
       appearance: none;
+      position: absolute;
+      inset: 0;
+      margin: 0;
+      background: transparent;
       cursor: pointer;
     }
 
+    .star-ctl-slider input[type=range]:focus-visible {
+      outline: none;
+    }
+
     .star-ctl-slider input[type=range]::-webkit-slider-runnable-track {
-      height: 8px;
+      height: 4px;
       background: transparent;
     }
 
     .star-ctl-slider input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      margin-top: -5px;
+      appearance: none;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.8);
       background: #ffffff;
-      border: 2px solid rgba(0, 255, 255, 0.85);
-      box-shadow: 0 0 18px rgba(0, 255, 255, 0.6);
+      box-shadow: 0 0 14px rgba(0, 255, 255, 0.6);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-top: -6px;
     }
 
     .star-ctl-slider input[type=range]:active::-webkit-slider-thumb {
-      transform: scale(1.1);
-      box-shadow: 0 0 22px rgba(153, 69, 255, 0.65);
+      transform: scale(0.9);
+      box-shadow: 0 0 20px rgba(153, 69, 255, 0.6);
     }
 
     .star-ctl-slider input[type=range]::-moz-range-track {
-      height: 8px;
+      height: 4px;
       background: transparent;
     }
 
     .star-ctl-slider input[type=range]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
+      border: 2px solid rgba(0, 255, 255, 0.8);
       background: #ffffff;
-      border: 2px solid rgba(0, 255, 255, 0.85);
-      box-shadow: 0 0 18px rgba(0, 255, 255, 0.6);
+      box-shadow: 0 0 14px rgba(0, 255, 255, 0.6);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    
+
+    .star-ctl-slider input[type=range]:active::-moz-range-thumb {
+      transform: scale(0.9);
+      box-shadow: 0 0 20px rgba(153, 69, 255, 0.6);
+    }
+
     /* Main Container */
     .wrap {
       position: relative;
@@ -709,6 +668,138 @@
       text-transform: uppercase;
       letter-spacing: 3px;
       text-shadow: 0 0 10px currentColor;
+    }
+
+    .dom-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .dom-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dom-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 255, 255, 0.12);
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(153, 69, 255, 0.05));
+      font-family: 'Orbitron', monospace;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+    }
+
+    .dom-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--dom-color, #00ffff);
+      box-shadow: 0 0 12px var(--dom-color, rgba(0, 255, 255, 0.6));
+    }
+
+    .dom-row .dom-name {
+      flex: 1;
+      font-weight: 700;
+      color: rgba(0, 255, 255, 0.92);
+      text-shadow: 0 0 10px currentColor;
+    }
+
+    .dom-row .dom-symbol {
+      font-size: 0.65rem;
+      opacity: 0.7;
+      margin-left: 6px;
+      letter-spacing: 1.6px;
+    }
+
+    .dom-value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      min-width: 72px;
+      text-align: right;
+    }
+
+    .dom-delta {
+      font-variant-numeric: tabular-nums;
+      min-width: 82px;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .dom-delta.up {
+      color: var(--up);
+      text-shadow: 0 0 8px currentColor;
+    }
+
+    .dom-delta.down {
+      color: var(--down);
+      text-shadow: 0 0 8px currentColor;
+    }
+
+    .dom-delta.neutral {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .dom-chart {
+      position: relative;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 255, 255, 0.12);
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.06), rgba(15, 18, 38, 0.75));
+      box-shadow: 0 12px 28px rgba(4, 12, 24, 0.45);
+    }
+
+    .dom-chart canvas {
+      display: block;
+      width: 100%;
+      height: 140px;
+    }
+
+    .dom-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 255, 255, 0.35);
+      background: rgba(0, 255, 255, 0.08);
+      color: #00ffff;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .dom-link:hover,
+    .dom-link:focus-visible {
+      border-color: rgba(0, 255, 255, 0.6);
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.25);
+      outline: none;
+    }
+
+    .dom-link.disabled {
+      color: rgba(255, 255, 255, 0.45);
+      border-color: rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.25);
+      cursor: default;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
+    .dom-empty {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
     }
     
     /* Controls */
@@ -1021,18 +1112,12 @@
 
       /* Star controller - smaller on mobile */
       .star-ctl {
-        margin: 6px 0 22px;
-        width: 100%;
-        justify-content: space-between;
-        padding: 14px 16px;
-      }
-
-      .star-ctl-meta {
-        flex: 1 1 auto;
+        margin: 12px auto 24px;
+        padding: 8px 14px;
       }
 
       .star-ctl-slider {
-        min-width: 100%;
+        width: clamp(140px, 60vw, 220px);
       }
       
       /* Hub adjustments */
@@ -1057,7 +1142,16 @@
       .seg-label {
         font-size: 12px;
       }
-      
+
+      .dom-row {
+        flex-wrap: wrap;
+      }
+
+      .dom-value,
+      .dom-delta {
+        min-width: auto;
+      }
+
       .hub-panel {
         min-height: 200px;
         padding: 16px;
@@ -1169,31 +1263,29 @@
       }
       
       .wrap {
-        padding: 90px 8px 40px;
+        padding: 110px 8px 40px;
       }
 
       .nav-container {
         padding: 12px 16px;
       }
 
-      .nav-right {
-        gap: 8px;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-      }
-
       .star-ctl {
-        width: 100%;
-        padding: 12px 14px;
-        gap: 14px;
-      }
-
-      .star-ctl-value {
-        font-size: 0.78rem;
+        margin: 10px auto 20px;
+        padding: 8px 12px;
       }
 
       .star-ctl-slider {
-        min-width: 100%;
+        width: clamp(150px, 70vw, 220px);
+      }
+
+      .dom-row {
+        gap: 8px;
+      }
+
+      .dom-value,
+      .dom-delta {
+        font-size: 0.72rem;
       }
 
       /* Even smaller hub on very small screens */
@@ -1355,28 +1447,18 @@
           <li><a href="/menu/auth/login/" data-tooltip="포털">Portal</a></li>
         </ul>
       </div>
-      <div class="nav-right">
-        <span>Cosmos Deck</span>
-        <span>Auto refresh 30s</span>
-      </div>
     </div>
   </nav>
 
   <div class="wrap">
     <!-- Star Controller -->
     <div class="star-ctl" aria-label="Star background controller">
-      <label class="star-ctl-meta" for="starRange" id="starRangeLabel">
-        <span class="star-ctl-icon" aria-hidden="true">✦</span>
-        <span class="star-ctl-copy">
-          <span class="star-ctl-title">Starfield Density</span>
-          <span class="star-ctl-value" id="starValue" aria-live="polite">80%</span>
-        </span>
-      </label>
+      <span id="starValue" class="sr-only" aria-live="polite">80%</span>
       <div class="star-ctl-slider">
         <div class="star-ctl-track" aria-hidden="true">
           <span class="star-ctl-progress" style="width:80%"></span>
         </div>
-        <input id="starRange" type="range" min="0" max="100" value="80" aria-labelledby="starRangeLabel" aria-describedby="starValue" />
+        <input id="starRange" type="range" min="0" max="100" value="80" aria-label="Starfield density" aria-describedby="starValue" />
       </div>
     </div>
 
@@ -1429,7 +1511,7 @@
     
     <div id="pager" class="controls"></div>
     
-    <footer>Cosmos Dashboard · Powered by CoinGecko · Alternative.me · Auto refresh 30s</footer>
+    <footer>Cosmos Dashboard · Powered by CoinGecko · Alternative.me</footer>
   </div>
   
   <!-- JavaScript 파일 로드 -->
