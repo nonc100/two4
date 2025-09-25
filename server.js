@@ -518,8 +518,12 @@ async function cgMarketCapMap(){
   const cached = hit2(key, 10*60*1000);
   if (cached) return JSON.parse(cached.body);
 
-  const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1';
-  const payload = await proxyFetch(url, cgHeaders);
+  const url = cgUrl('/coins/markets');
+  url.searchParams.set('vs_currency', 'usd');
+  url.searchParams.set('order', 'market_cap_desc');
+  url.searchParams.set('per_page', '250');
+  url.searchParams.set('page', '1');
+  const payload = await proxyFetch(url.toString(), cgHeaders);
   const rows = JSON.parse(payload.body || '[]');
   const map = {};
   rows.forEach(r => { map[(r.symbol||'').toUpperCase()] = r.market_cap ?? null; });
@@ -875,12 +879,20 @@ const CG_DEMO = process.env.COINGECKO_API_KEY || process.env.X_CG_DEMO_API_KEY |
 const cgHeaders = { 'User-Agent': 'two4-cosmos/1.0' };
 if (CG_PRO)  cgHeaders['x-cg-pro-api-key']  = CG_PRO;
 else if (CG_DEMO) cgHeaders['x-cg-demo-api-key'] = CG_DEMO;
+const CG_API_ORIGIN = (CG_PRO || CG_DEMO)
+  ? (process.env.CG_API_ORIGIN || 'https://pro-api.coingecko.com')
+  : 'https://api.coingecko.com';
+const CG_API_BASE = `${CG_API_ORIGIN.replace(/\/$/, '')}/api/v3`;
+const cgUrl = (path) => {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return new URL(normalized, CG_API_BASE);
+};
 
 // 1) 마켓 리스트
 // 예: /api/coins/markets?vs_currency=usd&ids=cosmos&per_page=50&page=1&sparkline=true
 app.get('/api/coins/markets', async (req, res) => {
   // 위의 Binance 미들웨어에서 걸러지지 않았다면(=source≠binance), CoinGecko로 프록시
-  const u = new URL('https://api.coingecko.com/api/v3/coins/markets');
+  const u = cgUrl('/coins/markets');
   for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
   if (!u.searchParams.get('vs_currency')) u.searchParams.set('vs_currency','usd');
   if (!u.searchParams.get('order'))       u.searchParams.set('order','market_cap_desc');
@@ -902,12 +914,12 @@ app.get('/api/coins/markets', async (req, res) => {
 
 // 2) 글로벌 메트릭
 app.get('/api/global', async (_req, res) => {
-  const url = 'https://api.coingecko.com/api/v3/global';
-  const key = `CG:${url}`;
+  const url = cgUrl('/global');
+  const key = `CG:${url.toString()}`;
   const cached = hit(key);
   if (cached){ setCorsAndCache(res); return res.type(cached.ct).status(cached.status).send(cached.body); }
 
-  const payload = await proxyFetch(url, cgHeaders);
+  const payload = await proxyFetch(url.toString(), cgHeaders);
   setCorsAndCache(res);
   res.type(payload.ct).status(payload.status).send(payload.body);
   keep(key, payload);
@@ -924,7 +936,7 @@ app.get('/api/dominance/top3', async (req, res) => {
   }
 
   try {
-    const listUrl = new URL('https://api.coingecko.com/api/v3/coins/markets');
+    const listUrl = cgUrl('/coins/markets');
     listUrl.searchParams.set('vs_currency', 'usd');
     listUrl.searchParams.set('order', 'market_cap_desc');
     listUrl.searchParams.set('per_page', '3');
@@ -949,8 +961,10 @@ app.get('/api/dominance/top3', async (req, res) => {
       return res.status(502).json({ error: 'no ids for dominance' });
     }
 
-    const globalUrl = `https://api.coingecko.com/api/v3/global/market_cap_chart?vs_currency=usd&days=${days}`;
-    const globalPayload = await proxyFetch(globalUrl, cgHeaders);
+    const globalUrl = cgUrl('/global/market_cap_chart');
+    globalUrl.searchParams.set('vs_currency', 'usd');
+    globalUrl.searchParams.set('days', String(days));
+    const globalPayload = await proxyFetch(globalUrl.toString(), cgHeaders);
     if (!globalPayload.ok) {
       setCorsAndCache(res);
       return res.type(globalPayload.ct).status(globalPayload.status).send(globalPayload.body);
@@ -1007,8 +1021,11 @@ app.get('/api/dominance/top3', async (req, res) => {
     };
 
     const coinPayloads = await pmap(ids, ids.length, (id) => {
-      const url = `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
-      return proxyFetch(url, cgHeaders);
+      const url = cgUrl(`/coins/${id}/market_chart`);
+      url.searchParams.set('vs_currency', 'usd');
+      url.searchParams.set('days', String(days));
+      url.searchParams.set('interval', 'daily');
+      return proxyFetch(url.toString(), cgHeaders);
     });
 
     const coins = [];
@@ -1077,7 +1094,7 @@ app.get('/api/dominance/top3', async (req, res) => {
 // 3) 심플 가격
 // 예: /api/simple/price?ids=cosmos,bitcoin&vs_currencies=usd,krw
 app.get('/api/simple/price', async (req, res) => {
-  const u = new URL('https://api.coingecko.com/api/v3/simple/price');
+  const u = cgUrl('/simple/price');
   for (const [k,v] of Object.entries(req.query)) u.searchParams.set(k,v);
 
   const key = `CG:${u.toString()}`;
@@ -1267,8 +1284,9 @@ app.get('/api/icon/:sym', async (req, res) => {
     }
 
     // 3) 코인게코 검색 → 같은 심볼 찾기 → thumb URL
-    const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(sym)}`;
-    const payload = await proxyFetch(url, { 'User-Agent': 'two4-cosmos/1.0' });
+    const url = cgUrl('/search');
+    url.searchParams.set('query', sym);
+    const payload = await proxyFetch(url.toString(), { 'User-Agent': 'two4-cosmos/1.0' });
     let img = null;
     if (payload.ok) {
       const j = JSON.parse(payload.body || '{}');
