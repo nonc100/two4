@@ -983,26 +983,33 @@ app.get('/api/dominance/top3', async (req, res) => {
     const normalizeTs = (ts) => {
       const n = Number(ts);
       if (!Number.isFinite(n)) return null;
-      return Math.round(n / 3_600_000) * 3_600_000; // hourly bucket
+      return n >= 1e12 ? Math.round(n) : Math.round(n * 1000); // ensure milliseconds
     };
 
-    const totalMap = new Map();
+    const totalPoints = [];
     for (const entry of totalSeries) {
       if (!Array.isArray(entry) || entry.length < 2) continue;
       const ts = normalizeTs(entry[0]);
       const val = Number(entry[1]);
       if (!Number.isFinite(ts) || !Number.isFinite(val) || val <= 0) continue;
-      totalMap.set(ts, val);
+      totalPoints.push({ ts, value: val });
     }
 
+    totalPoints.sort((a, b) => a.ts - b.ts);
+
     const findTotal = (ts) => {
-      if (totalMap.has(ts)) return totalMap.get(ts);
-      const offsets = [ -3_600_000, 3_600_000, -2 * 3_600_000, 2 * 3_600_000 ];
-      for (const off of offsets) {
-        const v = totalMap.get(ts + off);
-        if (Number.isFinite(v)) return v;
+      if (!totalPoints.length) return null;
+      let nearestDiff = Infinity;
+      let nearestVal = null;
+      for (const point of totalPoints) {
+        const diff = Math.abs(point.ts - ts);
+        if (diff < nearestDiff) {
+          nearestDiff = diff;
+          nearestVal = point.value;
+        }
       }
-      return null;
+      const MAX_GAP = 12 * 3_600_000; // tolerate up to 12h difference
+      return nearestDiff <= MAX_GAP ? nearestVal : null;
     };
 
     const coinPayloads = await pmap(ids, ids.length, (id) => {
@@ -1035,7 +1042,7 @@ app.get('/api/dominance/top3', async (req, res) => {
         const total = findTotal(ts);
         if (!Number.isFinite(total) || total <= 0) continue;
         const pct = (cap / total) * 100;
-        points.push({ time: Math.floor(ts / 1000), value: Number(pct.toFixed(4)) });
+        points.push({ time: ts, value: Number(pct.toFixed(4)) });
       }
 
       if (!points.length) return;
