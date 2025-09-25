@@ -983,7 +983,8 @@ app.get('/api/dominance/top3', async (req, res) => {
     const normalizeTs = (ts) => {
       const n = Number(ts);
       if (!Number.isFinite(n)) return null;
-      return Math.round(n / 3_600_000) * 3_600_000; // hourly bucket
+      const ms = n >= 1e12 ? n : n * 1000; // CoinGecko global chart uses seconds
+      return Math.round(ms / 3_600_000) * 3_600_000; // hourly bucket in ms
     };
 
     const totalMap = new Map();
