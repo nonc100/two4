@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Two.5 – 16 섹터 시총가중 캔들맵 (Binance Live)</title>
+  <style>
+    :root{
+      --bg:#0b0d13; --panel:#121626; --panel-2:#0e1220; --edge:#262b45; --neon:#8a63ff; --cyan:#4de0ff; --text:#d9dff9; --muted:#8c95c7;
+      --gap:10px; --radius:14px; --shadow:0 6px 24px rgba(0,0,0,.35); --fz:clamp(10px,.85vw,13px); --cols:4; --hdr-offset:44px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:radial-gradient(1200px 800px at 80% 10%, rgba(138,99,255,.08), transparent 60%),radial-gradient(1000px 700px at 10% 90%, rgba(77,224,255,.06), transparent 60%),var(--bg); color:var(--text); font:400 var(--fz)/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,sans-serif; overflow:hidden}
+    .topbar{position:fixed; inset:14px 14px auto 14px; height:56px; display:flex; align-items:center; gap:12px; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); border:1px solid var(--edge); border-radius:16px; box-shadow:var(--shadow); padding:8px 12px; backdrop-filter:blur(8px) saturate(120%); z-index:50}
+    .badge{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--edge); border-radius:12px; color:var(--muted); background:linear-gradient(180deg,var(--panel),var(--panel-2)); text-transform:uppercase; letter-spacing:.08em; font-weight:600}
+    .badge strong{color:var(--cyan)}
+    .ctrls{margin-left:auto; display:flex; align-items:center; gap:10px}
+    .ctrls button,.ctrls .toggle{height:38px; padding:0 12px; border-radius:12px; border:1px solid var(--edge); color:var(--text); background:linear-gradient(180deg,var(--panel),var(--panel-2)); cursor:pointer; font-weight:600; box-shadow:var(--shadow)}
+    .ctrls button:hover,.ctrls .toggle:hover{outline:1px solid var(--cyan)}
+    .wrap{position:absolute; inset:84px 14px 14px 14px; display:grid; grid-template-columns:repeat(var(--cols),1fr); grid-auto-rows:1fr; gap:var(--gap)}
+    .card{position:relative; background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02)); border:1px solid var(--edge); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow)}
+    .card .hdr{position:absolute; inset:8px 8px auto 8px; height:28px; display:flex; align-items:center; gap:8px; padding:0 8px; border-radius:10px; border:1px solid var(--edge); background:linear-gradient(180deg,rgba(16,22,42,.9),rgba(12,16,32,.9)); color:var(--muted); font-weight:600}
+    .pill{display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:8px; border:1px solid var(--edge); background:linear-gradient(180deg,var(--panel),var(--panel-2)); color:var(--text)}
+    .pill .dot{width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 10px var(--cyan)}
+    .tf-select{margin-left:6px; height:22px; padding:0 6px; border-radius:8px; border:1px solid var(--edge); background:rgba(16,22,42,0.4); color:var(--text); font-weight:700; backdrop-filter:blur(6px)}
+    .chart-slot{position:absolute; inset:var(--hdr-offset) 0 0 0; background:#0d1020}
+    .chart-slot .empty{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; text-align:center; font-weight:600; color:var(--muted); background:#0d1020}
+    .label{position:absolute; inset:auto 10px 10px auto; padding:6px 8px; border-radius:8px; font-weight:700; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); border:1px solid var(--edge); color:var(--text)}
+    .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:16px; padding:10px 14px; border-radius:12px; border:1px solid var(--edge); background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); color:var(--muted); z-index:200; display:none}
+    .toast.show{display:block}
+    .diag{position:fixed; right:14px; bottom:14px; z-index:250; min-width:320px; padding:10px 12px; border:1px solid var(--edge); border-radius:12px; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); color:var(--muted); font-weight:600}
+    .diag b{color:var(--text)} .diag .ok{color:#42d6a4} .diag .bad{color:#ff9aa5} .diag .warn{color:#ffcf6b}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="badge">Two.5 <strong>섹터 인덱스</strong> 4×4 캔들맵</div>
+    <div class="ctrls">
+      <button data-cols="4">4×4</button><button data-cols="3">3×3</button><button data-cols="2">2×2</button>
+      <div class="toggle"><input id="labels" type="checkbox" checked style="margin-right:6px">라벨</div>
+      <label class="toggle">TF
+        <select id="globalTF" class="tf-select" aria-label="Global Timeframe">
+          <option value="15m">15m</option><option value="1H">1H</option><option value="4H">4H</option>
+          <option value="1D" selected>1D</option><option value="1W">1W</option><option value="1M">1M</option>
+        </select>
+      </label>
+      <label class="toggle"><input id="srToggle" type="checkbox" checked style="margin-right:6px">S/R 자동선</label>
+    </div>
+  </div>
+
+  <div class="wrap" id="grid"></div>
+  <div class="toast" id="toast">⚠ 4K 미만: 3×3 또는 2×2 권장</div>
+  <div class="diag" id="diag" hidden>
+    <div>LW loaded: <b id="d-lw">-</b></div>
+    <div>candlestick API: <b id="d-cs">-</b></div>
+    <div>sector calc: <b id="d-sec">-</b></div>
+    <div>network: <b id="d-net">-</b></div>
+    <div>fallback renderer: <b id="d-fb">-</b></div>
+  </div>
+
+  <script>
+    const SECTORS = [
+      {name:'플랫폼/L1', list:['ETH','BNB','SOL','ADA','DOT','AVAX','TRX','NEAR','TON','APT','SUI','ATOM','ALGO','CFX','SEI']},
+      {name:'AI', list:['RNDR','GRT','TAO','WLD','ARKM','OCEAN','NMR']},
+      {name:'DePIN', list:['HNT','IOTX','AKT','FIL','STORJ','AR']},
+      {name:'DeFi', list:['AAVE','SNX','MKR','COMP','LDO','HIFI','YFI']},
+      {name:'LSDFi', list:['LDO','RPL','PENDLE','ETHFI','JTO','SWELL','PUFFER']},
+      {name:'DEX', list:['UNI','SUSHI','DYDX','RUNE','1INCH','KNC','BAL','JUP','RAY']},
+      {name:'NFT/메타/X2E', list:['AXS','SAND','MANA','ILV','GALA','APE','PIXEL','GMT','YGG','BIGTIME','VOXEL']},
+      {name:'오라클/데이터', list:['LINK','BAND','PYTH','API3','TRB','UMA']},
+      {name:'페이먼트', list:['XRP','XLM','CELO','COTI','CRO','PUNDIX']},
+      {name:'프라이버시', list:['ZEC','DASH','SCRT','ZEN']},
+      {name:'DID', list:['WLD','CVC','ICX','ONT']},
+      {name:'크로스체인', list:['AXL','W','STG']},
+      {name:'거래소 토큰', list:['BNB','OKB','BGB','CRO','KCS','WOO','MX']},
+      {name:'RWA', list:['ONDO','POLYX','CFG','RSR','MKR']},
+      {name:'BTCfi', list:['STX','RUNE']},
+      {name:'BRC-20', list:['ORDI','SATS']},
+    ];
+
+    const API_ENDPOINT = '/api/twofive/sector-map';
+
+    const CDN = [
+      'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.4/dist/lightweight-charts.standalone.production.js?psv=2',
+      'https://unpkg.com/lightweight-charts@4.2.4/dist/lightweight-charts.standalone.production.js?psv=2',
+      'https://fastly.jsdelivr.net/npm/lightweight-charts@4.2.4/dist/lightweight-charts.standalone.production.js?psv=2'
+    ];
+    let LW=null, LW_SOURCE='-';
+    function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script'); s.src=src; s.defer=true; s.onload=()=>res(src); s.onerror=()=>rej(); document.head.appendChild(s);});}
+    async function loadLW(){
+      if(window.LightweightCharts?.createChart){ LW_SOURCE='preloaded'; return window.LightweightCharts; }
+      for(const u of CDN){ try{ await loadScript(u); if(window.LightweightCharts?.createChart){ LW_SOURCE=u; return window.LightweightCharts; } }catch(e){} }
+      LW_SOURCE='fallback'; return createFallbackLW();
+    }
+    function createFallbackLW(){
+      function createChart(slot){
+        const c=document.createElement('canvas'); c.width=slot.clientWidth; c.height=slot.clientHeight; slot.appendChild(c); const ctx=c.getContext('2d');
+        const st={data:[], lines:[], slot, c, ctx};
+        function draw(){ ctx.fillStyle='#0d1020'; ctx.fillRect(0,0,c.width,c.height); if(!st.data.length) return; const w=c.width,h=c.height,p=8; const max=Math.max(...st.data.map(d=>d.high)),min=Math.min(...st.data.map(d=>d.low)); const sy=v=>h-p-((v-min)/(max-min||1))*(h-2*p); const cw=Math.max(1,Math.floor((w-2*p)/st.data.length*0.65)); st.data.forEach((d,i)=>{ const x=p+i*((w-2*p)/st.data.length)+(((w-2*p)/st.data.length)-cw)/2; ctx.strokeStyle=d.close>=d.open?'#3dd2a7':'#f26d7d'; ctx.beginPath(); ctx.moveTo(x+cw/2,sy(d.high)); ctx.lineTo(x+cw/2,sy(d.low)); ctx.stroke(); ctx.fillStyle=d.close>=d.open?'#3dd2a7':'#f26d7d'; const y1=sy(d.open),y2=sy(d.close); ctx.fillRect(x,Math.min(y1,y2),cw,Math.max(1,Math.abs(y1-y2))); }); st.lines.forEach(L=>{ ctx.strokeStyle=L.color||'#8a63ff'; ctx.beginPath(); const y=sy(L.price); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }); }
+        const api={ addCandlestickSeries(){ return { setData(arr){ st.data=arr||[]; draw(); }, createPriceLine(o){ const line={ price:o.price, color:o.color }; st.lines.push(line); draw(); return { remove(){ const idx=st.lines.indexOf(line); if(idx>-1) st.lines.splice(idx,1); draw(); } }; } }; }, timeScale(){ return { fitContent(){} }; }, applyOptions(){}, remove(){ slot.innerHTML=''; }, }; new ResizeObserver(()=>{ c.width=slot.clientWidth; c.height=slot.clientHeight; draw(); }).observe(slot); return api; }
+      return { createChart, CrosshairMode:{Magnet:0}, version:'fallback-1.1' };
+    }
+
+    const grid=document.getElementById('grid');
+    const toast=document.getElementById('toast');
+    const diag=document.getElementById('diag');
+    const dataCache=new Map();
+    const pending=new Map();
+    const charts=new Map();
+    let SR_ON=true;
+
+    function showToast(message,duration=4800){
+      if(!toast) return;
+      toast.textContent=message;
+      toast.classList.add('show');
+      window.setTimeout(()=>toast.classList.remove('show'), duration);
+    }
+
+    function updateDiag(field, html){
+      const el=document.getElementById(field);
+      if(el){ el.innerHTML=html; }
+    }
+
+    function refreshNetwork(){
+      updateDiag('d-net', navigator.onLine ? "<span class='ok'>ONLINE</span>" : "<span class='warn'>OFFLINE</span>");
+    }
+
+    function initDiag(){
+      diag.hidden=false;
+      updateDiag('d-lw', LW ? `<span class='ok'>OK</span> <small>${LW.version||''}</small>` : "<span class='bad'>NO</span>");
+      updateDiag('d-fb', LW_SOURCE==='fallback' ? "<span class='warn'>ON</span>" : "<span class='ok'>OFF</span>");
+      refreshNetwork();
+      window.addEventListener('online', refreshNetwork);
+      window.addEventListener('offline', refreshNetwork);
+    }
+
+    async function fetchSectors(tf){
+      if(dataCache.has(tf)) return dataCache.get(tf);
+      if(pending.has(tf)) return pending.get(tf);
+      updateDiag('d-cs', "<span class='warn'>LOADING…</span>");
+      updateDiag('d-sec', "<span class='warn'>...</span>");
+      const task = (async()=>{
+        const url = `${API_ENDPOINT}?interval=${encodeURIComponent(tf)}&limit=160`;
+        const res = await fetch(url, { headers:{'accept':'application/json'} });
+        if(!res.ok) {
+          const text = await res.text();
+          throw new Error(`HTTP ${res.status}: ${text.slice(0,120)}`);
+        }
+        const json = await res.json();
+        if(json && json.ok === false){
+          throw new Error(json.detail || json.error || 'API returned error');
+        }
+        const map = new Map();
+        (json.sectors||[]).forEach(sec=>{ map.set(sec.name, sec); });
+        const missingTotal = (json.sectors||[]).reduce((acc, sec)=>acc + ((sec.missing||[]).length||0), 0);
+        updateDiag('d-cs', `<span class='ok'>OK</span> <small>${json.binanceInterval||tf}</small>`);
+        const secCount = (json.sectors||[]).length;
+        const secHtml = missingTotal
+          ? `<span class='warn'>${secCount}</span> <small>-missing ${missingTotal}</small>`
+          : `<span class='ok'>${secCount}</span>`;
+        updateDiag('d-sec', secHtml);
+        return { raw: json, map };
+      })().catch(err=>{
+        updateDiag('d-cs', "<span class='bad'>ERR</span>");
+        updateDiag('d-sec', "<span class='bad'>0</span>");
+        showToast(`⚠ Binance 데이터 요청 실패: ${err.message}`);
+        throw err;
+      }).finally(()=>{ pending.delete(tf); refreshNetwork(); });
+      pending.set(tf, task);
+      const payload = await task;
+      dataCache.set(tf, payload);
+      return payload;
+    }
+
+    function buildCards(){
+      grid.innerHTML='';
+      SECTORS.forEach((sec,i)=>{
+        const card=document.createElement('div');
+        card.className='card';
+        card.dataset.sector=sec.name;
+        card.dataset.index=String(i);
+        card.dataset.tf='1D';
+        card.innerHTML=`<div class="chart-slot"><div class='empty'>로딩 중…</div></div><div class="hdr"><span class="pill"><span class="dot"></span>${sec.name}</span><span class="pill tf-pill">TF: <b>1D</b></span></div><div class="label">#${String(i+1).padStart(2,'0')}</div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function destroyChart(card){
+      const ctx=charts.get(card);
+      if(ctx){ try{ ctx.chart.remove && ctx.chart.remove(); }catch(e){} charts.delete(card); }
+    }
+
+    function ensureChart(card){
+      let ctx=charts.get(card); if(ctx) return ctx; const slot=card.querySelector('.chart-slot'); if(slot) slot.innerHTML='';
+      const chart=LW.createChart(slot,{ layout:{background:{type:'solid',color:'transparent'}, textColor:'#cfd6ff'}, grid:{vertLines:{color:'rgba(141,161,255,0.12)'}, horzLines:{color:'rgba(141,161,255,0.12)'}}, rightPriceScale:{borderColor:'rgba(141,161,255,0.2)'}, timeScale:{borderColor:'rgba(141,161,255,0.2)', timeVisible:true}, crosshair:{mode: LW.CrosshairMode?.Magnet ?? 0}, autoSize:true });
+      if(typeof chart.addCandlestickSeries!=='function') throw new Error('candles API missing');
+      const series=chart.addCandlestickSeries({ upColor:'#3dd2a7', downColor:'#f26d7d', borderUpColor:'#3dd2a7', borderDownColor:'#f26d7d', wickUpColor:'#3dd2a7', wickDownColor:'#f26d7d' });
+      ctx={ chart, series, lines:[] }; charts.set(card, ctx); return ctx;
+    }
+
+    function drawSR(ctx, candles){
+      if(ctx.lines){ ctx.lines.forEach(L=>L.remove && L.remove()); ctx.lines=[]; }
+      if(!SR_ON || !candles || candles.length<5) return;
+      const {supports,resistances}=calcSR(candles, 3, 60);
+      supports.forEach(p=> ctx.lines.push(ctx.series.createPriceLine({ price:p, color:'#4de0ff', lineWidth:1 })) );
+      resistances.forEach(p=> ctx.lines.push(ctx.series.createPriceLine({ price:p, color:'#ff9aa5', lineWidth:1 })) );
+    }
+
+    function calcSR(candles, pivots=3, lookback=40){
+      const n=Math.min(lookback, candles.length); const hi=[]; const lo=[];
+      for(let i=2;i<n-2;i++){
+        const a=candles[i-2], b=candles[i-1], c=candles[i], d=candles[i+1], e=candles[i+2];
+        if(b.high<c.high && d.high<c.high && a.high<=b.high && e.high<=d.high) hi.push({price:c.high, idx:i});
+        if(b.low>c.low && d.low>c.low && a.low>=b.low && e.low>=d.low) lo.push({price:c.low, idx:i});
+      }
+      hi.sort((x,y)=>y.price-x.price); lo.sort((x,y)=>x.price-y.price);
+      return { resistances: hi.slice(0,pivots).map(x=>x.price), supports: lo.slice(0,pivots).map(x=>x.price) };
+    }
+
+    function updateCardMeta(card, sector){
+      const label=card.querySelector('.label');
+      const idx=Number(card.dataset.index||'0');
+      const baseLabel=`#${String(idx+1).padStart(2,'0')}`;
+      const missing=sector?.missing||[];
+      if(label){
+        label.textContent=missing.length ? `${baseLabel} · -${missing.length}` : baseLabel;
+        label.title=missing.length ? `미수집: ${missing.join(', ')}` : '모든 구성 수집 완료';
+      }
+      card.dataset.missing=(missing||[]).join(',');
+      card.dataset.used=(sector?.used||[]).join(',');
+    }
+
+    function renderSector(card, sector){
+      const candles=sector?.candles||[];
+      const slot=card.querySelector('.chart-slot');
+      if(!candles.length){
+        destroyChart(card);
+        if(slot) slot.innerHTML="<div class='empty'>구성 종목의 실시간 캔들 데이터를 찾을 수 없습니다.</div>";
+        updateCardMeta(card, sector);
+        return;
+      }
+      const ctx=ensureChart(card);
+      ctx.series.setData(candles);
+      ctx.chart.timeScale().fitContent();
+      drawSR(ctx, candles);
+      updateCardMeta(card, sector);
+    }
+
+    async function renderAll(tf){
+      try{
+        const payload=await fetchSectors(tf);
+        grid.querySelectorAll('.card').forEach(card=>{
+          card.dataset.tf=tf;
+          const pill=card.querySelector('.tf-pill b');
+          if(pill) pill.textContent=tf;
+          const sector=payload.map.get(card.dataset.sector);
+          if(sector){ renderSector(card, sector); }
+          else {
+            destroyChart(card);
+            const slot=card.querySelector('.chart-slot');
+            if(slot) slot.innerHTML="<div class='empty'>섹터 데이터 없음</div>";
+          }
+        });
+      }catch(err){
+        console.error('sector render failed', err);
+      }
+    }
+
+    function wireControls(){
+      document.querySelectorAll('[data-cols]').forEach(btn=> btn.addEventListener('click',()=>{ document.documentElement.style.setProperty('--cols', +btn.dataset.cols); }));
+      document.getElementById('labels').addEventListener('change', e=>{ grid.querySelectorAll('.label').forEach(el=> el.style.display=e.target.checked?'block':'none' ); });
+      const globalTF=document.getElementById('globalTF');
+      globalTF.addEventListener('change', e=>{ const val=e.target.value; renderAll(val); });
+      document.getElementById('srToggle').addEventListener('change', async e=>{
+        SR_ON=e.target.checked;
+        const tf=document.getElementById('globalTF').value;
+        try{
+          const payload=await fetchSectors(tf);
+          grid.querySelectorAll('.card').forEach(card=>{
+            const sector=payload.map.get(card.dataset.sector);
+            if(!sector) return;
+            const ctx=charts.get(card);
+            if(ctx) drawSR(ctx, sector.candles||[]);
+          });
+        }catch(err){ console.warn('SR toggle failed', err); }
+      });
+      const badge=document.querySelector('.badge');
+      if(badge){
+        badge.addEventListener('dblclick', ()=>{
+          dataCache.clear();
+          showToast('♻ Binance 데이터 새로고침…', 3600);
+          renderAll(document.getElementById('globalTF').value);
+        });
+      }
+      const is4K=(window.innerWidth>=3840&&window.innerHeight>=2160)||(screen.width>=3840&&screen.height>=2160);
+      if(!is4K){ showToast('⚠ 4K 미만: 3×3 또는 2×2 권장', 5200); }
+    }
+
+    (async function init(){
+      try{
+        LW=await loadLW();
+        initDiag();
+        buildCards();
+        wireControls();
+        await renderAll('1D');
+      }catch(err){
+        console.error('init failed', err);
+        showToast(`⚠ 초기화 실패: ${err.message}`);
+      }
+    })();
+  </script>
+</body>
+</html>
