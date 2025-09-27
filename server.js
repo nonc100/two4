@@ -342,6 +342,15 @@ const keep = (key, payload) => { if (payload.ok) cache.set(key, { ...payload, t:
 const newsKoRouter = createNewsKoRouter({ hit, keep, setCorsAndCache });
 app.use('/api/news-ko', newsKoRouter);
 
+try {
+  const { createTwoFiveRouter } = require('./others/server.js');
+  const twoFiveRouter = createTwoFiveRouter({ setCorsAndCache });
+  app.use('/api/twofive', twoFiveRouter);
+  console.log('✅ TwoFive sector router mounted at /api/twofive');
+} catch (err) {
+  console.error('❌ Failed to mount TwoFive sector router:', err.message);
+}
+
 // === ADD: TTL-override hit() & limited concurrency map ===
 const hit2 = (key, ttlMs) => {
   const v = cache.get(key);
