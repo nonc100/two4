@@ -808,10 +808,68 @@
       gap: 16px;
       align-items: center;
       margin: 24px 0;
+      flex-wrap: wrap;
     }
-    
+
     .controls .search {
       flex: 1;
+    }
+
+    .twofive-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 255, 255, 0.35);
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.12), rgba(153, 69, 255, 0.12));
+      color: #f8fbff;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      text-decoration: none;
+      box-shadow: 0 12px 32px rgba(6, 20, 40, 0.35);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .twofive-link:hover,
+    .twofive-link:focus-visible {
+      border-color: rgba(0, 255, 255, 0.6);
+      box-shadow: 0 16px 42px rgba(0, 255, 255, 0.28);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .twofive-link__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(0, 255, 255, 0.16);
+      color: var(--neon-cyan);
+      font-size: 0.95rem;
+      box-shadow: 0 0 14px rgba(0, 255, 255, 0.32);
+    }
+
+    .twofive-link__meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .twofive-link__badge {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(0, 255, 255, 0.14);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      color: var(--neon-yellow);
+      font-size: 0.55rem;
+      letter-spacing: 1.2px;
     }
     
     input[type=text] {
@@ -1103,7 +1161,18 @@
         --name-w: 120px;
         --rank-w: 45px;
       }
-      
+
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .twofive-link {
+        width: 100%;
+        justify-content: center;
+      }
+
       /* Adjust main wrapper */
       .wrap {
         padding: 120px 12px 60px;
@@ -1479,6 +1548,15 @@
     
     <!-- Search -->
     <div class="controls">
+      <a class="twofive-link" href="/menu/cosmos/twofive.html"
+         title="Two.5 · 섹터 시총가중 캔들맵"
+         aria-label="Two.5 섹터 캔들맵 바로가기">
+        <span class="twofive-link__icon" aria-hidden="true">⧉</span>
+        <span class="twofive-link__meta">
+          <span>Two.5 Sector Map</span>
+          <span class="twofive-link__badge">LIVE</span>
+        </span>
+      </a>
       <input class="search" id="q" type="text" placeholder="🔍 Search cryptocurrency (name/symbol)">
     </div>
     
