@@ -31,6 +31,30 @@ const TIMEFRAME_TO_INTERVAL = {
   '1M': '1M',
 };
 
+function resolveTimeframeKey(raw) {
+  if (!raw) return null;
+  const base = String(raw).trim();
+  if (!base) return null;
+
+  const candidates = [
+    base,
+    base.toUpperCase(),
+    base.toLowerCase(),
+    base.replace(/([a-z]+)/gi, match => {
+      if (match.length <= 1) return match.toUpperCase();
+      return match[0].toUpperCase() + match.slice(1).toLowerCase();
+    }),
+  ];
+
+  for (const key of candidates) {
+    if (TIMEFRAME_TO_INTERVAL[key]) {
+      return key;
+    }
+  }
+
+  return null;
+}
+
 const DEFAULT_LIMIT = 120;
 const MAX_LIMIT = 720;
 const CANDLE_CACHE_TTL = 60_000; // 1 min
@@ -261,9 +285,14 @@ function aggregateCandles(constituents, weights, candlesByPair) {
 }
 
 async function gatherSectorData(interval, limit) {
-  const binanceInterval = TIMEFRAME_TO_INTERVAL[interval];
+  const normalizedInterval = resolveTimeframeKey(interval);
+  const effectiveInterval = normalizedInterval || '1D';
+  if (!normalizedInterval && interval) {
+    console.warn(`[twofive] unsupported interval "${interval}" – falling back to ${effectiveInterval}`);
+  }
+  const binanceInterval = TIMEFRAME_TO_INTERVAL[effectiveInterval];
   if (!binanceInterval) {
-    throw new Error(`Unsupported interval: ${interval}`);
+    throw new Error(`Unsupported interval: ${interval || effectiveInterval}`);
   }
 
   const allSymbols = new Set();
@@ -319,7 +348,7 @@ async function gatherSectorData(interval, limit) {
     };
   });
 
-  return { interval, binanceInterval, sectors };
+  return { interval: effectiveInterval, binanceInterval, sectors };
 }
 
 function createTwoFiveRouter({ setCorsAndCache } = {}) {
