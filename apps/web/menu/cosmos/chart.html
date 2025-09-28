@@ -100,34 +100,81 @@ if(!s){
 const SYMBOL=(s||'BTCUSDT').toUpperCase();
 let TF=(qs.get('tf')||qs.get('interval')||'15m').toLowerCase();
 
-/* ===== 개선된 Fetch 도우미 ===== */
+/* ===== 개선된 Fetch 도우미 - 다중 요청 지원 ===== */
 async function getJson(direct, proxy){
   try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
   catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error('fetch failed'); return await r2.json(); }
 }
 
-// 개선된 limit 함수 - 타임프레임별로 충분한 데이터 요청
-function chooseLimit(tf){
-  const limits = { 
-    '1m': 1000,    // ~16.7시간
-    '5m': 1000,    // ~3.5일  
-    '15m': 1000,   // ~10.4일
-    '30m': 1000,   // ~20.8일
-    '1h': 1000,    // ~41.7일 (최대한 많이)
-    '4h': 1000,    // ~166일 (최대한 많이)
-    '1d': 1000,    // ~2.7년 (최대한 많이)
-    '1w': 1000     // ~19.2년 (최대한 많이)
+// 타임프레임별 목표 데이터 수량 (더 긴 기간)
+function getTargetCandles(tf){
+  const targets = { 
+    '1m': 2000,    // ~33시간
+    '5m': 2000,    // ~7일  
+    '15m': 2000,   // ~21일
+    '30m': 2000,   // ~42일
+    '1h': 2000,    // ~83일 
+    '4h': 2000,    // ~333일 
+    '1d': 2000,    // ~5.5년 
+    '1w': 1000     // ~19년
   };
-  return limits[tf] || 1000;
+  return targets[tf] || 1500;
 }
 
-function klineURL(sym,tf,limit){
-  limit = limit ?? chooseLimit(tf);
-  const q=`symbol=${encodeURIComponent(sym)}&interval=${encodeURIComponent(tf)}&limit=${limit}`;
+function klineURL(sym,tf,limit,endTime){
+  const q = endTime 
+    ? `symbol=${encodeURIComponent(sym)}&interval=${encodeURIComponent(tf)}&limit=${limit}&endTime=${endTime}`
+    : `symbol=${encodeURIComponent(sym)}&interval=${encodeURIComponent(tf)}&limit=${limit}`;
   return [
     `https://api.binance.com/api/v3/klines?${q}`,
     `/api/binance/klines?${q}`
   ];
+}
+
+// 다중 요청으로 더 많은 데이터 가져오기
+async function fetchExtendedKlines(symbol, tf, targetCount = 2000) {
+  const batchSize = 1000; // API 한 번에 최대 1000개
+  let allData = [];
+  let endTime = null;
+  let attempts = 0;
+  const maxAttempts = Math.ceil(targetCount / batchSize);
+
+  console.log(`Fetching extended data for ${symbol} ${tf}, target: ${targetCount} candles`);
+
+  while (allData.length < targetCount && attempts < maxAttempts) {
+    try {
+      const [direct, proxy] = klineURL(symbol, tf, batchSize, endTime);
+      const batch = await getJson(direct, proxy);
+      
+      if (!batch || batch.length === 0) break;
+      
+      // 첫 번째 배치가 아니면 중복 제거 (마지막 캔들이 다음 배치 첫 캔들과 같음)
+      if (allData.length > 0) {
+        batch.shift(); // 첫 번째 요소 제거
+      }
+      
+      // 시간 순으로 앞에 추가 (과거 데이터)
+      allData = [...batch, ...allData];
+      
+      // 다음 요청을 위한 endTime 설정 (가장 오래된 캔들의 시작 시간 - 1ms)
+      if (batch.length > 0) {
+        endTime = Number(batch[0][0]) - 1;
+      }
+      
+      console.log(`Batch ${attempts + 1}: ${batch.length} candles, total: ${allData.length}`);
+      attempts++;
+      
+      // API 제한을 위한 작은 지연
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      console.warn(`Batch ${attempts + 1} failed:`, error);
+      break;
+    }
+  }
+  
+  console.log(`Final result: ${allData.length} candles fetched`);
+  return allData;
 }
 function oiURL(sym,period='5m',limit=600){
   const q=`symbol=${sym}&period=${period}&limit=${limit}`;
@@ -311,13 +358,14 @@ document.getElementById('btnReset').onclick = ()=> {
 // --- TF별 간격(초) ---
 const TFSEC = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
-/* 개선된 로더 */
+/* 개선된 로더 - 다중 요청 지원 */
 async function loadAll(){
   syncTFUI();
   console.log(`Loading ${TF} data for ${SYMBOL}...`);
   
-  const [dURL,pURL] = klineURL(SYMBOL, TF, chooseLimit(TF));
-  let rows = await getJson(dURL,pURL);
+  // 다중 요청으로 더 많은 데이터 가져오기
+  const targetCount = getTargetCandles(TF);
+  let rows = await fetchExtendedKlines(SYMBOL, TF, targetCount);
 
   // === 개선된 데이터 정규화 ===
   const SEC_OF = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
@@ -346,7 +394,7 @@ async function loadAll(){
     snapMap.set(t, v);
   }
 
-  // 3) 결측 구간 채우기를 최소화 (최대 10개 간격까지만)
+  // 3) 결측 구간 채우기를 최소화 (최대 5개 간격까지만)
   const ts = [...snapMap.keys()].sort((a,b)=>a-b);
   const norm = [];
   for (let i=0;i<ts.length;i++) {
@@ -359,7 +407,7 @@ async function loadAll(){
       let gapCount = Math.floor((nxt - t) / STEP) - 1;
       
       // 간격이 너무 크면 채우지 않음 (성능 개선)
-      if (gapCount > 0 && gapCount <= 10) {
+      if (gapCount > 0 && gapCount <= 5) {
         for (let u = t + STEP; u < nxt; u += STEP) {
           const prevClose = cur[4];
           norm.push([u, prevClose, prevClose, prevClose, prevClose, 0]);
@@ -369,7 +417,7 @@ async function loadAll(){
   }
 
   const rowsNorm = norm;
-  console.log(`Normalized data: ${rowsNorm.length} candles`);
+  console.log(`Normalized data: ${rowsNorm.length} candles, range: ${new Date(rowsNorm[0][0]*1000).toLocaleDateString()} ~ ${new Date(rowsNorm[rowsNorm.length-1][0]*1000).toLocaleDateString()}`);
 
   const candles = rowsNorm.map(toCandle);
   const volumes = rowsNorm.map(toVolume);
