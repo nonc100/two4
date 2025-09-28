@@ -195,7 +195,7 @@ const chart = LightweightCharts.createChart(root,{
   layout:{ background:{ type:'solid', color:'transparent' }, textColor:'#dfe8ff' },
   grid:{ vertLines:{color:'rgba(255,255,255,.06)'}, horzLines:{color:'rgba(255,255,255,.06)'} },
   rightPriceScale:{ borderVisible:false, scaleMargins:{ top:0.10, bottom:0.22 } },
-  timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true, timezone:'UTC' },
+  timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true, timezone:'Asia/Seoul' },
   crosshair:{ mode:LightweightCharts.CrosshairMode.Normal, vertLine:{color:'rgba(255,255,255,.25)'}, horzLine:{color:'rgba(255,255,255,.25)'} },
   watermark:{ visible:true, text:'TWO.4', fontSize:22, color:'rgba(255,255,255,.14)', horzAlign:'right', vertAlign:'top' }
 });
@@ -314,35 +314,19 @@ async function loadAll(){
     snapMap.set(t, v);
   }
 
-  // 3) 결측 구간 채우기 - 타임프레임별 정책 적용
+  // 3) 결측 구간 채우기 - 제한된 범위만
   const ts = [...snapMap.keys()].sort((a,b)=>a-b);
   const norm = [];
-  
-  // 타임프레임별 최대 결측 허용 범위
-  let maxGapFill;
-  if (TF.endsWith('m')) {
-    maxGapFill = 10;  // 분봉: 10개까지
-  } else if (TF === '1h') {
-    maxGapFill = 6;   // 1시간봉: 6시간까지
-  } else if (TF === '4h') {
-    maxGapFill = 6;   // 4시간봉: 24시간까지  
-  } else if (TF === '1d') {
-    maxGapFill = 3;   // 일봉: 3일까지
-  } else {
-    maxGapFill = 5;   // 기타: 5개까지
-  }
-  
   for (let i=0;i<ts.length;i++) {
     const t = ts[i];
     const cur = snapMap.get(t);
     norm.push(cur);
-    
     if (i+1 < ts.length) {
       let nxt = ts[i+1];
       let gapCount = Math.floor((nxt - t) / STEP) - 1;
       
-      // 결측 구간이 허용 범위 내일 때만 채움
-      if (gapCount > 0 && gapCount <= maxGapFill) {
+      // 결측 구간이 3개 이하일 때만 채움 (과도한 가상 캔들 생성 방지)
+      if (gapCount > 0 && gapCount <= 3) {
         for (let u = t + STEP; u < nxt; u += STEP) {
           const prevClose = cur[4];
           norm.push([u, prevClose, prevClose, prevClose, prevClose, 0]);
