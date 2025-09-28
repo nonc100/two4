@@ -24,6 +24,7 @@ function buildServer(opts = {}) {
 
   app.register(require('./plugins/news-ko'));
   app.register(require('./routes/logo-cache'));
+  app.register(require('./routes/twofive'));
 
   return app;
 }
