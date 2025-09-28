@@ -397,13 +397,28 @@ async function proxyFetch(url, headers = {}) {
 const BINANCE_FAPI = 'https://fapi.binance.com/fapi/v1';
 const BINANCE_CONT = 'https://fapi.binance.com/fapi/v1/continuousKlines';
 const BINANCE_API_KEY = process.env.BINANCE_API_KEY || '';
+const BINANCE_SPOT_BASES = [
+  'https://api.binance.com',
+  'https://api1.binance.com',
+  'https://api2.binance.com',
+  'https://api3.binance.com',
+  'https://api4.binance.com',
+  'https://api-gcp.binance.com',
+  'https://data-api.binance.vision'
+];
+
+const BINANCE_FETCH_HEADERS = (() => {
+  const headers = { 'User-Agent': 'two4-cosmos/1.0' };
+  if (BINANCE_API_KEY) headers['X-MBX-APIKEY'] = BINANCE_API_KEY;
+  return headers;
+})();
 
 async function bfetch(url) {
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 8000);
   try {
     const r = await fetch(url, {
-      headers: BINANCE_API_KEY ? { 'X-MBX-APIKEY': BINANCE_API_KEY } : {},
+      headers: BINANCE_FETCH_HEADERS,
       signal: ac.signal
     });
     const body = await r.json();
@@ -1111,11 +1126,11 @@ app.get('/api/binance/klines', async (req, res) => {
 
     symbol = String(symbol).toUpperCase();
     const lim = Math.min(Number(limit) || 500, 1000); // Binance 최대 1000
-
-    const u = new URL('https://api.binance.com/api/v3/klines');
-    u.searchParams.set('symbol', symbol);
-    u.searchParams.set('interval', interval);
-    u.searchParams.set('limit', String(lim));
+    const search = new URLSearchParams();
+    search.set('symbol', symbol);
+    search.set('interval', interval);
+    search.set('limit', String(lim));
+    const qs = search.toString();
 
     const cacheKey = `BINKLINES:${symbol}:${interval}:${lim}`;
     const cached = hit(cacheKey);
@@ -1123,16 +1138,58 @@ app.get('/api/binance/klines', async (req, res) => {
       setCorsAndCache(res);
       return res.type(cached.ct).status(cached.status).send(cached.body);
     }
+    let lastError;
+    const normalize = (rows) => {
+      if (!Array.isArray(rows)) return null;
+      if (!rows.length) return [];
+      if (Array.isArray(rows[0])) return rows;
+      const out = [];
+      for (const row of rows) {
+        if (!row || typeof row !== 'object') continue;
+        const openTime = Number(row.openTime ?? row.t ?? row.time ?? row.timestamp ?? row[0]);
+        const open = Number(row.open ?? row.o ?? row[1]);
+        const high = Number(row.high ?? row.h ?? row[2]);
+        const low = Number(row.low ?? row.l ?? row[3]);
+        const close = Number(row.close ?? row.c ?? row[4]);
+        const volumeRaw = row.volume ?? row.v ?? row.quoteAssetVolume ?? row.quoteVolume ?? row.q ?? row[5];
+        const volume = Number(volumeRaw ?? 0);
+        if (!Number.isFinite(openTime) || !Number.isFinite(open) || !Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(close)) {
+          continue;
+        }
+        out.push([
+          openTime,
+          open,
+          high,
+          low,
+          close,
+          Number.isFinite(volume) ? volume : 0
+        ]);
+      }
+      return out;
+    };
 
-    // ✅ 원본 포맷 그대로(배열의 배열) 반환 — 변환 금지
-    const raw = await bfetch(u.toString()); // bfetch는 JSON.parse까지 해 준 상태
-    const payload = { ok: true, status: 200, body: JSON.stringify(raw), ct: 'application/json; charset=utf-8' };
-    setCorsAndCache(res);
-    res.type(payload.ct).status(payload.status).send(payload.body);
-    keep(cacheKey, payload);
+    for (const base of BINANCE_SPOT_BASES) {
+      const url = `${base}/api/v3/klines?${qs}`;
+      try {
+        const raw = await bfetch(url);
+        const klines = normalize(raw);
+        if (!klines) throw new Error('invalid klines payload');
+        const payload = { ok: true, status: 200, body: JSON.stringify(klines), ct: 'application/json; charset=utf-8' };
+        setCorsAndCache(res);
+        res.type(payload.ct).status(payload.status).send(payload.body);
+        keep(cacheKey, payload);
+        return;
+      } catch (err) {
+        lastError = err;
+        console.warn(`[binance klines] ${base} failed:`, err?.message || err);
+      }
+    }
+
+    throw lastError || new Error('binance spot endpoints exhausted');
   } catch (e) {
+    console.error('/api/binance/klines error:', e);
     setCorsAndCache(res);
-    res.status(500).json({ error: 'binance kline failed', detail: String(e?.message || e) });
+    res.status(502).json({ error: 'binance kline failed', detail: String(e?.message || e) });
   }
 });
 
