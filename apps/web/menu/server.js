@@ -54,11 +54,6 @@ app.post("/fs/save", async (req, res) => {
   }
 });
 
-// ✅ Tidewave Studio 열기
-app.get("/tidewave", (_req, res) => {
-  res.sendFile(path.join(__dirname, "tidewave", "index.html"));
-});
-
 // 404 처리
 app.use((req, res, next) => {
   if (req.accepts("html")) return next();
