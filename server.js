@@ -1323,32 +1323,41 @@ app.use((req, res) => {
   return res.status(404).end();
 });
 
+// 헬스체크
+app.get('/healthz', (_req, res) => res.json({ ok: true }));
+
 // ==============================
 // MongoDB 연결 + 서버 시작
 // ==============================
+let serverStarted = false;
+function startHttpServer() {
+  if (serverStarted) return;
+  serverStarted = true;
+  app.listen(PORT, () => console.log(`🚀 TWO4/Seed server on ${PORT}`));
+}
+
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
-  console.error('❌ MONGODB_URI is not set');
-  process.exit(1);
-}
-try {
-  const u = new URL(MONGODB_URI);
-  const masked = `${u.protocol}//${u.username || '(no-user)'}:****@${u.host}${u.pathname || ''}`;
-  console.log('🔌 Trying MongoDB:', masked);
-} catch (_) {
-  console.log('🔌 Trying MongoDB: (unable to parse URI)');
-}
+  console.warn('⚠️ MONGODB_URI is not set. Starting without database features.');
+  startHttpServer();
+} else {
+  try {
+    const u = new URL(MONGODB_URI);
+    const masked = `${u.protocol}//${u.username || '(no-user)'}:****@${u.host}${u.pathname || ''}`;
+    console.log('🔌 Trying MongoDB:', masked);
+  } catch (_) {
+    console.log('🔌 Trying MongoDB: (unable to parse URI)');
+  }
 
-mongoose.set('strictQuery', true);
-mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
-  .then(() => {
-    console.log('✅ MongoDB connected');
-    app.listen(PORT, () => console.log(`🚀 TWO4/Seed server on ${PORT}`));
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connect error:', err.message);
-    process.exit(1);
-  });
-
-// 헬스체크
-app.get('/healthz', (_req, res) => res.json({ ok: true }));
+  mongoose.set('strictQuery', true);
+  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
+    .then(() => {
+      console.log('✅ MongoDB connected');
+      startHttpServer();
+    })
+    .catch(err => {
+      console.error('❌ MongoDB connect error:', err.message);
+      console.warn('⚠️ Continuing without MongoDB. Some features may be unavailable.');
+      startHttpServer();
+    });
+}
