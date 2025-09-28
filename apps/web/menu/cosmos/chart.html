@@ -100,23 +100,29 @@ if(!s){
 const SYMBOL=(s||'BTCUSDT').toUpperCase();
 let TF=(qs.get('tf')||qs.get('interval')||'15m').toLowerCase();
 
-/* ===== Fetch 도우미 (직접 → 프록시) ===== */
+/* ===== 개선된 Fetch 도우미 ===== */
 async function getJson(direct, proxy){
   try{ const r=await fetch(direct); if(!r.ok) throw 0; return await r.json(); }
   catch{ const r2=await fetch(proxy); if(!r2.ok) throw new Error('fetch failed'); return await r2.json(); }
 }
-function tfLimit(tf){
-  if (tf.endsWith('m')) return 1200;           // 1m/5m/15m/30m
-  if (tf==='1h' || tf==='4h') return 1000;     // 바이낸스 최대 1000
-  if (tf==='1d' || tf==='1w') return 1000;
-  return 1000;
-}
+
+// 개선된 limit 함수 - 타임프레임별로 충분한 데이터 요청
 function chooseLimit(tf){
-  const map = { '1m':1200,'5m':1200,'15m':1200,'30m':1000,'1h':1000,'4h':1000,'1d':1000,'1w':1000 };
-  return Math.min(map[tf] || 500, 1000);
+  const limits = { 
+    '1m': 1000,    // ~16.7시간
+    '5m': 1000,    // ~3.5일  
+    '15m': 1000,   // ~10.4일
+    '30m': 1000,   // ~20.8일
+    '1h': 1000,    // ~41.7일 (최대한 많이)
+    '4h': 1000,    // ~166일 (최대한 많이)
+    '1d': 1000,    // ~2.7년 (최대한 많이)
+    '1w': 1000     // ~19.2년 (최대한 많이)
+  };
+  return limits[tf] || 1000;
 }
+
 function klineURL(sym,tf,limit){
-  limit = limit ?? tfLimit(tf);
+  limit = limit ?? chooseLimit(tf);
   const q=`symbol=${encodeURIComponent(sym)}&interval=${encodeURIComponent(tf)}&limit=${limit}`;
   return [
     `https://api.binance.com/api/v3/klines?${q}`,
@@ -189,16 +195,23 @@ function calcBB(close, period=20, mult=2){
   return {mid:m, upper, lower};
 }
 
-/* ===== 차트 생성 ===== */
+/* ===== 개선된 차트 생성 ===== */
 const root = document.getElementById('chart');
 const chart = LightweightCharts.createChart(root,{
   layout:{ background:{ type:'solid', color:'transparent' }, textColor:'#dfe8ff' },
   grid:{ vertLines:{color:'rgba(255,255,255,.06)'}, horzLines:{color:'rgba(255,255,255,.06)'} },
-  rightPriceScale:{ borderVisible:false, scaleMargins:{ top:0.10, bottom:0.22 } },
-timeScale:{ borderVisible:false, rightOffset:8, timeVisible:true, timezone:'Asia/Seoul' },
+  rightPriceScale:{ borderVisible:false, scaleMargins:{ top:0.08, bottom:0.18 } },
+  timeScale:{ 
+    borderVisible:false, 
+    rightOffset:4,  // 오른쪽 여백 줄임
+    timeVisible:true, 
+    timezone:'Asia/Seoul',
+    lockVisibleTimeRangeOnResize: true  // 리사이즈 시 범위 유지
+  },
   crosshair:{ mode:LightweightCharts.CrosshairMode.Normal, vertLine:{color:'rgba(255,255,255,.25)'}, horzLine:{color:'rgba(255,255,255,.25)'} },
   watermark:{ visible:true, text:'TWO.4', fontSize:22, color:'rgba(255,255,255,.14)', horzAlign:'right', vertAlign:'top' }
 });
+
 const mainSeries = chart.addCandlestickSeries({
   upColor:'#22c55e', downColor:'#ef4444', borderVisible:false, wickUpColor:'#22c55e', wickDownColor:'#ef4444',
   lastValueVisible:true, priceLineVisible:true, priceLineColor:'#6aa3ff'
@@ -209,20 +222,20 @@ const volSeries = chart.addHistogramSeries({
   priceScaleId:'', priceFormat:{type:'volume'}, color:'rgba(180,200,255,.35)',
   priceLineVisible:false, lastValueVisible:false, overlay:true, base:0
 });
-chart.priceScale('').applyOptions({ scaleMargins:{ top:0.93, bottom:0 }});
+chart.priceScale('').applyOptions({ scaleMargins:{ top:0.92, bottom:0 }});
 
 /* 보조지표 패널 */
 const rsiPane = chart.addLineSeries({ 
   color:'#7aa5ff', lineWidth:2, priceScaleId:'rsi', 
   lastValueVisible:false, priceLineVisible:false 
 });
-chart.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.70, bottom:0.12 }, borderVisible:false });
+chart.priceScale('rsi').applyOptions({ scaleMargins:{ top:0.68, bottom:0.10 }, borderVisible:false });
 
 const oiPane = chart.addLineSeries({ 
   color:'#b397ff', lineWidth:2, priceScaleId:'oi', 
   lastValueVisible:false, priceLineVisible:false 
 });
-chart.priceScale('oi').applyOptions({ scaleMargins:{ top:0.86, bottom:0.02 }, borderVisible:false });
+chart.priceScale('oi').applyOptions({ scaleMargins:{ top:0.84, bottom:0.02 }, borderVisible:false });
 
 /* HMA 3종 (동시 토글, 굵기 1) */
 const h50  = chart.addLineSeries({ color:'#ff4d4d', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
@@ -273,82 +286,101 @@ function syncToggles(){
   };
 });
 
-/* Fit / Reset */
-document.getElementById('btnFit').onclick = ()=> chart.timeScale().fitContent();
-document.getElementById('btnReset').onclick = ()=> { chart.timeScale().setVisibleRange({from:undefined,to:undefined}); chart.timeScale().fitContent(); };
+/* Fit / Reset - 개선된 버전 */
+document.getElementById('btnFit').onclick = ()=> {
+  chart.timeScale().fitContent();
+  // 여백 최소화를 위한 추가 설정
+  setTimeout(() => {
+    const timeScale = chart.timeScale();
+    const visibleRange = timeScale.getVisibleRange();
+    if (visibleRange) {
+      const padding = (visibleRange.to - visibleRange.from) * 0.01; // 1% 패딩만
+      timeScale.setVisibleRange({
+        from: visibleRange.from - padding,
+        to: visibleRange.to + padding
+      });
+    }
+  }, 100);
+};
+
+document.getElementById('btnReset').onclick = ()=> { 
+  chart.timeScale().setVisibleRange({from:undefined,to:undefined}); 
+  chart.timeScale().fitContent(); 
+};
 
 // --- TF별 간격(초) ---
 const TFSEC = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
-/* 로더 */
+/* 개선된 로더 */
 async function loadAll(){
   syncTFUI();
+  console.log(`Loading ${TF} data for ${SYMBOL}...`);
+  
   const [dURL,pURL] = klineURL(SYMBOL, TF, chooseLimit(TF));
-  let rows = await getJson(dURL,pURL);           // 바이낸스 klines 원본(배열[])
+  let rows = await getJson(dURL,pURL);
 
-  // === Binance klines 정규화: ms→sec, 경계 스냅, 중복제거, 결측 채움 ===
+  // === 개선된 데이터 정규화 ===
   const SEC_OF = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
-  // 1) 응답 형태 통일 (프록시가 {timestamp,price}일 때 배열형으로 맞춤)
+  // 1) 응답 형태 통일
   if (rows?.length) {
     if (!Array.isArray(rows[0]) && rows[0]?.timestamp != null) {
       rows = rows.map(r => [Number(r.timestamp), String(r.price), String(r.price), String(r.price), String(r.price), "0"]);
     }
-    // 시간 오름차순
     rows.sort((a,b) => Number(a[0]) - Number(b[0]));
-    // 13자리(ms)면 초로 1번만 변환
+    
+    // 13자리(ms)면 초로 변환
     if (Number(rows[0][0]) > 1e12) {
       for (let i=0;i<rows.length;i++) rows[i][0] = Math.floor(Number(rows[i][0]) / 1000);
     }
   }
 
-  // 2) 간격 경계에 스냅(예: 4h면 모두 00:00/04:00/08:00 … 으로 정렬)
+  // 2) 최소한의 스냅 처리 (결측 채우기 제한)
   const STEP = SEC_OF[TF] ?? 60;
   const snap = t => Math.floor(Number(t) / STEP) * STEP;
-  const snapMap = new Map(); // t -> [t, open, high, low, close, vol]
+  const snapMap = new Map();
 
-  // 같은 버킷(t)에서 최신 값만 남김
   for (const k of rows) {
     const t = snap(k[0]);
     const v = [t, +k[1], +k[2], +k[3], +k[4], +k[5] || 0];
     snapMap.set(t, v);
   }
 
-  // 3) 결측 구간 채우기(이전 종가로 OHLC 동일 캔들 생성)
+  // 3) 결측 구간 채우기를 최소화 (최대 10개 간격까지만)
   const ts = [...snapMap.keys()].sort((a,b)=>a-b);
   const norm = [];
   for (let i=0;i<ts.length;i++) {
     const t = ts[i];
     const cur = snapMap.get(t);
     norm.push(cur);
+    
     if (i+1 < ts.length) {
       let nxt = ts[i+1];
-      for (let u = t + STEP; u < nxt; u += STEP) {
-        const prevClose = cur[4];
-        norm.push([u, prevClose, prevClose, prevClose, prevClose, 0]);
+      let gapCount = Math.floor((nxt - t) / STEP) - 1;
+      
+      // 간격이 너무 크면 채우지 않음 (성능 개선)
+      if (gapCount > 0 && gapCount <= 10) {
+        for (let u = t + STEP; u < nxt; u += STEP) {
+          const prevClose = cur[4];
+          norm.push([u, prevClose, prevClose, prevClose, prevClose, 0]);
+        }
       }
     }
   }
 
-  // 이후 로직은 norm 사용
   const rowsNorm = norm;
+  console.log(`Normalized data: ${rowsNorm.length} candles`);
 
   const candles = rowsNorm.map(toCandle);
   const volumes = rowsNorm.map(toVolume);
+  
   mainSeries.setData(candles);
   volSeries.setData(volumes);
-  chart.timeScale().fitContent();
-
-  // 디버그: 타임 스텝 확인
-  const steps = [...new Set(candles.slice(1).map((b,i)=>candles[i+1].time - candles[i].time))];
-  console.log('uniq steps:', steps);
-
-  // 디버그: 렌더에 넣은 데이터 확인
-  console.log('[candles]', TF, candles.length, 'from', new Date(candles[0].time*1000).toISOString(), 'to', new Date(candles.at(-1).time*1000).toISOString());
-  for(let i=1;i<Math.min(candles.length,50);i++){
-    const d=candles[i].time - candles[i-1].time;
-    if(d !== TFSEC[TF]){ console.warn('STEP MISMATCH at', i, 'Δ', d); break; }
-  }
+  
+  // 차트 피팅 개선
+  setTimeout(() => {
+    chart.timeScale().fitContent();
+  }, 50);
 
   // 가격/등락 표시
   const last = candles.at(-1), prev = candles.at(-2) || last;
@@ -359,7 +391,7 @@ async function loadAll(){
   chg.textContent = (pct>=0?'+':'') + pct.toFixed(2) + '%';
   chg.className = 'chg ' + (pct>=0?'up':'down');
 
-  // 보조지표 계산은 보정된 타임라인 기준
+  // 보조지표 계산
   const rtime = rowsNorm.map(r => Number(r[0]));
   const closes = candles.map(c=>c.close);
 
@@ -387,7 +419,7 @@ async function loadAll(){
   bbMid  .setData(bb.mid  .map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean));
   bbLower.setData(bb.lower.map((v,i)=>v==null?null:{time:rtime[i], value:v}).filter(Boolean));
 
-  // OI (근사 period)
+  // OI
   try{
     const period = (TF.endsWith('m') ? TF : '5m');
     const [od,op] = oiURL(SYMBOL, period, 600);
@@ -396,8 +428,8 @@ async function loadAll(){
     oiPane.setData(oiData);
   }catch(e){ oiPane.setData([]); }
 }
+
 syncToggles();
-document.getElementById('symLabel').textContent = SYMBOL;
 loadAll();
 </script>
 </body>
