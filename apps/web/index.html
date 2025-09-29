@@ -1006,7 +1006,8 @@
                 <button type="button" class="chart-range-btn" data-range="1d">1D</button>
                 <button type="button" class="chart-range-btn" data-range="3d">3D</button>
                 <button type="button" class="chart-range-btn active" data-range="7d">7D</button>
-                <button type="button" class="chart-range-btn" data-range="30d">30D</button>
+                <button type="button" class="chart-range-btn" data-range="1m">1M</button>
+                <button type="button" class="chart-range-btn" data-range="3m">3M</button>
               </div>
               <select id="chartType" class="chart-selector">
                 <option value="multi" selected>Multi Coins</option>
@@ -1409,15 +1410,75 @@
       {id:'ADA',name:'ADA',color:'#0066cc',visible:true},
       {id:'XRP',name:'XRP',color:'#00d4aa',visible:true},
       {id:'AVAX',name:'AVAX',color:'#e84142',visible:true},
-      {id:'DOGE',name:'DOGE',color:'#c2a633',visible:true}
+      {id:'DOGE',name:'DOGE',color:'#c2a633',visible:true},
+      {id:'LINK',name:'LINK',color:'#2a5ada',visible:true}
     ];
 
     const TIME_RANGES={
-      '1d':{interval:'15m',limit:96},
-      '3d':{interval:'30m',limit:144},
-      '7d':{interval:'1h',limit:168},
-      '30d':{interval:'2h',limit:360}
+      '1d':{interval:'5m',limit:288},
+      '3d':{interval:'15m',limit:288},
+      '7d':{interval:'30m',limit:336},
+      '1m':{interval:'2h',limit:360},
+      '3m':{interval:'6h',limit:360}
     };
+
+    const indicatorConfig={id:'HMA200',name:'HMA 200',color:'rgba(226, 232, 240, 0.9)'};
+    let indicatorVisible=true;
+
+    function buildCompositeSeries(seriesList){
+      const accum=new Map();
+      seriesList.forEach(arr=>{
+        if(!Array.isArray(arr)) return;
+        arr.forEach(point=>{
+          if(!point||!Number.isFinite(point.timestamp)||!Number.isFinite(point.price)) return;
+          const key=point.timestamp;
+          const next=accum.get(key)||{timestamp:key,sum:0,count:0};
+          next.sum+=point.price;
+          next.count+=1;
+          accum.set(key,next);
+        });
+      });
+      return Array.from(accum.values())
+        .filter(entry=>entry.count>0)
+        .map(entry=>({ timestamp:entry.timestamp, price:entry.sum/entry.count }))
+        .sort((a,b)=>a.timestamp-b.timestamp);
+    }
+
+    function calculateHMA(series, period){
+      if(!Array.isArray(series)||series.length<period) return [];
+      const prices=series.map(p=>p.price);
+      const timestamps=series.map(p=>p.timestamp);
+      const halfPeriod=Math.max(1,Math.round(period/2));
+      const sqrtPeriod=Math.max(1,Math.round(Math.sqrt(period)));
+      const wma=(source, window)=>{
+        const weightSum=window*(window+1)/2;
+        return source.map((_,idx)=>{
+          if(idx<window-1) return null;
+          let weighted=0;
+          for(let i=0;i<window;i++){
+            const value=source[idx-window+1+i];
+            if(!Number.isFinite(value)) return null;
+            weighted+=value*(i+1);
+          }
+          return weighted/weightSum;
+        });
+      };
+
+      const halfWma=wma(prices,halfPeriod);
+      const fullWma=wma(prices,period);
+      const diff=prices.map((_,idx)=>{
+        const hw=halfWma[idx];
+        const fw=fullWma[idx];
+        if(hw==null||fw==null) return null;
+        return (2*hw)-fw;
+      });
+      const hmaValues=wma(diff,sqrtPeriod);
+      return hmaValues.reduce((acc,val,idx)=>{
+        if(val==null) return acc;
+        acc.push({ timestamp:timestamps[idx], price:val });
+        return acc;
+      },[]);
+    }
 
     let activeRange='7d';
     let fetchToken=0;
@@ -1462,6 +1523,17 @@
         });
         legend.appendChild(item);
       });
+
+      const indicatorItem=document.createElement('div');
+      indicatorItem.className='legend-item legend-indicator';
+      indicatorItem.innerHTML=`<div class="legend-color" style="background:linear-gradient(90deg, rgba(226,232,240,0.85), rgba(148,163,184,0.6)); border:1px solid rgba(148,163,184,0.4);"></div><span>${indicatorConfig.name}</span>`;
+      indicatorItem.style.opacity=indicatorVisible?'1':'.35';
+      indicatorItem.addEventListener('click',()=>{
+        indicatorVisible=!indicatorVisible;
+        indicatorItem.style.opacity=indicatorVisible?'1':'.35';
+        drawChart();
+      });
+      legend.appendChild(indicatorItem);
     }
 
     function setupRangeControls(){
@@ -1535,17 +1607,17 @@
       const ctx=chartContext, w=chartCanvas.width, h=chartCanvas.height;
       ctx.clearRect(0,0,w,h);
 
-      const visibleSeries=cryptoConfig
-        .filter(c=>c.visible)
-        .map(c=>currentData.get(c.id))
-        .filter(arr=>Array.isArray(arr)&&arr.length);
+      const seriesEntries=cryptoConfig
+        .map(cfg=>({ config:cfg, data:currentData.get(cfg.id) }))
+        .filter(entry=>Array.isArray(entry.data)&&entry.data.length);
+      const visibleEntries=seriesEntries.filter(entry=>entry.config.visible);
 
       let timeRange=null;
-      if(visibleSeries.length){
+      if(visibleEntries.length){
         let minTs=Infinity, maxTs=-Infinity;
-        visibleSeries.forEach(arr=>{
-          const first=arr[0]?.timestamp;
-          const last=arr[arr.length-1]?.timestamp;
+        visibleEntries.forEach(({data})=>{
+          const first=data[0]?.timestamp;
+          const last=data[data.length-1]?.timestamp;
           if(Number.isFinite(first) && first<minTs) minTs=first;
           if(Number.isFinite(last) && last>maxTs) maxTs=last;
         });
@@ -1555,7 +1627,6 @@
         }
       }
 
-      // 배경 그라데이션
       const bg=ctx.createLinearGradient(0,0,0,h);
       bg.addColorStop(0,'rgba(139, 92, 246, 0.12)');
       bg.addColorStop(.5,'rgba(59, 130, 246, 0.06)');
@@ -1565,11 +1636,15 @@
 
       drawGrid(ctx,w,h,timeRange);
 
-      cryptoConfig.forEach(c=>{
-        const d=currentData.get(c.id);
-        if(!d||!d.length||!c.visible) return;
-        drawSeries(ctx,c,d,w,h,timeRange);
+      visibleEntries.forEach(({config,data})=>{
+        drawSeries(ctx,config,data,w,h,timeRange);
       });
+
+      if(indicatorVisible && visibleEntries.length){
+        const compositeSeries=buildCompositeSeries(visibleEntries.map(entry=>entry.data));
+        const hmaSeries=calculateHMA(compositeSeries,200);
+        drawIndicatorSeries(ctx,hmaSeries,compositeSeries,w,h,timeRange);
+      }
     }
 
     function drawGrid(ctx,w,h,timeRange){
@@ -1621,6 +1696,10 @@
       const hh=String(d.getHours()).padStart(2,'0');
       const mi=String(d.getMinutes()).padStart(2,'0');
       const daySpan=span/(24*60*60*1000);
+      if(daySpan>90){
+        const yy=String(d.getFullYear()).slice(-2);
+        return `${yy}/${mm}`;
+      }
       if(daySpan>2) return `${mm}/${dd}`;
       return `${mm}/${dd} ${hh}:${mi}`;
     }
@@ -1637,11 +1716,12 @@
       const span=Math.max(timeSpan,1);
       const getX=ts=>m.left+((ts-baseTs)/span)*cw;
 
+      ctx.save();
       ctx.strokeStyle=crypto.color;
       ctx.lineWidth=2.5;
       ctx.lineCap='round';
       ctx.lineJoin='round';
-      ctx.shadowColor=crypto.color; 
+      ctx.shadowColor=crypto.color;
       ctx.shadowBlur=6;
       
       ctx.beginPath();
@@ -1663,19 +1743,67 @@
       const last=data[data.length-1];
       const lx=getX(last.timestamp);
       const ly=m.top+(ch-((last.price-min)/range)*ch);
-      
-      ctx.beginPath(); 
-      ctx.arc(lx,ly,4,0,Math.PI*2); 
-      ctx.fillStyle=crypto.color; 
+
+      ctx.beginPath();
+      ctx.arc(lx,ly,4,0,Math.PI*2);
+      ctx.fillStyle=crypto.color;
       ctx.fill();
-      
-      ctx.fillStyle=crypto.color; 
-      ctx.font='11px Orbitron, monospace'; 
+
+      ctx.fillStyle=crypto.color;
+      ctx.font='11px Orbitron, monospace';
       ctx.textAlign='left';
       ctx.fillText(formatPrice(last.price), lx+8, ly+3);
-      
-      ctx.shadowBlur=0; 
-      ctx.textAlign='start';
+
+      ctx.shadowBlur=0;
+      ctx.restore();
+    }
+
+    function drawIndicatorSeries(ctx,series,baseSeries,w,h,timeRange){
+      if(!Array.isArray(series)||series.length<2||!Array.isArray(baseSeries)||baseSeries.length<2) return;
+      const m={left:40,right:80,top:30,bottom:40};
+      const cw=w-m.left-m.right, ch=h-m.top-m.bottom;
+
+      const combined=[...baseSeries,...series]
+        .map(p=>p?.price)
+        .filter(v=>Number.isFinite(v));
+      if(!combined.length) return;
+
+      const min=Math.min(...combined);
+      const max=Math.max(...combined);
+      const range=max-min||1;
+      const baseTs=Number.isFinite(timeRange?.min)?timeRange.min:baseSeries[0].timestamp;
+      const timeSpan=timeRange?.span ?? ((baseSeries[baseSeries.length-1].timestamp-baseSeries[0].timestamp)||1);
+      const span=Math.max(timeSpan,1);
+      const getX=ts=>m.left+((ts-baseTs)/span)*cw;
+
+      ctx.save();
+      ctx.strokeStyle=indicatorConfig.color;
+      ctx.lineWidth=1.8;
+      ctx.setLineDash([6,4]);
+      ctx.lineCap='round';
+      ctx.shadowColor='rgba(226, 232, 240, 0.35)';
+      ctx.shadowBlur=8;
+
+      ctx.beginPath();
+      series.forEach((p,i)=>{
+        const x=getX(p.timestamp);
+        const y=m.top+(ch-((p.price-min)/range)*ch);
+        if(i===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+
+      const last=series[series.length-1];
+      const lx=getX(last.timestamp);
+      const ly=m.top+(ch-((last.price-min)/range)*ch);
+
+      ctx.setLineDash([]);
+      ctx.shadowBlur=0;
+      ctx.fillStyle=indicatorConfig.color;
+      ctx.font='11px Orbitron, monospace';
+      ctx.textAlign='left';
+      ctx.fillText(indicatorConfig.name, lx+8, ly+3);
+      ctx.restore();
     }
     
     async function fetchMarketCap(){
