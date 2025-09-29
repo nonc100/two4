@@ -176,111 +176,130 @@
     }
 
     .menu-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
       position: relative;
-      width: 60px;
-      height: 60px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 18px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(139,92,246,.45);
+      background: radial-gradient(circle at top left, rgba(139,92,246,.28), rgba(13,148,136,.18) 55%, rgba(2,132,199,.22));
+      color: #e0f2fe;
+      cursor: pointer;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      font-weight: 600;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
     }
 
-    .star-z {
-      width: 50px;
-      height: 50px;
+    .menu-btn::before {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,.12);
+      opacity: .65;
+      pointer-events: none;
+    }
+
+    .menu-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(120deg, transparent 10%, rgba(224,242,254,.15) 40%, transparent 70%);
+      opacity: 0;
+      transition: opacity .35s ease;
+      pointer-events: none;
+    }
+
+    .menu-btn:hover,
+    .menu-btn:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px rgba(56,189,248,.35);
+      border-color: rgba(125,211,252,.75);
+      outline: none;
+    }
+
+    .menu-btn:hover::after,
+    .menu-btn:focus-visible::after {
+      opacity: 1;
+    }
+
+    .menu-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      text-align: left;
+    }
+
+    .menu-label {
+      font-size: 0.82rem;
+      letter-spacing: 0.2em;
+    }
+
+    .menu-sub {
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: none;
+      color: rgba(226,232,240,.75);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .menu-accent {
       position: relative;
-    }
-
-    .star-glow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60px;
-      height: 60px;
-      background: radial-gradient(circle, rgba(0,188,212,0.9) 0%, rgba(0,188,212,0.5) 20%, rgba(0,188,212,0.2) 40%, transparent 60%);
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      animation: starPulse 2s ease-in-out infinite;
-      z-index: 1;
+      background: radial-gradient(circle, rgba(240,249,255,.95), rgba(14,165,233,.45));
+      box-shadow: 0 0 15px rgba(56,189,248,.55), inset 0 0 12px rgba(14,165,233,.4);
     }
 
-    .star-rays {
+    .menu-accent::before,
+    .menu-accent::after {
+      content: '';
       position: absolute;
-      top: 50%;
-      left: 50%;
+      inset: 50%;
       transform: translate(-50%, -50%);
-      width: 60px;
-      height: 60px;
-      z-index: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(7,89,133,.35);
     }
 
-    .ray {
-      position: absolute;
-      background: linear-gradient(90deg, transparent, rgba(0,188,212,0.6), transparent);
-      transform-origin: center;
+    .menu-accent::before {
+      width: 80%;
+      height: 80%;
     }
 
-    .ray1 { width: 30px; height: 2px; top: 50%; left: 15px; animation: rayRotate1 4s linear infinite; }
-    .ray2 { width: 20px; height: 1px; top: 30%; left: 20px; animation: rayRotate2 6s linear infinite; }
-    .ray3 { width: 25px; height: 1.5px; top: 70%; left: 17px; animation: rayRotate3 5s linear infinite; }
-    .ray4 { width: 18px; height: 1px; top: 60%; left: 21px; animation: rayRotate4 3.5s linear infinite; }
-
-    .z-letter {
-      position: relative;
-      z-index: 2;
-      fill: #000000;
-      stroke: url(#zStroke);
-      stroke-width: 1.5;
-      filter: drop-shadow(0 0 5px rgba(0,229,255,0.6));
-      transition: all 0.3s ease;
+    .menu-accent::after {
+      width: 45%;
+      height: 45%;
+      background: rgba(14,165,233,.3);
+      box-shadow: 0 0 8px rgba(14,165,233,.45);
     }
 
-    .menu-btn:hover .star-glow {
-      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 15%, rgba(0,188,212,0.4) 35%, rgba(0,188,212,0.1) 50%, transparent 70%);
-      animation: starPulseHover 1s ease-in-out infinite;
-    }
+    @media (max-width: 768px) {
+      .menu-btn {
+        padding: 12px 22px;
+        gap: 14px;
+        font-size: 0.72rem;
+      }
 
-    .menu-btn:hover .z-letter {
-      stroke: rgba(255,255,255,0.9);
-      filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
-    }
+      .menu-label {
+        font-size: 0.76rem;
+      }
 
-    .menu-btn:hover .ray {
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
-    }
+      .menu-sub {
+        font-size: 0.58rem;
+      }
 
-    @keyframes starPulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
-      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-    }
-
-    @keyframes starPulseHover {
-      0%, 100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
-      50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
-    }
-
-    @keyframes rayRotate1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes rayRotate2 { from { transform: rotate(45deg); } to { transform: rotate(405deg); } }
-    @keyframes rayRotate3 { from { transform: rotate(90deg); } to { transform: rotate(450deg); } }
-    @keyframes rayRotate4 { from { transform: rotate(135deg); } to { transform: rotate(495deg); } }
-
-    .sparkle-dot {
-      position: absolute;
-      background: rgba(255,255,255,0.8);
-      border-radius: 50%;
-      animation: sparkle 2s ease-in-out infinite;
-    }
-
-    .sparkle1 { width: 2px; height: 2px; top: 15px; left: 20px; animation-delay: 0s; }
-    .sparkle2 { width: 3px; height: 3px; top: 80px; right: 15px; animation-delay: 0.7s; }
-    .sparkle3 { width: 1.5px; height: 1.5px; bottom: 10px; left: 10px; animation-delay: 1.4s; }
-    .sparkle4 { width: 2.5px; height: 2.5px; top: 10px; right: 25px; animation-delay: 0.3s; }
-
-    @keyframes sparkle {
-      0%, 70% { opacity: 0; transform: scale(0); }
-      35% { opacity: 1; transform: scale(1); }
+      .menu-accent {
+        width: 30px;
+        height: 30px;
+      }
     }
 
     /* ========== Infinity Clock ========== */
@@ -408,14 +427,16 @@
     .chart-container{
       background:linear-gradient(135deg, rgba(139,92,246,.08), rgba(59,130,246,.05));
       border:2px solid rgba(139,92,246,.25);
-      border-radius:24px; 
-      padding:2.5rem;
+      border-radius:24px;
+      padding:2.5rem 2.5rem 3.75rem;
       box-shadow:
         0 25px 50px rgba(0,0,0,.4),
         inset 0 1px 0 rgba(255,255,255,.1);
-      height:650px; 
-      position:relative; 
-      overflow:hidden;
+      min-height:650px;
+      height:auto;
+      position:relative;
+      overflow:visible;
+      margin-bottom:3.5rem;
     }
 
     .chart-container::before{
@@ -434,18 +455,24 @@
     }
 
     .chart-header{
-      display:flex; 
-      justify-content:space-between; 
-      align-items:center;
-      margin-bottom:25px; 
-      padding-bottom:20px; 
-      border-bottom:2px solid rgba(139,92,246,.2);
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:24px;
+      margin-bottom:28px;
+      padding:18px 22px;
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,.25);
+      background:rgba(15,23,42,.55);
+      box-shadow:0 16px 38px rgba(15,23,42,.28);
+      backdrop-filter:blur(20px);
     }
 
     .chart-controls{
       display:flex;
-      gap:15px;
-      align-items:center
+      gap:18px;
+      align-items:center;
+      flex-wrap:wrap;
     }
 
     .chart-range-toggle{
@@ -526,10 +553,11 @@
       color:#fff 
     }
 
-    .chart-legend{ 
-      display:flex; 
-      gap:20px; 
-      flex-wrap:wrap 
+    .chart-legend{
+      display:flex;
+      gap:18px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
     .legend-item{ 
       display:flex; 
@@ -555,11 +583,7 @@
       border-radius:2px
     }
     .price-display{
-      color:#8b5cf6;
-      font-weight:700;
-      font-size:16px;
-      font-family:'Orbitron',monospace;
-      text-shadow:0 0 10px rgba(139,92,246,.5);
+      display:none;
     }
 
     .cosmos-chart-canvas{
@@ -893,10 +917,11 @@
       .menu-overlay{ width:100%; right:-100% }
       .content-section{ padding:60px 20px 100px }
       .section-title{ font-size:2rem }
-      .chart-header{ flex-direction:column; gap:10px; align-items:flex-start }
-      .chart-legend{ justify-content:center; gap:8px }
+      .chart-header{ flex-direction:column; gap:14px; align-items:stretch; padding:16px 18px }
+      .chart-controls{ width:100%; justify-content:space-between }
+      .chart-legend{ justify-content:flex-start; gap:10px }
       .legend-item{ font-size:10px; gap:4px; padding:4px 8px }
-      .chart-container{ padding:1.5rem; height:auto }
+      .chart-container{ padding:1.75rem 1.5rem 3rem; min-height:auto; margin-bottom:2.75rem }
       .cosmos-chart-canvas{ width:100%; height:auto }
       .hero-title{ font-size:2.5rem }
     }
@@ -938,30 +963,13 @@
       <li><a href="/menu/constellation.html">Constellation</a></li>
       <li><a href="/menu/auth/login/">Portal</a></li>
     </ul>
-    <div class="menu-btn" id="menuButton" aria-label="Open menu">
-      <div class="star-rays">
-        <div class="ray ray1"></div>
-        <div class="ray ray2"></div>
-        <div class="ray ray3"></div>
-        <div class="ray ray4"></div>
-      </div>
-            <div class="star-glow"></div>
-      <div class="sparkle-dot sparkle1"></div>
-      <div class="sparkle-dot sparkle2"></div>
-      <div class="sparkle-dot sparkle3"></div>
-      <div class="sparkle-dot sparkle4"></div>
-      <svg class="star-z" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="zStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#00e5ff"/>
-            <stop offset="30%" stop-color="#26c6da"/>
-            <stop offset="70%" stop-color="#9c27b0"/>
-            <stop offset="100%" stop-color="#7b1fa2"/>
-          </linearGradient>
-        </defs>
-        <path d="M 15 15 L 45 15 L 45 20 L 25 40 L 45 40 L 45 45 L 15 45 L 15 40 L 35 20 L 15 20 Z" class="z-letter"/>
-      </svg>
-    </div>
+    <button type="button" class="menu-btn" id="menuButton" aria-label="Open menu">
+      <span class="menu-text">
+        <span class="menu-label">MENU</span>
+        <span class="menu-sub">Cosmos Navigation</span>
+      </span>
+      <span class="menu-accent" aria-hidden="true"></span>
+    </button>
   </nav>
 
   <!-- Infinity Clock -->
@@ -1013,7 +1021,7 @@
                 <option value="multi" selected>Multi Coins</option>
                 <option value="single">Single Coin</option>
               </select>
-              <span class="price-display" id="marketCap">COSMOS Ready...</span>
+              <span class="price-display" id="marketCap" aria-hidden="true"></span>
             </div>
             <div class="chart-legend" id="chartLegend"></div>
           </div>
@@ -1025,24 +1033,6 @@
         <h2 class="section-title">Two.4 — Seed AI 예측 날씨</h2>
         <div id="seed-weather-root"></div>
       </section>
-
-      <div class="section-content">
-        <h2 class="section-title">Intelligence Feed</h2>
-        <div class="news-grid">
-          <div class="news-card">
-            <h3 class="card-title">Market Signals</h3>
-            <div class="card-content">비트코인이 새로운 저항선을 돌파하며 상승 모멘텀을 이어가고 있습니다. AI 분석에 따르면 기관 투자자들의 지속적인 유입이 주요 동력으로 작용하고 있습니다.</div>
-          </div>
-          <div class="news-card">
-            <h3 class="card-title">Network Updates</h3>
-            <div class="card-content">이더리움 네트워크의 최신 업그레이드가 완료되어 거래 처리량이 30% 향상되었습니다. DeFi 생태계에 긍정적 영향이 예상됩니다.</div>
-          </div>
-          <div class="news-card">
-            <h3 class="card-title">AI Insights</h3>
-            <div class="card-content">머신러닝 모델이 감지한 새로운 패턴 분석 결과, 알트코인 시장에서 흥미로운 기회가 포착되고 있습니다.</div>
-          </div>
-        </div>
-      </div>
 
       <div class="section-content" style="text-align:center;">
         <h2 class="section-title">Community Hub</h2>
@@ -1422,7 +1412,7 @@
       '3m':{interval:'6h',limit:360}
     };
 
-    const indicatorConfig={id:'HMA200',name:'HMA 200',color:'rgba(226, 232, 240, 0.9)'};
+    const indicatorConfig={id:'HMA100',name:'',color:'rgba(226, 232, 240, 0.9)'};
     let indicatorVisible=true;
 
     function buildCompositeSeries(seriesList){
@@ -1524,16 +1514,18 @@
         legend.appendChild(item);
       });
 
-      const indicatorItem=document.createElement('div');
-      indicatorItem.className='legend-item legend-indicator';
-      indicatorItem.innerHTML=`<div class="legend-color" style="background:linear-gradient(90deg, rgba(226,232,240,0.85), rgba(148,163,184,0.6)); border:1px solid rgba(148,163,184,0.4);"></div><span>${indicatorConfig.name}</span>`;
-      indicatorItem.style.opacity=indicatorVisible?'1':'.35';
-      indicatorItem.addEventListener('click',()=>{
-        indicatorVisible=!indicatorVisible;
+      if(indicatorConfig.name){
+        const indicatorItem=document.createElement('div');
+        indicatorItem.className='legend-item legend-indicator';
+        indicatorItem.innerHTML=`<div class="legend-color" style="background:linear-gradient(90deg, rgba(226,232,240,0.85), rgba(148,163,184,0.6)); border:1px solid rgba(148,163,184,0.4);"></div><span>${indicatorConfig.name}</span>`;
         indicatorItem.style.opacity=indicatorVisible?'1':'.35';
-        drawChart();
-      });
-      legend.appendChild(indicatorItem);
+        indicatorItem.addEventListener('click',()=>{
+          indicatorVisible=!indicatorVisible;
+          indicatorItem.style.opacity=indicatorVisible?'1':'.35';
+          drawChart();
+        });
+        legend.appendChild(indicatorItem);
+      }
     }
 
     function setupRangeControls(){
@@ -1642,7 +1634,7 @@
 
       if(indicatorVisible && visibleEntries.length){
         const compositeSeries=buildCompositeSeries(visibleEntries.map(entry=>entry.data));
-        const hmaSeries=calculateHMA(compositeSeries,200);
+        const hmaSeries=calculateHMA(compositeSeries,100);
         drawIndicatorSeries(ctx,hmaSeries,compositeSeries,w,h,timeRange);
       }
     }
@@ -1799,10 +1791,12 @@
 
       ctx.setLineDash([]);
       ctx.shadowBlur=0;
-      ctx.fillStyle=indicatorConfig.color;
-      ctx.font='11px Orbitron, monospace';
-      ctx.textAlign='left';
-      ctx.fillText(indicatorConfig.name, lx+8, ly+3);
+      if(indicatorConfig.name){
+        ctx.fillStyle=indicatorConfig.color;
+        ctx.font='11px Orbitron, monospace';
+        ctx.textAlign='left';
+        ctx.fillText(indicatorConfig.name, lx+8, ly+3);
+      }
       ctx.restore();
     }
     
