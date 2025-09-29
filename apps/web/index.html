@@ -33,6 +33,7 @@
   </script>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="seed-weather.css"/>
 
   <style>
     #app{position:relative; z-index:2}
@@ -929,6 +930,7 @@
   <nav class="nav">
     <ul class="nav-links">
       <li><a href="/menu/cosmos/">Crypto Market</a></li>
+      <li><a href="#seed-weather">Cosmic Weather</a></li>
       <li><a href="/menu/orbits.html">Orbits</a></li>
       <li><a href="/menu/method.html">Method</a></li>
       <li><a href="/menu/psyche.html">Psyche</a></li>
@@ -1018,6 +1020,11 @@
         </div>
       </div>
 
+      <section id="seed-weather" class="section-content cosmic-section">
+        <h2 class="section-title">Two.4 — Seed AI 예측 날씨</h2>
+        <div id="seed-weather-root"></div>
+      </section>
+
       <div class="section-content">
         <h2 class="section-title">Intelligence Feed</h2>
         <div class="news-grid">
@@ -1062,8 +1069,9 @@
     <div class="menu-close" id="menuClose" aria-label="Close">×</div>
     <div class="menu-section">
       <ul class="menu-items">
-<li class="menu-item"><a href="menu/cosmos/" class="menu-link">COSMOS CRYPTO</a><span class="korean-desc">차트</span></li> 
-<li class="menu-item"><a href="menu/cosmos/" class="menu-link">CRYPTO MARKET<span class="korean-desc">암호화폐 시세</span></a></li>       
+<li class="menu-item"><a href="menu/cosmos/" class="menu-link">COSMOS CRYPTO</a><span class="korean-desc">차트</span></li>
+<li class="menu-item"><a href="#seed-weather" class="menu-link">COSMIC WEATHER<span class="korean-desc">시장 기상</span></a></li>
+<li class="menu-item"><a href="menu/cosmos/" class="menu-link">CRYPTO MARKET<span class="korean-desc">암호화폐 시세</span></a></li>
 <li class="menu-item"><a href="menu/orbits.html" class="menu-link">ORBITS (SIGNALS / INDICATORS)<span class="korean-desc">지표/신호</span></a></li>
 <li class="menu-item"><a href="menu/method.html" class="menu-link">METHOD (TECHNIQUE)<span class="korean-desc">매매 기법</span></a></li>
 <li class="menu-item"><a href="menu/psyche.html" class="menu-link">PSYCHE<span class="korean-desc">마음과 철학, 멘탈</span></a></li>
@@ -1110,7 +1118,8 @@
     
   </div>
   
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="seed-weather.js" defer></script>
   <script>
     function createSeedPlanet() {
       const canvas = document.getElementById('planet-canvas');
