@@ -12,6 +12,7 @@ const { HeatmapEngine } = require('./server/engines/heatmapEngine');
 const createCvdRouter = require('./server/api/cvd');
 const createHeatmapRouter = require('./server/api/heatmap');
 const createPriceRouter = require('./server/api/price');
+const createSeedWeatherRouter = require('./server/api/seed-weather');
 
 const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
@@ -26,6 +27,7 @@ heatmapEngine.start();
 const cvdRouter = createCvdRouter({ cvdEngine });
 const heatmapRouter = createHeatmapRouter({ heatmapEngine });
 const priceRouter = createPriceRouter({ cvdEngine });
+const seedWeatherRouter = createSeedWeatherRouter();
 
 // ==============================
 // 정적 파일 서빙
@@ -333,6 +335,7 @@ orbitsRouter.delete('/posts/:id', (req, res) => {
 app.use('/api/cvd', cvdRouter);
 app.use('/api/heatmap', heatmapRouter);
 app.use('/api/price', priceRouter);
+app.use('/api/seed-weather', seedWeatherRouter);
 app.use('/api/orbits', orbitsRouter);
 app.use('/api/method', orbitsRouter);
 
