@@ -6,9 +6,26 @@ const mongoose = require('mongoose');
 const Parser = require('rss-parser');               // RSS (네이버/구글 트렌드)
 const parser = new Parser();
 const createNewsKoRouter = require('./routes/news-ko');
+const { getDatabase } = require('./server/database');
+const { CVDEngine } = require('./server/engines/cvdEngine');
+const { HeatmapEngine } = require('./server/engines/heatmapEngine');
+const createCvdRouter = require('./server/api/cvd');
+const createHeatmapRouter = require('./server/api/heatmap');
+const createPriceRouter = require('./server/api/price');
 
 const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
+
+const marketDb = getDatabase();
+const cvdEngine = new CVDEngine({ db: marketDb, symbol: 'BTCUSDT' });
+const heatmapEngine = new HeatmapEngine({ db: marketDb, symbol: 'BTCUSDT' });
+
+cvdEngine.start();
+heatmapEngine.start();
+
+const cvdRouter = createCvdRouter({ cvdEngine });
+const heatmapRouter = createHeatmapRouter({ heatmapEngine });
+const priceRouter = createPriceRouter({ cvdEngine });
 
 // ==============================
 // 정적 파일 서빙
@@ -313,6 +330,9 @@ orbitsRouter.delete('/posts/:id', (req, res) => {
   res.json({ ok: true, removed: id, updatedAt: computeUpdatedAt(orbitPostsStore) });
 });
 
+app.use('/api/cvd', cvdRouter);
+app.use('/api/heatmap', heatmapRouter);
+app.use('/api/price', priceRouter);
 app.use('/api/orbits', orbitsRouter);
 app.use('/api/method', orbitsRouter);
 
@@ -1392,6 +1412,29 @@ function startHttpServer() {
   serverStarted = true;
   app.listen(PORT, () => console.log(`🚀 TWO4/Seed server on ${PORT}`));
 }
+
+let shuttingDown = false;
+function gracefulShutdown(signal) {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+  console.log(`⚙️  Received ${signal}, shutting down market engines...`);
+  try {
+    cvdEngine.stop();
+    heatmapEngine.stop();
+  } catch (error) {
+    console.error('Failed to stop market engines:', error.message);
+  }
+  if (!serverStarted) {
+    process.exit(0);
+  }
+  setTimeout(() => process.exit(0), 500).unref?.();
+}
+
+['SIGINT', 'SIGTERM'].forEach((signal) => {
+  process.on(signal, () => gracefulShutdown(signal));
+});
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#05030f" />
+  <title>TWO.4 · Cosmic Liquidity &amp; CVD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./cvd-heatmap.css" />
+</head>
+<body>
+  <div class="nebula-overlay" aria-hidden="true"></div>
+  <header class="dashboard-header">
+    <a class="back-link" href="/menu/cosmos/">
+      <span aria-hidden="true">⭠</span>
+      <span>Cosmos Hub</span>
+    </a>
+    <div class="header-title">
+      <h1>Cosmic Liquidity Matrix</h1>
+      <p>Binance BTCUSDT · Futures Orderbook heatmap + CVD bands · 우주 네온 감성</p>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <section class="panel heatmap-panel" aria-labelledby="heatmapTitle">
+      <div class="panel-header">
+        <div>
+          <h2 id="heatmapTitle">Liquidity Heatmap</h2>
+          <p class="panel-description">30초 스냅샷으로 구성된 가격-시간 유동성 히트맵 · 파란선은 실시간 중간가</p>
+        </div>
+        <div class="panel-meta">
+          <div>
+            <span class="meta-label">Symbol</span>
+            <span class="meta-value neon" data-symbol>BTCUSDT</span>
+          </div>
+          <div>
+            <span class="meta-label">Last Price</span>
+            <span class="meta-value" data-price>--</span>
+          </div>
+          <div>
+            <span class="meta-label">Last Update</span>
+            <span class="meta-value" data-updated>--</span>
+          </div>
+          <div>
+            <span class="meta-label">Stream</span>
+            <span class="status-pill" data-status data-status-state="idle">Initializing</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart" id="heatmapChart" role="img" aria-label="Heatmap of liquidity"></div>
+    </section>
+
+    <section class="panel cvd-panel" aria-labelledby="cvdTitle">
+      <div class="panel-header">
+        <div>
+          <h2 id="cvdTitle">Neon CVD Bands</h2>
+          <p class="panel-description">1분 누적 매수·매도 델타 · 주문규모별 5개 밴드 + 전체 누적</p>
+        </div>
+        <div class="panel-hints">
+          <span>범례 클릭으로 라인 on/off · 드래그로 줌 · 상단 히트맵과 시간축 연동</span>
+        </div>
+      </div>
+      <div class="chart" id="cvdChart" role="img" aria-label="CVD lines by notional size"></div>
+    </section>
+  </main>
+
+  <footer class="dashboard-footer">
+    Data from Binance WebSocket · Aggregated &amp; cached in SQLite · Crafted for TWO.4 Cosmos
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+  <script src="./cvd-heatmap.js" defer></script>
+</body>
+</html>
