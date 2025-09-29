@@ -871,6 +871,24 @@
       font-size: 0.55rem;
       letter-spacing: 1.2px;
     }
+
+    .twofive-link.neon-dashboard-link {
+      border-color: rgba(109, 40, 217, 0.6);
+      background: linear-gradient(135deg, rgba(76, 29, 149, 0.55), rgba(13, 148, 136, 0.45));
+      box-shadow: 0 18px 42px rgba(56, 189, 248, 0.28);
+    }
+
+    .twofive-link.neon-dashboard-link .twofive-link__icon {
+      background: rgba(56, 189, 248, 0.22);
+      color: #f0f9ff;
+      box-shadow: 0 0 18px rgba(14, 165, 233, 0.45);
+    }
+
+    .twofive-link.neon-dashboard-link .twofive-link__badge {
+      background: linear-gradient(135deg, rgba(244, 114, 182, 0.8), rgba(96, 165, 250, 0.8));
+      border-color: rgba(255, 255, 255, 0.35);
+      color: #fff7c2;
+    }
     
     input[type=text] {
       width: 100%;
@@ -1554,6 +1572,15 @@
         <span class="twofive-link__meta">
           <span>Two.5 Sector Map</span>
           <span class="twofive-link__badge">LIVE</span>
+        </span>
+      </a>
+      <a class="twofive-link neon-dashboard-link" href="/menu/cosmos/cvd-heatmap.html"
+         title="Cosmic Liquidity &amp; CVD Dashboard"
+         aria-label="Cosmic Liquidity &amp; CVD Dashboard 바로가기">
+        <span class="twofive-link__icon" aria-hidden="true">🛰️</span>
+        <span class="twofive-link__meta">
+          <span>Cosmic Liquidity</span>
+          <span class="twofive-link__badge">NEW</span>
         </span>
       </a>
       <input class="search" id="q" type="text" placeholder="🔍 Search cryptocurrency (name/symbol)">
