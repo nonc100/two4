@@ -43,7 +43,7 @@ function loadOwnPosts() {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(id => typeof id === 'string');
   } catch (error) {
-    console.error('Failed to read ORBITS own posts', error);
+    console.error('ORBITS 내 게시글을 불러오지 못했습니다.', error);
     return [];
   }
 }
@@ -53,7 +53,7 @@ function saveOwnPosts(ids) {
   try {
     window.localStorage.setItem(OWN_POSTS_STORAGE_KEY, JSON.stringify(ids));
   } catch (error) {
-    console.error('Failed to persist ORBITS own posts', error);
+    console.error('ORBITS 내 게시글을 저장하지 못했습니다.', error);
   }
 }
 
@@ -305,11 +305,11 @@ async function postOrbitEntry(payload) {
     // ignore parsing error to allow generic message below
   }
   if (!response.ok) {
-    const message = data?.error || 'FAILED';
+    const message = data?.error || '요청을 처리하지 못했습니다.';
     throw new Error(message);
   }
   if (!data?.post) {
-    throw new Error('INVALID_RESPONSE');
+    throw new Error('응답 데이터가 올바르지 않습니다.');
   }
   return data;
 }
@@ -344,7 +344,7 @@ async function handleSubmit(event) {
     category,
     content,
     tags: tags.length ? tags : ['새글'],
-    author: 'You'
+    author: '나'
   };
   if (images.length) {
     payload.images = images;
@@ -363,7 +363,7 @@ async function handleSubmit(event) {
     }
     window.location.href = './';
   } catch (error) {
-    console.error('Failed to submit ORBITS post', error);
+    console.error('ORBITS 게시글 등록 중 오류가 발생했습니다.', error);
     alert('게시글 등록에 실패했습니다. 잠시 후 다시 시도해주세요.');
   } finally {
     state.submitting = false;

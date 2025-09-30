@@ -77,7 +77,7 @@ function ensureOrbitStore() {
   try {
     fs.mkdirSync(ORBITS_DATA_DIR, { recursive: true });
   } catch (error) {
-    console.error('⚠️ Failed to ensure ORBITS data directory:', error.message);
+    console.error('⚠️ ORBITS 데이터 디렉터리를 생성하지 못했습니다:', error.message);
   }
 
   if (!fs.existsSync(ORBITS_POSTS_FILE)) {
@@ -88,7 +88,7 @@ function ensureOrbitStore() {
         fs.writeFileSync(ORBITS_POSTS_FILE, JSON.stringify({ posts: [] }, null, 2), 'utf8');
       }
     } catch (error) {
-      console.error('⚠️ Failed to initialize ORBITS posts store:', error.message);
+      console.error('⚠️ ORBITS 게시글 저장소를 초기화하지 못했습니다:', error.message);
     }
   }
 }
@@ -175,8 +175,8 @@ function normalizeStoredPost(raw) {
   return {
     id,
     category: typeof raw.category === 'string' && raw.category.trim() ? raw.category.trim() : 'general',
-    title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : 'Untitled',
-    author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : 'Anonymous',
+    title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : '제목 없음',
+    author: typeof raw.author === 'string' && raw.author.trim() ? raw.author.trim() : '익명',
     tags,
     image: normalizedImages[0] || undefined,
     images: normalizedImages,
@@ -202,7 +202,7 @@ function loadOrbitPosts() {
       .map(normalizeStoredPost)
       .filter(Boolean);
   } catch (error) {
-    console.error('⚠️ Failed to load ORBITS posts:', error.message);
+    console.error('⚠️ ORBITS 게시글을 불러오지 못했습니다:', error.message);
     return [];
   }
 }
@@ -214,7 +214,7 @@ function saveOrbitPosts() {
   try {
     fs.writeFileSync(ORBITS_POSTS_FILE, JSON.stringify({ posts: orbitPostsStore }, null, 2), 'utf8');
   } catch (error) {
-    console.error('⚠️ Failed to save ORBITS posts:', error.message);
+    console.error('⚠️ ORBITS 게시글을 저장하지 못했습니다:', error.message);
   }
 }
 
@@ -343,7 +343,7 @@ try {
   console.log('✅ Seed AI router mounted at /api');
   app.get('/api/_probe', (_req, res) => res.json({ ok: true, mounted: true }));
 } catch (e) {
-  console.error('❌ Failed to mount Seed AI router:', e.message);
+  console.error('❌ Seed AI 라우터를 연결하지 못했습니다:', e.message);
 }
 
 function setCorsAndCache(res) {
