@@ -2,11 +2,16 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const mongoose = require('mongoose');
 const Parser = require('rss-parser');               // RSS (네이버/구글 트렌드)
 const parser = new Parser();
 const createNewsKoRouter = require('./routes/news-ko');
-const { getDatabase } = require('./server/database');
+const { connectDatabase } = require('./server/database');
+const {
+  CVDModel,
+  HeatmapModel,
+  PriceModel,
+  LiquidationEventModel,
+} = require('./server/models/marketModels');
 const { CVDEngine } = require('./server/engines/cvdEngine');
 const { HeatmapEngine } = require('./server/engines/heatmapEngine');
 const { LiquidationHeatmapEngine } = require('./server/engines/liquidationHeatmapEngine');
@@ -19,19 +24,13 @@ const createSeedWeatherRouter = require('./server/api/seed-weather');
 const app = express();
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 
-const marketDb = getDatabase();
-const cvdEngine = new CVDEngine({ db: marketDb, symbol: 'BTCUSDT' });
-const heatmapEngine = new HeatmapEngine({ db: marketDb, symbol: 'BTCUSDT' });
-const liquidationEngine = new LiquidationHeatmapEngine({ db: marketDb });
-
-cvdEngine.start();
-heatmapEngine.start();
-liquidationEngine.start();
-
-const cvdRouter = createCvdRouter({ cvdEngine });
-const heatmapRouter = createHeatmapRouter({ heatmapEngine });
-const liquidationRouter = createLiquidationHeatmapRouter({ liquidationEngine });
-const priceRouter = createPriceRouter({ cvdEngine });
+let cvdEngine;
+let heatmapEngine;
+let liquidationEngine;
+let cvdRouter;
+let heatmapRouter;
+let liquidationRouter;
+let priceRouter;
 const seedWeatherRouter = createSeedWeatherRouter();
 
 // ==============================
@@ -336,14 +335,6 @@ orbitsRouter.delete('/posts/:id', (req, res) => {
 
   res.json({ ok: true, removed: id, updatedAt: computeUpdatedAt(orbitPostsStore) });
 });
-
-app.use('/api/cvd', cvdRouter);
-app.use('/api/heatmap', heatmapRouter);
-app.use('/api/liquidations', liquidationRouter);
-app.use('/api/price', priceRouter);
-app.use('/api/seed-weather', seedWeatherRouter);
-app.use('/api/orbits', orbitsRouter);
-app.use('/api/method', orbitsRouter);
 
 // [SEED AI] Seed 라우터 마운트 (+ 마운트 확인 로그 & 프로브)
 try {
@@ -1430,9 +1421,9 @@ function gracefulShutdown(signal) {
   shuttingDown = true;
   console.log(`⚙️  Received ${signal}, shutting down market engines...`);
   try {
-    cvdEngine.stop();
-    heatmapEngine.stop();
-    liquidationEngine.stop();
+    cvdEngine?.stop?.();
+    heatmapEngine?.stop?.();
+    liquidationEngine?.stop?.();
   } catch (error) {
     console.error('Failed to stop market engines:', error.message);
   }
@@ -1446,28 +1437,50 @@ function gracefulShutdown(signal) {
   process.on(signal, () => gracefulShutdown(signal));
 });
 
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.warn('⚠️ MONGODB_URI is not set. Starting without database features.');
-  startHttpServer();
-} else {
-  try {
-    const u = new URL(MONGODB_URI);
-    const masked = `${u.protocol}//${u.username || '(no-user)'}:****@${u.host}${u.pathname || ''}`;
-    console.log('🔌 Trying MongoDB:', masked);
-  } catch (_) {
-    console.log('🔌 Trying MongoDB: (unable to parse URI)');
+async function bootstrap() {
+  const uri = process.env.MONGODB_URI;
+  if (uri) {
+    try {
+      const parsed = new URL(uri);
+      const masked = `${parsed.protocol}//${parsed.username || '(no-user)'}:****@${parsed.host}${parsed.pathname || ''}`;
+      console.log('🔌 Connecting to MongoDB at', masked);
+    } catch (error) {
+      console.log('🔌 Connecting to MongoDB with provided URI');
+    }
   }
 
-  mongoose.set('strictQuery', true);
-  mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
-    .then(() => {
-      console.log('✅ MongoDB connected');
-      startHttpServer();
-    })
-    .catch(err => {
-      console.error('❌ MongoDB connect error:', err.message);
-      console.warn('⚠️ Continuing without MongoDB. Some features may be unavailable.');
-      startHttpServer();
-    });
+  try {
+    await connectDatabase();
+  } catch (error) {
+    console.error('❌ Failed to connect to MongoDB:', error.message);
+    process.exit(1);
+  }
+
+  cvdEngine = new CVDEngine({ cvdModel: CVDModel, priceModel: PriceModel, symbol: 'BTCUSDT' });
+  heatmapEngine = new HeatmapEngine({ heatmapModel: HeatmapModel, symbol: 'BTCUSDT' });
+  liquidationEngine = new LiquidationHeatmapEngine({ liquidationModel: LiquidationEventModel });
+
+  cvdEngine.start();
+  heatmapEngine.start();
+  liquidationEngine.start();
+
+  cvdRouter = createCvdRouter({ cvdEngine, cvdModel: CVDModel, priceModel: PriceModel });
+  heatmapRouter = createHeatmapRouter({ heatmapEngine, heatmapModel: HeatmapModel });
+  liquidationRouter = createLiquidationHeatmapRouter({ liquidationEngine });
+  priceRouter = createPriceRouter({ cvdEngine, priceModel: PriceModel });
+
+  app.use('/api/cvd', cvdRouter);
+  app.use('/api/heatmap', heatmapRouter);
+  app.use('/api/liquidations', liquidationRouter);
+  app.use('/api/price', priceRouter);
+  app.use('/api/seed-weather', seedWeatherRouter);
+  app.use('/api/orbits', orbitsRouter);
+  app.use('/api/method', orbitsRouter);
+
+  startHttpServer();
 }
+
+bootstrap().catch((error) => {
+  console.error('❌ Failed to bootstrap application:', error);
+  process.exit(1);
+});
