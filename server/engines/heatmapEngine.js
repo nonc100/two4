@@ -20,6 +20,8 @@ class HeatmapEngine extends EventEmitter {
     this.snapshotReady = false;
     this.snapshotTimer = null;
     this.lastPrice = null;
+    this.retryAttempt = 0;
+    this.snapshotIntervalMs = 30_000;
 
     this.initTable();
     this.backfillSnapshots();
@@ -124,6 +126,7 @@ class HeatmapEngine extends EventEmitter {
 
     this.ws.on('open', () => {
       this.connected = true;
+      this.retryAttempt = 0;
       console.log(`[HEATMAP] Connected depth stream for ${this.symbol}`);
     });
 
@@ -139,8 +142,11 @@ class HeatmapEngine extends EventEmitter {
     this.ws.on('close', () => {
       this.connected = false;
       this.ws = null;
-      console.warn(`[HEATMAP] Depth stream closed for ${this.symbol}, retrying in 5s`);
-      setTimeout(() => this.openSocket(), 5000);
+      const delay = Math.min(60_000, 5_000 * 2 ** Math.min(this.retryAttempt, 5));
+      this.retryAttempt += 1;
+      console.warn(`[HEATMAP] Depth stream closed for ${this.symbol}, retrying in ${Math.round(delay / 1000)}s`);
+      const timer = setTimeout(() => this.openSocket(), delay);
+      timer.unref?.();
     });
 
     this.ws.on('error', (error) => {
@@ -225,7 +231,7 @@ class HeatmapEngine extends EventEmitter {
     this.captureSnapshot();
     this.snapshotTimer = setInterval(() => {
       this.captureSnapshot();
-    }, 30_000);
+    }, this.snapshotIntervalMs);
     this.snapshotTimer.unref?.();
   }
 

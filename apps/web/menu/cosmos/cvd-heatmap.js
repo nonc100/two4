@@ -46,6 +46,14 @@
     heatmap: { '1m': 720, '5m': 720, '15m': 480, '1h': 360, '4h': 360, '1d': 180 },
   };
 
+  const syncState = {
+    heatmapIndexMap: new Map(),
+    heatmapTimestamps: [],
+    cvdSeriesAll: [],
+  };
+  let tooltipSyncBound = false;
+  let isSyncingPointer = false;
+
   const storedTimeframe = (() => {
     try {
       const value = localStorage.getItem(STORAGE_KEY);
@@ -141,6 +149,18 @@
     return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   }
 
+  function fromLogValue(logValue, base = 10) {
+    if (!Number.isFinite(logValue) || logValue <= 0) {
+      return 0;
+    }
+    return Math.pow(base, logValue) - 1;
+  }
+
+  function formatLiquidity(logValue, base = 10) {
+    const actual = fromLogValue(logValue, base);
+    return `${formatNumber(actual)} USDT`;
+  }
+
   function formatTimestamp(ts) {
     if (!Number.isFinite(ts)) return '--';
     const date = new Date(ts);
@@ -200,15 +220,94 @@
       });
     }
     if (Array.isArray(cvdPoints)) {
-      cvdPoints.forEach((point) => {
-        const ts = Number(point?.timestamp);
-        const price = Number(point?.price);
-        if (Number.isFinite(ts) && Number.isFinite(price) && !lookup.has(ts)) {
-          lookup.set(ts, price);
+      cvdPoints.forEach(([ts, price]) => {
+        const tsNum = Number(ts);
+        const priceNum = Number(price);
+        if (Number.isFinite(tsNum) && Number.isFinite(priceNum) && !lookup.has(tsNum)) {
+          lookup.set(tsNum, priceNum);
         }
       });
     }
     return lookup;
+  }
+
+  function findNearestIndex(series, targetTs) {
+    if (!Array.isArray(series) || !Number.isFinite(targetTs) || series.length === 0) {
+      return -1;
+    }
+    let low = 0;
+    let high = series.length - 1;
+    let bestIndex = -1;
+    let bestDiff = Infinity;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const ts = Number(series[mid]?.[0]);
+      if (!Number.isFinite(ts)) {
+        break;
+      }
+      const diff = Math.abs(ts - targetTs);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestIndex = mid;
+      }
+      if (ts < targetTs) {
+        low = mid + 1;
+      } else if (ts > targetTs) {
+        high = mid - 1;
+      } else {
+        break;
+      }
+    }
+    return bestIndex;
+  }
+
+  function updateAxisPointer(chart, timestamp) {
+    if (!chart || !Number.isFinite(timestamp)) return;
+    chart.dispatchAction({ type: 'updateAxisPointer', xAxisIndex: 0, value: timestamp });
+  }
+
+  function ensureTooltipSync() {
+    if (tooltipSyncBound) {
+      return;
+    }
+
+    heatmapChart.on('updateAxisPointer', (event) => {
+      const ts = Number(event?.axesInfo?.[0]?.value);
+      if (!Number.isFinite(ts) || isSyncingPointer) {
+        return;
+      }
+      isSyncingPointer = true;
+      const idx = findNearestIndex(syncState.cvdSeriesAll, ts);
+      if (idx !== -1) {
+        cvdChart.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: idx });
+      }
+      updateAxisPointer(cvdChart, ts);
+      const heatIdx = syncState.heatmapIndexMap.get(ts);
+      if (Number.isInteger(heatIdx)) {
+        heatmapChart.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: heatIdx });
+      }
+      isSyncingPointer = false;
+    });
+
+    cvdChart.on('updateAxisPointer', (event) => {
+      const ts = Number(event?.axesInfo?.[0]?.value);
+      if (!Number.isFinite(ts) || isSyncingPointer) {
+        return;
+      }
+      isSyncingPointer = true;
+      updateAxisPointer(heatmapChart, ts);
+      const heatIdx = syncState.heatmapIndexMap.get(ts);
+      if (Number.isInteger(heatIdx)) {
+        heatmapChart.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: heatIdx });
+      }
+      const idx = findNearestIndex(syncState.cvdSeriesAll, ts);
+      if (idx !== -1) {
+        cvdChart.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: idx });
+      }
+      isSyncingPointer = false;
+    });
+
+    tooltipSyncBound = true;
   }
 
   function buildHeatmapOption(heatmap, lineData, priceBounds) {
@@ -224,15 +323,23 @@
 
     const centers = (heatmap.priceBins && heatmap.priceBins.centers) || [];
     const heatmapData = [];
+    const timestampIndexMap = new Map();
+    const logBase = Number(heatmap.meta?.scale?.logBase) || 10;
+    const clipThreshold = Number(heatmap.meta?.scale?.clip) || 0;
 
     heatmap.matrix.forEach((row, rowIndex) => {
       const ts = heatmap.timestamps[rowIndex];
       if (!Number.isFinite(ts) || !Array.isArray(row)) return;
+      const baseIndex = heatmapData.length;
       row.forEach((value, colIndex) => {
         const price = centers[colIndex];
         if (!Number.isFinite(price) || !Number.isFinite(value)) return;
         heatmapData.push([ts, price, Number(value)]);
       });
+      if (!timestampIndexMap.has(ts)) {
+        const centerIdx = Math.max(0, Math.min(row.length - 1, Math.floor(row.length / 2)));
+        timestampIndexMap.set(ts, baseIndex + centerIdx);
+      }
     });
 
     const rangeStart = heatmap.timestamps[0];
@@ -250,7 +357,7 @@
     const minPrice = Number.isFinite(priceBounds?.min) ? priceBounds.min : null;
     const maxPrice = Number.isFinite(priceBounds?.max) ? priceBounds.max : null;
 
-    return {
+    const option = {
       backgroundColor: 'transparent',
       grid: { left: 70, right: 60, top: 80, bottom: 60 },
       tooltip: {
@@ -261,10 +368,15 @@
         formatter(params) {
           if (!params || !params.value) return '';
           const [ts, price, value] = params.value;
+          const liquidity = formatLiquidity(value, logBase);
+          const clipped = clipThreshold > 0 && fromLogValue(value, logBase) >= clipThreshold;
+          const badge = clipped
+            ? '<span style="margin-left:8px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.12);color:#fbbf24;font-size:11px;letter-spacing:0.05em;">CLIPPED</span>'
+            : '';
           return [
             `<div class="tooltip-title">${formatTimestampLong(ts)}</div>`,
             `<div>Price&nbsp;<strong>${formatCurrency(price)}</strong></div>`,
-            `<div>Liquidity&nbsp;<strong>${formatNumber(value)} USDT</strong></div>`,
+            `<div>Liquidity&nbsp;<strong>${liquidity}</strong>${badge}</div>`,
           ].join('');
         },
       },
@@ -285,6 +397,7 @@
         inRange: {
           color: ['#140020', '#31004c', '#5a007a', '#9c0060', '#ff3d00', '#ffe45c'],
         },
+        formatter: (value) => formatLiquidity(value, logBase),
       },
       xAxis: {
         type: 'time',
@@ -362,10 +475,12 @@
         fontFamily: 'Rajdhani, sans-serif',
       },
     };
+
+    return { option, timestampIndexMap };
   }
 
   function buildCvdOption(cvd, priceLookup) {
-    if (!cvd || !Array.isArray(cvd.points) || !Array.isArray(cvd.buckets)) {
+    if (!cvd || !cvd.series || !Array.isArray(cvd.buckets)) {
       return null;
     }
 
@@ -376,9 +491,10 @@
       const key = bucket.key;
       const name = bucket.label || key;
       legendNames.push(name);
-      const data = cvd.points
-        .filter((point) => point && Number.isFinite(point.timestamp))
-        .map((point) => [point.timestamp, point.values ? Number(point.values[key]) : 0]);
+      const rawSeries = Array.isArray(cvd.series?.[key]) ? cvd.series[key] : [];
+      const data = rawSeries
+        .map(([ts, val]) => [Number(ts), Number(val)])
+        .filter(([ts, val]) => Number.isFinite(ts) && Number.isFinite(val));
       series.push({
         name,
         type: 'line',
@@ -443,6 +559,7 @@
       },
       yAxis: {
         type: 'value',
+        position: 'right',
         axisLabel: {
           color: '#c7d2fe',
           formatter: (value) => `${formatNumber(value)} USDT`,
@@ -541,36 +658,44 @@
 
       const prices = Array.isArray(price?.prices) ? price.prices : [];
       const lineData = prices
-        .map((entry) => [Number(entry.t), Number(entry.close)])
+        .map(([ts, close]) => [Number(ts), Number(close)])
         .filter(([ts, val]) => Number.isFinite(ts) && Number.isFinite(val))
         .sort((a, b) => a[0] - b[0]);
       const priceBounds = computePriceBounds(lineData);
-      const heatmapOption = buildHeatmapOption(heatmap, lineData, priceBounds);
-      const priceLookup = buildPriceLookup(lineData, cvd?.points);
+      const heatmapOptionData = buildHeatmapOption(heatmap, lineData, priceBounds);
+      const cvdPriceSeries = Array.isArray(cvd?.price) ? cvd.price : [];
+      const priceLookup = buildPriceLookup(lineData, cvdPriceSeries);
       const cvdOption = buildCvdOption(cvd, priceLookup);
 
-      if (heatmapOption) {
-        heatmapChart.setOption(heatmapOption, true);
+      if (heatmapOptionData && heatmapOptionData.option) {
+        heatmapChart.setOption(heatmapOptionData.option, true);
         chartState.heatmapHasData = true;
         setEmptyVisible(heatmapEmpty, false);
+        syncState.heatmapIndexMap = heatmapOptionData.timestampIndexMap || new Map();
+        syncState.heatmapTimestamps = Array.isArray(heatmap?.timestamps) ? heatmap.timestamps : [];
       } else {
         heatmapChart.clear();
         chartState.heatmapHasData = false;
         setEmptyVisible(heatmapEmpty, true);
+        syncState.heatmapIndexMap = new Map();
+        syncState.heatmapTimestamps = [];
       }
 
       if (cvdOption) {
         cvdChart.setOption(cvdOption, true);
         chartState.cvdHasData = true;
         setEmptyVisible(cvdEmpty, false);
+        syncState.cvdSeriesAll = Array.isArray(cvd?.series?.all) ? cvd.series.all : [];
       } else {
         cvdChart.clear();
         chartState.cvdHasData = false;
         setEmptyVisible(cvdEmpty, true);
+        syncState.cvdSeriesAll = [];
       }
 
       updateMetadata({ cvd, heatmap, price, lineData });
       setStatus('online', 'Online');
+      ensureTooltipSync();
     } catch (error) {
       if (token !== requestToken) {
         return;
