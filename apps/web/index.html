@@ -934,6 +934,74 @@
       #seed-container{transform:scale(.8);}
       .seed-tooltip{font-size:9px;}
     }
+
+    /* ========== Core Architecture Section ========== */
+    #two4-core-architecture{
+      position:relative;
+      z-index:2;
+      margin:120px auto 80px;
+      width: min(1100px, 92vw);
+    }
+
+    #two4-core-architecture .core-architecture-frame{
+      position:relative;
+      width:100%;
+      aspect-ratio: 16 / 9;
+      border-radius:32px;
+      border:1px solid rgba(148,163,184,.25);
+      background:linear-gradient(160deg, rgba(15,23,42,.92), rgba(8,11,21,.92));
+      overflow:hidden;
+      box-shadow:0 30px 60px rgba(15,23,42,.55);
+    }
+
+    #two4-core-architecture canvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    #two4-core-architecture .core-architecture-status{
+      position:absolute;
+      top:32px;
+      right:32px;
+      font:500 11px 'Rajdhani', 'Inter', sans-serif;
+      letter-spacing:2px;
+      color:#9ca3af;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      z-index:3;
+    }
+
+    #two4-core-architecture .core-architecture-dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:#4ade80;
+      box-shadow:0 0 12px rgba(74,222,128,.75);
+      animation:core-architecture-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes core-architecture-pulse{
+      0%,100%{opacity:1;}
+      50%{opacity:.3;}
+    }
+
+    @media (max-width:768px){
+      #two4-core-architecture{
+        margin:100px auto 60px;
+        width: min(100%, 94vw);
+      }
+
+      #two4-core-architecture .core-architecture-status{
+        top:20px;
+        right:20px;
+        font-size:10px;
+        letter-spacing:1.6px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1106,9 +1174,19 @@
     <canvas id="planet-canvas"></canvas>
     <div class="seed-tooltip">C.518D - Seed Ai</div>
   </div>
-    
+
+  <section id="two4-core-architecture">
+    <div class="core-architecture-frame">
+      <canvas id="core-architecture-canvas" aria-hidden="true"></canvas>
+      <div class="core-architecture-status">
+        <span class="core-architecture-dot" aria-hidden="true"></span>
+        SYSTEM OPERATIONAL
+      </div>
+    </div>
+  </section>
+
   </div>
-  
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="seed-weather.js" defer></script>
   <script>
@@ -1914,6 +1992,352 @@
         e.target.value='multi'
       }
     });
+
+    // Core architecture canvas animation
+    (function initCoreArchitecture(){
+      const section = document.getElementById('two4-core-architecture');
+      const canvas = document.getElementById('core-architecture-canvas');
+      if (!section || !canvas) return;
+
+      const frame = section.querySelector('.core-architecture-frame');
+      if (!frame) return;
+
+      const ctx = canvas.getContext('2d');
+      const nodes = {
+        question: { x: 0.50, y: 0.10, label: '?', sublabel: 'Start', color: '#a855f7', shape: 'circle', tier: 'start' },
+        ingress: { x: 0.15, y: 0.20, label: 'INGRESS', sublabel: 'Exchanges/AIs', color: '#ec4899', shape: 'triangle', tier: 'edge' },
+        etl: { x: 0.15, y: 0.35, label: 'ETL', sublabel: 'Pipeline', color: '#ec4899', shape: 'triangle', tier: 'edge' },
+        dataLake: { x: 0.32, y: 0.25, label: 'DATA LAKE', sublabel: 'Storage', color: '#3b82f6', shape: 'circle', tier: 'storage' },
+        storage: { x: 0.15, y: 0.53, label: 'STORAGE', sublabel: 'Persistent', color: '#3b82f6', shape: 'circle', tier: 'storage' },
+        gpuCluster1: { x: 0.15, y: 0.70, label: 'GPU', sublabel: 'Cluster A', color: '#3b82f6', shape: 'triangle', tier: 'compute' },
+        cpuWorkers1: { x: 0.30, y: 0.70, label: 'CPU', sublabel: 'Workers A', color: '#ec4899', shape: 'triangle', tier: 'compute' },
+        gpuCluster2: { x: 0.40, y: 0.82, label: 'GPU', sublabel: 'Cluster B', color: '#ec4899', shape: 'triangle', tier: 'compute' },
+        cpuWorkers2: { x: 0.54, y: 0.82, label: 'CPU', sublabel: 'Workers B', color: '#9333ea', shape: 'triangle', tier: 'compute' },
+        cache: { x: 0.68, y: 0.82, label: 'CACHE', sublabel: 'Memory', color: '#9333ea', shape: 'square', tier: 'compute' },
+        queue1: { x: 0.15, y: 0.88, label: 'QUEUE', sublabel: 'Buffer A', color: '#3b82f6', shape: 'circle', tier: 'queue' },
+        aiOrch1: { x: 0.58, y: 0.30, label: 'AI ORCHESTRATION', sublabel: 'Controller', color: '#14b8a6', shape: 'circle', tier: 'orchestration' },
+        core: { x: 0.50, y: 0.50, label: 'TWO.4 CORE', sublabel: 'Central Hub', color: '#fb923c', shape: 'circle', tier: 'core' },
+        aiOrch2: { x: 0.82, y: 0.20, label: 'AI ORCHESTRATION', sublabel: 'Manager', color: '#14b8a6', shape: 'square', tier: 'orchestration' },
+        modelServing: { x: 0.82, y: 0.35, label: 'MODEL SERVING', sublabel: 'Inference', color: '#9333ea', shape: 'triangle', tier: 'ai' },
+        strategyEngine: { x: 0.82, y: 0.50, label: 'STRATEGY', sublabel: 'Engine', color: '#9333ea', shape: 'triangle', tier: 'ai' },
+        executionRouter: { x: 0.82, y: 0.65, label: 'EXECUTION', sublabel: 'Router', color: '#9333ea', shape: 'triangle', tier: 'execution' },
+        queue2: { x: 0.74, y: 0.88, label: 'QUEUE', sublabel: 'Buffer B', color: '#9333ea', shape: 'circle', tier: 'queue' },
+        notifications: { x: 0.88, y: 0.88, label: 'NOTIFY', sublabel: 'System', color: '#ec4899', shape: 'circle', tier: 'edge' }
+      };
+
+      const connections = [
+        { from: 'question', to: 'core' },
+        { from: 'ingress', to: 'dataLake' },
+        { from: 'ingress', to: 'etl' },
+        { from: 'etl', to: 'storage' },
+        { from: 'dataLake', to: 'aiOrch1' },
+        { from: 'dataLake', to: 'core' },
+        { from: 'dataLake', to: 'storage' },
+        { from: 'storage', to: 'core' },
+        { from: 'storage', to: 'cpuWorkers1' },
+        { from: 'gpuCluster1', to: 'queue1' },
+        { from: 'cpuWorkers1', to: 'gpuCluster2' },
+        { from: 'cpuWorkers1', to: 'core' },
+        { from: 'gpuCluster2', to: 'core' },
+        { from: 'cpuWorkers2', to: 'core' },
+        { from: 'cache', to: 'core' },
+        { from: 'aiOrch1', to: 'core' },
+        { from: 'aiOrch1', to: 'modelServing' },
+        { from: 'aiOrch2', to: 'modelServing' },
+        { from: 'modelServing', to: 'strategyEngine' },
+        { from: 'core', to: 'strategyEngine' },
+        { from: 'strategyEngine', to: 'executionRouter' },
+        { from: 'executionRouter', to: 'queue2' },
+        { from: 'executionRouter', to: 'notifications' },
+        { from: 'queue2', to: 'cache' }
+      ];
+
+      const activeConnections = new Set();
+      const visibleConnections = new Set();
+      let connectionIndex = 0;
+      let width = 0;
+      let height = 0;
+      let dpr = window.devicePixelRatio || 1;
+      let mouseX = 0;
+      let mouseY = 0;
+      let time = 0;
+
+      function resize(){
+        const rect = frame.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.scale(dpr, dpr);
+        mouseX = width / 2;
+        mouseY = height / 2;
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+
+      function showNextConnection(){
+        if (connectionIndex < connections.length){
+          const conn = connections[connectionIndex];
+          visibleConnections.add(`${conn.from}-${conn.to}`);
+          connectionIndex += 1;
+        }
+      }
+
+      showNextConnection();
+      setInterval(showNextConnection, 2000);
+
+      function activateRandomConnection(){
+        const conn = connections[Math.floor(Math.random() * connections.length)];
+        const key = `${conn.from}-${conn.to}`;
+        activeConnections.add(key);
+        setTimeout(() => activeConnections.delete(key), 800);
+      }
+
+      setInterval(activateRandomConnection, 150);
+
+      frame.addEventListener('mousemove', (event) => {
+        const rect = frame.getBoundingClientRect();
+        mouseX = event.clientX - rect.left;
+        mouseY = event.clientY - rect.top;
+      });
+
+      frame.addEventListener('mouseleave', () => {
+        mouseX = width / 2;
+        mouseY = height / 2;
+      });
+
+      function drawTriangle(x, y, size){
+        ctx.beginPath();
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x - size * 0.866, y + size * 0.5);
+        ctx.lineTo(x + size * 0.866, y + size * 0.5);
+        ctx.closePath();
+      }
+
+      function drawSquare(x, y, size){
+        ctx.beginPath();
+        ctx.rect(x - size, y - size, size * 2, size * 2);
+        ctx.closePath();
+      }
+
+      function animate(){
+        time += 0.003;
+        ctx.fillStyle = '#0a0a0f';
+        ctx.fillRect(0, 0, width, height);
+
+        connections.forEach(conn => {
+          const from = nodes[conn.from];
+          const to = nodes[conn.to];
+          const key = `${conn.from}-${conn.to}`;
+          if (!visibleConnections.has(key)) return;
+
+          const isActive = activeConnections.has(key);
+          const fromX = from.x * width;
+          const fromY = from.y * height;
+          const toX = to.x * width;
+          const toY = to.y * height;
+          const fromSize = from.tier === 'core' ? 34 : from.tier === 'start' ? 18 : 24;
+          const toSize = to.tier === 'core' ? 34 : to.tier === 'start' ? 18 : 24;
+          const angle = Math.atan2(toY - fromY, toX - fromX);
+          const margin = 8;
+          const startX = fromX + Math.cos(angle) * (fromSize + margin);
+          const startY = fromY + Math.sin(angle) * (fromSize + margin);
+          const endX = toX - Math.cos(angle) * (toSize + margin);
+          const endY = toY - Math.sin(angle) * (toSize + margin);
+          const dx = Math.abs(endX - startX);
+          const dy = Math.abs(endY - startY);
+
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          if (dx > dy){
+            const midX = startX + (endX - startX) * 0.5;
+            ctx.lineTo(midX, startY);
+            ctx.lineTo(midX, endY);
+            ctx.lineTo(endX, endY);
+          } else {
+            const midY = startY + (endY - startY) * 0.5;
+            ctx.lineTo(startX, midY);
+            ctx.lineTo(endX, midY);
+            ctx.lineTo(endX, endY);
+          }
+
+          if (isActive){
+            ctx.strokeStyle = from.color;
+            ctx.lineWidth = 0.6;
+            ctx.shadowColor = from.color;
+            ctx.shadowBlur = 14;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+          } else {
+            ctx.strokeStyle = `${from.color}40`;
+            ctx.lineWidth = 0.5;
+            ctx.shadowColor = from.color;
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+          }
+        });
+
+        Object.entries(nodes).forEach(([key, node]) => {
+          const x = node.x * width;
+          const y = node.y * height;
+          const dx = mouseX - x;
+          const dy = mouseY - y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const isNear = distance < 130;
+          const nodeSize = node.tier === 'core' ? 34 : node.tier === 'start' ? 18 : 24;
+
+          if (node.tier === 'core'){
+            const bgGradient = ctx.createRadialGradient(x, y, 0, x, y, nodeSize * 3);
+            bgGradient.addColorStop(0, 'rgba(251, 146, 60, 0.18)');
+            bgGradient.addColorStop(0.5, 'rgba(251, 146, 60, 0.08)');
+            bgGradient.addColorStop(1, 'rgba(251, 146, 60, 0)');
+            ctx.fillStyle = bgGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, nodeSize * 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let i = 0; i < 3; i += 1){
+              const pulseRadius = 42 + i * 14 + Math.sin(time * 2 + i * 0.5) * 4;
+              ctx.beginPath();
+              ctx.arc(x, y, pulseRadius, 0, Math.PI * 2);
+              ctx.strokeStyle = `${node.color}${(40 - i * 8).toString(16).padStart(2, '0')}`;
+              ctx.lineWidth = 1.3;
+              ctx.shadowColor = node.color;
+              ctx.shadowBlur = 8;
+              ctx.stroke();
+              ctx.shadowBlur = 0;
+            }
+
+            const rotationSpeed = time * 0.5;
+            for (let i = 0; i < 6; i += 1){
+              const angle = (Math.PI * 2 / 6) * i + rotationSpeed;
+              const innerR = 46;
+              const outerR = 52;
+              ctx.beginPath();
+              ctx.moveTo(x + Math.cos(angle) * innerR, y + Math.sin(angle) * innerR);
+              ctx.lineTo(x + Math.cos(angle) * outerR, y + Math.sin(angle) * outerR);
+              ctx.strokeStyle = `${node.color}60`;
+              ctx.lineWidth = 1.8;
+              ctx.shadowColor = node.color;
+              ctx.shadowBlur = 6;
+              ctx.stroke();
+              ctx.shadowBlur = 0;
+            }
+          }
+
+          if (node.shape === 'circle'){
+            ctx.beginPath();
+            ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
+            if (node.tier === 'core'){
+              const innerGradient = ctx.createRadialGradient(x, y, 0, x, y, nodeSize);
+              innerGradient.addColorStop(0, 'rgba(251, 191, 36, 0.32)');
+              innerGradient.addColorStop(0.5, 'rgba(251, 146, 60, 0.18)');
+              innerGradient.addColorStop(1, 'rgba(10, 10, 15, 0.9)');
+              ctx.fillStyle = innerGradient;
+              ctx.fill();
+              ctx.strokeStyle = node.color;
+              ctx.lineWidth = 2.2;
+              ctx.shadowColor = node.color;
+              ctx.shadowBlur = 16;
+              ctx.stroke();
+              ctx.shadowBlur = 0;
+            } else if (node.tier === 'start'){
+              const questionGradient = ctx.createRadialGradient(x, y, 0, x, y, nodeSize);
+              questionGradient.addColorStop(0, 'rgba(168, 85, 247, 0.28)');
+              questionGradient.addColorStop(0.5, 'rgba(168, 85, 247, 0.12)');
+              questionGradient.addColorStop(1, 'rgba(10, 10, 15, 0.92)');
+              ctx.fillStyle = questionGradient;
+              ctx.fill();
+              ctx.strokeStyle = node.color;
+              ctx.lineWidth = 1.8;
+              ctx.shadowColor = node.color;
+              ctx.shadowBlur = 12;
+              ctx.stroke();
+              ctx.shadowBlur = 0;
+            } else {
+              ctx.strokeStyle = node.color;
+              ctx.lineWidth = isNear ? 1.8 : 1;
+              ctx.stroke();
+              ctx.fillStyle = '#0a0a0f';
+              ctx.fill();
+            }
+          } else if (node.shape === 'triangle'){
+            drawTriangle(x, y, nodeSize);
+            ctx.strokeStyle = node.color;
+            ctx.lineWidth = isNear ? 1.8 : 1;
+            ctx.stroke();
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fill();
+          } else if (node.shape === 'square'){
+            drawSquare(x, y, nodeSize);
+            ctx.strokeStyle = node.color;
+            ctx.lineWidth = isNear ? 1.8 : 1;
+            ctx.stroke();
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fill();
+          }
+
+          if (node.tier !== 'start' && node.tier !== 'core'){
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = node.color;
+            ctx.shadowColor = node.color;
+            ctx.shadowBlur = isNear ? 10 : 5;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+
+          if (isNear || node.tier === 'core' || node.tier === 'start'){
+            if (node.tier === 'start'){
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 26px Rajdhani, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(node.label, x, y);
+            } else if (node.tier === 'core'){
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.font = 'bold 18px Rajdhani, sans-serif';
+              const gradient1 = ctx.createLinearGradient(x - 30, y - 10, x + 30, y - 10);
+              gradient1.addColorStop(0, '#fbbf24');
+              gradient1.addColorStop(1, '#fb923c');
+              ctx.fillStyle = gradient1;
+              ctx.shadowColor = '#fb923c';
+              ctx.shadowBlur = 12;
+              ctx.fillText('TWO.4', x, y - 8);
+              ctx.shadowBlur = 0;
+              ctx.font = 'bold 15px Rajdhani, sans-serif';
+              const gradient2 = ctx.createLinearGradient(x - 25, y + 8, x + 25, y + 8);
+              gradient2.addColorStop(0, '#fb923c');
+              gradient2.addColorStop(1, '#f97316');
+              ctx.fillStyle = gradient2;
+              ctx.shadowColor = '#fb923c';
+              ctx.shadowBlur = 12;
+              ctx.fillText('CORE', x, y + 8);
+              ctx.shadowBlur = 0;
+            } else {
+              ctx.fillStyle = '#e0e0e0';
+              ctx.font = '600 11px Rajdhani, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText(node.label, x, y - nodeSize - 12);
+              ctx.fillStyle = '#666666';
+              ctx.font = '400 9px Rajdhani, sans-serif';
+              ctx.fillText(node.sublabel, x, y - nodeSize - 2);
+            }
+          }
+        });
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    })();
 
     // Seed AI click event
     document.addEventListener('DOMContentLoaded', function() {
