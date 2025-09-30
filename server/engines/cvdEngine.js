@@ -28,10 +28,13 @@ class CVDEngine extends EventEmitter {
     this.lastPrice = null;
     this.lastTimestamp = null;
     this.heartbeatInterval = null;
+    this.retryAttempt = 0;
+    this.backfillTimer = null;
 
     this.initTables();
     this.loadState();
     this.backfillSeries();
+    this.scheduleBackfill();
   }
 
   initTables() {
@@ -142,6 +145,7 @@ class CVDEngine extends EventEmitter {
 
     this.ws.on('open', () => {
       this.connected = true;
+      this.retryAttempt = 0;
       console.log(`[CVD] Connected trade stream for ${this.symbol}`);
     });
 
@@ -160,8 +164,11 @@ class CVDEngine extends EventEmitter {
     this.ws.on('close', () => {
       this.connected = false;
       this.ws = null;
-      console.warn(`[CVD] Trade stream closed for ${this.symbol}, retrying in 5s`);
-      setTimeout(() => this.connect(), 5000);
+      const delay = Math.min(60_000, 5_000 * 2 ** Math.min(this.retryAttempt, 5));
+      this.retryAttempt += 1;
+      console.warn(`[CVD] Trade stream closed for ${this.symbol}, retrying in ${Math.round(delay / 1000)}s`);
+      const timer = setTimeout(() => this.connect(), delay);
+      timer.unref?.();
     });
 
     this.ws.on('error', (error) => {
@@ -179,6 +186,10 @@ class CVDEngine extends EventEmitter {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
+    }
+    if (this.backfillTimer) {
+      clearInterval(this.backfillTimer);
+      this.backfillTimer = null;
     }
   }
 
@@ -341,6 +352,37 @@ class CVDEngine extends EventEmitter {
         }
       );
     });
+  }
+
+  scheduleBackfill() {
+    const run = () => {
+      const cutoff = Date.now() - 72 * 60 * 60 * 1000;
+      this.db.all(
+        `SELECT minute, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
+         FROM cvd_points
+         WHERE symbol = ? AND minute >= ?
+         ORDER BY minute ASC`,
+        [this.symbol, cutoff],
+        (err, rows) => {
+          if (err) {
+            console.error('[CVD] Backfill window failed:', err.message);
+            return;
+          }
+          rows.forEach((row) => {
+            this.persistAggregates({
+              minute: row.minute,
+              total: row.total,
+              buckets: [row.bucket0, row.bucket1, row.bucket2, row.bucket3, row.bucket4],
+              price: row.price,
+            });
+          });
+        }
+      );
+    };
+
+    run();
+    this.backfillTimer = setInterval(run, 30 * 60 * 1000);
+    this.backfillTimer.unref?.();
   }
 
   getHistory({ limit = 1440, timeframe = '1m' } = {}) {
