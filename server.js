@@ -9,8 +9,10 @@ const createNewsKoRouter = require('./routes/news-ko');
 const { getDatabase } = require('./server/database');
 const { CVDEngine } = require('./server/engines/cvdEngine');
 const { HeatmapEngine } = require('./server/engines/heatmapEngine');
+const { LiquidationHeatmapEngine } = require('./server/engines/liquidationHeatmapEngine');
 const createCvdRouter = require('./server/api/cvd');
 const createHeatmapRouter = require('./server/api/heatmap');
+const createLiquidationHeatmapRouter = require('./server/api/liquidation-heatmap');
 const createPriceRouter = require('./server/api/price');
 const createSeedWeatherRouter = require('./server/api/seed-weather');
 
@@ -20,12 +22,15 @@ const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 const marketDb = getDatabase();
 const cvdEngine = new CVDEngine({ db: marketDb, symbol: 'BTCUSDT' });
 const heatmapEngine = new HeatmapEngine({ db: marketDb, symbol: 'BTCUSDT' });
+const liquidationEngine = new LiquidationHeatmapEngine({ db: marketDb });
 
 cvdEngine.start();
 heatmapEngine.start();
+liquidationEngine.start();
 
 const cvdRouter = createCvdRouter({ cvdEngine });
 const heatmapRouter = createHeatmapRouter({ heatmapEngine });
+const liquidationRouter = createLiquidationHeatmapRouter({ liquidationEngine });
 const priceRouter = createPriceRouter({ cvdEngine });
 const seedWeatherRouter = createSeedWeatherRouter();
 
@@ -334,6 +339,7 @@ orbitsRouter.delete('/posts/:id', (req, res) => {
 
 app.use('/api/cvd', cvdRouter);
 app.use('/api/heatmap', heatmapRouter);
+app.use('/api/liquidations', liquidationRouter);
 app.use('/api/price', priceRouter);
 app.use('/api/seed-weather', seedWeatherRouter);
 app.use('/api/orbits', orbitsRouter);
@@ -1426,6 +1432,7 @@ function gracefulShutdown(signal) {
   try {
     cvdEngine.stop();
     heatmapEngine.stop();
+    liquidationEngine.stop();
   } catch (error) {
     console.error('Failed to stop market engines:', error.message);
   }
