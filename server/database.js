@@ -1,31 +1,35 @@
-const path = require('path');
-const fs = require('fs');
-const sqlite3 = require('sqlite3').verbose();
+const mongoose = require('mongoose');
 
-let dbInstance = null;
+let connectionPromise = null;
 
-function ensureDataDir() {
-  const dataDir = path.join(__dirname, '..', 'data');
-  fs.mkdirSync(dataDir, { recursive: true });
-  return dataDir;
-}
-
-function getDatabase() {
-  if (dbInstance) {
-    return dbInstance;
+async function connectDatabase() {
+  if (connectionPromise) {
+    return connectionPromise;
   }
 
-  const dataDir = ensureDataDir();
-  const dbPath = path.join(dataDir, 'markets.sqlite');
-  dbInstance = new sqlite3.Database(dbPath);
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error('MONGODB_URI environment variable is not defined.');
+  }
 
-  dbInstance.serialize(() => {
-    dbInstance.run('PRAGMA journal_mode = WAL');
-  });
+  mongoose.set('strictQuery', true);
 
-  return dbInstance;
+  connectionPromise = mongoose
+    .connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+    })
+    .then((connection) => {
+      console.log('MongoDB Connected');
+      return connection;
+    })
+    .catch((error) => {
+      connectionPromise = null;
+      throw error;
+    });
+
+  return connectionPromise;
 }
 
 module.exports = {
-  getDatabase,
+  connectDatabase,
 };

@@ -95,7 +95,7 @@ function performIntegrityChecks(series, priceSeries) {
   return { warnings };
 }
 
-module.exports = function createCvdRouter({ cvdEngine }) {
+module.exports = function createCvdRouter({ cvdEngine, cvdModel, priceModel }) {
   const router = express.Router();
 
   cvdEngine.on('minute', () => {
@@ -115,14 +115,48 @@ module.exports = function createCvdRouter({ cvdEngine }) {
 
     try {
       const payload = await RESPONSE_CACHE.wrap(cacheKey, async () => {
-        const rows = await cvdEngine.getHistory({ limit, timeframe });
+        let docs = [];
+        if (cvdModel) {
+          docs = await cvdModel
+            .find({ symbol, tf: timeframe })
+            .sort({ t: -1 })
+            .limit(limit)
+            .lean();
+        }
+
+        const rows = (docs || [])
+          .slice()
+          .reverse()
+          .map((doc) => ({
+            timestamp: doc.t,
+            total: doc.all,
+            bucket0: doc.g0,
+            bucket1: doc.g1,
+            bucket2: doc.g2,
+            bucket3: doc.g3,
+            bucket4: doc.g4,
+            price: doc.price ?? null,
+          }));
         const buckets = formatBuckets();
         const { series, deltas } = buildSeries(rows, buckets);
-        const price = rows
+        let priceRows = [];
+        if (priceModel) {
+          priceRows = await priceModel
+            .find({ symbol, tf: timeframe, close: { $ne: null } })
+            .sort({ t: -1 })
+            .limit(limit)
+            .lean();
+        }
+
+        const priceSource = priceRows.length ? priceRows : docs;
+        const price = priceSource
+          .slice()
+          .reverse()
           .map((row) => {
-            const ts = Number(row.timestamp);
-            const priceValue = row.price == null ? null : Number(row.price);
-            return [ts, priceValue];
+            const ts = Number(row.t ?? row.timestamp);
+            const priceValue = row.close ?? row.price;
+            const numericPrice = priceValue == null ? null : Number(priceValue);
+            return [ts, numericPrice];
           })
           .filter(([ts, val]) => Number.isFinite(ts) && Number.isFinite(val));
         const integrity = performIntegrityChecks(series, price);

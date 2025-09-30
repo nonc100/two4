@@ -12,9 +12,10 @@ const BUCKETS = [
 ];
 
 class CVDEngine extends EventEmitter {
-  constructor({ db, symbol }) {
+  constructor({ cvdModel, priceModel, symbol }) {
     super();
-    this.db = db;
+    this.cvdModel = cvdModel;
+    this.priceModel = priceModel;
     this.symbol = symbol.toUpperCase();
     this.symbolLower = this.symbol.toLowerCase();
     this.ws = null;
@@ -29,97 +30,30 @@ class CVDEngine extends EventEmitter {
     this.lastTimestamp = null;
     this.heartbeatInterval = null;
     this.retryAttempt = 0;
-    this.backfillTimer = null;
-
-    this.initTables();
-    this.loadState();
-    this.backfillSeries();
-    this.scheduleBackfill();
+    this.restoreState();
   }
 
-  initTables() {
-    this.db.serialize(() => {
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS cvd_points (
-          symbol TEXT NOT NULL,
-          minute INTEGER NOT NULL,
-          total REAL NOT NULL,
-          bucket0 REAL NOT NULL,
-          bucket1 REAL NOT NULL,
-          bucket2 REAL NOT NULL,
-          bucket3 REAL NOT NULL,
-          bucket4 REAL NOT NULL,
-          price REAL,
-          created_at INTEGER DEFAULT (strftime('%s','now') * 1000),
-          PRIMARY KEY (symbol, minute)
-        )
-      `);
-      this.db.run('CREATE INDEX IF NOT EXISTS idx_cvd_symbol_minute ON cvd_points(symbol, minute DESC)');
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS cvd_series (
-          symbol TEXT NOT NULL,
-          timeframe TEXT NOT NULL,
-          timestamp INTEGER NOT NULL,
-          total REAL NOT NULL,
-          bucket0 REAL NOT NULL,
-          bucket1 REAL NOT NULL,
-          bucket2 REAL NOT NULL,
-          bucket3 REAL NOT NULL,
-          bucket4 REAL NOT NULL,
-          price REAL,
-          PRIMARY KEY (symbol, timeframe, timestamp)
-        )
-      `);
-      this.db.run('CREATE INDEX IF NOT EXISTS idx_cvd_series_symbol_tf_time ON cvd_series(symbol, timeframe, timestamp DESC)');
-    });
-  }
+  restoreState() {
+    if (!this.cvdModel) {
+      return;
+    }
 
-  backfillSeries(limit = 5000) {
-    this.db.all(
-      `SELECT minute, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
-         FROM cvd_points
-         WHERE symbol = ?
-         ORDER BY minute ASC
-         LIMIT ?`,
-      [this.symbol, limit],
-      (err, rows) => {
-        if (err) {
-          console.error('[CVD] Failed to backfill series:', err.message);
+    this.cvdModel
+      .findOne({ symbol: this.symbol, tf: '1m' })
+      .sort({ t: -1 })
+      .lean()
+      .then((doc) => {
+        if (!doc) {
           return;
         }
-        if (!Array.isArray(rows) || !rows.length) {
-          return;
-        }
-        rows.forEach((row) => {
-          const payload = {
-            minute: row.minute,
-            total: row.total,
-            buckets: [row.bucket0, row.bucket1, row.bucket2, row.bucket3, row.bucket4],
-            price: row.price,
-          };
-          this.persistAggregates(payload);
-        });
-      }
-    );
-  }
-
-  loadState() {
-    this.db.get(
-      'SELECT * FROM cvd_points WHERE symbol = ? ORDER BY minute DESC LIMIT 1',
-      [this.symbol],
-      (err, row) => {
-        if (err) {
-          console.error('[CVD] Failed to load state:', err.message);
-          return;
-        }
-        if (row) {
-          this.cumulative = [row.bucket0, row.bucket1, row.bucket2, row.bucket3, row.bucket4];
-          this.cumulativeTotal = row.total;
-          this.currentMinute = row.minute;
-          this.lastPrice = row.price;
-        }
-      }
-    );
+        this.cumulative = [doc.g0, doc.g1, doc.g2, doc.g3, doc.g4];
+        this.cumulativeTotal = doc.all;
+        this.currentMinute = doc.t;
+        this.lastPrice = doc.price ?? null;
+      })
+      .catch((error) => {
+        console.error('[CVD] Failed to restore state:', error.message);
+      });
   }
 
   createZeroBuckets() {
@@ -186,10 +120,6 @@ class CVDEngine extends EventEmitter {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
-    }
-    if (this.backfillTimer) {
-      clearInterval(this.backfillTimer);
-      this.backfillTimer = null;
     }
   }
 
@@ -293,28 +223,37 @@ class CVDEngine extends EventEmitter {
   }
 
   persistRow(row) {
-    this.db.run(
-      `INSERT OR REPLACE INTO cvd_points
-        (symbol, minute, total, bucket0, bucket1, bucket2, bucket3, bucket4, price)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ,
-      [
-        row.symbol,
-        row.minute,
-        row.total,
-        row.buckets[0],
-        row.buckets[1],
-        row.buckets[2],
-        row.buckets[3],
-        row.buckets[4],
-        row.price,
-      ],
-      (err) => {
-        if (err) {
-          console.error('[CVD] Failed to store minute snapshot:', err.message);
-        }
-      }
-    );
+    if (!this.cvdModel || !row || !Number.isFinite(row.minute)) {
+      return;
+    }
+
+    const buckets = Array.isArray(row.buckets) ? row.buckets : this.createZeroBuckets();
+    const minuteTimestamp = Number(row.minute);
+    const priceValue = Number.isFinite(row.price) ? row.price : null;
+
+    this.cvdModel
+      .findOneAndUpdate(
+        { symbol: this.symbol, tf: '1m', t: minuteTimestamp },
+        {
+          $set: {
+            symbol: this.symbol,
+            tf: '1m',
+            t: minuteTimestamp,
+            g0: buckets[0] ?? 0,
+            g1: buckets[1] ?? 0,
+            g2: buckets[2] ?? 0,
+            g3: buckets[3] ?? 0,
+            g4: buckets[4] ?? 0,
+            all: row.total ?? 0,
+            price: priceValue,
+          },
+        },
+        { upsert: true, setDefaultsOnInsert: true }
+      )
+      .catch((error) => {
+        console.error('[CVD] Failed to store minute snapshot:', error.message);
+      });
+
     this.persistAggregates(row);
   }
 
@@ -323,108 +262,129 @@ class CVDEngine extends EventEmitter {
       return;
     }
 
+    if (!this.cvdModel) {
+      return;
+    }
+
     const buckets = Array.isArray(row.buckets) ? row.buckets : this.createZeroBuckets();
+    const priceValue = Number.isFinite(row.price) ? row.price : null;
+    const operations = [];
+
     SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
       const bucketMs = timeframeToMs(timeframe);
       if (!bucketMs) return;
       const bucketTimestamp = Math.floor(row.minute / bucketMs) * bucketMs;
-      this.db.run(
-        `INSERT OR REPLACE INTO cvd_series
-           (symbol, timeframe, timestamp, total, bucket0, bucket1, bucket2, bucket3, bucket4, price)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ,
-        [
-          this.symbol,
-          timeframe,
-          bucketTimestamp,
-          row.total,
-          buckets[0],
-          buckets[1],
-          buckets[2],
-          buckets[3],
-          buckets[4],
-          Number.isFinite(row.price) ? row.price : null,
-        ],
-        (err) => {
-          if (err) {
-            console.error('[CVD] Failed to store series snapshot:', err.message);
-          }
-        }
+      const update = {
+        symbol: this.symbol,
+        tf: timeframe,
+        t: bucketTimestamp,
+        g0: buckets[0] ?? 0,
+        g1: buckets[1] ?? 0,
+        g2: buckets[2] ?? 0,
+        g3: buckets[3] ?? 0,
+        g4: buckets[4] ?? 0,
+        all: row.total ?? 0,
+        price: priceValue,
+      };
+
+      operations.push(
+        this.cvdModel
+          .findOneAndUpdate(
+            { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
+            { $set: update },
+            { upsert: true, setDefaultsOnInsert: true }
+          )
+          .catch((error) => {
+            console.error('[CVD] Failed to store series snapshot:', error.message);
+          })
       );
+
+      if (this.priceModel && priceValue != null) {
+        operations.push(
+          this.priceModel
+            .findOneAndUpdate(
+              { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
+              {
+                $set: {
+                  symbol: this.symbol,
+                  tf: timeframe,
+                  t: bucketTimestamp,
+                  close: priceValue,
+                },
+              },
+              { upsert: true, setDefaultsOnInsert: true }
+            )
+            .catch((error) => {
+              console.error('[CVD] Failed to store price snapshot:', error.message);
+            })
+        );
+      }
     });
+
+    if (operations.length) {
+      Promise.allSettled(operations);
+    }
   }
 
-  scheduleBackfill() {
-    const run = () => {
-      const cutoff = Date.now() - 72 * 60 * 60 * 1000;
-      this.db.all(
-        `SELECT minute, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
-         FROM cvd_points
-         WHERE symbol = ? AND minute >= ?
-         ORDER BY minute ASC`,
-        [this.symbol, cutoff],
-        (err, rows) => {
-          if (err) {
-            console.error('[CVD] Backfill window failed:', err.message);
-            return;
-          }
-          rows.forEach((row) => {
-            this.persistAggregates({
-              minute: row.minute,
-              total: row.total,
-              buckets: [row.bucket0, row.bucket1, row.bucket2, row.bucket3, row.bucket4],
-              price: row.price,
-            });
-          });
-        }
-      );
-    };
-
-    run();
-    this.backfillTimer = setInterval(run, 30 * 60 * 1000);
-    this.backfillTimer.unref?.();
-  }
-
-  getHistory({ limit = 1440, timeframe = '1m' } = {}) {
+  async getHistory({ limit = 1440, timeframe = '1m' } = {}) {
     const tf = normalizeTimeframe(timeframe);
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        `SELECT timestamp, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
-         FROM cvd_series
-         WHERE symbol = ? AND timeframe = ?
-         ORDER BY timestamp DESC
-         LIMIT ?`,
-        [this.symbol, tf, limit],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(rows.reverse());
-        }
-      );
-    });
+    if (!this.cvdModel) {
+      return [];
+    }
+
+    const docs = await this.cvdModel
+      .find({ symbol: this.symbol, tf })
+      .sort({ t: -1 })
+      .limit(limit)
+      .lean();
+
+    return docs
+      .slice()
+      .reverse()
+      .map((doc) => ({
+        timestamp: doc.t,
+        total: doc.all,
+        bucket0: doc.g0,
+        bucket1: doc.g1,
+        bucket2: doc.g2,
+        bucket3: doc.g3,
+        bucket4: doc.g4,
+        price: doc.price,
+      }));
   }
 
-  getPriceHistory({ limit = 1440, timeframe = '1m' } = {}) {
+  async getPriceHistory({ limit = 1440, timeframe = '1m' } = {}) {
     const tf = normalizeTimeframe(timeframe);
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        `SELECT timestamp, price
-         FROM cvd_series
-         WHERE symbol = ? AND timeframe = ? AND price IS NOT NULL
-         ORDER BY timestamp DESC
-         LIMIT ?`,
-        [this.symbol, tf, limit],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(rows.reverse());
-        }
-      );
-    });
+    if (!this.priceModel && !this.cvdModel) {
+      return [];
+    }
+
+    let docs;
+    if (this.priceModel) {
+      docs = await this.priceModel
+        .find({ symbol: this.symbol, tf, close: { $ne: null } })
+        .sort({ t: -1 })
+        .limit(limit)
+        .lean();
+    } else {
+      docs = await this.cvdModel
+        .find({ symbol: this.symbol, tf, price: { $ne: null } })
+        .sort({ t: -1 })
+        .limit(limit)
+        .lean();
+    }
+
+    if (!docs || !docs.length) {
+      return [];
+    }
+
+    return docs
+      .slice()
+      .reverse()
+      .map((doc) => ({
+        timestamp: doc.t,
+        price: doc.close ?? doc.price ?? null,
+      }));
   }
 }
 

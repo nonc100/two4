@@ -4,7 +4,7 @@ const { createMemoryCache } = require('../utils/cache');
 
 const RESPONSE_CACHE = createMemoryCache({ ttlMs: 2 * 60 * 60 * 1000, maxEntries: 128 });
 
-module.exports = function createPriceRouter({ cvdEngine }) {
+module.exports = function createPriceRouter({ cvdEngine, priceModel }) {
   const router = express.Router();
 
   cvdEngine.on('minute', () => {
@@ -24,7 +24,28 @@ module.exports = function createPriceRouter({ cvdEngine }) {
 
     try {
       const payload = await RESPONSE_CACHE.wrap(cacheKey, async () => {
-        const rows = await cvdEngine.getPriceHistory({ limit, timeframe });
+        let docs = [];
+        if (priceModel) {
+          docs = await priceModel
+            .find({ symbol, tf: timeframe, close: { $ne: null } })
+            .sort({ t: -1 })
+            .limit(limit)
+            .lean();
+        }
+
+        let rows = [];
+        if (docs.length) {
+          rows = docs
+            .slice()
+            .reverse()
+            .map((doc) => ({
+              timestamp: doc.t,
+              price: doc.close,
+            }));
+        } else {
+          rows = await cvdEngine.getPriceHistory({ limit, timeframe });
+        }
+
         const prices = rows
           .map((row) => {
             const ts = Number(row.timestamp);

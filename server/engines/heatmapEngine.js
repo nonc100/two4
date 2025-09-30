@@ -5,9 +5,9 @@ const fetch = require('node-fetch');
 const { SUPPORTED_TIMEFRAMES, timeframeToMs, normalizeTimeframe } = require('../utils/timeframes');
 
 class HeatmapEngine extends EventEmitter {
-  constructor({ db, symbol }) {
+  constructor({ heatmapModel, symbol }) {
     super();
-    this.db = db;
+    this.heatmapModel = heatmapModel;
     this.symbol = symbol.toUpperCase();
     this.symbolLower = this.symbol.toLowerCase();
 
@@ -23,64 +23,27 @@ class HeatmapEngine extends EventEmitter {
     this.retryAttempt = 0;
     this.snapshotIntervalMs = 30_000;
 
-    this.initTable();
-    this.backfillSnapshots();
+    this.restoreLastSnapshot();
   }
 
-  initTable() {
-    this.db.serialize(() => {
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS orderbook_snapshots (
-          symbol TEXT NOT NULL,
-          timestamp INTEGER NOT NULL,
-          bids TEXT NOT NULL,
-          asks TEXT NOT NULL,
-          last_price REAL,
-          PRIMARY KEY (symbol, timestamp)
-        )
-      `);
-      this.db.run('CREATE INDEX IF NOT EXISTS idx_snapshots_symbol_time ON orderbook_snapshots(symbol, timestamp DESC)');
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS orderbook_snapshots_tf (
-          symbol TEXT NOT NULL,
-          timeframe TEXT NOT NULL,
-          timestamp INTEGER NOT NULL,
-          bids TEXT NOT NULL,
-          asks TEXT NOT NULL,
-          last_price REAL,
-          PRIMARY KEY (symbol, timeframe, timestamp)
-        )
-      `);
-      this.db.run('CREATE INDEX IF NOT EXISTS idx_snapshots_tf_symbol_time ON orderbook_snapshots_tf(symbol, timeframe, timestamp DESC)');
-    });
-  }
+  restoreLastSnapshot() {
+    if (!this.heatmapModel) {
+      return;
+    }
 
-  backfillSnapshots(limit = 2000) {
-    this.db.all(
-      `SELECT timestamp, bids, asks, last_price
-         FROM orderbook_snapshots
-         WHERE symbol = ?
-         ORDER BY timestamp ASC
-         LIMIT ?`,
-      [this.symbol, limit],
-      (err, rows) => {
-        if (err) {
-          console.error('[HEATMAP] Failed to backfill snapshots:', err.message);
+    this.heatmapModel
+      .findOne({ symbol: this.symbol, tf: '1m' })
+      .sort({ t: -1 })
+      .lean()
+      .then((doc) => {
+        if (!doc) {
           return;
         }
-        if (!Array.isArray(rows) || !rows.length) {
-          return;
-        }
-        rows.forEach((row) => {
-          this.persistSnapshotVariants({
-            timestamp: row.timestamp,
-            bidsJson: row.bids,
-            asksJson: row.asks,
-            lastPrice: row.last_price,
-          });
-        });
-      }
-    );
+        this.lastPrice = doc.lastPrice ?? null;
+      })
+      .catch((error) => {
+        console.error('[HEATMAP] Failed to restore snapshot state:', error.message);
+      });
   }
 
   start() {
@@ -242,78 +205,82 @@ class HeatmapEngine extends EventEmitter {
     const timestamp = Date.now();
     const bids = this.serializeBook(this.bids, true);
     const asks = this.serializeBook(this.asks, false);
-    const bidsJson = JSON.stringify(bids);
-    const asksJson = JSON.stringify(asks);
-
-    this.db.run(
-      `INSERT OR REPLACE INTO orderbook_snapshots (symbol, timestamp, bids, asks, last_price)
-       VALUES (?, ?, ?, ?, ?)` ,
-      [this.symbol, timestamp, bidsJson, asksJson, this.lastPrice],
-      (err) => {
-        if (err) {
-          console.error('[HEATMAP] Failed to store snapshot:', err.message);
-        }
-      }
-    );
 
     this.persistSnapshotVariants({
       timestamp,
-      bidsJson,
-      asksJson,
+      bids,
+      asks,
       lastPrice: this.lastPrice,
     });
 
     const retentionCutoff = timestamp - 48 * 60 * 60 * 1000;
-    this.db.run(
-      'DELETE FROM orderbook_snapshots WHERE symbol = ? AND timestamp < ?',
-      [this.symbol, retentionCutoff],
-      (err) => {
-        if (err) {
-          console.error('[HEATMAP] Failed to prune snapshots:', err.message);
-        }
-      }
-    );
-
-    SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
-      const bucketMs = timeframeToMs(timeframe);
-      if (!bucketMs) return;
-      const cutoff = Math.floor(retentionCutoff / bucketMs) * bucketMs;
-      this.db.run(
-        'DELETE FROM orderbook_snapshots_tf WHERE symbol = ? AND timeframe = ? AND timestamp < ?',
-        [this.symbol, timeframe, cutoff],
-        (err) => {
-          if (err) {
-            console.error('[HEATMAP] Failed to prune timeframe snapshots:', err.message);
-          }
-        }
-      );
-    });
+    this.pruneSnapshots(retentionCutoff);
 
     this.emit('snapshot', { symbol: this.symbol, timestamp, bids, asks, lastPrice: this.lastPrice });
   }
 
-  persistSnapshotVariants({ timestamp, bidsJson, asksJson, lastPrice }) {
-    if (!Number.isFinite(timestamp)) {
+  persistSnapshotVariants({ timestamp, bids, asks, lastPrice }) {
+    if (!Number.isFinite(timestamp) || !this.heatmapModel) {
       return;
     }
 
     const priceValue = Number.isFinite(lastPrice) ? lastPrice : null;
+    const snapshotBids = Array.isArray(bids) ? bids : [];
+    const snapshotAsks = Array.isArray(asks) ? asks : [];
+    const operations = [];
+
     SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
       const bucketMs = timeframeToMs(timeframe);
       if (!bucketMs) return;
       const bucketTimestamp = Math.floor(timestamp / bucketMs) * bucketMs;
-      this.db.run(
-        `INSERT OR REPLACE INTO orderbook_snapshots_tf
-           (symbol, timeframe, timestamp, bids, asks, last_price)
-         VALUES (?, ?, ?, ?, ?, ?)` ,
-        [this.symbol, timeframe, bucketTimestamp, bidsJson, asksJson, priceValue],
-        (err) => {
-          if (err) {
-            console.error('[HEATMAP] Failed to store timeframe snapshot:', err.message);
-          }
-        }
+      operations.push(
+        this.heatmapModel
+          .findOneAndUpdate(
+            { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
+            {
+              $set: {
+                symbol: this.symbol,
+                tf: timeframe,
+                t: bucketTimestamp,
+                bids: snapshotBids,
+                asks: snapshotAsks,
+                lastPrice: priceValue,
+              },
+            },
+            { upsert: true, setDefaultsOnInsert: true }
+          )
+          .catch((error) => {
+            console.error('[HEATMAP] Failed to store timeframe snapshot:', error.message);
+          })
       );
     });
+
+    if (operations.length) {
+      Promise.allSettled(operations);
+    }
+  }
+
+  pruneSnapshots(retentionCutoff) {
+    if (!this.heatmapModel || !Number.isFinite(retentionCutoff)) {
+      return;
+    }
+
+    const operations = SUPPORTED_TIMEFRAMES.map((timeframe) => {
+      const bucketMs = timeframeToMs(timeframe);
+      if (!bucketMs) {
+        return null;
+      }
+      const cutoff = Math.floor(retentionCutoff / bucketMs) * bucketMs;
+      return this.heatmapModel
+        .deleteMany({ symbol: this.symbol, tf: timeframe, t: { $lt: cutoff } })
+        .catch((error) => {
+          console.error('[HEATMAP] Failed to prune snapshots:', error.message);
+        });
+    }).filter(Boolean);
+
+    if (operations.length) {
+      Promise.allSettled(operations);
+    }
   }
 
   serializeBook(book, isBid) {
@@ -321,25 +288,27 @@ class HeatmapEngine extends EventEmitter {
     return sorted.slice(0, 400);
   }
 
-  getSnapshots({ limit = 720, timeframe = '1m' } = {}) {
+  async getSnapshots({ limit = 720, timeframe = '1m' } = {}) {
     const tf = normalizeTimeframe(timeframe);
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        `SELECT timestamp, bids, asks, last_price
-         FROM orderbook_snapshots_tf
-         WHERE symbol = ? AND timeframe = ?
-         ORDER BY timestamp DESC
-         LIMIT ?`,
-        [this.symbol, tf, limit],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(rows.reverse());
-        }
-      );
-    });
+    if (!this.heatmapModel) {
+      return [];
+    }
+
+    const docs = await this.heatmapModel
+      .find({ symbol: this.symbol, tf })
+      .sort({ t: -1 })
+      .limit(limit)
+      .lean();
+
+    return docs
+      .slice()
+      .reverse()
+      .map((doc) => ({
+        timestamp: doc.t,
+        bids: Array.isArray(doc.bids) ? doc.bids : [],
+        asks: Array.isArray(doc.asks) ? doc.asks : [],
+        last_price: doc.lastPrice ?? null,
+      }));
   }
 }
 

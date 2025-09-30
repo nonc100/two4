@@ -12,9 +12,9 @@ function sleep(ms) {
 }
 
 class LiquidationHeatmapEngine extends EventEmitter {
-  constructor({ db, topSymbols = 30, retentionDays = 14 } = {}) {
+  constructor({ liquidationModel, topSymbols = 30, retentionDays = 14 } = {}) {
     super();
-    this.db = db;
+    this.liquidationModel = liquidationModel;
     this.topSymbols = topSymbols;
     this.retentionDays = retentionDays;
 
@@ -25,28 +25,6 @@ class LiquidationHeatmapEngine extends EventEmitter {
 
     this.refreshTimer = null;
     this.pruneTimer = null;
-
-    this.initTable();
-  }
-
-  initTable() {
-    this.db.serialize(() => {
-      this.db.run(`
-        CREATE TABLE IF NOT EXISTS liquidation_events (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          symbol TEXT NOT NULL,
-          event_time INTEGER NOT NULL,
-          side TEXT NOT NULL,
-          price REAL NOT NULL,
-          quantity REAL NOT NULL,
-          notional REAL NOT NULL,
-          created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
-          UNIQUE(symbol, event_time, side, price, quantity)
-        )
-      `);
-      this.db.run('CREATE INDEX IF NOT EXISTS idx_liq_symbol_time ON liquidation_events(symbol, event_time DESC)');
-      this.db.run('CREATE INDEX IF NOT EXISTS idx_liq_time ON liquidation_events(event_time DESC)');
-    });
   }
 
   start() {
@@ -215,18 +193,24 @@ class LiquidationHeatmapEngine extends EventEmitter {
       const meta = this.symbolMeta.get(symbol) || {};
       this.symbolMeta.set(symbol, { ...meta, lastPrice: price, updatedAt: Date.now() });
 
-      this.db.run(
-        `INSERT OR IGNORE INTO liquidation_events (symbol, event_time, side, price, quantity, notional)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [symbol, eventTime, side, price, quantity, notional],
-        (err) => {
-          if (err) {
-            console.error(`[LIQ:${symbol}] Failed to store liquidation event:`, err.message);
-          } else {
-            this.emit('event', { symbol, eventTime, side, price, quantity, notional });
-          }
-        }
-      );
+      const payload = { symbol, eventTime, side, price, quantity, notional };
+      if (!this.liquidationModel) {
+        this.emit('event', payload);
+        return;
+      }
+
+      this.liquidationModel
+        .updateOne(
+          { symbol, eventTime, side, price, quantity },
+          { $setOnInsert: payload },
+          { upsert: true }
+        )
+        .then(() => {
+          this.emit('event', payload);
+        })
+        .catch((error) => {
+          console.error(`[LIQ:${symbol}] Failed to store liquidation event:`, error.message);
+        });
     } catch (error) {
       console.error(`[LIQ:${symbol}] Failed to parse message:`, error.message);
     }
@@ -234,15 +218,15 @@ class LiquidationHeatmapEngine extends EventEmitter {
 
   pruneOldEvents() {
     const cutoff = Date.now() - this.retentionDays * 24 * 60 * 60 * 1000;
-    this.db.run(
-      'DELETE FROM liquidation_events WHERE event_time < ?',
-      [cutoff],
-      (err) => {
-        if (err) {
-          console.error('[LIQ] Failed to prune liquidation events:', err.message);
-        }
-      }
-    );
+    if (!this.liquidationModel) {
+      return;
+    }
+
+    this.liquidationModel
+      .deleteMany({ eventTime: { $lt: cutoff } })
+      .catch((error) => {
+        console.error('[LIQ] Failed to prune liquidation events:', error.message);
+      });
   }
 
   getSymbols() {
@@ -268,30 +252,33 @@ class LiquidationHeatmapEngine extends EventEmitter {
   }
 
   getEvents({ symbol, timeframe = '1m', limit = 720 }) {
-    return new Promise((resolve, reject) => {
-      const tf = normalizeTimeframe(timeframe, '1m');
-      const bucketMs = timeframeToMs(tf);
-      if (!bucketMs) {
-        resolve([]);
-        return;
-      }
-      const rangeMs = bucketMs * Math.max(10, limit);
-      const cutoff = Date.now() - rangeMs;
-      this.db.all(
-        `SELECT event_time, side, price, quantity, notional
-         FROM liquidation_events
-         WHERE symbol = ? AND event_time >= ?
-         ORDER BY event_time ASC`,
-        [symbol, cutoff],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(rows || []);
-        }
-      );
-    });
+    const tf = normalizeTimeframe(timeframe, '1m');
+    const bucketMs = timeframeToMs(tf);
+    if (!bucketMs || !this.liquidationModel) {
+      return Promise.resolve([]);
+    }
+
+    const rangeMs = bucketMs * Math.max(10, limit);
+    const cutoff = Date.now() - rangeMs;
+
+    return this.liquidationModel
+      .find({ symbol, eventTime: { $gte: cutoff } })
+      .sort({ eventTime: 1 })
+      .limit(Math.max(limit * 5, 2000))
+      .lean()
+      .then((docs) =>
+        (docs || []).map((doc) => ({
+          event_time: doc.eventTime,
+          side: doc.side,
+          price: doc.price,
+          quantity: doc.quantity,
+          notional: doc.notional,
+        }))
+      )
+      .catch((error) => {
+        console.error('[LIQ] Failed to load liquidation events:', error.message);
+        return [];
+      });
   }
 }
 

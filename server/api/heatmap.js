@@ -33,7 +33,7 @@ function percentile(values, ratio) {
 
 const RESPONSE_CACHE = createMemoryCache({ ttlMs: 2 * 60 * 60 * 1000, maxEntries: 64 });
 
-module.exports = function createHeatmapRouter({ heatmapEngine }) {
+module.exports = function createHeatmapRouter({ heatmapEngine, heatmapModel }) {
   const router = express.Router();
 
   heatmapEngine.on('snapshot', () => {
@@ -54,7 +54,36 @@ module.exports = function createHeatmapRouter({ heatmapEngine }) {
 
     try {
       const payload = await RESPONSE_CACHE.wrap(cacheKey, async () => {
-        const rows = await heatmapEngine.getSnapshots({ limit, timeframe });
+        let docs = [];
+        if (heatmapModel) {
+          docs = await heatmapModel
+            .find({ symbol, tf: timeframe })
+            .sort({ t: -1 })
+            .limit(limit)
+            .lean();
+        }
+
+        let rows;
+        if (docs.length) {
+          rows = docs
+            .slice()
+            .reverse()
+            .map((doc) => ({
+              timestamp: doc.t,
+              bids: Array.isArray(doc.bids) ? doc.bids : [],
+              asks: Array.isArray(doc.asks) ? doc.asks : [],
+              lastPrice: doc.lastPrice ?? null,
+            }));
+        } else {
+          const fallback = await heatmapEngine.getSnapshots({ limit, timeframe });
+          rows = fallback.map((row) => ({
+            timestamp: Number(row.timestamp),
+            bids: Array.isArray(row.bids) ? row.bids : JSON.parse(row.bids || '[]'),
+            asks: Array.isArray(row.asks) ? row.asks : JSON.parse(row.asks || '[]'),
+            lastPrice: row.last_price ?? row.lastPrice ?? null,
+          }));
+        }
+
         if (!rows.length) {
           return {
             symbol,
@@ -70,9 +99,9 @@ module.exports = function createHeatmapRouter({ heatmapEngine }) {
 
         const parsed = rows.map((row) => ({
           timestamp: Number(row.timestamp),
-          bids: JSON.parse(row.bids || '[]'),
-          asks: JSON.parse(row.asks || '[]'),
-          lastPrice: row.last_price,
+          bids: Array.isArray(row.bids) ? row.bids : [],
+          asks: Array.isArray(row.asks) ? row.asks : [],
+          lastPrice: row.lastPrice ?? null,
         }));
 
         let minPrice = Number.POSITIVE_INFINITY;
