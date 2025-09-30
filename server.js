@@ -1,4 +1,6 @@
 // server.js
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -20,8 +22,10 @@ const createHeatmapRouter = require('./server/api/heatmap');
 const createLiquidationHeatmapRouter = require('./server/api/liquidation-heatmap');
 const createPriceRouter = require('./server/api/price');
 const createSeedWeatherRouter = require('./server/api/seed-weather');
+const compression = require('compression');
 
 const app = express();
+app.use(compression());
 const PORT = process.env.COSMOS_PORT || process.env.PORT || 3000;
 
 let cvdEngine;

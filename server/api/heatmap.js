@@ -1,34 +1,9 @@
 const express = require('express');
-const { normalizeTimeframe, SUPPORTED_TIMEFRAMES } = require('../utils/timeframes');
+const { normalizeTimeframe, timeframeToMs } = require('../utils/timeframes');
 const { createMemoryCache } = require('../utils/cache');
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
-}
-
-function computeAdaptiveStep(range, bins) {
-  if (!Number.isFinite(range) || range <= 0 || !Number.isFinite(bins) || bins <= 0) {
-    return 1;
-  }
-  const rawStep = range / bins;
-  if (!Number.isFinite(rawStep) || rawStep <= 0) {
-    return 1;
-  }
-  const exponent = Math.floor(Math.log10(rawStep));
-  const base = 10 ** exponent;
-  const normalized = rawStep / base;
-  const candidates = [1, 2, 2.5, 5, 10];
-  const nice = candidates.find((value) => normalized <= value) || 10;
-  return nice * base;
-}
-
-function percentile(values, ratio) {
-  if (!Array.isArray(values) || values.length === 0) {
-    return 0;
-  }
-  const sorted = values.slice().sort((a, b) => a - b);
-  const index = Math.min(sorted.length - 1, Math.max(0, Math.floor(sorted.length * ratio)));
-  return sorted[index];
 }
 
 const RESPONSE_CACHE = createMemoryCache({ ttlMs: 2 * 60 * 60 * 1000, maxEntries: 64 });
@@ -43,7 +18,7 @@ module.exports = function createHeatmapRouter({ heatmapEngine, heatmapModel }) {
   router.get('/', async (req, res) => {
     const symbol = (req.query.symbol || heatmapEngine.symbol || 'BTCUSDT').toUpperCase();
     const bins = clamp(Number.parseInt(req.query.bins, 10) || 120, 10, 500);
-    const limit = clamp(Number.parseInt(req.query.limit, 10) || 720, 10, 2000);
+    const limit = clamp(Number.parseInt(req.query.limit, 10) || 720, 10, 720);
     const timeframe = normalizeTimeframe(req.query.tf, '1m');
 
     if (symbol !== heatmapEngine.symbol) {
@@ -54,145 +29,192 @@ module.exports = function createHeatmapRouter({ heatmapEngine, heatmapModel }) {
 
     try {
       const payload = await RESPONSE_CACHE.wrap(cacheKey, async () => {
-        let docs = [];
-        if (heatmapModel) {
-          docs = await heatmapModel
-            .find({ symbol, tf: timeframe })
-            .sort({ t: -1 })
-            .limit(limit)
-            .lean();
-        }
-
-        let rows;
-        if (docs.length) {
-          rows = docs
-            .slice()
-            .reverse()
-            .map((doc) => ({
-              timestamp: doc.t,
-              bids: Array.isArray(doc.bids) ? doc.bids : [],
-              asks: Array.isArray(doc.asks) ? doc.asks : [],
-              lastPrice: doc.lastPrice ?? null,
-            }));
-        } else {
-          const fallback = await heatmapEngine.getSnapshots({ limit, timeframe });
-          rows = fallback.map((row) => ({
-            timestamp: Number(row.timestamp),
-            bids: Array.isArray(row.bids) ? row.bids : JSON.parse(row.bids || '[]'),
-            asks: Array.isArray(row.asks) ? row.asks : JSON.parse(row.asks || '[]'),
-            lastPrice: row.last_price ?? row.lastPrice ?? null,
-          }));
-        }
-
-        if (!rows.length) {
+        if (!heatmapModel) {
           return {
             symbol,
             timeframe,
-            timestamps: [],
+            rows: [],
+            cols: [],
             matrix: [],
-            priceBins: { count: bins, min: null, max: null, step: null, centers: [] },
-            maxValue: 0,
+            priceMin: null,
+            priceMax: null,
             lastPrice: heatmapEngine.lastPrice,
-            meta: { timeframes: SUPPORTED_TIMEFRAMES, scale: { logBase: 10, clip: null } },
           };
         }
 
-        const parsed = rows.map((row) => ({
-          timestamp: Number(row.timestamp),
-          bids: Array.isArray(row.bids) ? row.bids : [],
-          asks: Array.isArray(row.asks) ? row.asks : [],
-          lastPrice: row.lastPrice ?? null,
-        }));
+        const timeframeMs = timeframeToMs(timeframe) || timeframeToMs('1m');
+        const effectiveTf = timeframeMs || 60_000;
+        const since = Math.max(0, Date.now() - effectiveTf * limit);
+        const pipeline = [
+          {
+            $match: {
+              symbol,
+              tf: '1m',
+              binLow: { $ne: null },
+              t: { $gte: since },
+            },
+          },
+          {
+            $addFields: {
+              bucket: {
+                $subtract: ['$t', { $mod: ['$t', effectiveTf] }],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: { bucket: '$bucket', binLow: '$binLow', binHigh: '$binHigh' },
+              volume: { $sum: '$volUSDT' },
+              priceMin: { $min: '$priceMin' },
+              priceMax: { $max: '$priceMax' },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id.bucket',
+              bins: {
+                $push: {
+                  binLow: '$_id.binLow',
+                  binHigh: '$_id.binHigh',
+                  volume: '$volume',
+                },
+              },
+              priceMin: { $min: '$priceMin' },
+              priceMax: { $max: '$priceMax' },
+            },
+          },
+          { $sort: { _id: -1 } },
+          { $limit: limit },
+          {
+            $project: {
+              _id: 0,
+              t: '$_id',
+              bins: 1,
+              priceMin: 1,
+              priceMax: 1,
+            },
+          },
+          { $sort: { t: 1 } },
+        ];
 
-        let minPrice = Number.POSITIVE_INFINITY;
-        let maxPrice = Number.NEGATIVE_INFINITY;
-        parsed.forEach((snapshot) => {
-          [...snapshot.bids, ...snapshot.asks].forEach(([price]) => {
-            const value = Number(price);
-            if (Number.isFinite(value)) {
-              minPrice = Math.min(minPrice, value);
-              maxPrice = Math.max(maxPrice, value);
+        const aggregated = await heatmapModel.aggregate(pipeline).exec();
+
+        if (!aggregated.length) {
+          return {
+            symbol,
+            timeframe,
+            rows: [],
+            cols: [],
+            matrix: [],
+            priceMin: null,
+            priceMax: null,
+            lastPrice: heatmapEngine.lastPrice,
+          };
+        }
+
+        const colMap = new Map();
+        const rows = [];
+        let globalMin = Number.POSITIVE_INFINITY;
+        let globalMax = Number.NEGATIVE_INFINITY;
+
+        aggregated.forEach((entry) => {
+          const timestamp = Number(entry.t);
+          if (Number.isFinite(timestamp)) {
+            rows.push(timestamp);
+          }
+          (entry.bins || []).forEach((cell) => {
+            const low = Number(cell.binLow);
+            const high = Number(cell.binHigh);
+            const vol = Number(cell.volume);
+            if (!Number.isFinite(low) || !Number.isFinite(vol)) {
+              return;
+            }
+            if (!colMap.has(low)) {
+              colMap.set(low, { low, high: Number.isFinite(high) ? high : low });
+            }
+            if (Number.isFinite(low)) {
+              globalMin = Math.min(globalMin, low);
+              globalMax = Math.max(globalMax, colMap.get(low).high);
             }
           });
+          const entryMin = Number(entry.priceMin);
+          if (Number.isFinite(entryMin)) {
+            globalMin = Math.min(globalMin, entryMin);
+          }
+          const entryMax = Number(entry.priceMax);
+          if (Number.isFinite(entryMax)) {
+            globalMax = Math.max(globalMax, entryMax);
+          }
         });
 
-        if (!Number.isFinite(minPrice) || !Number.isFinite(maxPrice)) {
-          return {
-            symbol,
-            timeframe,
-            timestamps: [],
-            matrix: [],
-            priceBins: { count: bins, min: null, max: null, step: null, centers: [] },
-            maxValue: 0,
-            lastPrice: heatmapEngine.lastPrice,
-            meta: { timeframes: SUPPORTED_TIMEFRAMES, scale: { logBase: 10, clip: null } },
-          };
-        }
+        const sortedCols = Array.from(colMap.values()).sort((a, b) => a.low - b.low);
+        const colIndex = new Map(sortedCols.map((col, index) => [col.low, index]));
+        const baseMatrix = aggregated.map((entry) => {
+          const row = new Array(sortedCols.length).fill(0);
+          (entry.bins || []).forEach((cell) => {
+            const low = Number(cell.binLow);
+            const vol = Number(cell.volume);
+            if (!Number.isFinite(low) || !Number.isFinite(vol)) {
+              return;
+            }
+            const idx = colIndex.get(low);
+            if (idx != null) {
+              row[idx] += vol;
+            }
+          });
+          return row;
+        });
 
-        if (minPrice === maxPrice) {
-          const padding = Math.max(1, minPrice * 0.001);
-          minPrice -= padding;
-          maxPrice += padding;
-        }
+        let finalCols = sortedCols.map((col) => col.low);
+        let finalMatrix = baseMatrix;
 
-        const range = maxPrice - minPrice;
-        const step = computeAdaptiveStep(range, bins);
-        const centers = Array.from({ length: bins }, (_, idx) => minPrice + step * (idx + 0.5));
+        if (finalCols.length > bins) {
+          const step = finalCols.length / bins;
+          const downsampled = baseMatrix.map(() => new Array(bins).fill(0));
+          const sampledCols = [];
 
-        const rawValues = [];
-        const matrix = parsed.map((snapshot) => {
-          const rowValues = new Array(bins).fill(0);
-          const accumulate = (levels) => {
-            levels.forEach(([price, qty]) => {
-              const priceNum = Number(price);
-              const qtyNum = Number(qty);
-              if (!Number.isFinite(priceNum) || !Number.isFinite(qtyNum)) {
-                return;
+          for (let idx = 0; idx < bins; idx += 1) {
+            const start = Math.min(finalCols.length - 1, Math.floor(idx * step));
+            let end = Math.min(finalCols.length - 1, Math.floor((idx + 1) * step) - 1);
+            if (end < start) {
+              end = start;
+            }
+            sampledCols.push(finalCols[start]);
+            downsampled.forEach((row, rowIndex) => {
+              let sum = 0;
+              for (let col = start; col <= end; col += 1) {
+                sum += baseMatrix[rowIndex][col] || 0;
               }
-              const index = Math.min(
-                bins - 1,
-                Math.max(0, Math.floor((priceNum - minPrice) / step))
-              );
-              const notional = Math.abs(priceNum * qtyNum);
-              if (Number.isFinite(notional)) {
-                rowValues[index] += notional;
-                rawValues.push(notional);
-              }
+              row[idx] = sum;
             });
-          };
-          accumulate(snapshot.bids);
-          accumulate(snapshot.asks);
-          return rowValues;
-        });
+          }
 
-        const clipThreshold = percentile(rawValues, 0.99) || 0;
-        const logMatrix = matrix.map((row) =>
-          row.map((value) => {
-            const effectiveClip = clipThreshold > 0 ? clipThreshold : value;
-            const clipped = Math.min(value, effectiveClip);
-            return Number.isFinite(clipped) && clipped > 0 ? Math.log10(1 + clipped) : 0;
-          })
-        );
-        const maxValue = logMatrix.reduce((max, row) => {
-          const local = Math.max(...row);
-          return Number.isFinite(local) ? Math.max(max, local) : max;
-        }, 0);
+          finalCols = sampledCols;
+          finalMatrix = downsampled;
+        }
+
+        const metaDoc = await heatmapModel
+          .findOne({ symbol, tf: '1m', binLow: null })
+          .sort({ t: -1 })
+          .select({ lastPrice: 1 })
+          .lean();
+
+        const lastPrice = Number.isFinite(metaDoc?.lastPrice)
+          ? metaDoc.lastPrice
+          : heatmapEngine.lastPrice;
+
+        const priceMin = Number.isFinite(globalMin) ? globalMin : null;
+        const priceMax = Number.isFinite(globalMax) ? globalMax : null;
 
         return {
           symbol,
           timeframe,
-          timestamps: parsed.map((snapshot) => snapshot.timestamp),
-          matrix: logMatrix,
-          priceBins: {
-            count: bins,
-            min: minPrice,
-            max: maxPrice,
-            step,
-            centers,
-          },
-          maxValue,
-          lastPrice: parsed[parsed.length - 1].lastPrice ?? heatmapEngine.lastPrice,
-          meta: { timeframes: SUPPORTED_TIMEFRAMES, scale: { logBase: 10, clip: clipThreshold } },
+          rows,
+          cols: finalCols,
+          matrix: finalMatrix,
+          priceMin,
+          priceMax,
+          lastPrice,
         };
       });
 

@@ -14,7 +14,7 @@ module.exports = function createPriceRouter({ cvdEngine, priceModel }) {
   router.get('/', async (req, res) => {
     const symbol = (req.query.symbol || cvdEngine.symbol || 'BTCUSDT').toUpperCase();
     const timeframe = normalizeTimeframe(req.query.tf, '1m');
-    const limit = Math.min(10_000, Math.max(10, Number.parseInt(req.query.limit, 10) || 1440));
+    const limit = Math.min(5000, Math.max(10, Number.parseInt(req.query.limit, 10) || 1440));
 
     if (symbol !== cvdEngine.symbol) {
       return res.status(404).json({ error: 'Symbol not tracked yet.' });
@@ -30,6 +30,7 @@ module.exports = function createPriceRouter({ cvdEngine, priceModel }) {
             .find({ symbol, tf: timeframe, close: { $ne: null } })
             .sort({ t: -1 })
             .limit(limit)
+            .select({ t: 1, close: 1 })
             .lean();
         }
 

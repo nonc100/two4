@@ -16,7 +16,7 @@ const cvdSchema = new mongoose.Schema(
   { timestamps: false, versionKey: false }
 );
 
-cvdSchema.index({ symbol: 1, tf: 1, t: 1 }, { unique: true });
+cvdSchema.index({ symbol: 1, tf: 1, t: -1 }, { unique: true });
 
 const heatmapLevelSchema = new mongoose.Schema(
   {
@@ -38,12 +38,14 @@ const heatmapSchema = new mongoose.Schema(
     bids: { type: [[Number]], default: [] },
     asks: { type: [[Number]], default: [] },
     lastPrice: { type: Number, default: null },
+    priceMin: { type: Number, default: null },
+    priceMax: { type: Number, default: null },
     levels: { type: [heatmapLevelSchema], default: undefined },
   },
   { timestamps: false, versionKey: false }
 );
 
-heatmapSchema.index({ symbol: 1, tf: 1, t: 1 }, { unique: true });
+heatmapSchema.index({ symbol: 1, tf: 1, t: -1, binLow: 1 }, { unique: true });
 
 const priceSchema = new mongoose.Schema(
   {
@@ -56,7 +58,7 @@ const priceSchema = new mongoose.Schema(
   { timestamps: false, versionKey: false }
 );
 
-priceSchema.index({ symbol: 1, tf: 1, t: 1 }, { unique: true });
+priceSchema.index({ symbol: 1, tf: 1, t: -1 }, { unique: true });
 
 const liquidationEventSchema = new mongoose.Schema(
   {
