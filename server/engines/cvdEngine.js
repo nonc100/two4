@@ -1,6 +1,8 @@
 const EventEmitter = require('events');
 const WebSocket = require('ws');
 
+const { SUPPORTED_TIMEFRAMES, timeframeToMs, normalizeTimeframe } = require('../utils/timeframes');
+
 const BUCKETS = [
   { key: 'bucket0', label: '$0 - $10K', min: 0, max: 10_000 },
   { key: 'bucket1', label: '$10K - $100K', min: 10_000, max: 100_000 },
@@ -29,6 +31,7 @@ class CVDEngine extends EventEmitter {
 
     this.initTables();
     this.loadState();
+    this.backfillSeries();
   }
 
   initTables() {
@@ -49,7 +52,52 @@ class CVDEngine extends EventEmitter {
         )
       `);
       this.db.run('CREATE INDEX IF NOT EXISTS idx_cvd_symbol_minute ON cvd_points(symbol, minute DESC)');
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS cvd_series (
+          symbol TEXT NOT NULL,
+          timeframe TEXT NOT NULL,
+          timestamp INTEGER NOT NULL,
+          total REAL NOT NULL,
+          bucket0 REAL NOT NULL,
+          bucket1 REAL NOT NULL,
+          bucket2 REAL NOT NULL,
+          bucket3 REAL NOT NULL,
+          bucket4 REAL NOT NULL,
+          price REAL,
+          PRIMARY KEY (symbol, timeframe, timestamp)
+        )
+      `);
+      this.db.run('CREATE INDEX IF NOT EXISTS idx_cvd_series_symbol_tf_time ON cvd_series(symbol, timeframe, timestamp DESC)');
     });
+  }
+
+  backfillSeries(limit = 5000) {
+    this.db.all(
+      `SELECT minute, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
+         FROM cvd_points
+         WHERE symbol = ?
+         ORDER BY minute ASC
+         LIMIT ?`,
+      [this.symbol, limit],
+      (err, rows) => {
+        if (err) {
+          console.error('[CVD] Failed to backfill series:', err.message);
+          return;
+        }
+        if (!Array.isArray(rows) || !rows.length) {
+          return;
+        }
+        rows.forEach((row) => {
+          const payload = {
+            minute: row.minute,
+            total: row.total,
+            buckets: [row.bucket0, row.bucket1, row.bucket2, row.bucket3, row.bucket4],
+            price: row.price,
+          };
+          this.persistAggregates(payload);
+        });
+      }
+    );
   }
 
   loadState() {
@@ -256,17 +304,55 @@ class CVDEngine extends EventEmitter {
         }
       }
     );
+    this.persistAggregates(row);
   }
 
-  getHistory({ limit = 1440 } = {}) {
+  persistAggregates(row) {
+    if (!row || !Number.isFinite(row.minute)) {
+      return;
+    }
+
+    const buckets = Array.isArray(row.buckets) ? row.buckets : this.createZeroBuckets();
+    SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
+      const bucketMs = timeframeToMs(timeframe);
+      if (!bucketMs) return;
+      const bucketTimestamp = Math.floor(row.minute / bucketMs) * bucketMs;
+      this.db.run(
+        `INSERT OR REPLACE INTO cvd_series
+           (symbol, timeframe, timestamp, total, bucket0, bucket1, bucket2, bucket3, bucket4, price)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ,
+        [
+          this.symbol,
+          timeframe,
+          bucketTimestamp,
+          row.total,
+          buckets[0],
+          buckets[1],
+          buckets[2],
+          buckets[3],
+          buckets[4],
+          Number.isFinite(row.price) ? row.price : null,
+        ],
+        (err) => {
+          if (err) {
+            console.error('[CVD] Failed to store series snapshot:', err.message);
+          }
+        }
+      );
+    });
+  }
+
+  getHistory({ limit = 1440, timeframe = '1m' } = {}) {
+    const tf = normalizeTimeframe(timeframe);
     return new Promise((resolve, reject) => {
       this.db.all(
-        `SELECT minute, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
-         FROM cvd_points
-         WHERE symbol = ?
-         ORDER BY minute DESC
+        `SELECT timestamp, total, bucket0, bucket1, bucket2, bucket3, bucket4, price
+         FROM cvd_series
+         WHERE symbol = ? AND timeframe = ?
+         ORDER BY timestamp DESC
          LIMIT ?`,
-        [this.symbol, limit],
+        [this.symbol, tf, limit],
         (err, rows) => {
           if (err) {
             reject(err);
@@ -278,15 +364,16 @@ class CVDEngine extends EventEmitter {
     });
   }
 
-  getPriceHistory({ limit = 1440 } = {}) {
+  getPriceHistory({ limit = 1440, timeframe = '1m' } = {}) {
+    const tf = normalizeTimeframe(timeframe);
     return new Promise((resolve, reject) => {
       this.db.all(
-        `SELECT minute, price
-         FROM cvd_points
-         WHERE symbol = ? AND price IS NOT NULL
-         ORDER BY minute DESC
+        `SELECT timestamp, price
+         FROM cvd_series
+         WHERE symbol = ? AND timeframe = ? AND price IS NOT NULL
+         ORDER BY timestamp DESC
          LIMIT ?`,
-        [this.symbol, limit],
+        [this.symbol, tf, limit],
         (err, rows) => {
           if (err) {
             reject(err);
@@ -302,4 +389,5 @@ class CVDEngine extends EventEmitter {
 module.exports = {
   CVDEngine,
   BUCKETS,
+  SUPPORTED_TIMEFRAMES,
 };

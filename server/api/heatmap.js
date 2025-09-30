@@ -1,4 +1,5 @@
 const express = require('express');
+const { normalizeTimeframe, SUPPORTED_TIMEFRAMES } = require('../utils/timeframes');
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -11,21 +12,24 @@ module.exports = function createHeatmapRouter({ heatmapEngine }) {
     const symbol = (req.query.symbol || heatmapEngine.symbol || 'BTCUSDT').toUpperCase();
     const bins = clamp(Number.parseInt(req.query.bins, 10) || 120, 10, 500);
     const limit = clamp(Number.parseInt(req.query.limit, 10) || 720, 10, 2000);
+    const timeframe = normalizeTimeframe(req.query.tf, '1m');
 
     if (symbol !== heatmapEngine.symbol) {
       return res.status(404).json({ error: 'Symbol not tracked yet.' });
     }
 
     try {
-      const rows = await heatmapEngine.getSnapshots({ limit });
+      const rows = await heatmapEngine.getSnapshots({ limit, timeframe });
       if (!rows.length) {
         return res.json({
           symbol,
+          timeframe,
           timestamps: [],
           matrix: [],
           priceBins: { count: bins, min: null, max: null, step: null, centers: [] },
           maxValue: 0,
           lastPrice: heatmapEngine.lastPrice,
+          meta: { timeframes: SUPPORTED_TIMEFRAMES },
         });
       }
 
@@ -105,6 +109,7 @@ module.exports = function createHeatmapRouter({ heatmapEngine }) {
 
       return res.json({
         symbol,
+        timeframe,
         timestamps: parsed.map((snapshot) => snapshot.timestamp),
         matrix,
         priceBins: {
@@ -116,6 +121,7 @@ module.exports = function createHeatmapRouter({ heatmapEngine }) {
         },
         maxValue: globalMax,
         lastPrice: parsed[parsed.length - 1].lastPrice ?? heatmapEngine.lastPrice,
+        meta: { timeframes: SUPPORTED_TIMEFRAMES },
       });
     } catch (error) {
       console.error('[API/HEATMAP] Failed to load snapshots:', error.message);

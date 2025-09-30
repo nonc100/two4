@@ -2,6 +2,8 @@ const EventEmitter = require('events');
 const WebSocket = require('ws');
 const fetch = require('node-fetch');
 
+const { SUPPORTED_TIMEFRAMES, timeframeToMs, normalizeTimeframe } = require('../utils/timeframes');
+
 class HeatmapEngine extends EventEmitter {
   constructor({ db, symbol }) {
     super();
@@ -20,6 +22,7 @@ class HeatmapEngine extends EventEmitter {
     this.lastPrice = null;
 
     this.initTable();
+    this.backfillSnapshots();
   }
 
   initTable() {
@@ -35,7 +38,47 @@ class HeatmapEngine extends EventEmitter {
         )
       `);
       this.db.run('CREATE INDEX IF NOT EXISTS idx_snapshots_symbol_time ON orderbook_snapshots(symbol, timestamp DESC)');
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS orderbook_snapshots_tf (
+          symbol TEXT NOT NULL,
+          timeframe TEXT NOT NULL,
+          timestamp INTEGER NOT NULL,
+          bids TEXT NOT NULL,
+          asks TEXT NOT NULL,
+          last_price REAL,
+          PRIMARY KEY (symbol, timeframe, timestamp)
+        )
+      `);
+      this.db.run('CREATE INDEX IF NOT EXISTS idx_snapshots_tf_symbol_time ON orderbook_snapshots_tf(symbol, timeframe, timestamp DESC)');
     });
+  }
+
+  backfillSnapshots(limit = 2000) {
+    this.db.all(
+      `SELECT timestamp, bids, asks, last_price
+         FROM orderbook_snapshots
+         WHERE symbol = ?
+         ORDER BY timestamp ASC
+         LIMIT ?`,
+      [this.symbol, limit],
+      (err, rows) => {
+        if (err) {
+          console.error('[HEATMAP] Failed to backfill snapshots:', err.message);
+          return;
+        }
+        if (!Array.isArray(rows) || !rows.length) {
+          return;
+        }
+        rows.forEach((row) => {
+          this.persistSnapshotVariants({
+            timestamp: row.timestamp,
+            bidsJson: row.bids,
+            asksJson: row.asks,
+            lastPrice: row.last_price,
+          });
+        });
+      }
+    );
   }
 
   start() {
@@ -193,17 +236,26 @@ class HeatmapEngine extends EventEmitter {
     const timestamp = Date.now();
     const bids = this.serializeBook(this.bids, true);
     const asks = this.serializeBook(this.asks, false);
+    const bidsJson = JSON.stringify(bids);
+    const asksJson = JSON.stringify(asks);
 
     this.db.run(
       `INSERT OR REPLACE INTO orderbook_snapshots (symbol, timestamp, bids, asks, last_price)
        VALUES (?, ?, ?, ?, ?)` ,
-      [this.symbol, timestamp, JSON.stringify(bids), JSON.stringify(asks), this.lastPrice],
+      [this.symbol, timestamp, bidsJson, asksJson, this.lastPrice],
       (err) => {
         if (err) {
           console.error('[HEATMAP] Failed to store snapshot:', err.message);
         }
       }
     );
+
+    this.persistSnapshotVariants({
+      timestamp,
+      bidsJson,
+      asksJson,
+      lastPrice: this.lastPrice,
+    });
 
     const retentionCutoff = timestamp - 48 * 60 * 60 * 1000;
     this.db.run(
@@ -216,7 +268,46 @@ class HeatmapEngine extends EventEmitter {
       }
     );
 
+    SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
+      const bucketMs = timeframeToMs(timeframe);
+      if (!bucketMs) return;
+      const cutoff = Math.floor(retentionCutoff / bucketMs) * bucketMs;
+      this.db.run(
+        'DELETE FROM orderbook_snapshots_tf WHERE symbol = ? AND timeframe = ? AND timestamp < ?',
+        [this.symbol, timeframe, cutoff],
+        (err) => {
+          if (err) {
+            console.error('[HEATMAP] Failed to prune timeframe snapshots:', err.message);
+          }
+        }
+      );
+    });
+
     this.emit('snapshot', { symbol: this.symbol, timestamp, bids, asks, lastPrice: this.lastPrice });
+  }
+
+  persistSnapshotVariants({ timestamp, bidsJson, asksJson, lastPrice }) {
+    if (!Number.isFinite(timestamp)) {
+      return;
+    }
+
+    const priceValue = Number.isFinite(lastPrice) ? lastPrice : null;
+    SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
+      const bucketMs = timeframeToMs(timeframe);
+      if (!bucketMs) return;
+      const bucketTimestamp = Math.floor(timestamp / bucketMs) * bucketMs;
+      this.db.run(
+        `INSERT OR REPLACE INTO orderbook_snapshots_tf
+           (symbol, timeframe, timestamp, bids, asks, last_price)
+         VALUES (?, ?, ?, ?, ?, ?)` ,
+        [this.symbol, timeframe, bucketTimestamp, bidsJson, asksJson, priceValue],
+        (err) => {
+          if (err) {
+            console.error('[HEATMAP] Failed to store timeframe snapshot:', err.message);
+          }
+        }
+      );
+    });
   }
 
   serializeBook(book, isBid) {
@@ -224,15 +315,16 @@ class HeatmapEngine extends EventEmitter {
     return sorted.slice(0, 400);
   }
 
-  getSnapshots({ limit = 720 } = {}) {
+  getSnapshots({ limit = 720, timeframe = '1m' } = {}) {
+    const tf = normalizeTimeframe(timeframe);
     return new Promise((resolve, reject) => {
       this.db.all(
         `SELECT timestamp, bids, asks, last_price
-         FROM orderbook_snapshots
-         WHERE symbol = ?
+         FROM orderbook_snapshots_tf
+         WHERE symbol = ? AND timeframe = ?
          ORDER BY timestamp DESC
          LIMIT ?`,
-        [this.symbol, limit],
+        [this.symbol, tf, limit],
         (err, rows) => {
           if (err) {
             reject(err);
