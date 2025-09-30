@@ -193,20 +193,20 @@ class LiquidationHeatmapEngine extends EventEmitter {
       const meta = this.symbolMeta.get(symbol) || {};
       this.symbolMeta.set(symbol, { ...meta, lastPrice: price, updatedAt: Date.now() });
 
-      const payload = { symbol, eventTime, side, price, quantity, notional };
+      const eventPayload = { symbol, eventTime, side, price, quantity, notional };
       if (!this.liquidationModel) {
-        this.emit('event', payload);
+        this.emit('event', eventPayload);
         return;
       }
 
       this.liquidationModel
         .updateOne(
           { symbol, eventTime, side, price, quantity },
-          { $setOnInsert: payload },
+          { $setOnInsert: eventPayload },
           { upsert: true }
         )
         .then(() => {
-          this.emit('event', payload);
+          this.emit('event', eventPayload);
         })
         .catch((error) => {
           console.error(`[LIQ:${symbol}] Failed to store liquidation event:`, error.message);
