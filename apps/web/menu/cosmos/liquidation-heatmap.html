@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070312" />
+  <title>TWO.4 · Liquidation Heatmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./liquidation-heatmap.css" />
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <header class="page-header">
+    <a class="back-link" href="/menu/cosmos/">
+      <span aria-hidden="true">⭠</span>
+      <span>Cosmos Hub</span>
+    </a>
+    <div class="header-meta">
+      <h1>Liquidation Heatmap</h1>
+      <p>Binance Futures · Top 30 USDT pairs · 실시간 청산 히트맵</p>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="control-panel" aria-label="Liquidation controls">
+      <div class="symbol-picker">
+        <label for="symbolInput">Symbol</label>
+        <input id="symbolInput" class="symbol-input" type="search" placeholder="BTCUSDT" list="symbolList" autocomplete="off" />
+        <datalist id="symbolList"></datalist>
+      </div>
+      <div class="range-picker" role="group" aria-label="Select history range">
+        <button type="button" class="range-button" data-range="12h">12h</button>
+        <button type="button" class="range-button" data-range="1d">1d</button>
+        <button type="button" class="range-button" data-range="3d">3d</button>
+        <button type="button" class="range-button" data-range="1w">1w</button>
+        <button type="button" class="range-button" data-range="2w">2w</button>
+      </div>
+      <div class="totals" aria-live="polite">
+        <div>
+          <span class="label">Long Liq.</span>
+          <span class="value" data-total-long>--</span>
+        </div>
+        <div>
+          <span class="label">Short Liq.</span>
+          <span class="value" data-total-short>--</span>
+        </div>
+        <div>
+          <span class="label">Events</span>
+          <span class="value" data-total-count>--</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-panel" aria-labelledby="heatmapTitle">
+      <div class="panel-header">
+        <div>
+          <h2 id="heatmapTitle">Liquidation Heatmap</h2>
+          <p class="panel-description">가격-시간 축으로 집계된 청산 공백 · 진한 색상일수록 더 큰 청산 규모</p>
+        </div>
+        <div class="panel-meta">
+          <div>
+            <span class="meta-label">Last Price</span>
+            <span class="meta-value" data-last-price>--</span>
+          </div>
+          <div>
+            <span class="meta-label">Updated</span>
+            <span class="meta-value" data-updated>--</span>
+          </div>
+          <div>
+            <span class="meta-label">Status</span>
+            <span class="status-pill" data-status>Initializing</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart" id="heatmapChart" role="img" aria-label="Liquidation heatmap"></div>
+      <div class="empty-state" data-empty hidden>
+        <p>아직 축적된 청산 데이터가 없습니다. 잠시 후 다시 확인해주세요.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    Data sourced from Binance Futures force-order streams · 저장소: SQLite · 업데이트 간격: 실시간
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+  <script src="./liquidation-heatmap.js" defer></script>
+</body>
+</html>
