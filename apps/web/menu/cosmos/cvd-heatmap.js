@@ -385,7 +385,7 @@
         max: maxValue,
         calculable: true,
         orient: 'vertical',
-        right: 18,
+        right: 68,
         top: 'center',
         text: ['HIGH', 'LOW'],
         itemHeight: 200,
