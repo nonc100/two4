@@ -41,6 +41,7 @@ class CVDEngine extends EventEmitter {
     this.cvdModel
       .findOne({ symbol: this.symbol, tf: '1m' })
       .sort({ t: -1 })
+      .select({ t: 1, g0: 1, g1: 1, g2: 1, g3: 1, g4: 1, all: 1, price: 1 })
       .lean()
       .then((doc) => {
         if (!doc) {
@@ -231,98 +232,96 @@ class CVDEngine extends EventEmitter {
     const minuteTimestamp = Number(row.minute);
     const priceValue = Number.isFinite(row.price) ? row.price : null;
 
-    this.cvdModel
-      .findOneAndUpdate(
-        { symbol: this.symbol, tf: '1m', t: minuteTimestamp },
-        {
-          $set: {
-            symbol: this.symbol,
-            tf: '1m',
-            t: minuteTimestamp,
-            g0: buckets[0] ?? 0,
-            g1: buckets[1] ?? 0,
-            g2: buckets[2] ?? 0,
-            g3: buckets[3] ?? 0,
-            g4: buckets[4] ?? 0,
-            all: row.total ?? 0,
-            price: priceValue,
-          },
-        },
-        { upsert: true, setDefaultsOnInsert: true }
-      )
-      .catch((error) => {
-        console.error('[CVD] Failed to store minute snapshot:', error.message);
-      });
+    const cvdOperations = [];
+    const cvdDocument = {
+      symbol: this.symbol,
+      tf: '1m',
+      t: minuteTimestamp,
+      g0: buckets[0] ?? 0,
+      g1: buckets[1] ?? 0,
+      g2: buckets[2] ?? 0,
+      g3: buckets[3] ?? 0,
+      g4: buckets[4] ?? 0,
+      all: row.total ?? 0,
+      price: priceValue,
+    };
 
-    this.persistAggregates(row);
-  }
+    cvdOperations.push({
+      updateOne: {
+        filter: { symbol: this.symbol, tf: '1m', t: minuteTimestamp },
+        update: { $set: cvdDocument },
+        upsert: true,
+      },
+    });
 
-  persistAggregates(row) {
-    if (!row || !Number.isFinite(row.minute)) {
-      return;
-    }
-
-    if (!this.cvdModel) {
-      return;
-    }
-
-    const buckets = Array.isArray(row.buckets) ? row.buckets : this.createZeroBuckets();
-    const priceValue = Number.isFinite(row.price) ? row.price : null;
-    const operations = [];
+    const priceOperations = [];
 
     SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
       const bucketMs = timeframeToMs(timeframe);
       if (!bucketMs) return;
       const bucketTimestamp = Math.floor(row.minute / bucketMs) * bucketMs;
-      const update = {
-        symbol: this.symbol,
-        tf: timeframe,
-        t: bucketTimestamp,
-        g0: buckets[0] ?? 0,
-        g1: buckets[1] ?? 0,
-        g2: buckets[2] ?? 0,
-        g3: buckets[3] ?? 0,
-        g4: buckets[4] ?? 0,
-        all: row.total ?? 0,
-        price: priceValue,
-      };
 
-      operations.push(
+      cvdOperations.push({
+        updateOne: {
+          filter: { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
+          update: {
+            $set: {
+              symbol: this.symbol,
+              tf: timeframe,
+              t: bucketTimestamp,
+              g0: buckets[0] ?? 0,
+              g1: buckets[1] ?? 0,
+              g2: buckets[2] ?? 0,
+              g3: buckets[3] ?? 0,
+              g4: buckets[4] ?? 0,
+              all: row.total ?? 0,
+              price: priceValue,
+            },
+          },
+          upsert: true,
+        },
+      });
+
+      if (this.priceModel && priceValue != null) {
+        priceOperations.push({
+          updateOne: {
+            filter: { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
+            update: {
+              $set: {
+                symbol: this.symbol,
+                tf: timeframe,
+                t: bucketTimestamp,
+                close: priceValue,
+              },
+            },
+            upsert: true,
+          },
+        });
+      }
+    });
+
+    const writes = [];
+    if (cvdOperations.length) {
+      writes.push(
         this.cvdModel
-          .findOneAndUpdate(
-            { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
-            { $set: update },
-            { upsert: true, setDefaultsOnInsert: true }
-          )
+          .bulkWrite(cvdOperations, { ordered: false })
           .catch((error) => {
             console.error('[CVD] Failed to store series snapshot:', error.message);
           })
       );
+    }
+    if (this.priceModel && priceOperations.length) {
+      writes.push(
+        this.priceModel
+          .bulkWrite(priceOperations, { ordered: false })
+          .catch((error) => {
+            console.error('[CVD] Failed to store price snapshot:', error.message);
+          })
+      );
+    }
 
-      if (this.priceModel && priceValue != null) {
-        operations.push(
-          this.priceModel
-            .findOneAndUpdate(
-              { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
-              {
-                $set: {
-                  symbol: this.symbol,
-                  tf: timeframe,
-                  t: bucketTimestamp,
-                  close: priceValue,
-                },
-              },
-              { upsert: true, setDefaultsOnInsert: true }
-            )
-            .catch((error) => {
-              console.error('[CVD] Failed to store price snapshot:', error.message);
-            })
-        );
-      }
-    });
-
-    if (operations.length) {
-      Promise.allSettled(operations);
+    if (writes.length) {
+      Promise.allSettled(writes);
     }
   }
 
@@ -332,10 +331,13 @@ class CVDEngine extends EventEmitter {
       return [];
     }
 
+    const cappedLimit = Math.min(5000, Math.max(10, Number(limit) || 1440));
+
     const docs = await this.cvdModel
       .find({ symbol: this.symbol, tf })
       .sort({ t: -1 })
-      .limit(limit)
+      .limit(cappedLimit)
+      .select({ t: 1, all: 1, g0: 1, g1: 1, g2: 1, g3: 1, g4: 1, price: 1 })
       .lean();
 
     return docs
@@ -359,18 +361,22 @@ class CVDEngine extends EventEmitter {
       return [];
     }
 
+    const cappedLimit = Math.min(5000, Math.max(10, Number(limit) || 1440));
+
     let docs;
     if (this.priceModel) {
       docs = await this.priceModel
         .find({ symbol: this.symbol, tf, close: { $ne: null } })
         .sort({ t: -1 })
-        .limit(limit)
+        .limit(cappedLimit)
+        .select({ t: 1, close: 1 })
         .lean();
     } else {
       docs = await this.cvdModel
         .find({ symbol: this.symbol, tf, price: { $ne: null } })
         .sort({ t: -1 })
-        .limit(limit)
+        .limit(cappedLimit)
+        .select({ t: 1, price: 1 })
         .lean();
     }
 

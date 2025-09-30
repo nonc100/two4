@@ -133,6 +133,7 @@ class LiquidationHeatmapEngine extends EventEmitter {
 
       ws.on('open', () => {
         stream.retry = 0;
+        console.log(`[LIQ:${symbol}] Connected liquidation stream`);
       });
 
       ws.on('message', (raw) => {
@@ -144,6 +145,7 @@ class LiquidationHeatmapEngine extends EventEmitter {
       });
 
       ws.on('close', async () => {
+        console.warn(`[LIQ:${symbol}] Stream closed, scheduling reconnect`);
         const delay = Math.min(60_000, 1000 * 2 ** Math.min(stream.retry, 5));
         stream.retry += 1;
         await sleep(delay);
@@ -200,10 +202,17 @@ class LiquidationHeatmapEngine extends EventEmitter {
       }
 
       this.liquidationModel
-        .updateOne(
-          { symbol, eventTime, side, price, quantity },
-          { $setOnInsert: eventPayload },
-          { upsert: true }
+        .bulkWrite(
+          [
+            {
+              updateOne: {
+                filter: { symbol, eventTime, side, price, quantity },
+                update: { $setOnInsert: eventPayload },
+                upsert: true,
+              },
+            },
+          ],
+          { ordered: false }
         )
         .then(() => {
           this.emit('event', eventPayload);
@@ -265,6 +274,7 @@ class LiquidationHeatmapEngine extends EventEmitter {
       .find({ symbol, eventTime: { $gte: cutoff } })
       .sort({ eventTime: 1 })
       .limit(Math.max(limit * 5, 2000))
+      .select({ eventTime: 1, side: 1, price: 1, quantity: 1, notional: 1 })
       .lean()
       .then((docs) =>
         (docs || []).map((doc) => ({

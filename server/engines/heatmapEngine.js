@@ -2,7 +2,7 @@ const EventEmitter = require('events');
 const WebSocket = require('ws');
 const fetch = require('node-fetch');
 
-const { SUPPORTED_TIMEFRAMES, timeframeToMs, normalizeTimeframe } = require('../utils/timeframes');
+const { SUPPORTED_TIMEFRAMES, timeframeToMs } = require('../utils/timeframes');
 
 class HeatmapEngine extends EventEmitter {
   constructor({ heatmapModel, symbol }) {
@@ -32,8 +32,9 @@ class HeatmapEngine extends EventEmitter {
     }
 
     this.heatmapModel
-      .findOne({ symbol: this.symbol, tf: '1m' })
+      .findOne({ symbol: this.symbol, tf: '1m', binLow: null })
       .sort({ t: -1 })
+      .select({ lastPrice: 1 })
       .lean()
       .then((doc) => {
         if (!doc) {
@@ -224,39 +225,82 @@ class HeatmapEngine extends EventEmitter {
       return;
     }
 
-    const priceValue = Number.isFinite(lastPrice) ? lastPrice : null;
-    const snapshotBids = Array.isArray(bids) ? bids : [];
-    const snapshotAsks = Array.isArray(asks) ? asks : [];
-    const operations = [];
+    try {
+      const priceValue = Number.isFinite(lastPrice) ? lastPrice : null;
+      const snapshotBids = Array.isArray(bids) ? bids : [];
+      const snapshotAsks = Array.isArray(asks) ? asks : [];
+      const { cells, priceMin, priceMax } = this.transformSnapshot(snapshotBids, snapshotAsks);
+      const minuteTimestamp = Math.floor(timestamp / 60000) * 60000;
 
-    SUPPORTED_TIMEFRAMES.forEach((timeframe) => {
-      const bucketMs = timeframeToMs(timeframe);
-      if (!bucketMs) return;
-      const bucketTimestamp = Math.floor(timestamp / bucketMs) * bucketMs;
-      operations.push(
-        this.heatmapModel
-          .findOneAndUpdate(
-            { symbol: this.symbol, tf: timeframe, t: bucketTimestamp },
-            {
+      const operations = [
+        {
+          deleteMany: {
+            filter: { symbol: this.symbol, tf: '1m', t: minuteTimestamp },
+          },
+        },
+      ];
+
+      cells.forEach((cell) => {
+        operations.push({
+          updateOne: {
+            filter: {
+              symbol: this.symbol,
+              tf: '1m',
+              t: minuteTimestamp,
+              binLow: cell.binLow,
+            },
+            update: {
               $set: {
                 symbol: this.symbol,
-                tf: timeframe,
-                t: bucketTimestamp,
-                bids: snapshotBids,
-                asks: snapshotAsks,
+                tf: '1m',
+                t: minuteTimestamp,
+                binLow: cell.binLow,
+                binHigh: cell.binHigh,
+                volUSDT: cell.volUSDT,
                 lastPrice: priceValue,
+                priceMin,
+                priceMax,
               },
             },
-            { upsert: true, setDefaultsOnInsert: true }
-          )
-          .catch((error) => {
-            console.error('[HEATMAP] Failed to store timeframe snapshot:', error.message);
-          })
-      );
-    });
+            upsert: true,
+          },
+        });
+      });
 
-    if (operations.length) {
-      Promise.allSettled(operations);
+      operations.push({
+        updateOne: {
+          filter: {
+            symbol: this.symbol,
+            tf: '1m',
+            t: minuteTimestamp,
+            binLow: null,
+          },
+          update: {
+            $set: {
+              symbol: this.symbol,
+              tf: '1m',
+              t: minuteTimestamp,
+              binLow: null,
+              binHigh: null,
+              volUSDT: 0,
+              lastPrice: priceValue,
+              priceMin,
+              priceMax,
+            },
+          },
+          upsert: true,
+        },
+      });
+
+      if (operations.length > 1) {
+        this.heatmapModel
+          .bulkWrite(operations, { ordered: false })
+          .catch((error) => {
+            console.error('[HEATMAP] Failed to store heatmap snapshot:', error.message);
+          });
+      }
+    } catch (error) {
+      console.error('[HEATMAP] Failed to transform snapshot:', error.message);
     }
   }
 
@@ -288,27 +332,43 @@ class HeatmapEngine extends EventEmitter {
     return sorted.slice(0, 400);
   }
 
-  async getSnapshots({ limit = 720, timeframe = '1m' } = {}) {
-    const tf = normalizeTimeframe(timeframe);
-    if (!this.heatmapModel) {
-      return [];
+  transformSnapshot(bids, asks) {
+    const cells = [];
+    let priceMin = Number.POSITIVE_INFINITY;
+    let priceMax = Number.NEGATIVE_INFINITY;
+
+    const addLevel = ([price, qty]) => {
+      const priceNum = Number(price);
+      const qtyNum = Number(qty);
+      if (!Number.isFinite(priceNum) || !Number.isFinite(qtyNum) || qtyNum === 0) {
+        return;
+      }
+      const notional = Math.abs(priceNum * qtyNum);
+      if (!Number.isFinite(notional) || notional <= 0) {
+        return;
+      }
+
+      priceMin = Math.min(priceMin, priceNum);
+      priceMax = Math.max(priceMax, priceNum);
+
+      cells.push({
+        binLow: priceNum,
+        binHigh: priceNum,
+        volUSDT: notional,
+      });
+    };
+
+    bids.forEach(addLevel);
+    asks.forEach(addLevel);
+
+    if (!Number.isFinite(priceMin)) {
+      priceMin = null;
+    }
+    if (!Number.isFinite(priceMax)) {
+      priceMax = null;
     }
 
-    const docs = await this.heatmapModel
-      .find({ symbol: this.symbol, tf })
-      .sort({ t: -1 })
-      .limit(limit)
-      .lean();
-
-    return docs
-      .slice()
-      .reverse()
-      .map((doc) => ({
-        timestamp: doc.t,
-        bids: Array.isArray(doc.bids) ? doc.bids : [],
-        asks: Array.isArray(doc.asks) ? doc.asks : [],
-        last_price: doc.lastPrice ?? null,
-      }));
+    return { cells, priceMin, priceMax };
   }
 }
 
