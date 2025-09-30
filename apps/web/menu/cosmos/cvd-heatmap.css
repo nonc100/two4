@@ -97,6 +97,45 @@ body {
   gap: 32px;
 }
 
+.timeframe-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: -8px;
+  margin-bottom: -8px;
+  padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.tf-button {
+  position: relative;
+  border: 1px solid rgba(94, 234, 255, 0.4);
+  background: rgba(9, 16, 36, 0.6);
+  color: #b3f4ff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.tf-button:hover,
+.tf-button:focus-visible {
+  outline: none;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.3);
+  border-color: rgba(0, 255, 255, 0.6);
+}
+
+.tf-button.is-active {
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.25), rgba(91, 33, 182, 0.5));
+  color: #ffffff;
+  border-color: rgba(125, 211, 252, 0.7);
+  box-shadow: 0 0 24px rgba(91, 33, 182, 0.4);
+}
+
 .panel {
   background: linear-gradient(135deg, rgba(8, 16, 36, 0.78), rgba(20, 12, 40, 0.82));
   border-radius: 28px;
@@ -228,6 +267,61 @@ body {
   overflow: hidden;
 }
 
+.chart-skeleton {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 30%, rgba(20, 40, 75, 0.85), rgba(8, 14, 32, 0.92));
+  z-index: 3;
+  pointer-events: none;
+}
+
+.chart-skeleton::after {
+  content: '';
+  width: 60%;
+  height: 60%;
+  border-radius: 24px;
+  background: linear-gradient(120deg, rgba(41, 121, 255, 0.25), rgba(56, 189, 248, 0.15), rgba(147, 51, 234, 0.25));
+  filter: blur(16px);
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+.chart-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  background: rgba(13, 23, 42, 0.8);
+  color: #9be8ff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 4;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.05);
+  }
+}
+
 .cvd-panel .chart {
   height: 360px;
 }
@@ -250,6 +344,10 @@ body {
   .dashboard-main {
     padding-bottom: 48px;
   }
+
+  .timeframe-toolbar {
+    padding: 0 24px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -262,6 +360,12 @@ body {
   .panel {
     border-radius: 22px;
     padding: 20px;
+  }
+
+  .timeframe-toolbar {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .chart {
