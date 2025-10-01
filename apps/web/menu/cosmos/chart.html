@@ -300,6 +300,15 @@ document.getElementById('btnReset').onclick = ()=> { chart.timeScale().setVisibl
 // --- TF별 간격(초) ---
 const TFSEC = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
+function lastItem(arr){
+  return Array.isArray(arr) && arr.length ? arr[arr.length - 1] : undefined;
+}
+function nthFromEnd(arr, n){
+  if (!Array.isArray(arr)) return undefined;
+  const idx = arr.length - 1 - n;
+  return idx >= 0 ? arr[idx] : undefined;
+}
+
 function clearAllSeries(){
   mainSeries.setData([]);
   volSeries.setData([]);
@@ -383,7 +392,7 @@ async function loadAll(){
 
   // 3-1) 마지막 캔들 이후 현재 시점까지 더미 캔들 보강
   const now = Math.floor(Date.now() / 1000);
-  let last = norm.at(-1);
+  let last = lastItem(norm);
   while (last && last[0] + STEP <= now) {
     const prevClose = last[4];
     last = [last[0] + STEP, prevClose, prevClose, prevClose, prevClose, 0];
@@ -410,16 +419,26 @@ async function loadAll(){
   console.log('uniq steps:', steps);
 
   // 디버그: 렌더에 넣은 데이터 확인
-  console.log('[candles]', TF, candles.length, 'from', new Date(candles[0].time*1000).toISOString(), 'to', new Date(candles.at(-1).time*1000).toISOString());
+  const firstCandle = candles[0];
+  const lastCandle = lastItem(candles);
+  if (firstCandle && lastCandle) {
+    console.log('[candles]', TF, candles.length, 'from', new Date(firstCandle.time*1000).toISOString(), 'to', new Date(lastCandle.time*1000).toISOString());
+  }
   for(let i=1;i<Math.min(candles.length,50);i++){
     const d=candles[i].time - candles[i-1].time;
     if(d !== TFSEC[TF]){ console.warn('STEP MISMATCH at', i, 'Δ', d); break; }
   }
 
   // 가격/등락 표시
-  const last = candles.at(-1), prev = candles.at(-2) || last;
-  const lastPrice = last.close, prevClose = prev.close;
-  const pct = ((lastPrice - prevClose)/prevClose)*100;
+  const last = lastCandle;
+  const prev = nthFromEnd(candles, 1) || last;
+  const lastPrice = last?.close ?? 0;
+  const prevClose = prev?.close ?? lastPrice;
+  if (!last || !Number.isFinite(lastPrice) || !Number.isFinite(prevClose)) {
+    showStatus('가격 데이터를 불러오지 못했습니다', 'error');
+    return;
+  }
+  const pct = prevClose !== 0 ? ((lastPrice - prevClose)/prevClose)*100 : 0;
   document.getElementById('lastPrice').textContent = lastPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const chg = document.getElementById('pctChg');
   chg.textContent = (pct>=0?'+':'') + pct.toFixed(2) + '%';
