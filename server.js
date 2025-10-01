@@ -37,6 +37,19 @@ let liquidationRouter;
 let priceRouter;
 const seedWeatherRouter = createSeedWeatherRouter();
 
+let coreRoutersRegistered = false;
+function ensureCoreRouters() {
+  if (coreRoutersRegistered) {
+    return;
+  }
+
+  app.use('/api/seed-weather', seedWeatherRouter);
+  app.use('/api/orbits', orbitsRouter);
+  app.use('/api/method', orbitsRouter);
+
+  coreRoutersRegistered = true;
+}
+
 // ==============================
 // 정적 파일 서빙
 // ==============================
@@ -1443,7 +1456,15 @@ function gracefulShutdown(signal) {
 
 async function bootstrap() {
   const uri = process.env.MONGODB_URI;
-  if (uri) {
+
+  if (!uri) {
+    console.warn('⚠️  MONGODB_URI is not set. Starting server without Mongo-backed features.');
+    ensureCoreRouters();
+    startHttpServer();
+    return;
+  }
+
+  try {
     try {
       const parsed = new URL(uri);
       const masked = `${parsed.protocol}//${parsed.username || '(no-user)'}:****@${parsed.host}${parsed.pathname || ''}`;
@@ -1451,13 +1472,14 @@ async function bootstrap() {
     } catch (error) {
       console.log('🔌 Connecting to MongoDB with provided URI');
     }
-  }
 
-  try {
     await connectDatabase();
   } catch (error) {
     console.error('❌ Failed to connect to MongoDB:', error.message);
-    process.exit(1);
+    console.warn('➡️  Continuing without MongoDB. API endpoints that rely on Mongo will be disabled.');
+    ensureCoreRouters();
+    startHttpServer();
+    return;
   }
 
   cvdEngine = new CVDEngine({ cvdModel: CVDModel, priceModel: PriceModel, symbol: 'BTCUSDT' });
@@ -1477,14 +1499,13 @@ async function bootstrap() {
   app.use('/api/heatmap', heatmapRouter);
   app.use('/api/liquidations', liquidationRouter);
   app.use('/api/price', priceRouter);
-  app.use('/api/seed-weather', seedWeatherRouter);
-  app.use('/api/orbits', orbitsRouter);
-  app.use('/api/method', orbitsRouter);
+  ensureCoreRouters();
 
   startHttpServer();
 }
 
 bootstrap().catch((error) => {
   console.error('❌ Failed to bootstrap application:', error);
-  process.exit(1);
+  ensureCoreRouters();
+  startHttpServer();
 });
