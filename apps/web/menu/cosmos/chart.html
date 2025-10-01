@@ -32,7 +32,11 @@
   .ghost{background:transparent; border-color:rgba(255,255,255,.14)}
 
   /* 차트 */
-  #chart{flex:1; min-height:360px}
+  #chart{flex:1; min-height:360px; position:relative}
+  .chart-status{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; background:rgba(11,16,24,.78); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border:1px solid rgba(148,163,184,.2); border-radius:18px; margin:18px; color:#cbd5ff; box-shadow:0 18px 48px rgba(0,0,0,.35); z-index:5; pointer-events:none;}
+  .chart-status.muted{color:#94a3b8; border-color:rgba(148,163,184,.18)}
+  .chart-status.error{color:#fda4af; border-color:rgba(248,113,113,.28); text-shadow:0 0 18px rgba(248,113,113,.35)}
+  .chart-status.hidden{display:none}
 
   /* 하단 도크 */
   .dock{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 12px;
@@ -191,6 +195,22 @@ function calcBB(close, period=20, mult=2){
 
 /* ===== 차트 생성 - UTC 시간대로 수정 ===== */
 const root = document.getElementById('chart');
+const statusBox = document.createElement('div');
+statusBox.id = 'chartStatus';
+statusBox.className = 'chart-status hidden muted';
+statusBox.textContent = 'Loading...';
+root.appendChild(statusBox);
+
+function showStatus(message, tone='muted'){
+  statusBox.textContent = message;
+  statusBox.classList.remove('hidden','muted','error');
+  statusBox.classList.add(tone === 'error' ? 'error' : 'muted');
+}
+
+function hideStatus(){
+  statusBox.classList.add('hidden');
+}
+
 const chart = LightweightCharts.createChart(root,{
   layout:{ background:{ type:'solid', color:'transparent' }, textColor:'#dfe8ff' },
   grid:{ vertLines:{color:'rgba(255,255,255,.06)'}, horzLines:{color:'rgba(255,255,255,.06)'} },
@@ -280,11 +300,37 @@ document.getElementById('btnReset').onclick = ()=> { chart.timeScale().setVisibl
 // --- TF별 간격(초) ---
 const TFSEC = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
 
+function clearAllSeries(){
+  mainSeries.setData([]);
+  volSeries.setData([]);
+  rsiPane.setData([]);
+  oiPane.setData([]);
+  h50.setData([]);
+  h100.setData([]);
+  h200.setData([]);
+  bbUpper.setData([]);
+  bbMid.setData([]);
+  bbLower.setData([]);
+}
+
 /* 로더 - 결측 구간 처리 개선 */
 async function loadAll(){
   syncTFUI();
+  showStatus('Loading...', 'muted');
   const [dURL,pURL] = klineURL(SYMBOL, TF, chooseLimit(TF));
-  let rows = await getJson(dURL,pURL);           // 바이낸스 klines 원본(배열[])
+  try {
+    let rows = await getJson(dURL,pURL);           // 바이낸스 klines 원본(배열[])
+
+    if (rows && Array.isArray(rows.data)) rows = rows.data;
+    if (!Array.isArray(rows)) {
+      throw new Error('invalid klines payload');
+    }
+
+    if (!rows.length) {
+      clearAllSeries();
+      showStatus('데이터가 없습니다', 'muted');
+      return;
+    }
 
   // === Binance klines 정규화: ms→sec, 경계 스냅, 중복제거, 결측 채움 ===
   const SEC_OF = { '1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800 };
@@ -346,6 +392,12 @@ async function loadAll(){
 
   // 이후 로직은 norm 사용
   const rowsNorm = norm;
+
+  if (!rowsNorm.length) {
+    clearAllSeries();
+    showStatus('데이터가 없습니다', 'muted');
+    return;
+  }
 
   const candles = rowsNorm.map(toCandle);
   const volumes = rowsNorm.map(toVolume);
@@ -409,6 +461,13 @@ async function loadAll(){
     const oiData = oij.map(x=>({ time: Math.floor(new Date(x.timestamp).getTime()/1000), value: +x.sumOpenInterest }));
     oiPane.setData(oiData);
   }catch(e){ oiPane.setData([]); }
+
+  hideStatus();
+  } catch (err) {
+    console.error('chart load failed', err);
+    clearAllSeries();
+    showStatus('차트를 불러오지 못했습니다', 'error');
+  }
 }
 syncToggles();
 document.getElementById('symLabel').textContent = SYMBOL;
