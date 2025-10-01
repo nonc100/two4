@@ -335,6 +335,15 @@ async function loadAll(){
     }
   }
 
+  // 3-1) 마지막 캔들 이후 현재 시점까지 더미 캔들 보강
+  const now = Math.floor(Date.now() / 1000);
+  let last = norm.at(-1);
+  while (last && last[0] + STEP <= now) {
+    const prevClose = last[4];
+    last = [last[0] + STEP, prevClose, prevClose, prevClose, prevClose, 0];
+    norm.push(last);
+  }
+
   // 이후 로직은 norm 사용
   const rowsNorm = norm;
 
