@@ -89,7 +89,7 @@ body {
 .dashboard-main {
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 clamp(16px, 4vw, 48px) 64px;
   display: flex;
@@ -262,7 +262,7 @@ body {
 .chart {
   position: relative;
   margin-top: 20px;
-  height: 420px;
+  height: 360px;
   border-radius: 20px;
   overflow: hidden;
 }
@@ -323,7 +323,7 @@ body {
 }
 
 .cvd-panel .chart {
-  height: 360px;
+  height: 300px;
 }
 
 .dashboard-footer {
