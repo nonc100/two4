@@ -210,9 +210,14 @@
         max = Math.max(max, highValue);
       }
     });
+    if (!Number.isFinite(min) || !Number.isFinite(max)) {
+      return { min: null, max: null };
+    }
+    const range = Math.max(max - min, 0);
+    const padding = range > 0 ? range * 0.05 : Math.max(Math.abs(max) * 0.01, 1);
     return {
-      min: Number.isFinite(min) ? min : null,
-      max: Number.isFinite(max) ? max : null,
+      min: min - padding,
+      max: max + padding,
     };
   }
 
@@ -387,7 +392,7 @@
     tooltipSyncBound = true;
   }
 
-  function buildHeatmapOption(heatmap, candlesticks, priceBounds) {
+  function buildHeatmapOption(heatmap, candlesticks, priceBounds, lineSeries) {
     const timestamps = Array.isArray(heatmap?.timestamps)
       ? heatmap.timestamps
       : Array.isArray(heatmap?.rows)
@@ -445,9 +450,16 @@
     const minPrice = Number.isFinite(priceBounds?.min) ? priceBounds.min : null;
     const maxPrice = Number.isFinite(priceBounds?.max) ? priceBounds.max : null;
 
+    const hasCandles = Array.isArray(filteredCandles) && filteredCandles.length > 0;
+    const priceLine = Array.isArray(lineSeries)
+      ? lineSeries
+          .filter(([ts, close]) => Number.isFinite(ts) && Number.isFinite(close))
+          .map(([ts, close]) => [Number(ts), Number(close)])
+      : [];
+
     const option = {
       backgroundColor: 'transparent',
-      grid: { left: 110, right: 60, top: 70, bottom: 60 },
+      grid: { left: 110, right: 90, top: 70, bottom: 60 },
       tooltip: {
         trigger: 'item',
         borderColor: '#1b3455',
@@ -520,7 +532,7 @@
       },
       yAxis: {
         type: 'value',
-        position: 'left',
+        position: 'right',
         scale: true,
         min: (value) => (minPrice != null ? minPrice : value.min),
         max: (value) => (maxPrice != null ? maxPrice : value.max),
@@ -564,22 +576,44 @@
           progressive: 0,
           emphasis: { itemStyle: { borderColor: '#00f5ff', borderWidth: 1 } },
         },
-        {
-          id: 'price-candles',
-          name: 'Price',
-          type: 'candlestick',
-          encode: { x: 0, y: [1, 2, 3, 4] },
-          data: filteredCandles,
-          itemStyle: {
-            color: 'rgba(34, 211, 238, 0.85)',
-            color0: 'rgba(248, 113, 113, 0.85)',
-            borderColor: '#22d3ee',
-            borderColor0: '#f87171',
-          },
-          emphasis: { focus: 'series' },
-          barWidth: '65%',
-          zlevel: 3,
-        },
+        ...(hasCandles
+          ? [
+              {
+                id: 'price-candles',
+                name: 'Price',
+                type: 'candlestick',
+                encode: { x: 0, y: [1, 2, 3, 4] },
+                data: filteredCandles,
+                itemStyle: {
+                  color: 'rgba(34, 211, 238, 0.85)',
+                  color0: 'rgba(248, 113, 113, 0.85)',
+                  borderColor: '#22d3ee',
+                  borderColor0: '#f87171',
+                },
+                emphasis: { focus: 'series' },
+                barWidth: '65%',
+                zlevel: 3,
+              },
+            ]
+          : []),
+        ...(priceLine.length
+          ? [
+              {
+                id: 'price-line',
+                name: 'Price Close',
+                type: 'line',
+                data: priceLine,
+                smooth: true,
+                showSymbol: false,
+                lineStyle: {
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  width: 1.5,
+                },
+                emphasis: { focus: 'series' },
+                zlevel: 4,
+              },
+            ]
+          : []),
       ],
       textStyle: {
         fontFamily: 'Rajdhani, sans-serif',
@@ -778,7 +812,7 @@
         .sort((a, b) => a[0] - b[0]);
       const candles = buildCandlestickData(lineData);
       const priceBounds = computeCandlestickBounds(candles);
-      const heatmapOptionData = buildHeatmapOption(heatmap, candles, priceBounds);
+      const heatmapOptionData = buildHeatmapOption(heatmap, candles, priceBounds, lineData);
       const cvdPriceSeries = Array.isArray(cvd?.price) ? cvd.price : [];
       const priceLookup = buildPriceLookup(lineData, cvdPriceSeries);
       const cvdOption = buildCvdOption(cvd, priceLookup);
