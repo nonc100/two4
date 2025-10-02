@@ -22,6 +22,7 @@ const createHeatmapRouter = require('./server/api/heatmap');
 const createLiquidationHeatmapRouter = require('./server/api/liquidation-heatmap');
 const createPriceRouter = require('./server/api/price');
 const createSeedWeatherRouter = require('./server/api/seed-weather');
+const { SUPPORTED_TIMEFRAMES, normalizeTimeframe } = require('./server/utils/timeframes');
 const compression = require('compression');
 
 const app = express();
@@ -36,6 +37,48 @@ let heatmapRouter;
 let liquidationRouter;
 let priceRouter;
 const seedWeatherRouter = createSeedWeatherRouter();
+
+function clamp(value, min, max) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(Math.max(value, min), max);
+}
+
+function createDisabledLiquidationsRouter() {
+  const router = express.Router();
+
+  router.get('/symbols', (_req, res) => {
+    res.json({ symbols: [] });
+  });
+
+  router.get('/', (req, res) => {
+    const symbol = String(req.query.symbol || '').toUpperCase() || null;
+    const timeframe = normalizeTimeframe(req.query.tf, '1m');
+    const bins = clamp(Number.parseInt(req.query.bins, 10) || 160, 20, 600);
+
+    res.json({
+      symbol,
+      timeframe,
+      timestamps: [],
+      matrix: [],
+      priceSeries: [],
+      longSeries: [],
+      shortSeries: [],
+      totals: { long: 0, short: 0, count: 0 },
+      priceBins: { count: bins, min: null, max: null, step: null, centers: [] },
+      maxValue: 0,
+      meta: {
+        timeframes: SUPPORTED_TIMEFRAMES,
+        lastPrice: null,
+        clip: null,
+        disabled: true,
+      },
+    });
+  });
+
+  return router;
+}
 
 let coreRoutersRegistered = false;
 function ensureCoreRouters() {
@@ -1459,6 +1502,8 @@ async function bootstrap() {
 
   if (!uri) {
     console.warn('⚠️  MONGODB_URI is not set. Starting server without Mongo-backed features.');
+    liquidationRouter = createDisabledLiquidationsRouter();
+    app.use('/api/liquidations', liquidationRouter);
     ensureCoreRouters();
     startHttpServer();
     return;
@@ -1477,6 +1522,8 @@ async function bootstrap() {
   } catch (error) {
     console.error('❌ Failed to connect to MongoDB:', error.message);
     console.warn('➡️  Continuing without MongoDB. API endpoints that rely on Mongo will be disabled.');
+    liquidationRouter = createDisabledLiquidationsRouter();
+    app.use('/api/liquidations', liquidationRouter);
     ensureCoreRouters();
     startHttpServer();
     return;
