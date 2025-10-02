@@ -80,6 +80,87 @@ function createDisabledLiquidationsRouter() {
   return router;
 }
 
+function createDisabledHeatmapRouter() {
+  const router = express.Router();
+
+  router.get('/', (req, res) => {
+    const symbol = String(req.query.symbol || 'BTCUSDT').toUpperCase();
+    const timeframe = normalizeTimeframe(req.query.tf, '1m');
+    const bins = clamp(Number.parseInt(req.query.bins, 10) || 120, 10, 500);
+
+    res.json({
+      symbol,
+      timeframe,
+      rows: [],
+      cols: [],
+      timestamps: [],
+      matrix: [],
+      priceMin: null,
+      priceMax: null,
+      lastPrice: null,
+      priceBins: { count: bins, min: null, max: null, step: null, centers: [] },
+      maxValue: 0,
+      meta: {
+        timeframes: SUPPORTED_TIMEFRAMES,
+        lastPrice: null,
+        scale: { logBase: 10, clip: null },
+        disabled: true,
+      },
+    });
+  });
+
+  return router;
+}
+
+function createDisabledCvdRouter() {
+  const router = express.Router();
+
+  router.get('/', (req, res) => {
+    const symbol = String(req.query.symbol || 'BTCUSDT').toUpperCase();
+    const timeframe = normalizeTimeframe(req.query.tf, '1m');
+
+    res.json({
+      symbol,
+      timeframe,
+      buckets: [],
+      series: {},
+      price: [],
+      deltas: {},
+      meta: {
+        lastPrice: null,
+        lastTimestamp: null,
+        timeframes: SUPPORTED_TIMEFRAMES,
+        disabled: true,
+        integrity: { warnings: [] },
+      },
+    });
+  });
+
+  return router;
+}
+
+function createDisabledPriceRouter() {
+  const router = express.Router();
+
+  router.get('/', (req, res) => {
+    const symbol = String(req.query.symbol || 'BTCUSDT').toUpperCase();
+    const timeframe = normalizeTimeframe(req.query.tf, '1m');
+
+    res.json({
+      symbol,
+      timeframe,
+      prices: [],
+      meta: {
+        lastPrice: null,
+        timeframes: SUPPORTED_TIMEFRAMES,
+        disabled: true,
+      },
+    });
+  });
+
+  return router;
+}
+
 let coreRoutersRegistered = false;
 function ensureCoreRouters() {
   if (coreRoutersRegistered) {
@@ -1502,7 +1583,13 @@ async function bootstrap() {
 
   if (!uri) {
     console.warn('⚠️  MONGODB_URI is not set. Starting server without Mongo-backed features.');
+    cvdRouter = createDisabledCvdRouter();
+    heatmapRouter = createDisabledHeatmapRouter();
+    priceRouter = createDisabledPriceRouter();
     liquidationRouter = createDisabledLiquidationsRouter();
+    app.use('/api/cvd', cvdRouter);
+    app.use('/api/heatmap', heatmapRouter);
+    app.use('/api/price', priceRouter);
     app.use('/api/liquidations', liquidationRouter);
     ensureCoreRouters();
     startHttpServer();
@@ -1522,7 +1609,13 @@ async function bootstrap() {
   } catch (error) {
     console.error('❌ Failed to connect to MongoDB:', error.message);
     console.warn('➡️  Continuing without MongoDB. API endpoints that rely on Mongo will be disabled.');
+    cvdRouter = createDisabledCvdRouter();
+    heatmapRouter = createDisabledHeatmapRouter();
+    priceRouter = createDisabledPriceRouter();
     liquidationRouter = createDisabledLiquidationsRouter();
+    app.use('/api/cvd', cvdRouter);
+    app.use('/api/heatmap', heatmapRouter);
+    app.use('/api/price', priceRouter);
     app.use('/api/liquidations', liquidationRouter);
     ensureCoreRouters();
     startHttpServer();
