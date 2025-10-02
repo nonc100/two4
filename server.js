@@ -174,6 +174,24 @@ function ensureCoreRouters() {
   coreRoutersRegistered = true;
 }
 
+let fallbackRoutesRegistered = false;
+function ensureFallbackRoutes() {
+  if (fallbackRoutesRegistered) {
+    return;
+  }
+
+  app.get('/healthz', (_req, res) => res.json({ ok: true }));
+
+  app.use((req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'Not Found' });
+    }
+    return res.status(404).end();
+  });
+
+  fallbackRoutesRegistered = true;
+}
+
 // ==============================
 // 정적 파일 서빙
 // ==============================
@@ -1533,17 +1551,6 @@ app.get('*', (req, res, next) => {
   return res.sendFile(path.join(__dirname, 'apps/web/index.html'));
 });
 
-// 여기까지 못 잡힌 건 404로
-app.use((req, res) => {
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({ error: 'Not Found' });
-  }
-  return res.status(404).end();
-});
-
-// 헬스체크
-app.get('/healthz', (_req, res) => res.json({ ok: true }));
-
 // ==============================
 // MongoDB 연결 + 서버 시작
 // ==============================
@@ -1592,6 +1599,7 @@ async function bootstrap() {
     app.use('/api/price', priceRouter);
     app.use('/api/liquidations', liquidationRouter);
     ensureCoreRouters();
+    ensureFallbackRoutes();
     startHttpServer();
     return;
   }
@@ -1618,6 +1626,7 @@ async function bootstrap() {
     app.use('/api/price', priceRouter);
     app.use('/api/liquidations', liquidationRouter);
     ensureCoreRouters();
+    ensureFallbackRoutes();
     startHttpServer();
     return;
   }
@@ -1640,6 +1649,7 @@ async function bootstrap() {
   app.use('/api/liquidations', liquidationRouter);
   app.use('/api/price', priceRouter);
   ensureCoreRouters();
+  ensureFallbackRoutes();
 
   startHttpServer();
 }
@@ -1647,5 +1657,6 @@ async function bootstrap() {
 bootstrap().catch((error) => {
   console.error('❌ Failed to bootstrap application:', error);
   ensureCoreRouters();
+  ensureFallbackRoutes();
   startHttpServer();
 });
