@@ -359,7 +359,7 @@
 
     const option = {
       backgroundColor: 'transparent',
-      grid: { left: 70, right: 60, top: 80, bottom: 60 },
+      grid: { left: 110, right: 60, top: 70, bottom: 60 },
       tooltip: {
         trigger: 'item',
         borderColor: '#1b3455',
@@ -385,7 +385,7 @@
         max: maxValue,
         calculable: true,
         orient: 'vertical',
-        right: 68,
+        left: 36,
         top: 'center',
         text: ['HIGH', 'LOW'],
         itemHeight: 200,
@@ -413,7 +413,7 @@
       },
       yAxis: {
         type: 'value',
-        position: 'right',
+        position: 'left',
         scale: true,
         min: (value) => (minPrice != null ? minPrice : value.min),
         max: (value) => (maxPrice != null ? maxPrice : value.max),

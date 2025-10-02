@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -19,7 +19,7 @@
     </a>
     <div class="header-title">
       <h1>Cosmic Liquidity Matrix</h1>
-      <p>Binance BTCUSDT · Futures Orderbook heatmap + CVD bands · 우주 네온 감성</p>
+      <p>Binance BTCUSDT · Futures orderbook heatmap + CVD bands</p>
     </div>
   </header>
 
@@ -37,7 +37,7 @@
       <div class="panel-header">
         <div>
           <h2 id="heatmapTitle">Liquidity Heatmap</h2>
-          <p class="panel-description">30초 스냅샷으로 구성된 가격-시간 유동성 히트맵 · 파란선은 실시간 중간가</p>
+          <p class="panel-description">Price-time liquidity heatmap built from 30s snapshots · Blue line tracks the live mid price</p>
         </div>
         <div class="panel-meta">
           <div>
@@ -65,10 +65,10 @@
       <div class="panel-header">
         <div>
           <h2 id="cvdTitle">Neon CVD Bands</h2>
-          <p class="panel-description">1분 누적 매수·매도 델타 · 주문규모별 5개 밴드 + 전체 누적</p>
+          <p class="panel-description">One-minute cumulative buy &amp; sell delta · Five bands by order size plus the total cumulative line</p>
         </div>
         <div class="panel-hints">
-          <span>범례 클릭으로 라인 on/off · 드래그로 줌 · 상단 히트맵과 시간축 연동</span>
+          <span>Toggle lines via the legend · Drag to zoom · Time axis synced with the heatmap above</span>
         </div>
       </div>
       <div class="chart" id="cvdChart" role="img" aria-label="CVD lines by notional size"></div>
