@@ -68,9 +68,9 @@
     if (abs < 1) {
       digits = 4;
     }
-   if (abs < 0.01) {
-     digits = 6;
-   }
+    if (abs < 0.01) {
+      digits = 6;
+    }
     const fixed = Number(value).toFixed(digits);
     return numberFormatter.format(Number(fixed));
   }
@@ -112,6 +112,7 @@
     }
     const centers = payload.priceBins?.centers || [];
     const heatmapData = [];
+    const priceExtents = [];
     payload.matrix.forEach((row, rowIndex) => {
       const ts = payload.timestamps[rowIndex];
       row.forEach((value, colIndex) => {
@@ -120,15 +121,36 @@
           return;
         }
         heatmapData.push([ts, price, Number(value)]);
+        priceExtents.push(Number(price));
       });
     });
 
     const priceSeries = Array.isArray(payload.priceSeries)
-      ? payload.priceSeries.filter((point) => Number.isFinite(point?.[1]))
+      ? payload.priceSeries
+          .filter((point) => Number.isFinite(point?.[1]))
+          .map(([ts, price]) => {
+            const tsNumber = Number(ts);
+            const priceNumber = Number(price);
+            if (Number.isFinite(priceNumber)) {
+              priceExtents.push(priceNumber);
+            }
+            return [tsNumber, priceNumber];
+          })
       : [];
 
     const maxValue = Math.max(1, Number(payload.maxValue) || 0);
     const clip = Number(payload.meta?.clip) || 0;
+    const hasPrices = priceExtents.length > 0;
+    const priceMin = hasPrices ? Math.min(...priceExtents) : null;
+    const priceMax = hasPrices ? Math.max(...priceExtents) : null;
+    let axisMin = Number.isFinite(priceMin) ? priceMin : payload.priceBins?.min ?? null;
+    let axisMax = Number.isFinite(priceMax) ? priceMax : payload.priceBins?.max ?? null;
+    if (Number.isFinite(axisMin) && Number.isFinite(axisMax)) {
+      const range = Math.max(axisMax - axisMin, 0);
+      const padding = range > 0 ? range * 0.05 : Math.max(Math.abs(axisMax) * 0.01, 1);
+      axisMin -= padding;
+      axisMax += padding;
+    }
 
     return {
       animation: false,
@@ -136,7 +158,7 @@
       grid: {
         top: 24,
         left: 60,
-        right: 20,
+        right: 80,
         bottom: 40,
       },
       tooltip: {
@@ -172,9 +194,10 @@
       },
       yAxis: {
         type: 'value',
-        inverse: true,
-        min: payload.priceBins?.min ?? null,
-        max: payload.priceBins?.max ?? null,
+        position: 'right',
+        scale: true,
+        min: axisMin,
+        max: axisMax,
         axisLabel: {
           color: '#dbe2ff',
           formatter: (value) => formatPrice(value),
