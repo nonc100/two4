@@ -257,7 +257,11 @@
         updatedEl.textContent = '--';
       }
     }
-    setStatus('Online', 'online');
+    if (payload?.meta?.disabled) {
+      setStatus('Offline', 'error');
+    } else {
+      setStatus('Online', 'online');
+    }
   }
 
   function render(payload) {
