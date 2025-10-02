@@ -41,7 +41,7 @@
   };
 
   const LIMITS = {
-    price: { '1m': 1440, '5m': 1440, '15m': 960, '1h': 720, '4h': 720, '1d': 365 },
+    price: { '1m': 500, '5m': 500, '15m': 480, '1h': 420, '4h': 360, '1d': 365 },
     cvd: { '1m': 1440, '5m': 1440, '15m': 960, '1h': 720, '4h': 720, '1d': 365 },
     heatmap: { '1m': 720, '5m': 720, '15m': 480, '1h': 360, '4h': 360, '1d': 180 },
   };
@@ -49,6 +49,7 @@
   const syncState = {
     heatmapIndexMap: new Map(),
     heatmapTimestamps: [],
+    candlestickIndexMap: new Map(),
     cvdSeriesAll: [],
   };
   let tooltipSyncBound = false;
@@ -193,21 +194,89 @@
     return group[timeframe] || fallback;
   }
 
-  function computePriceBounds(lineData) {
-    if (!Array.isArray(lineData) || lineData.length === 0) {
+  function computeCandlestickBounds(candles) {
+    if (!Array.isArray(candles) || candles.length === 0) {
       return { min: null, max: null };
     }
     let min = Number.POSITIVE_INFINITY;
     let max = Number.NEGATIVE_INFINITY;
-    lineData.forEach(([, price]) => {
-      if (!Number.isFinite(price)) return;
-      min = Math.min(min, price);
-      max = Math.max(max, price);
+    candles.forEach(([, , , low, high]) => {
+      const lowValue = Number(low);
+      const highValue = Number(high);
+      if (Number.isFinite(lowValue)) {
+        min = Math.min(min, lowValue);
+      }
+      if (Number.isFinite(highValue)) {
+        max = Math.max(max, highValue);
+      }
     });
     return {
       min: Number.isFinite(min) ? min : null,
       max: Number.isFinite(max) ? max : null,
     };
+  }
+
+  function toNumberArray(values) {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    return values
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+  }
+
+  function deriveBinCenters(heatmap) {
+    const priceBins = heatmap?.priceBins;
+    if (Array.isArray(priceBins?.centers) && priceBins.centers.length) {
+      return toNumberArray(priceBins.centers);
+    }
+    const cols = toNumberArray(heatmap?.cols);
+    if (!cols.length) {
+      return [];
+    }
+    if (cols.length === 1) {
+      return [cols[0]];
+    }
+    return cols.map((value, index) => {
+      const next = cols[index + 1];
+      if (Number.isFinite(next)) {
+        return value + (next - value) / 2;
+      }
+      const prev = cols[index - 1];
+      if (Number.isFinite(prev)) {
+        return value - (value - prev) / 2;
+      }
+      return value;
+    });
+  }
+
+  function buildCandlestickData(lineData) {
+    const candles = [];
+    if (!Array.isArray(lineData)) {
+      return candles;
+    }
+    lineData.forEach(([ts, close], index) => {
+      const timestamp = Number(ts);
+      const closeValue = Number(close);
+      if (!Number.isFinite(timestamp) || !Number.isFinite(closeValue)) {
+        return;
+      }
+      const prevClose = index > 0 ? Number(lineData[index - 1][1]) : closeValue;
+      const openValue = Number.isFinite(prevClose) ? prevClose : closeValue;
+      const neighborValues = [openValue, closeValue];
+      const nextClose = index < lineData.length - 1 ? Number(lineData[index + 1][1]) : null;
+      if (Number.isFinite(nextClose)) {
+        neighborValues.push(nextClose);
+      }
+      if (Number.isFinite(prevClose)) {
+        neighborValues.push(prevClose);
+      }
+      const highValue = Math.max(...neighborValues);
+      const lowValue = Math.min(...neighborValues);
+      const candle = [timestamp, openValue, closeValue, lowValue, highValue];
+      candles.push(candle);
+    });
+    return candles;
   }
 
   function buildPriceLookup(lineData, cvdPoints) {
@@ -286,6 +355,10 @@
       if (Number.isInteger(heatIdx)) {
         heatmapChart.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: heatIdx });
       }
+      const candleIdx = syncState.candlestickIndexMap.get(ts);
+      if (Number.isInteger(candleIdx)) {
+        heatmapChart.dispatchAction({ type: 'showTip', seriesIndex: 1, dataIndex: candleIdx });
+      }
       isSyncingPointer = false;
     });
 
@@ -304,37 +377,44 @@
       if (idx !== -1) {
         cvdChart.dispatchAction({ type: 'showTip', seriesIndex: 0, dataIndex: idx });
       }
+      const candleIdx = syncState.candlestickIndexMap.get(ts);
+      if (Number.isInteger(candleIdx)) {
+        heatmapChart.dispatchAction({ type: 'showTip', seriesIndex: 1, dataIndex: candleIdx });
+      }
       isSyncingPointer = false;
     });
 
     tooltipSyncBound = true;
   }
 
-  function buildHeatmapOption(heatmap, lineData, priceBounds) {
-    if (
-      !heatmap ||
-      !Array.isArray(heatmap.timestamps) ||
-      !Array.isArray(heatmap.matrix) ||
-      heatmap.timestamps.length === 0 ||
-      heatmap.matrix.length === 0
-    ) {
+  function buildHeatmapOption(heatmap, candlesticks, priceBounds) {
+    const timestamps = Array.isArray(heatmap?.timestamps)
+      ? heatmap.timestamps
+      : Array.isArray(heatmap?.rows)
+      ? heatmap.rows
+      : [];
+    if (!heatmap || !Array.isArray(timestamps) || !Array.isArray(heatmap.matrix) || !timestamps.length) {
       return null;
     }
 
-    const centers = (heatmap.priceBins && heatmap.priceBins.centers) || [];
+    const centers = deriveBinCenters(heatmap);
     const heatmapData = [];
     const timestampIndexMap = new Map();
     const logBase = Number(heatmap.meta?.scale?.logBase) || 10;
     const clipThreshold = Number(heatmap.meta?.scale?.clip) || 0;
 
+    let computedMaxValue = 0;
+
     heatmap.matrix.forEach((row, rowIndex) => {
-      const ts = heatmap.timestamps[rowIndex];
+      const ts = Number(timestamps[rowIndex]);
       if (!Number.isFinite(ts) || !Array.isArray(row)) return;
       const baseIndex = heatmapData.length;
       row.forEach((value, colIndex) => {
-        const price = centers[colIndex];
-        if (!Number.isFinite(price) || !Number.isFinite(value)) return;
-        heatmapData.push([ts, price, Number(value)]);
+        const price = Number(centers[colIndex]);
+        const numericValue = Number(value);
+        if (!Number.isFinite(price) || !Number.isFinite(numericValue)) return;
+        heatmapData.push([ts, price, numericValue]);
+        computedMaxValue = Math.max(computedMaxValue, numericValue);
       });
       if (!timestampIndexMap.has(ts)) {
         const centerIdx = Math.max(0, Math.min(row.length - 1, Math.floor(row.length / 2)));
@@ -342,10 +422,10 @@
       }
     });
 
-    const rangeStart = heatmap.timestamps[0];
-    const rangeEnd = heatmap.timestamps[heatmap.timestamps.length - 1];
-    const filteredLine = Array.isArray(lineData)
-      ? lineData.filter(([ts]) => {
+    const rangeStart = Number(timestamps[0]);
+    const rangeEnd = Number(timestamps[timestamps.length - 1]);
+    const filteredCandles = Array.isArray(candlesticks)
+      ? candlesticks.filter(([ts]) => {
           if (!Number.isFinite(ts)) return false;
           if (Number.isFinite(rangeStart) && ts < rangeStart) return false;
           if (Number.isFinite(rangeEnd) && ts > rangeEnd) return false;
@@ -353,7 +433,15 @@
         })
       : [];
 
-    const maxValue = Math.max(heatmap.maxValue || 0, 1);
+    const candlestickIndexMap = new Map();
+    filteredCandles.forEach((candle, index) => {
+      const tsValue = Number(candle?.[0]);
+      if (Number.isFinite(tsValue) && !candlestickIndexMap.has(tsValue)) {
+        candlestickIndexMap.set(tsValue, index);
+      }
+    });
+
+    const maxValue = Math.max(Number(heatmap.maxValue) || 0, computedMaxValue, 1);
     const minPrice = Number.isFinite(priceBounds?.min) ? priceBounds.min : null;
     const maxPrice = Number.isFinite(priceBounds?.max) ? priceBounds.max : null;
 
@@ -366,7 +454,26 @@
         backgroundColor: 'rgba(10, 20, 40, 0.9)',
         borderWidth: 1,
         formatter(params) {
-          if (!params || !params.value) return '';
+          if (!params) return '';
+          if (params.seriesType === 'candlestick') {
+            const value = Array.isArray(params.value) ? params.value : [];
+            const ts = Number(value[0] ?? params.data?.[0]);
+            const open = Number(value[1]);
+            const close = Number(value[2]);
+            const low = Number(value[3]);
+            const high = Number(value[4]);
+            const title = Number.isFinite(ts) ? formatTimestampLong(ts) : params.name || '';
+            return [
+              `<div class="tooltip-title">${title}</div>`,
+              `<div>Open&nbsp;<strong>${formatCurrency(open)}</strong></div>`,
+              `<div>High&nbsp;<strong>${formatCurrency(high)}</strong></div>`,
+              `<div>Low&nbsp;<strong>${formatCurrency(low)}</strong></div>`,
+              `<div>Close&nbsp;<strong>${formatCurrency(close)}</strong></div>`,
+            ]
+              .filter(Boolean)
+              .join('');
+          }
+          if (!params.value) return '';
           const [ts, price, value] = params.value;
           const liquidity = formatLiquidity(value, logBase);
           const clipped = clipThreshold > 0 && fromLogValue(value, logBase) >= clipThreshold;
@@ -458,16 +565,19 @@
           emphasis: { itemStyle: { borderColor: '#00f5ff', borderWidth: 1 } },
         },
         {
-          id: 'price',
+          id: 'price-candles',
           name: 'Price',
-          type: 'line',
-          yAxisIndex: 0,
-          showSymbol: false,
-          smooth: 0.2,
-          lineStyle: { width: 2, color: '#00bfff' },
+          type: 'candlestick',
+          encode: { x: 0, y: [1, 2, 3, 4] },
+          data: filteredCandles,
+          itemStyle: {
+            color: 'rgba(34, 211, 238, 0.85)',
+            color0: 'rgba(248, 113, 113, 0.85)',
+            borderColor: '#22d3ee',
+            borderColor0: '#f87171',
+          },
           emphasis: { focus: 'series' },
-          data: filteredLine,
-          tooltip: { show: false },
+          barWidth: '65%',
           zlevel: 3,
         },
       ],
@@ -476,7 +586,7 @@
       },
     };
 
-    return { option, timestampIndexMap };
+    return { option, timestampIndexMap, candlestickIndexMap };
   }
 
   function buildCvdOption(cvd, priceLookup) {
@@ -609,8 +719,13 @@
       if (cvd && Number.isFinite(cvd.meta?.lastTimestamp)) {
         timestamps.push(cvd.meta.lastTimestamp);
       }
-      if (Array.isArray(heatmap?.timestamps) && heatmap.timestamps.length) {
-        timestamps.push(heatmap.timestamps[heatmap.timestamps.length - 1]);
+      const heatmapTimes = Array.isArray(heatmap?.timestamps)
+        ? heatmap.timestamps
+        : Array.isArray(heatmap?.rows)
+        ? heatmap.rows
+        : [];
+      if (heatmapTimes.length) {
+        timestamps.push(heatmapTimes[heatmapTimes.length - 1]);
       }
       if (Array.isArray(lineData) && lineData.length) {
         timestamps.push(lineData[lineData.length - 1][0]);
@@ -661,8 +776,9 @@
         .map(([ts, close]) => [Number(ts), Number(close)])
         .filter(([ts, val]) => Number.isFinite(ts) && Number.isFinite(val))
         .sort((a, b) => a[0] - b[0]);
-      const priceBounds = computePriceBounds(lineData);
-      const heatmapOptionData = buildHeatmapOption(heatmap, lineData, priceBounds);
+      const candles = buildCandlestickData(lineData);
+      const priceBounds = computeCandlestickBounds(candles);
+      const heatmapOptionData = buildHeatmapOption(heatmap, candles, priceBounds);
       const cvdPriceSeries = Array.isArray(cvd?.price) ? cvd.price : [];
       const priceLookup = buildPriceLookup(lineData, cvdPriceSeries);
       const cvdOption = buildCvdOption(cvd, priceLookup);
@@ -672,13 +788,20 @@
         chartState.heatmapHasData = true;
         setEmptyVisible(heatmapEmpty, false);
         syncState.heatmapIndexMap = heatmapOptionData.timestampIndexMap || new Map();
-        syncState.heatmapTimestamps = Array.isArray(heatmap?.timestamps) ? heatmap.timestamps : [];
+        const heatmapTimestamps = Array.isArray(heatmap?.timestamps)
+          ? heatmap.timestamps
+          : Array.isArray(heatmap?.rows)
+          ? heatmap.rows
+          : [];
+        syncState.heatmapTimestamps = heatmapTimestamps;
+        syncState.candlestickIndexMap = heatmapOptionData.candlestickIndexMap || new Map();
       } else {
         heatmapChart.clear();
         chartState.heatmapHasData = false;
         setEmptyVisible(heatmapEmpty, true);
         syncState.heatmapIndexMap = new Map();
         syncState.heatmapTimestamps = [];
+        syncState.candlestickIndexMap = new Map();
       }
 
       if (cvdOption) {
