@@ -296,6 +296,118 @@ body {
   height: clamp(420px, 60vh, 620px);
 }
 
+.chart .overlay-chart {
+  position: absolute;
+  inset: 24px 80px 40px 60px;
+  pointer-events: none;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 3;
+}
+
+.chart .overlay-chart canvas {
+  pointer-events: none !important;
+}
+
+.overlay-primitives {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-heading);
+}
+
+.fvg-box,
+.ob-box {
+  position: absolute;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  box-shadow: 0 0 18px rgba(25, 10, 60, 0.45);
+  pointer-events: none;
+  overflow: hidden;
+  backdrop-filter: blur(2px);
+}
+
+.fvg-box {
+  display: flex;
+  align-items: flex-end;
+  padding: 6px;
+}
+
+.fvg-box.bullish {
+  border-color: rgba(0, 255, 196, 0.55);
+  background: linear-gradient(180deg, rgba(0, 255, 196, 0.18), rgba(0, 120, 96, 0.05));
+}
+
+.fvg-box.bearish {
+  border-color: rgba(255, 70, 166, 0.55);
+  background: linear-gradient(180deg, rgba(255, 70, 166, 0.18), rgba(120, 0, 80, 0.05));
+}
+
+.fvg-volume-bar {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  min-height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  background: rgba(6, 10, 20, 0.35);
+}
+
+.fvg-volume-bar span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: #0e0c1f;
+  text-shadow: none;
+  padding: 0 4px;
+}
+
+.fvg-volume-bar .bull {
+  background: linear-gradient(90deg, rgba(0, 255, 188, 0.75), rgba(0, 200, 220, 0.65));
+}
+
+.fvg-volume-bar .bear {
+  background: linear-gradient(90deg, rgba(255, 70, 166, 0.75), rgba(255, 120, 200, 0.65));
+}
+
+.fvg-volume-bar .empty {
+  background: rgba(18, 12, 40, 0.45);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ob-box {
+  border-style: dashed;
+  padding: 6px 8px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.ob-box.bullish {
+  border-color: rgba(0, 214, 255, 0.6);
+  background: rgba(0, 214, 255, 0.08);
+}
+
+.ob-box.bearish {
+  border-color: rgba(255, 120, 220, 0.6);
+  background: rgba(255, 120, 220, 0.08);
+}
+
+.ob-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(241, 245, 255, 0.92);
+  text-shadow: 0 0 8px rgba(0, 255, 196, 0.35);
+}
+
+.ob-box.bearish .ob-label {
+  text-shadow: 0 0 8px rgba(255, 120, 220, 0.35);
+}
+
 .empty-state {
   text-align: center;
   padding: 24px;
