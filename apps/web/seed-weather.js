@@ -126,7 +126,13 @@
 
   function renderWeather(data) {
     if (!data) {
-      root.innerHTML = '<div class="seed-weather-empty">기상 데이터를 불러오지 못했습니다.</div>';
+      root.innerHTML = `
+        <div class="seed-weather-frame">
+          <div class="seed-weather-scroll">
+            <div class="seed-weather-empty">기상 데이터를 불러오지 못했습니다.</div>
+          </div>
+        </div>
+      `;
       hasRendered = true;
       lastData = null;
       return;
@@ -135,10 +141,14 @@
     const sectors = Array.isArray(data.sectors) ? data.sectors : [];
 
     root.innerHTML = `
-      <div class="seed-weather-layout">
-        ${renderHeadline(data.headline || {}, data.symbol || 'BTCUSDT', data.asOf)}
-        <div class="seed-weather-grid">
-          ${sectors.map(renderSectorCard).join('')}
+      <div class="seed-weather-frame">
+        <div class="seed-weather-scroll">
+          <div class="seed-weather-layout">
+            ${renderHeadline(data.headline || {}, data.symbol || 'BTCUSDT', data.asOf)}
+            <div class="seed-weather-grid">
+              ${sectors.map(renderSectorCard).join('')}
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -157,14 +167,18 @@
     `;
 
     root.innerHTML = `
-      <div class="seed-weather-layout">
-        <article class="seed-weather-card seed-weather-headline seed-weather-skeleton">
-          <div style="height:64px"></div>
-          <div style="height:60px"></div>
-          <div style="height:100px"></div>
-        </article>
-        <div class="seed-weather-grid">
-          ${Array.from({ length: 5 }).map(() => skeletonCard).join('')}
+      <div class="seed-weather-frame">
+        <div class="seed-weather-scroll">
+          <div class="seed-weather-layout">
+            <article class="seed-weather-card seed-weather-headline seed-weather-skeleton">
+              <div style="height:64px"></div>
+              <div style="height:60px"></div>
+              <div style="height:100px"></div>
+            </article>
+            <div class="seed-weather-grid">
+              ${Array.from({ length: 5 }).map(() => skeletonCard).join('')}
+            </div>
+          </div>
         </div>
       </div>
     `;

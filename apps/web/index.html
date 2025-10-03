@@ -1074,8 +1074,9 @@
   <!-- Content - 차트 영역 -->
   <section class="content-section">
     <div class="container">
-      <div class="section-content">
+      <div class="section-content cosmos-section">
         <h2 class="section-title">COSMOS CHART</h2>
+        <p class="cosmos-summary">시총 상위 자산들의 동시 흐름을 추적하며, 코어 3종(BTC·ETH·XRP)을 기준선으로 두고 나머지 자산은 필요할 때 범례에서 토글해 비교할 수 있습니다.</p>
         <div class="chart-container">
           <div class="chart-header">
             <div class="chart-controls">
@@ -1118,6 +1119,100 @@
           <div class="coin-card" style="max-width:300px;">
             <h3 class="card-title">Oracle Q&A</h3>
             <div class="card-content">AI 오라클과 함께하는 질의응답</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-content core-sim-section">
+        <h2 class="section-title">Two.4 Core Flow Simulation</h2>
+        <p class="core-sim-intro">거래 인프라의 각 노드가 중앙 코어와 어떻게 연결되는지 시각화했습니다. 데이터 유입부터 전략 실행까지의 경로를 따라가며 시스템의 상호작용을 확인하세요.</p>
+        <div class="core-sim">
+          <svg class="core-sim-links" viewBox="0 0 100 100" preserveAspectRatio="none" role="presentation" aria-hidden="true">
+            <defs>
+              <linearGradient id="coreLineCool" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#a855f7" stop-opacity="0.75"/>
+              </linearGradient>
+              <linearGradient id="coreLineWarm" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#f97316" stop-opacity="0.85"/>
+                <stop offset="100%" stop-color="#fb7185" stop-opacity="0.75"/>
+              </linearGradient>
+            </defs>
+            <path class="core-line" d="M12.5 10H37.5H62.5H87.5" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M12.5 10V90" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M12.5 30H37.5L50 50" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M12.5 50H50" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M12.5 70H37.5H50H62.5" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M12.5 90H37.5H50H62.5" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M62.5 10V70" stroke="url(#coreLineCool)"/>
+            <path class="core-line" d="M50 50H87.5" stroke="url(#coreLineWarm)"/>
+            <path class="core-line" d="M87.5 10V90" stroke="url(#coreLineWarm)"/>
+            <path class="core-line" d="M62.5 70H87.5" stroke="url(#coreLineWarm)"/>
+            <path class="core-line" d="M62.5 90H87.5" stroke="url(#coreLineWarm)"/>
+          </svg>
+          <div class="core-node node-ingress">
+            <span class="core-node-title">Ingress</span>
+            <span class="core-node-sub">Exchanges / AIs</span>
+          </div>
+          <div class="core-node node-etl">
+            <span class="core-node-title">ETL</span>
+            <span class="core-node-sub">정제 · 라우팅</span>
+          </div>
+          <div class="core-node node-storage">
+            <span class="core-node-title">Storage</span>
+            <span class="core-node-sub">장기 데이터 레이크</span>
+          </div>
+          <div class="core-node node-gpu-ingest">
+            <span class="core-node-title">GPU Cluster</span>
+            <span class="core-node-sub">실시간 파이프라인</span>
+          </div>
+          <div class="core-node node-queue-ingest">
+            <span class="core-node-title">Queue</span>
+            <span class="core-node-sub">이벤트 버퍼링</span>
+          </div>
+          <div class="core-node node-datalake">
+            <span class="core-node-title">Data Lake</span>
+            <span class="core-node-sub">시세 · 온체인 · 뉴스</span>
+          </div>
+          <div class="core-node node-orchestration">
+            <span class="core-node-title">AI Orchestration</span>
+            <span class="core-node-sub">파이프라인 스케줄링</span>
+          </div>
+          <div class="core-node node-model-serving">
+            <span class="core-node-title">Model Serving</span>
+            <span class="core-node-sub">예측 / 임베딩</span>
+          </div>
+          <div class="core-node node-strategy">
+            <span class="core-node-title">Strategy Engine</span>
+            <span class="core-node-sub">멀티모달 시그널</span>
+          </div>
+          <div class="core-node node-execution">
+            <span class="core-node-title">Execution Router</span>
+            <span class="core-node-sub">브로커 · 거래소</span>
+          </div>
+          <div class="core-node node-notify">
+            <span class="core-node-title">Notifications</span>
+            <span class="core-node-sub">경보 · 피드백</span>
+          </div>
+          <div class="core-node node-core">
+            <span class="core-node-title">Two.4 Core</span>
+            <span class="core-node-sub">시뮬레이션 · 상태 동기화</span>
+          </div>
+          <div class="core-node node-cpu">
+            <span class="core-node-title">CPU Workers</span>
+            <span class="core-node-sub">연산 · 로깅</span>
+          </div>
+          <div class="core-node node-gpu-train">
+            <span class="core-node-title">GPU Cluster</span>
+            <span class="core-node-sub">학습 · 재학습</span>
+          </div>
+          <div class="core-node node-cache">
+            <span class="core-node-title">Cache</span>
+            <span class="core-node-sub">저지연 응답</span>
+          </div>
+          <div class="core-node node-queue-out">
+            <span class="core-node-title">Queue</span>
+            <span class="core-node-sub">실행 대기열</span>
           </div>
         </div>
       </div>
@@ -1474,13 +1569,13 @@
     const cryptoConfig=[
       {id:'BTC',name:'BTC',color:'#ff9500',visible:true},
       {id:'ETH',name:'ETH',color:'#627eea',visible:true},
-      {id:'BNB',name:'BNB',color:'#f0b90b',visible:true},
-      {id:'SOL',name:'SOL',color:'#9945ff',visible:true},
-      {id:'ADA',name:'ADA',color:'#0066cc',visible:true},
+      {id:'BNB',name:'BNB',color:'#f0b90b',visible:false},
+      {id:'SOL',name:'SOL',color:'#9945ff',visible:false},
+      {id:'ADA',name:'ADA',color:'#0066cc',visible:false},
       {id:'XRP',name:'XRP',color:'#00d4aa',visible:true},
-      {id:'AVAX',name:'AVAX',color:'#e84142',visible:true},
-      {id:'DOGE',name:'DOGE',color:'#c2a633',visible:true},
-      {id:'LINK',name:'LINK',color:'#2a5ada',visible:true}
+      {id:'AVAX',name:'AVAX',color:'#e84142',visible:false},
+      {id:'DOGE',name:'DOGE',color:'#c2a633',visible:false},
+      {id:'LINK',name:'LINK',color:'#2a5ada',visible:false}
     ];
 
     const TIME_RANGES={
@@ -1585,6 +1680,7 @@
         const item=document.createElement('div');
         item.className='legend-item';
         item.innerHTML=`<div class="legend-color" style="background-color:${c.color}"></div><span>${c.name}</span>`;
+        item.style.opacity=c.visible?'1':'.35';
         item.addEventListener('click',()=>{
           c.visible=!c.visible;
           item.style.opacity=c.visible?'1':'.35';
