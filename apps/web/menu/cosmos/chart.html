@@ -12,7 +12,7 @@
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:radial-gradient(1200px 600px at 50% 0%, #182036 0%, var(--bg) 60%); color:var(--text); font:14px/1.45 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-  .wrap{height:100svh; display:flex; flex-direction:column}
+  .wrap{height:100svh; display:flex; flex-direction:column; position:relative}
 
   /* 상단: 심볼/가격 스트립 */
   .ticker{display:flex; align-items:center; gap:10px; padding:10px 12px; background:rgba(12,16,24,.55);
@@ -42,6 +42,34 @@
   .dock{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 12px;
     background:rgba(12,16,24,.55); border-top:1px solid rgba(255,255,255,.06); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
   .dock .group{display:flex; gap:6px; flex-wrap:wrap}
+
+  .ma-panel{position:absolute; right:12px; bottom:68px; width:min(360px, calc(100% - 24px));
+    background:rgba(13,18,30,.92); border:1px solid rgba(148,163,184,.25); border-radius:18px; padding:16px 18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); color:#e8eefc;
+    display:none; z-index:20}
+  .ma-panel.open{display:block}
+  .ma-panel h3{margin:0 0 12px; font-size:15px; letter-spacing:.08em; text-transform:uppercase; display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .ma-close{cursor:pointer; font-size:18px; font-weight:700; line-height:1; color:#94a3b8; padding:2px 8px; border-radius:8px; border:1px solid transparent}
+  .ma-close:hover{color:#e2e8f0; border-color:rgba(148,163,184,.35); background:rgba(148,163,184,.08)}
+  .ma-row{padding:10px 0; border-bottom:1px solid rgba(148,163,184,.18); display:grid; grid-template-columns:auto 54px; gap:10px; align-items:center}
+  .ma-row:last-child{border-bottom:none; padding-bottom:0}
+  .ma-label{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.02em}
+  .ma-dot{width:12px; height:12px; border-radius:999px; flex:0 0 12px}
+  .ma-toggle{display:flex; align-items:center; justify-content:flex-end}
+  .ma-toggle input{width:18px; height:18px}
+  .ma-controls{grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap}
+  .ma-controls select,.ma-controls input{flex:1 1 90px; border-radius:10px; border:1px solid rgba(148,163,184,.25); background:rgba(12,18,29,.65); color:#e2e8f0; padding:6px 10px; font-weight:600; outline:none; min-height:32px}
+  .ma-controls input[type=number]{max-width:86px}
+  .ma-controls select:focus,.ma-controls input:focus{border-color:rgba(114,153,255,.65); box-shadow:0 0 0 2px rgba(114,153,255,.2)}
+  .ma-footer{margin-top:14px; display:flex; align-items:center; gap:10px; justify-content:space-between; flex-wrap:wrap; font-size:13px; color:#a9b4ce}
+  .ma-footer select{flex:0 0 auto; border-radius:12px; border:1px solid rgba(148,163,184,.3); background:rgba(12,18,29,.7); color:#e2e8f0; padding:6px 12px; font-weight:600}
+  .ma-footer small{font-size:12px; color:#7c8aa5}
+  @media (max-width:600px){
+    .ma-panel{right:8px; left:8px; width:auto}
+    .ma-row{grid-template-columns:auto 44px}
+    .ma-controls{flex-direction:column}
+    .ma-controls input[type=number]{max-width:none}
+  }
 
   @media (min-width:1024px){
     .ticker{padding:12px 18px}
@@ -82,10 +110,28 @@
       <div class="chip on" id="togOI">OI</div>
       <div class="chip" id="togHMA">HMA</div>
       <div class="chip" id="togBB">BB</div>
+      <div class="chip" id="togMA">MA+</div>
+      <div class="chip ghost" id="btnMAConfig">MA⚙</div>
     </div>
     <div class="group">
       <div class="chip ghost" id="btnFit">Fit</div>
       <div class="chip ghost" id="btnReset">Reset</div>
+    </div>
+  </div>
+
+  <div class="ma-panel" id="maPanel">
+    <h3>7 MA Suite <span class="ma-close" id="maPanelClose">×</span></h3>
+    <div id="maPanelRows"></div>
+    <div class="ma-footer">
+      <div>
+        Forecast Bias
+        <select id="maBiasSelect">
+          <option value="neutral">Neutral</option>
+          <option value="bullish">Bullish</option>
+          <option value="bearish">Bearish</option>
+        </select>
+      </div>
+      <small>구성요소를 조정해 TWO.4 스타일 7중 이동평균을 만들 수 있습니다.</small>
     </div>
   </div>
 </div>
@@ -346,6 +392,137 @@ function sma(values, period){
   }
   return out;
 }
+function ema(values, period){
+  const out=[];
+  let sum=0;
+  let emaVal=null;
+  const alpha = 2/(period+1);
+  for(let i=0;i<values.length;i++){
+    const v=values[i];
+    sum += v;
+    if(i===period-1){
+      emaVal = sum/period;
+      out.push(emaVal);
+    }else if(i>=period){
+      emaVal = alpha * v + (1-alpha) * emaVal;
+      out.push(emaVal);
+    }else{
+      out.push(null);
+    }
+  }
+  return out;
+}
+function rma(values, period){
+  const out=[];
+  let sum=0;
+  let avg=null;
+  for(let i=0;i<values.length;i++){
+    const v=values[i];
+    sum += v;
+    if(i===period-1){
+      avg = sum/period;
+      out.push(avg);
+    }else if(i>=period){
+      avg = ((avg*(period-1)) + v)/period;
+      out.push(avg);
+    }else{
+      out.push(null);
+    }
+  }
+  return out;
+}
+function vwma(values, volumes, period){
+  const out=[];
+  let sumPV=0, sumV=0;
+  for(let i=0;i<values.length;i++){
+    const price=values[i];
+    const vol=volumes?.[i] ?? 0;
+    sumPV += price*vol;
+    sumV += vol;
+    if(i>=period){
+      const oldPrice=values[i-period];
+      const oldVol=volumes?.[i-period] ?? 0;
+      sumPV -= oldPrice*oldVol;
+      sumV -= oldVol;
+    }
+    if(i>=period-1 && sumV!==0) out.push(sumPV/sumV); else out.push(null);
+  }
+  return out;
+}
+function alma(values, period, offset=0.85, sigma=6){
+  const out=[];
+  const m = Math.floor(offset*(period-1));
+  const s = period / sigma;
+  for(let i=0;i<values.length;i++){
+    if(i<period-1){ out.push(null); continue; }
+    let numerator=0, denominator=0;
+    for(let k=0;k<period;k++){
+      const weight = Math.exp(-Math.pow(k - m,2)/(2*s*s));
+      const price = values[i-period+1+k];
+      numerator += weight*price;
+      denominator += weight;
+    }
+    out.push(denominator!==0 ? numerator/denominator : null);
+  }
+  return out;
+}
+function kama(values, period){
+  const out=[];
+  if(!values.length) return out;
+  let kamaVal = values[0];
+  for(let i=0;i<values.length;i++){
+    if(i<period){ out.push(null); continue; }
+    const change = Math.abs(values[i] - values[i-period]);
+    let noise = 0;
+    for(let k=i-period+1;k<=i;k++){
+      const prev = values[k-1];
+      const cur = values[k];
+      noise += Math.abs(cur - prev);
+    }
+    const er = noise!==0 ? change / noise : 1;
+    const fast = 0.6667;
+    const slow = 0.0645;
+    const sc = Math.pow(er*(fast-slow)+slow,2);
+    kamaVal = kamaVal + sc * (values[i] - kamaVal);
+    out.push(kamaVal);
+  }
+  return out;
+}
+function zema(values, period){
+  const out=[];
+  const lag = Math.max(1, Math.floor((period-1)/2));
+  let emaVal = values[0] ?? 0;
+  const alpha = 2/(period+1);
+  for(let i=0;i<values.length;i++){
+    const lagged = i>=lag ? values[i-lag] : values[0];
+    const adjusted = values[i] + values[i] - lagged;
+    if(i===0){ out.push(null); continue; }
+    emaVal = emaVal + alpha * (adjusted - emaVal);
+    out.push(i>=period-1 ? emaVal : null);
+  }
+  return out;
+}
+function lsma(values, period){
+  const out=[];
+  for(let i=0;i<values.length;i++){
+    if(i<period-1){ out.push(null); continue; }
+    let sumX=0,sumY=0,sumXY=0,sumXX=0;
+    for(let j=0;j<period;j++){
+      const x=j+1;
+      const y=values[i-period+1+j];
+      sumX += x;
+      sumY += y;
+      sumXY += x*y;
+      sumXX += x*x;
+    }
+    const denom = (period*sumXX - sumX*sumX);
+    const slope = denom!==0 ? (period*sumXY - sumX*sumY)/denom : 0;
+    const intercept = (sumY - slope*sumX)/period;
+    const result = intercept + slope*period;
+    out.push(result);
+  }
+  return out;
+}
 function std(values, period){
   const out=[]; let sum=0, sumsq=0;
   for(let i=0;i<values.length;i++){
@@ -431,6 +608,63 @@ const bbUpper = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1,
 const bbMid   = chart.addLineSeries({ color:'rgba(200,210,230,.9)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
 const bbLower = chart.addLineSeries({ color:'rgba(122,165,255,.9)', lineWidth:1, lastValueVisible:false, priceLineVisible:false });
 
+/* 7MA 플러스 (커스터마이즈 가능한 이동평균 모음) */
+const MA_TYPES = [
+  {value:'SMA', label:'SMA'},
+  {value:'EMA', label:'EMA'},
+  {value:'WMA', label:'WMA'},
+  {value:'HMA', label:'HMA'},
+  {value:'RMA', label:'Wilder'},
+  {value:'VWMA', label:'VWMA'},
+  {value:'ALMA', label:'ALMA'},
+  {value:'KAMA', label:'KAMA'},
+  {value:'ZEMA', label:'ZEMA'},
+  {value:'LSMA', label:'LSMA'}
+];
+const MA_SOURCE_OPTIONS = [
+  {value:'close', label:'Close'},
+  {value:'open', label:'Open'},
+  {value:'high', label:'High'},
+  {value:'low', label:'Low'},
+  {value:'hl2', label:'HL2'},
+  {value:'hlc3', label:'HLC3'},
+  {value:'ohlc4', label:'OHLC4'},
+  {value:'oc', label:'(O+C)/2'}
+];
+const maConfigs = [
+  {key:'ma0', label:'MA⁰ Hybrid', color:'#05ffa6', visible:false, type:'HYBRID', period:21, source:'close', editable:false},
+  {key:'ma1', label:'MA¹', color:'#ff7043', visible:true, type:'WMA', period:21, source:'oc'},
+  {key:'ma2', label:'MA²', color:'#f97316', visible:true, type:'EMA', period:55, source:'close'},
+  {key:'ma3', label:'MA³', color:'#8b5cf6', visible:true, type:'SMA', period:200, source:'close'},
+  {key:'ma4', label:'MA⁴', color:'#ff00ff', visible:false, type:'EMA', period:20, source:'close'},
+  {key:'ma5', label:'MA⁵', color:'#7c3aed', visible:false, type:'WMA', period:30, source:'close'},
+  {key:'ma6', label:'MA⁶', color:'#84cc16', visible:false, type:'SMA', period:12, source:'close'}
+];
+const maSeries = maConfigs.map((cfg, idx)=>chart.addLineSeries({
+  color:cfg.color,
+  lineWidth: idx===0 ? 2 : 2,
+  lastValueVisible:false,
+  priceLineVisible:false,
+  crosshairMarkerVisible:false
+}));
+const maForecastSeries = maConfigs.map((cfg, idx)=>{
+  if(idx===0 || idx>3) return null;
+  return chart.addLineSeries({
+    color:cfg.color,
+    lineWidth:1,
+    lineStyle:LightweightCharts.LineStyle.Dashed,
+    lastValueVisible:false,
+    priceLineVisible:false,
+    crosshairMarkerVisible:false,
+    visible:false
+  });
+});
+
+let baseCandles=[], baseTimes=[], baseVolumes=[], baseStep=0;
+let maMaster=true;
+let maBias='neutral';
+const maSourceCache=new Map();
+
 /* UI 세팅 */
 document.getElementById('symLabel').textContent = SYMBOL;
 
@@ -444,6 +678,14 @@ const togRSI  = document.getElementById('togRSI');
 const togOI   = document.getElementById('togOI');
 const togHMA  = document.getElementById('togHMA');
 const togBB   = document.getElementById('togBB');
+const togMA   = document.getElementById('togMA');
+const btnMAConfig = document.getElementById('btnMAConfig');
+const maPanel = document.getElementById('maPanel');
+const maPanelRows = document.getElementById('maPanelRows');
+const maPanelClose = document.getElementById('maPanelClose');
+const maBiasSelect = document.getElementById('maBiasSelect');
+
+maConfigs.forEach(cfg=>{ cfg.lastData=[]; cfg.forecastData=[]; });
 
 let showRSI=false, showOI=true, showHMA=false, showBB=false;
 function syncToggles(){
@@ -451,6 +693,7 @@ function syncToggles(){
   togOI.classList.toggle('on',showOI);
   togHMA.classList.toggle('on',showHMA);
   togBB.classList.toggle('on',showBB);
+  togMA.classList.toggle('on', maMaster && maConfigs.some(cfg=>cfg.visible));
   rsiPane.applyOptions({visible:showRSI});
   oiPane.applyOptions({visible:showOI});
   h50.applyOptions({visible:showHMA});
@@ -459,9 +702,11 @@ function syncToggles(){
   bbUpper.applyOptions({visible:showBB});
   bbMid.applyOptions({visible:showBB});
   bbLower.applyOptions({visible:showBB});
+  if(maMaster) updateMAForecasts();
+  applyMAVisibility();
 }
 [togRSI,togOI,togHMA,togBB].forEach(btn=>{
-  btn.onclick=()=>{ 
+  btn.onclick=()=>{
     if(btn===togRSI) showRSI=!showRSI;
     if(btn===togOI) showOI=!showOI;
     if(btn===togHMA) showHMA=!showHMA;
@@ -469,6 +714,286 @@ function syncToggles(){
     syncToggles();
   };
 });
+
+function openMAPanel(){ maPanel.classList.add('open'); }
+function closeMAPanel(){ maPanel.classList.remove('open'); }
+function toggleMAPanel(){ maPanel.classList.toggle('open'); }
+
+function buildMAPanel(){
+  if(!maPanelRows) return;
+  maPanelRows.innerHTML='';
+  maConfigs.forEach((cfg)=>{
+    const row=document.createElement('div');
+    row.className='ma-row';
+
+    const label=document.createElement('div');
+    label.className='ma-label';
+    const dot=document.createElement('span');
+    dot.className='ma-dot';
+    dot.style.background=cfg.color;
+    const text=document.createElement('span');
+    text.textContent=cfg.label;
+    label.appendChild(dot);
+    label.appendChild(text);
+    row.appendChild(label);
+
+    const toggleWrap=document.createElement('label');
+    toggleWrap.className='ma-toggle';
+    const toggle=document.createElement('input');
+    toggle.type='checkbox';
+    toggle.checked=cfg.visible;
+    toggle.addEventListener('change',()=>{
+      cfg.visible = toggle.checked;
+      updateMAOverlays();
+      syncToggles();
+    });
+    toggleWrap.appendChild(toggle);
+    row.appendChild(toggleWrap);
+
+    const controls=document.createElement('div');
+    controls.className='ma-controls';
+    if(cfg.editable===false){
+      const note=document.createElement('span');
+      note.textContent='WMA21과 EMA20 평균';
+      note.style.fontSize='12px';
+      note.style.color='#9ca3c7';
+      controls.appendChild(note);
+    }else{
+      const typeSel=document.createElement('select');
+      MA_TYPES.forEach(opt=>{
+        const option=document.createElement('option');
+        option.value=opt.value;
+        option.textContent=opt.label;
+        typeSel.appendChild(option);
+      });
+      typeSel.value=cfg.type;
+      typeSel.addEventListener('change',()=>{
+        cfg.type=typeSel.value;
+        updateMAOverlays();
+      });
+      controls.appendChild(typeSel);
+
+      const periodInput=document.createElement('input');
+      periodInput.type='number';
+      periodInput.min='1';
+      periodInput.max='600';
+      periodInput.value=cfg.period;
+      periodInput.addEventListener('change',()=>{
+        let val=parseInt(periodInput.value,10);
+        if(!Number.isFinite(val)) val=cfg.period;
+        cfg.period=Math.max(1, Math.min(600, val));
+        periodInput.value=cfg.period;
+        updateMAOverlays();
+      });
+      controls.appendChild(periodInput);
+
+      const sourceSel=document.createElement('select');
+      MA_SOURCE_OPTIONS.forEach(opt=>{
+        const option=document.createElement('option');
+        option.value=opt.value;
+        option.textContent=opt.label;
+        sourceSel.appendChild(option);
+      });
+      sourceSel.value=cfg.source;
+      sourceSel.addEventListener('change',()=>{
+        cfg.source=sourceSel.value;
+        updateMAOverlays();
+      });
+      controls.appendChild(sourceSel);
+    }
+    row.appendChild(controls);
+    maPanelRows.appendChild(row);
+  });
+}
+
+buildMAPanel();
+
+if(togMA){
+  togMA.addEventListener('click', (event)=>{
+    event.stopPropagation();
+    maMaster = !maMaster;
+    if(maMaster && maConfigs.some(cfg=>cfg.visible)) openMAPanel();
+    else closeMAPanel();
+    syncToggles();
+  });
+}
+if(btnMAConfig){
+  btnMAConfig.addEventListener('click', (event)=>{
+    event.stopPropagation();
+    if(!maMaster){
+      maMaster = true;
+      syncToggles();
+    }
+    toggleMAPanel();
+  });
+}
+if(maPanelClose){
+  maPanelClose.addEventListener('click', (event)=>{
+    event.stopPropagation();
+    closeMAPanel();
+  });
+}
+if(maPanel){
+  maPanel.addEventListener('click', (event)=>event.stopPropagation());
+}
+document.addEventListener('click',(event)=>{
+  if(!maPanel) return;
+  if(maPanel.classList.contains('open') && !maPanel.contains(event.target) && event.target!==btnMAConfig && event.target!==togMA){
+    closeMAPanel();
+  }
+});
+if(maBiasSelect){
+  maBiasSelect.addEventListener('change',()=>{
+    maBias = maBiasSelect.value || 'neutral';
+    updateMAForecasts();
+    applyMAVisibility();
+  });
+}
+
+const MA_FORECAST_STEPS = 5;
+
+function updateMAButtonState(){
+  if(!togMA) return;
+  const active = maMaster && maConfigs.some(cfg=>cfg.visible);
+  togMA.classList.toggle('on', active);
+}
+
+function applyMAVisibility(){
+  maConfigs.forEach((cfg, idx)=>{
+    const series = maSeries[idx];
+    const forecastSeries = maForecastSeries[idx];
+    const show = maMaster && cfg.visible && Array.isArray(cfg.lastData) && cfg.lastData.length;
+    if(series){
+      series.applyOptions({visible:show});
+      series.setData(show ? cfg.lastData : []);
+    }
+    if(forecastSeries){
+      const futureVisible = show && Array.isArray(cfg.forecastData) && cfg.forecastData.length;
+      forecastSeries.applyOptions({visible:futureVisible});
+      forecastSeries.setData(futureVisible ? cfg.forecastData : []);
+    }
+  });
+  updateMAButtonState();
+}
+
+function getSourceValues(sourceKey){
+  const key = sourceKey || 'close';
+  if(maSourceCache.has(key)) return maSourceCache.get(key);
+  const arr = baseCandles.map(c=>{
+    switch(key){
+      case 'open': return c.open;
+      case 'high': return c.high;
+      case 'low': return c.low;
+      case 'hl2': return (c.high + c.low)/2;
+      case 'hlc3': return (c.high + c.low + c.close)/3;
+      case 'ohlc4': return (c.open + c.high + c.low + c.close)/4;
+      case 'oc': return (c.open + c.close)/2;
+      default: return c.close;
+    }
+  });
+  maSourceCache.set(key, arr);
+  return arr;
+}
+
+function computeMAByType(type, values, period, volumes){
+  const arr = values || [];
+  if(period<=0) return arr.map(()=>null);
+  switch(type){
+    case 'SMA': return sma(arr, period);
+    case 'EMA': return ema(arr, period);
+    case 'WMA': return wma(arr, period);
+    case 'HMA': return hma(arr, period);
+    case 'RMA': return rma(arr, period);
+    case 'VWMA': return vwma(arr, volumes ?? baseVolumes, period);
+    case 'ALMA': return alma(arr, period);
+    case 'KAMA': return kama(arr, period);
+    case 'ZEMA': return zema(arr, period);
+    case 'LSMA': return lsma(arr, period);
+    default: return ema(arr, period);
+  }
+}
+
+function computeATR(period=14){
+  if(baseCandles.length<2) return 0;
+  const tr=[];
+  for(let i=0;i<baseCandles.length;i++){
+    const candle=baseCandles[i];
+    if(i===0){ tr.push(candle.high - candle.low); continue; }
+    const prevClose = baseCandles[i-1].close;
+    const range1 = candle.high - candle.low;
+    const range2 = Math.abs(candle.high - prevClose);
+    const range3 = Math.abs(candle.low - prevClose);
+    tr.push(Math.max(range1, range2, range3));
+  }
+  const atrSeries = rma(tr, period);
+  const lastVal = atrSeries[atrSeries.length-1];
+  return Number.isFinite(lastVal) ? lastVal : 0;
+}
+
+function updateMAForecasts(){
+  const atr = computeATR(14);
+  const biasDelta = maBias==='neutral' ? 0 : (maBias==='bullish' ? atr : -atr);
+  maConfigs.forEach((cfg, idx)=>{
+    if(!maForecastSeries[idx]){ cfg.forecastData=[]; return; }
+    if(!maMaster || !cfg.visible){ cfg.forecastData=[]; return; }
+    if(!baseTimes.length || !baseStep){ cfg.forecastData=[]; return; }
+    const srcBase = getSourceValues(cfg.source);
+    if(!srcBase.length){ cfg.forecastData=[]; return; }
+    const volumesBase = baseVolumes;
+    const extended = srcBase.slice();
+    const volExtended = volumesBase.slice();
+    const lastVolume = volumesBase.length ? volumesBase[volumesBase.length-1] : 0;
+    const future=[];
+    const startTime = baseTimes[baseTimes.length-1];
+    for(let step=1; step<=MA_FORECAST_STEPS; step++){
+      const predictedSource = extended[extended.length-1] + biasDelta;
+      extended.push(predictedSource);
+      volExtended.push(lastVolume);
+      const maVals = computeMAByType(cfg.type, extended, cfg.period, volExtended);
+      const nextVal = maVals[maVals.length-1];
+      if(nextVal!=null && Number.isFinite(nextVal)){
+        future.push({ time: startTime + baseStep*step, value: nextVal });
+      }
+    }
+    cfg.forecastData = future;
+  });
+}
+
+function updateMAOverlays(){
+  if(!baseCandles.length){
+    maConfigs.forEach(cfg=>{ cfg.lastData=[]; cfg.forecastData=[]; });
+    applyMAVisibility();
+    return;
+  }
+  maSourceCache.clear();
+  const closeValues = baseCandles.map(c=>c.close);
+  const wma21 = wma(closeValues, 21);
+  const ema20 = ema(closeValues, 20);
+  maConfigs.forEach((cfg, idx)=>{
+    let values;
+    if(cfg.key==='ma0'){
+      values = closeValues.map((_,i)=>{
+        const a=wma21[i];
+        const b=ema20[i];
+        return (a==null || b==null) ? null : (a+b)/2;
+      });
+    }else{
+      const src = getSourceValues(cfg.source);
+      values = computeMAByType(cfg.type, src, cfg.period);
+    }
+    const points=[];
+    if(values){
+      for(let i=0;i<values.length;i++){
+        const val=values[i];
+        if(val==null || !Number.isFinite(val)) continue;
+        points.push({ time: baseTimes[i], value: val });
+      }
+    }
+    cfg.lastData = points;
+  });
+  updateMAForecasts();
+  applyMAVisibility();
+}
 
 /* Fit / Reset */
 document.getElementById('btnFit').onclick = ()=> chart.timeScale().fitContent();
@@ -497,6 +1022,11 @@ function clearAllSeries(){
   bbUpper.setData([]);
   bbMid.setData([]);
   bbLower.setData([]);
+  maSeries.forEach(s=>s.setData([]));
+  maForecastSeries.forEach(s=>{ if(s) s.setData([]); });
+  maConfigs.forEach(cfg=>{ cfg.lastData=[]; cfg.forecastData=[]; });
+  maSourceCache.clear();
+  baseCandles=[]; baseTimes=[]; baseVolumes=[]; baseStep=0;
 }
 
 /* 로더 - 결측 구간 처리 개선 */
@@ -540,6 +1070,13 @@ async function loadAll(){
     mainSeries.setData(candles);
     volSeries.setData(volumes);
     chart.timeScale().fitContent();
+
+    baseCandles = candles;
+    baseTimes = candles.map(c=>c.time);
+    baseVolumes = rowsNorm.map(row=>Number(row[5])||0);
+    baseStep = TFSEC[TF] ?? 60;
+    maSourceCache.clear();
+    updateMAOverlays();
 
     if(usingFallback){
       console.info('[chart] CoinGecko fallback active for', SYMBOL, TF);
