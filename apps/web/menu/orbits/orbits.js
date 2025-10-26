@@ -17,7 +17,7 @@ function loadOwnPosts() {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(id => typeof id === 'string');
   } catch (error) {
-    console.error('Failed to load saved ORBITS posts', error);
+    console.error('ORBITS 저장된 게시글을 불러오지 못했습니다.', error);
     return [];
   }
 }
@@ -79,11 +79,11 @@ const groupLists = Array.from(document.querySelectorAll('[data-group-list]')).re
 }, {});
 
 function formatUpdatedAt(timestamp) {
-  if (!timestamp) return 'Last sync — 준비 중';
+  if (!timestamp) return '최근 동기화 — 준비 중';
   try {
     const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return 'Last sync — 준비 중';
-    return `Last sync — ${new Intl.DateTimeFormat('ko-KR', {
+    if (Number.isNaN(date.getTime())) return '최근 동기화 — 준비 중';
+    return `최근 동기화 — ${new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -91,7 +91,7 @@ function formatUpdatedAt(timestamp) {
       minute: '2-digit'
     }).format(date)}`;
   } catch (error) {
-    return 'Last sync — 준비 중';
+    return '최근 동기화 — 준비 중';
   }
 }
 
@@ -202,7 +202,7 @@ function normalizePost(post, source = 'remote') {
   const categoryId = rawCategory || getDefaultCategoryId();
   const category = findCategoryById(categoryId);
   const rawTitle = typeof post.title === 'string' ? post.title.trim() : '';
-  const title = rawTitle || 'Untitled';
+  const title = rawTitle || '제목 없음';
   const heroAltFallback = rawTitle ? `${rawTitle} 대표 아이콘` : category ? `${category.title} 아이콘` : '전략 아이콘';
   const hero = normalizeIcon(post.hero, heroAltFallback) || normalizeIcon(category ? category.heroIcon : null, heroAltFallback);
   const images = normalizeImages(post.images);
@@ -268,7 +268,7 @@ function saveOwnPosts() {
   try {
     window.localStorage.setItem(OWN_POSTS_STORAGE_KEY, JSON.stringify(state.ownPosts));
   } catch (error) {
-    console.error('Failed to persist ORBITS posts', error);
+    console.error('ORBITS 게시글 정보를 저장하지 못했습니다.', error);
   }
 }
 
@@ -589,7 +589,7 @@ async function fetchRemotePosts() {
     headers: { Accept: 'application/json' }
   });
   if (!response.ok) {
-    throw new Error(`Failed to load posts (${response.status})`);
+    throw new Error(`게시글을 불러오지 못했습니다 (${response.status})`);
   }
   const data = await response.json();
   const posts = Array.isArray(data.posts) ? data.posts.map(item => normalizePost(item, 'remote')).filter(Boolean) : [];
@@ -612,7 +612,7 @@ async function deleteRemotePost(postId) {
     if (response.status === 404) {
       return { ok: false, removed: postId, updatedAt: null };
     }
-    const message = data && data.error ? data.error : 'Failed to delete post';
+    const message = data && data.error ? data.error : '게시글을 삭제하지 못했습니다.';
     throw new Error(message);
   }
   return data;
@@ -627,7 +627,7 @@ async function loadRemotePosts() {
       elements.boardUpdated.textContent = formatUpdatedAt(updatedAt);
     }
   } catch (error) {
-    console.error('Failed to fetch ORBITS posts', error);
+    console.error('ORBITS 게시글을 가져오는 중 오류가 발생했습니다.', error);
   }
 }
 
@@ -666,7 +666,7 @@ async function handleDeletePost(postId, triggerButton) {
     const updatedTimestamp = response && response.updatedAt ? response.updatedAt : new Date().toISOString();
     elements.boardUpdated.textContent = formatUpdatedAt(updatedTimestamp);
   } catch (error) {
-    console.error('Failed to delete ORBITS post', error);
+    console.error('ORBITS 게시글 삭제 중 오류가 발생했습니다.', error);
     alert('게시글 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
   } finally {
     state.deletingPostId = null;
